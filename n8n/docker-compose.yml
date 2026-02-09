@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-autopilot
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Timezone for market open scheduling
+      - TZ=America/New_York
+      - GENERIC_TIMEZONE=America/New_York
+      # n8n settings
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      # Execution settings
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      # Security - disable auth for local dev
+      - N8N_BASIC_AUTH_ACTIVE=false
+      # Backend connection
+      - BACKEND_URL=http://host.docker.internal:8000
+    volumes:
+      # Persistent storage for workflows and credentials
+      - n8n_data:/home/node/.n8n
+      # Mount workflows for auto-import
+      - ./workflows:/home/node/workflows:ro
+    extra_hosts:
+      # Allow connection to host machine
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  n8n_data:
+    driver: local
+
+# Usage:
+# 1. Start: docker compose up -d
+# 2. Access n8n: http://localhost:5678
+# 3. Import workflows from /home/node/workflows
+# 4. Activate scheduled workflows

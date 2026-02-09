@@ -1,0 +1,148 @@
+{
+  "name": "Regime Change Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "regime-change",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Regime Change Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "regime-change-handler"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.new_regime }}",
+              "operation": "equals",
+              "value2": "high_volatility"
+            }
+          ]
+        }
+      },
+      "id": "if-high-vol",
+      "name": "High Volatility?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/autopilot/config",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"risk_limits\": {\n    \"max_risk_per_trade\": 25,\n    \"max_total_risk\": 150\n  },\n  \"allowed_templates\": [\"iron_condor\", \"put_credit_spread\"]\n}",
+        "options": {}
+      },
+      "id": "reduce-risk-config",
+      "name": "Reduce Risk Settings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [690, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/autopilot/config",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"risk_limits\": {\n    \"max_risk_per_trade\": 50,\n    \"max_total_risk\": 300\n  },\n  \"allowed_templates\": [\"put_credit_spread\", \"call_credit_spread\", \"iron_condor\", \"call_debit_spread\", \"put_debit_spread\"]\n}",
+        "options": {}
+      },
+      "id": "normal-risk-config",
+      "name": "Normal Risk Settings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [690, 380]
+    },
+    {
+      "parameters": {
+        "channel": "#trading-alerts",
+        "text": "=⚠️ **Regime Change Detected**\n\nOld Regime: {{ $json.body.old_regime }}\nNew Regime: {{ $json.body.new_regime }}\nVIX: {{ $json.body.vix_level }}\n\n{{ $json.body.new_regime === 'high_volatility' ? '🔴 Risk limits reduced automatically.' : '🟢 Normal risk settings restored.' }}",
+        "otherOptions": {}
+      },
+      "id": "slack-alert",
+      "name": "Slack Regime Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [910, 300],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Regime Change Webhook": {
+      "main": [
+        [
+          {
+            "node": "High Volatility?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "High Volatility?": {
+      "main": [
+        [
+          {
+            "node": "Reduce Risk Settings",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normal Risk Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reduce Risk Settings": {
+      "main": [
+        [
+          {
+            "node": "Slack Regime Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normal Risk Settings": {
+      "main": [
+        [
+          {
+            "node": "Slack Regime Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "tradingview-recreation"
+  },
+  "tags": [
+    {
+      "name": "autopilot"
+    },
+    {
+      "name": "regime"
+    }
+  ]
+}

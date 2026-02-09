@@ -1,0 +1,4 @@
+# Root requirements.txt for Heroku deployment
+# This references the phase1 requirements
+
+-r phase1/requirements.txt

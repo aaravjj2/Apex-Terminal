@@ -1,0 +1,45 @@
+{
+  "name": "autopilot-trading",
+  "description": "Automated options trading service with Alpaca paper trading",
+  "repository": "https://github.com/your-org/tradingview-recreation",
+  "keywords": ["python", "trading", "alpaca", "options"],
+  "stack": "heroku-22",
+  "env": {
+    "PROFILE": {
+      "description": "Runtime profile (prod for production, dev for local)",
+      "value": "prod",
+      "required": true
+    },
+    "ALPACA3_KEY": {
+      "description": "Alpaca API Key ID (from alpaca.markets)",
+      "required": true
+    },
+    "ALPACA3_SECRET": {
+      "description": "Alpaca API Secret Key (from alpaca.markets)",
+      "required": true
+    },
+    "ALPACA3_ENDPOINT": {
+      "description": "Alpaca API endpoint (paper or live)",
+      "value": "https://paper-api.alpaca.markets",
+      "required": false
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level",
+      "value": "INFO",
+      "required": false
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "addons": [],
+  "scripts": {}
+}

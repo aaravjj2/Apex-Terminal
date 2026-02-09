@@ -1,0 +1,190 @@
+# ===========================================
+# SECRETS - NEVER COMMIT
+# ===========================================
+*.env
+.env
+.env.*
+.env.local
+.env.*.local
+keys.env
+phase1/keys.env
+keys.env.local
+*.pem
+*.key
+*.crt
+*.secret
+secrets*
+credentials.*
+
+# ===========================================
+# PYTHON
+# ===========================================
+venv/
+.venv/
+env/
+.env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# ===========================================
+# NODE / FRONTEND
+# ===========================================
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.next/
+.vite/
+.npm/
+package-lock.json.bak
+
+# ===========================================
+# BUILD / DIST
+# ===========================================
+build/
+dist/
+out/
+coverage/
+htmlcov/
+
+# ===========================================
+# TESTING / CI
+# ===========================================
+.cache/
+.pytest_cache/
+test-results/
+playwright-report/
+blob-report/
+.nyc_output/
+junit.xml
+*.lcov
+
+# ===========================================
+# LOGS & RUNTIME STATE
+# ===========================================
+logs/
+*.log
+*.out
+nohup.out
+uvicorn.out
+
+# ===========================================
+# DATABASES
+# ===========================================
+*.db
+*.sqlite
+*.sqlite3
+phase1.db
+
+# ===========================================
+# IDE / EDITOR
+# ===========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# ===========================================
+# OS FILES
+# ===========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===========================================
+# WINDOWS ADS (Alternate Data Streams)
+# ===========================================
+*:Zone.Identifier
+Zone.Identifier
+
+# ===========================================
+# PLAYWRIGHT MCP (local screenshots)
+# ===========================================
+.playwright-mcp/
+
+# ===========================================
+# PROJECT SPECIFIC
+# ===========================================
+# Playwright / test artifacts and generated reports
+artifacts/
+frontend/artifacts/
+frontend/e2e-results/
+frontend/playwright-report-*
+
+# Project-specific data and local configs
+cboe_pipeline/data/
+.envrc
+
+
+# Market data cache (v1.11)
+.cache/
+phase1/data/cache/
+
+# ===========================================
+# AI ASSISTANTS & CODING AGENTS
+# ===========================================
+.gemini/
+.claude/
+.cursor/
+.agent/
+.agents/
+.ag/
+.antigravity/
+.codebuddy/
+.codex/
+.continue/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.shared/
+.trae/
+.windsurf/
+.current_artifact_dir
+
+# ===========================================
+# ADDITIONAL CLEANUP
+# ===========================================
+# Backup files
+*.save
+*.save.*
+*.bak
+*.backup
+
+# Colab notebooks (not needed for demo)
+*.ipynb
+
+# Zone identifiers (Windows ADS)
+*Zone.Identifier
+
+# Proof packs and artifacts (dev only)
+proofpacks/
+repo_cleanup_evidence/
+
+# Demo media (regenerate as needed)
+devpost_media/*.mp4
+devpost_media/*.webm
+
+# Generated HTML docs
+README.html
+README_NEW.html
+
+# Lean/QC local data
+lean_clean/
+qc/
+
+# VWAP subsystems (dev experiments)
+vwap_paper/
+vwap_trading_system/

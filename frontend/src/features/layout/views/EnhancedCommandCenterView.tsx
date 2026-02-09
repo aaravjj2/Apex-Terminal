@@ -1,5 +1,5 @@
 /**
- * Enhanced Command Center View
+ * Enhanced Command Center View – v2 UI Overhaul
  * 
  * Unified dashboard combining:
  * - Financial Intelligence Dashboard
@@ -17,6 +17,8 @@ import {
 import { cn } from '../../../ui/utils';
 import { Badge } from '../../../ui/Badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
+import { PageHeader } from '../../../ui/PageHeader';
+import { Button } from '../../../ui/Button';
 import { FinancialIntelligenceDashboard } from '../../dashboard/FinancialIntelligenceDashboard';
 import { MultiAgentFinancePanel } from '../../dashboard/MultiAgentFinancePanel';
 import { RealTimePnLAnalytics } from '../../dashboard/RealTimePnLAnalytics';
@@ -45,7 +47,7 @@ interface MarketStatus {
 const formatCurrency = (v: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 
-// Quick Stat Pill
+// Quick Stat Pill – v2 with subtle gradient and better spacing
 function StatPill({ icon: Icon, label, value, trend, compact = false }: {
     icon: React.ElementType;
     label: string;
@@ -55,7 +57,8 @@ function StatPill({ icon: Icon, label, value, trend, compact = false }: {
 }) {
     return (
         <div className={cn(
-            "flex items-center gap-2 px-3 py-1.5 bg-element-bg rounded-lg",
+            "flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/50 transition-colors hover:border-border-active",
+            trend === 'up' ? 'bg-up/5' : trend === 'down' ? 'bg-down/5' : 'bg-element-bg/70',
             compact ? "gap-1.5" : "gap-2"
         )}>
             <Icon size={compact ? 12 : 14} className={cn(
@@ -63,7 +66,7 @@ function StatPill({ icon: Icon, label, value, trend, compact = false }: {
                 trend === 'down' ? 'text-down' :
                 'text-text-secondary'
             )} />
-            {!compact && <span className="text-[10px] text-text-secondary uppercase">{label}</span>}
+            {!compact && <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium">{label}</span>}
             <span className={cn(
                 "text-sm font-semibold tabular-nums",
                 trend === 'up' ? 'text-up' :
@@ -155,57 +158,55 @@ export function EnhancedCommandCenterView() {
     const isPnlPositive = (stats?.open_pnl ?? 0) >= 0;
 
     return (
-        <div className="h-full flex flex-col bg-background overflow-hidden">
-            {/* Enhanced Header */}
-            <div className="shrink-0 border-b border-border bg-panel-bg">
-                {/* Top row - Title and Status */}
-                <div className="h-12 px-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-brand" />
-                            <h1 className="text-lg font-semibold text-text">Command Center</h1>
-                        </div>
-
+        <div className="h-full flex flex-col bg-background overflow-hidden" data-testid="command-center-view">
+            {/* Enhanced Header with PageHeader */}
+            <PageHeader
+                title="Command Center"
+                subtitle="Real-time portfolio intelligence & analytics"
+                icon={<Activity size={20} />}
+                badge={
+                    <div className="flex items-center gap-2">
                         <MarketStatusBadge status={marketStatus} />
-
-                        {/* Autopilot Status */}
                         <Badge
                             variant={autopilotStatus?.state === 'running' ? 'success' :
                                     autopilotStatus?.state === 'paused' ? 'warning' :
                                     autopilotStatus?.kill_switch ? 'error' : 'default'}
+                            dot
                         >
-                            <Bot size={12} className="mr-1" />
+                            <Bot size={10} className="mr-0.5" />
                             AP: {autopilotStatus?.kill_switch ? 'KILLED' : autopilotStatus?.state?.toUpperCase() || 'IDLE'}
                         </Badge>
                     </div>
-
+                }
+                actions={
                     <div className="flex items-center gap-2">
-                        {/* Start Risk Desk Demo Quick Action */}
-                        <button
+                        <Button
+                            variant="success"
+                            size="sm"
                             onClick={() => {
-                                // Dispatch custom event for Shell to navigate
                                 window.dispatchEvent(new CustomEvent('navigate-risk-desk', { detail: { loadDemo: true } }));
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors"
                             data-testid="start-risk-desk-demo-btn"
                         >
                             <TrendingUp size={14} />
-                            Start Risk Desk Demo
-                        </button>
-
-                        <button
+                            Risk Desk Demo
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={fetchData}
                             disabled={loading}
-                            className="p-2 rounded bg-element-bg hover:bg-border transition-colors"
                         >
                             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        </button>
+                        </Button>
                     </div>
-                </div>
+                }
+                data-testid="command-center-header"
+            />
 
-                {/* Second row - Quick Stats */}
-                <div className="h-10 px-4 flex items-center gap-3 bg-background/50">
-                    <StatPill
+            {/* Quick Stats Ribbon */}
+            <div className="shrink-0 px-4 py-2 flex items-center gap-2 bg-panel-bg/50 border-b border-border/60 overflow-x-auto">
+                <StatPill
                         icon={Wallet}
                         label="Equity"
                         value={stats ? formatCurrency(stats.total_equity) : '---'}
@@ -261,22 +262,17 @@ export function EnhancedCommandCenterView() {
                 onValueChange={setActiveTab}
                 className="flex-1 flex flex-col min-h-0"
             >
-                <div className="px-4 py-2 border-b border-border bg-panel-bg shrink-0">
-                    <TabsList>
-                        <TabsTrigger value="overview">
-                            <Brain size={12} className="mr-1.5" />
-                            Intelligence
-                        </TabsTrigger>
-                        <TabsTrigger value="agents">
-                            <Bot size={12} className="mr-1.5" />
-                            AI Agents
-                        </TabsTrigger>
-                        <TabsTrigger value="analytics">
-                            <BarChart2 size={12} className="mr-1.5" />
-                            P&L Analytics
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+                <TabsList className="px-6">
+                    <TabsTrigger value="overview" icon={<Brain size={12} />}>
+                        Intelligence
+                    </TabsTrigger>
+                    <TabsTrigger value="agents" icon={<Bot size={12} />}>
+                        AI Agents
+                    </TabsTrigger>
+                    <TabsTrigger value="analytics" icon={<BarChart2 size={12} />}>
+                        P&amp;L Analytics
+                    </TabsTrigger>
+                </TabsList>
 
                 {/* Tab Contents */}
                 <TabsContent value="overview" className="flex-1 overflow-hidden m-0 p-0">

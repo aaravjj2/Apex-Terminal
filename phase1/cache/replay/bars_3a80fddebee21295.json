@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "request_type": "bars",
+    "params": {
+      "end": "2024-01-31",
+      "symbol": "AAPL",
+      "start": "2024-01-01"
+    },
+    "captured_at": "2026-02-14T07:15:41.016913",
+    "canonical_key": "bars_3a80fddebee21295"
+  },
+  "data": {
+    "bars": [
+      {
+        "open": 100
+      }
+    ]
+  }
+}

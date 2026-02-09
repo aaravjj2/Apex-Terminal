@@ -49,14 +49,20 @@ export function Tabs({ defaultValue, value, onValueChange, children, className }
 interface TabsListProps {
     children: ReactNode;
     className?: string;
+    variant?: 'default' | 'underline' | 'pills';
 }
 
-export function TabsList({ children, className }: TabsListProps) {
+export function TabsList({ children, className, variant = 'default' }: TabsListProps) {
     return (
         <div className={cn(
-            'flex items-center gap-1 px-2 py-1 border-b border-border bg-panel-bg shrink-0',
+            'flex items-center shrink-0',
+            {
+                'gap-1 px-3 py-1.5 border-b border-border bg-panel-bg': variant === 'default',
+                'gap-0 px-4 border-b border-border bg-panel-bg': variant === 'underline',
+                'gap-1 px-3 py-1.5 bg-panel-bg': variant === 'pills',
+            },
             className
-        )}>
+        )} data-variant={variant}>
             {children}
         </div>
     );
@@ -67,11 +73,13 @@ interface TabsTriggerProps {
     value: string;
     children: ReactNode;
     icon?: ReactNode;
+    badge?: string | number;
     className?: string;
     disabled?: boolean;
+    'data-testid'?: string;
 }
 
-export function TabsTrigger({ value, children, icon, className, disabled }: TabsTriggerProps) {
+export function TabsTrigger({ value, children, icon, badge, className, disabled, 'data-testid': testId }: TabsTriggerProps) {
     const { activeTab, setActiveTab } = useTabsContext();
     const isActive = activeTab === value;
 
@@ -79,19 +87,28 @@ export function TabsTrigger({ value, children, icon, className, disabled }: Tabs
         <button
             onClick={() => !disabled && setActiveTab(value)}
             disabled={disabled}
+            data-testid={testId}
             className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors',
-                'focus:outline-none focus:ring-1 focus:ring-blue-500/50',
+                'inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md transition-all',
+                'focus:outline-none focus:ring-1 focus:ring-brand/40',
                 {
-                    'bg-element-bg text-text border border-border-active': isActive,
+                    'bg-brand/10 text-brand border border-brand/20': isActive,
                     'text-text-secondary hover:text-text hover:bg-element-bg': !isActive && !disabled,
-                    'opacity-50 cursor-not-allowed': disabled,
+                    'opacity-40 cursor-not-allowed': disabled,
                 },
                 className
             )}
         >
-            {icon && <span className="opacity-70">{icon}</span>}
+            {icon && <span className={cn(isActive ? 'opacity-100' : 'opacity-60')}>{icon}</span>}
             {children}
+            {badge !== undefined && (
+                <span className={cn(
+                    'ml-1 px-1.5 py-0.5 text-[9px] rounded-full font-semibold tabular-nums',
+                    isActive ? 'bg-brand/20 text-brand' : 'bg-element-bg text-text-muted'
+                )}>
+                    {badge}
+                </span>
+            )}
         </button>
     );
 }

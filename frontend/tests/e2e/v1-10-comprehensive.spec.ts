@@ -74,7 +74,7 @@ test.describe('v1.10 Comprehensive Verification', () => {
       const res = await fetch('http://localhost:8000/api/v1/ticker/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker: 'BRK-B' })
+        body: JSON.stringify({ symbol: 'BRK-B' })
       });
       return res.json();
     });
@@ -83,7 +83,7 @@ test.describe('v1.10 Comprehensive Verification', () => {
     expect(response.ticker).toBe('BRK.B');
     expect(response.normalized).toBe('BRK.B');
     expect(response.confidence).toBe('high');
-    expect(response.reason).toMatch(/Normalized/);
+    expect(response.reason).toMatch(/Resolved/);
     expect(response.collision).toBe(false);
   });
 
@@ -93,7 +93,7 @@ test.describe('v1.10 Comprehensive Verification', () => {
       const res = await fetch('http://localhost:8000/api/v1/ticker/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker: 'ON' })
+        body: JSON.stringify({ symbol: 'ON' })
       });
       return res.json();
     });
@@ -102,7 +102,7 @@ test.describe('v1.10 Comprehensive Verification', () => {
     expect(response.ticker).toBe('ON');
     expect(response.confidence).toBe('low');
     expect(response.collision).toBe(true);
-    expect(response.reason).toMatch(/Ambiguous input/);
+    expect(response.reason).toMatch(/collision/);
   });
 
   test('B3 - Ticker batch resolution handles mixed inputs', async ({ page }) => {
@@ -112,35 +112,35 @@ test.describe('v1.10 Comprehensive Verification', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          tickers: ['AAPL', 'brk-b', 'ON', 'INVALID123', 'spy'] 
+          symbols: ['AAPL', 'brk-b', 'ON', 'INVALID123', 'spy'] 
         })
       });
       return res.json();
     });
 
     // Verify batch results
-    expect(response.results).toHaveLength(5);
+    expect(response).toHaveLength(5);
     
     // AAPL - high confidence
-    expect(response.results[0].ticker).toBe('AAPL');
-    expect(response.results[0].confidence).toBe('high');
-    expect(response.results[0].collision).toBe(false);
+    expect(response[0].ticker).toBe('AAPL');
+    expect(response[0].confidence).toBe('high');
+    expect(response[0].collision).toBe(false);
     
     // BRK-B - normalized to BRK.B
-    expect(response.results[1].ticker).toBe('BRK.B');
-    expect(response.results[1].normalized).toBe('BRK.B');
+    expect(response[1].ticker).toBe('BRK.B');
+    expect(response[1].normalized).toBe('BRK.B');
     
     // ON - collision detected
-    expect(response.results[2].collision).toBe(true);
-    expect(response.results[2].confidence).toBe('low');
+    expect(response[2].collision).toBe(true);
+    expect(response[2].confidence).toBe('low');
     
     // INVALID123 - unknown
-    expect(response.results[3].confidence).toBe('low');
-    expect(response.results[3].reason).toMatch(/Unknown ticker/);
+    expect(response[3].confidence).toBe('low');
+    expect(response[3].reason).toMatch(/Unknown ticker/);
     
     // SPY - high confidence
-    expect(response.results[4].ticker).toBe('SPY');
-    expect(response.results[4].confidence).toBe('high');
+    expect(response[4].ticker).toBe('SPY');
+    expect(response[4].confidence).toBe('high');
   });
 
   test('B4 - Ticker normalize endpoint provides quick normalization', async ({ page }) => {
@@ -149,7 +149,7 @@ test.describe('v1.10 Comprehensive Verification', () => {
       const res = await fetch('http://localhost:8000/api/v1/ticker/normalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker: '  brk/b  ' })
+        body: JSON.stringify({ symbol: '  brk/b  ' })
       });
       return res.json();
     });

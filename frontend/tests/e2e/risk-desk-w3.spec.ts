@@ -104,15 +104,15 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
   test('W3-2: Risk Desk Subtabs (Run | Runs | Export)', async ({ page }) => {
     await navigateToRiskDesk(page);
     
-    // Verify Run subtab is active by default
-    const runSubtab = page.locator('button').filter({ hasText: /^Run$/i }).first();
+    // Verify Run subtab is active by default (use testid)
+    const runSubtab = page.locator('[data-testid="riskdesk-subtab-run"]');
     await expect(runSubtab).toBeVisible({ timeout: 5000 });
     
     // Take screenshot of Run subtab
     await page.screenshot({ path: 'artifacts/w3-screenshots/03-risk-desk-run-subtab.png', fullPage: true });
     
     // Click Runs subtab
-    const runsSubtab = page.locator('button').filter({ hasText: /^Runs$/i }).first();
+    const runsSubtab = page.locator('[data-testid="riskdesk-subtab-runs"]');
     await expect(runsSubtab).toBeVisible({ timeout: 5000 });
     await runsSubtab.click();
     await page.waitForTimeout(300);
@@ -125,7 +125,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await expect(emptyMessage).toBeVisible({ timeout: 5000 });
     
     // Click Export subtab
-    const exportSubtab = page.locator('button').filter({ hasText: /^Export$/i }).first();
+    const exportSubtab = page.locator('[data-testid="riskdesk-subtab-export"]');
     await expect(exportSubtab).toBeVisible({ timeout: 5000 });
     await exportSubtab.click();
     await page.waitForTimeout(300);
@@ -164,7 +164,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.screenshot({ path: 'artifacts/w3-screenshots/06-risk-desk-after-run.png', fullPage: true });
     
     // Navigate to Runs subtab using data-testid
-    const runsSubtab = page.locator('[data-testid="risk-desk-subtab-runs"]');
+    const runsSubtab = page.locator('[data-testid="riskdesk-subtab-runs"]');
     await runsSubtab.click();
     await page.waitForTimeout(300);
     
@@ -204,7 +204,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await expect(greeksCard).toBeVisible({ timeout: 10000 });
     
     // Navigate to Export subtab using data-testid
-    const exportSubtab = page.locator('[data-testid="risk-desk-subtab-export"]');
+    const exportSubtab = page.locator('[data-testid="riskdesk-subtab-export"]');
     await exportSubtab.click();
     await page.waitForTimeout(300);
     
@@ -341,7 +341,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await navigateToRiskDesk(page);
     
     // Navigate directly to Export subtab without running anything using data-testid
-    const exportSubtab = page.locator('[data-testid="risk-desk-subtab-export"]');
+    const exportSubtab = page.locator('[data-testid="riskdesk-subtab-export"]');
     await expect(exportSubtab).toBeVisible({ timeout: 5000 });
     await exportSubtab.click();
     await page.waitForTimeout(300);

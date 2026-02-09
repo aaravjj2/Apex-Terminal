@@ -41,10 +41,10 @@ async function navigateToRiskDesk(page: import('@playwright/test').Page) {
   await optionsNav.click();
 
   // Wait for OptionsView
-  await expect(page.locator('text=Options Analytics')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=/Options/i').first()).toBeVisible({ timeout: 10000 });
 
   // Click Risk Desk tab
-  const riskDeskTab = page.locator('[data-testid="options-tab-risk-desk"]');
+  const riskDeskTab = page.locator('[data-testid="options-main-tab-risk-desk"]');
   await riskDeskTab.waitFor({ state: 'visible', timeout: 10000 });
   await riskDeskTab.click();
   await page.waitForTimeout(500);

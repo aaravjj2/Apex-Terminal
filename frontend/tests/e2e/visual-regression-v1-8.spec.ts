@@ -153,14 +153,14 @@ test.describe('v1.8 - Backtest Subtabs & Status', () => {
 
   test('v1.8-14 - Backtest runs tab', async ({ page }) => {
     await gotoBacktest(page);
-    await page.getByTestId('backtest-subtab-runs').click();
+    await page.getByTestId('backtest-tab-runs').click();
     await page.waitForTimeout(500);
     await expect(page).toHaveScreenshot('v1.8-14-backtest-runs.png', { fullPage: false });
   });
 
   test('v1.8-15 - Backtest export tab', async ({ page }) => {
     await gotoBacktest(page);
-    await page.getByTestId('backtest-subtab-export').click();
+    await page.getByTestId('backtest-tab-export').click();
     await page.waitForTimeout(500);
     await expect(page).toHaveScreenshot('v1.8-15-backtest-export.png', { fullPage: false });
   });
@@ -203,7 +203,7 @@ test.describe('v1.8 - Accessibility (ARIA / Keyboard)', () => {
     await gotoBacktest(page);
     const tablist = page.locator('[role="tablist"][aria-label="Backtest tabs"]');
     await expect(tablist).toBeVisible();
-    const configTab = page.getByTestId('backtest-subtab-configure');
+    const configTab = page.getByTestId('backtest-tab-configure');
     await expect(configTab).toHaveAttribute('role', 'tab');
     await expect(configTab).toHaveAttribute('aria-selected', 'true');
   });

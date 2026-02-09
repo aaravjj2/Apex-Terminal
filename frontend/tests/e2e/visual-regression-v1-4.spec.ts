@@ -119,7 +119,7 @@ test.describe('Strategy Lab Visual Regression', () => {
     await gotoOptions(page);
     await page.getByTestId('options-main-tab-strategy-lab').click();
     // Navigate to Library subtab (default is Builder)
-    await page.getByTestId('strategylab-subtab-library').click();
+    await page.getByTestId('strategy-lab-tab-library').click();
     // Wait for library to load
     await expect(page.locator('[data-testid^="library-item-"]').first()).toBeVisible({ timeout: 10000 });
 
@@ -132,7 +132,7 @@ test.describe('Strategy Lab Visual Regression', () => {
   test('VR-07 Strategy Validate Tab', async ({ page }) => {
     await gotoOptions(page);
     await page.getByTestId('options-main-tab-strategy-lab').click();
-    await page.getByTestId('strategylab-subtab-validate').click();
+    await page.getByTestId('strategy-lab-tab-validate').click();
 
     await expect(page).toHaveScreenshot('vr-07-strategy-validate.png', {
       fullPage: false,

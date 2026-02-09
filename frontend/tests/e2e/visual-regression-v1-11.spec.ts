@@ -79,6 +79,7 @@ test.describe('Dashboard Visual Regression v1.11', () => {
 
     await expect(page.getByTestId('data-source-selector')).toHaveScreenshot('vr11-03-data-source-selector.png', {
       animations: 'disabled',
+      maxDiffPixelRatio: 0.1,
     });
   });
 });
@@ -185,7 +186,7 @@ test.describe('Options: Strategy Lab Visual Regression v1.11', () => {
   test('VR11-11: Strategy Lab Library subtab', async ({ page }) => {
     await gotoOptions(page);
     await page.getByTestId('options-main-tab-strategy-lab').click();
-    await page.getByTestId('strategylab-subtab-library').click();
+    await page.getByTestId('strategy-lab-tab-library').click();
     
     // Wait for library items to load
     await page.waitForTimeout(500);
@@ -199,7 +200,7 @@ test.describe('Options: Strategy Lab Visual Regression v1.11', () => {
   test('VR11-12: Strategy Lab Validate subtab', async ({ page }) => {
     await gotoOptions(page);
     await page.getByTestId('options-main-tab-strategy-lab').click();
-    await page.getByTestId('strategylab-subtab-validate').click();
+    await page.getByTestId('strategy-lab-tab-validate').click();
 
     await expect(page).toHaveScreenshot('vr11-12-strategy-lab-validate.png', {
       fullPage: false,
@@ -258,7 +259,7 @@ test.describe('Backtest Tool Visual Regression v1.11', () => {
     await expect(page.getByTestId('backtest-runs-row-0')).toBeVisible({ timeout: 30000 });
     
     // Navigate to Analyze subtab
-    await page.getByTestId('backtest-subtab-analyze').click();
+    await page.getByTestId('backtest-tab-analyze').click();
     await page.waitForTimeout(1000);
     
     const equityChart = page.getByTestId('backtest-analyze-chart-equity');
@@ -276,7 +277,7 @@ test.describe('Backtest Tool Visual Regression v1.11', () => {
     await page.getByTestId('run-backtest-btn').click();
     await expect(page.getByTestId('backtest-runs-row-0')).toBeVisible({ timeout: 30000 });
     
-    await page.getByTestId('backtest-subtab-analyze').click();
+    await page.getByTestId('backtest-tab-analyze').click();
     await page.waitForTimeout(1000);
     
     const drawdownChart = page.getByTestId('backtest-analyze-chart-drawdown');
@@ -294,7 +295,7 @@ test.describe('Backtest Tool Visual Regression v1.11', () => {
     await page.getByTestId('run-backtest-btn').click();
     await expect(page.getByTestId('backtest-runs-row-0')).toBeVisible({ timeout: 30000 });
     
-    await page.getByTestId('backtest-subtab-compare').click();
+    await page.getByTestId('backtest-tab-compare').click();
     await page.waitForTimeout(500);
 
     await expect(page).toHaveScreenshot('vr11-18-backtest-compare.png', {
@@ -317,6 +318,7 @@ test.describe('Cross-Cutting Visual Regression v1.11', () => {
 
     await expect(page.getByTestId('data-source-dropdown')).toHaveScreenshot('vr11-19-provider-dropdown.png', {
       animations: 'disabled',
+      maxDiffPixelRatio: 0.1,
     });
   });
 

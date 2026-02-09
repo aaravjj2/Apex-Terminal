@@ -63,11 +63,10 @@ test.describe('Devpost Media Generation', () => {
             await page.waitForTimeout(5000);
         }
 
-        // Navigate or ensure we see the autopilot tab/panel
-        // Assuming there's a tab or link for Autopilot
-        const autopilotLinkSelector = 'a[href="/autopilot"], button:has-text("Autopilot")';
-        if (await page.isVisible(autopilotLinkSelector)) {
-            await page.click(autopilotLinkSelector);
+        // Navigate to Autopilot via left nav
+        const autopilotNav = page.getByTestId('nav-item-autopilot');
+        if (await autopilotNav.isVisible()) {
+            await autopilotNav.click();
             await page.waitForTimeout(2000);
         }
 

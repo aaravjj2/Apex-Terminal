@@ -1,4 +1,4 @@
-# TradingView Recreation
+# Apex Terminal
 
 <div align="center">
 
@@ -78,7 +78,7 @@
 
 ## 🎯 What is This Project?
 
-**TradingView Recreation** is a comprehensive, production-ready market analysis platform that recreates and extends the functionality of professional trading platforms like TradingView and Bloomberg Terminal. Built for serious traders, quantitative researchers, and financial analysts, it provides:
+**Apex Terminal** is a comprehensive, production-ready market analysis platform that recreates and extends the functionality of professional trading platforms like TradingView and Bloomberg Terminal. Built for serious traders, quantitative researchers, and financial analysts, it provides:
 
 - **Professional-grade charting** with real-time data streaming
 - **Advanced technical analysis** with 35+ indicators and 30+ drawing tools
@@ -360,7 +360,7 @@ npm run test:e2e       # End-to-end tests
 ### Project Structure
 
 ```
-Tradingview recreation/
+Apex Terminal/
 ```sh
 └── /
     ├── .github

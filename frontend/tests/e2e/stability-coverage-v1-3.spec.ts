@@ -188,7 +188,7 @@ test.describe('Strategy Lab Workflows (5 tests)', () => {
     await page.getByTestId('options-main-tab-strategy-lab').click();
 
     // Navigate to Library subtab
-    await page.getByTestId('strategylab-subtab-library').click();
+    await page.getByTestId('strategy-lab-tab-library').click();
 
     // Wait for library items to load (API call)
     const firstItem = page.locator('[data-testid^="library-item-"]').first();
@@ -204,14 +204,14 @@ test.describe('Strategy Lab Workflows (5 tests)', () => {
     await gotoOptions(page);
     await page.getByTestId('options-main-tab-strategy-lab').click();
 
-    await page.getByTestId('strategylab-subtab-validate').click();
+    await page.getByTestId('strategy-lab-tab-validate').click();
 
     // Fill invalid JSON into textarea
     const jsonInput = page.getByTestId('strategy-json-input');
     await jsonInput.fill('{ invalid json }');
 
     // Click validate
-    await page.getByTestId('validate-strategy-btn').click();
+    await page.getByTestId('validate-json-btn').click();
 
     // Verify error message appears
     await expect(page.locator('text=/error|invalid/i').first()).toBeVisible();
@@ -221,7 +221,7 @@ test.describe('Strategy Lab Workflows (5 tests)', () => {
     await gotoOptions(page);
     await page.getByTestId('options-main-tab-strategy-lab').click();
 
-    await page.getByTestId('strategylab-subtab-validate').click();
+    await page.getByTestId('strategy-lab-tab-validate').click();
 
     const validStrategy = JSON.stringify(
       { name: 'Test Strategy', type: 'sma_crossover', params: { fast: 10, slow: 20 } },
@@ -232,7 +232,7 @@ test.describe('Strategy Lab Workflows (5 tests)', () => {
     const jsonInput = page.getByTestId('strategy-json-input');
     await jsonInput.fill(validStrategy);
 
-    await page.getByTestId('validate-strategy-btn').click();
+    await page.getByTestId('validate-json-btn').click();
 
     // Verify success result
     const validateResult = page.getByTestId('validate-result');
@@ -245,7 +245,7 @@ test.describe('Strategy Lab Workflows (5 tests)', () => {
   test('13 - Strategy Lab: Builder Subtab Active by Default', async ({ page }) => {
     await gotoOptions(page);
     await page.getByTestId('options-main-tab-strategy-lab').click();
-    await expect(page.getByTestId('strategylab-subtab-builder')).toHaveClass(/bg-brand/);
+    await expect(page.getByTestId('strategy-lab-tab-builder')).toHaveClass(/bg-brand/);
   });
 });
 
@@ -259,7 +259,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await page.getByTestId('nav-item-backtest').click();
 
     await expect(page.getByTestId('backtest-panel')).toBeVisible();
-    await expect(page.getByTestId('backtest-subtab-configure')).toHaveClass(/bg-brand/);
+    await expect(page.getByTestId('backtest-tab-configure')).toHaveClass(/bg-brand/);
     await expect(page.getByTestId('backtest-strategy-select')).toBeVisible();
     await expect(page.getByTestId('backtest-symbol-input')).toBeVisible();
     await expect(page.getByTestId('backtest-start-date')).toBeVisible();
@@ -275,7 +275,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await backtestCreateRun(page);
 
     // Verify runs tab is active with a completed row
-    await expect(page.getByTestId('backtest-subtab-runs')).toHaveClass(/bg-brand/);
+    await expect(page.getByTestId('backtest-tab-runs')).toHaveClass(/bg-brand/);
     await expect(page.getByTestId('backtest-runs-table')).toBeVisible();
     const row0 = page.getByTestId('backtest-runs-row-0');
     await expect(row0).toBeVisible();
@@ -295,7 +295,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     // Click Analyze on row 0
     await page.getByTestId('backtest-runs-row-0').locator('button:has-text("Analyze")').click();
 
-    await expect(page.getByTestId('backtest-subtab-analyze')).toHaveClass(/bg-brand/);
+    await expect(page.getByTestId('backtest-tab-analyze')).toHaveClass(/bg-brand/);
 
     await page.screenshot({ path: 'e2e-results/backtest_runs_row.png', fullPage: true });
   });
@@ -343,14 +343,14 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await backtestCreateRun(page);
 
     // Create run #2
-    await page.getByTestId('backtest-subtab-configure').click();
+    await page.getByTestId('backtest-tab-configure').click();
     await page.getByTestId('backtest-start-date').fill('2023-04-01');
     await page.getByTestId('backtest-end-date').fill('2023-06-30');
     await page.getByTestId('run-backtest-btn').click();
     await expect(page.getByTestId('backtest-runs-row-0')).toBeVisible({ timeout: 30000 });
 
     // Navigate to Compare tab (auto-loads runs)
-    await page.getByTestId('backtest-subtab-compare').click();
+    await page.getByTestId('backtest-tab-compare').click();
 
     // Wait for compare buttons to appear
     const addRun0 = page.getByTestId('backtest-compare-add-run-0');
@@ -372,7 +372,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await backtestCreateRun(page);
 
     // Navigate to Export tab (auto-loads runs → auto-selects latest)
-    await page.getByTestId('backtest-subtab-export').click();
+    await page.getByTestId('backtest-tab-export').click();
     await expect(page.getByTestId('backtest-export-btn')).toBeVisible({ timeout: 10000 });
 
     // Trigger download
@@ -394,7 +394,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await gotoOptions(page);
     await backtestCreateRun(page);
 
-    await page.getByTestId('backtest-subtab-export').click();
+    await page.getByTestId('backtest-tab-export').click();
     await expect(page.getByTestId('backtest-export-btn')).toBeVisible({ timeout: 10000 });
 
     const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
@@ -409,7 +409,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await gotoOptions(page);
     await backtestCreateRun(page, { endDate: '2023-02-28' });
 
-    await page.getByTestId('backtest-subtab-export').click();
+    await page.getByTestId('backtest-tab-export').click();
     await expect(page.getByTestId('backtest-export-btn')).toBeVisible({ timeout: 10000 });
 
     // Download #1
@@ -445,8 +445,8 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await page.getByTestId('nav-item-backtest').click();
 
     for (const tab of ['configure', 'runs', 'compare', 'export'] as const) {
-      await page.getByTestId(`backtest-subtab-${tab}`).click();
-      await expect(page.getByTestId(`backtest-subtab-${tab}`)).toHaveClass(/bg-brand/);
+      await page.getByTestId(`backtest-tab-${tab}`).click();
+      await expect(page.getByTestId(`backtest-tab-${tab}`)).toHaveClass(/bg-brand/);
     }
   });
 });

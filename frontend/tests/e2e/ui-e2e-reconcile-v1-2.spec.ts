@@ -127,9 +127,9 @@ test.describe('UI E2E v1.2', () => {
     await page.waitForTimeout(500);
     await page.getByTestId('options-main-tab-strategy-lab').click();
     await page.waitForTimeout(500);
-    await page.getByTestId('strategylab-subtab-builder').click();
+    await page.getByTestId('strategy-lab-tab-builder').click();
     await page.waitForTimeout(500);
-    await expect(page.getByTestId('strategylab-subtab-builder')).toHaveClass(/bg-brand/);
+    await expect(page.getByTestId('strategy-lab-tab-builder')).toHaveClass(/bg-brand/);
   });
 
   test('13 - Risk Desk: Run subtab active by default', async ({ page }) => {
@@ -145,9 +145,9 @@ test.describe('UI E2E v1.2', () => {
     await page.waitForTimeout(500);
     await page.getByTestId('options-main-tab-strategy-lab').click();
     await page.waitForTimeout(500);
-    await page.getByTestId('strategylab-subtab-validate').click();
+    await page.getByTestId('strategy-lab-tab-validate').click();
     await page.waitForTimeout(500);
-    await expect(page.getByTestId('strategylab-subtab-validate')).toHaveClass(/bg-brand/);
+    await expect(page.getByTestId('strategy-lab-tab-validate')).toHaveClass(/bg-brand/);
   });
 
   test('15 - QuickActions: Strip visible', async ({ page }) => {
@@ -175,7 +175,7 @@ test.describe('UI E2E v1.2', () => {
     await page.waitForTimeout(500);
     await page.getByTestId('options-main-tab-strategy-lab').click();
     await page.waitForTimeout(500);
-    await expect(page.getByTestId('strategylab-subtab-builder')).toHaveClass(/bg-brand/);
+    await expect(page.getByTestId('strategy-lab-tab-builder')).toHaveClass(/bg-brand/);
   });
 
   test('19 - Analytics: Tab active on load', async ({ page }) => {
@@ -191,3 +191,4 @@ test.describe('UI E2E v1.2', () => {
   });
 
 });
+

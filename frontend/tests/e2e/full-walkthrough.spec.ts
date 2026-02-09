@@ -4,10 +4,10 @@ test.describe('Full System Walkthrough', () => {
     test('navigate through all major features', async ({ page }) => {
         // 1. Start at Home
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         
         // Verify shell is loaded
-        await expect(page.locator('[data-testid="app-shell"], nav')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('[data-testid="app-shell"]')).toBeVisible({ timeout: 15000 });
 
         // 2. Navigate to Monitor (Chart view)
         const monitorNav = page.locator('[data-testid="nav-item-monitor"]');
@@ -25,12 +25,12 @@ test.describe('Full System Walkthrough', () => {
 
         // 4. Navigate to Autopilot
         const autopilotNav = page.locator('[data-testid="nav-item-autopilot"]');
-        if (await autopilotNav.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await autopilotNav.isVisible().catch(() => false)) {
             await autopilotNav.click();
-            await page.waitForTimeout(500);
+            await page.waitForTimeout(1000);
             
             // Verify autopilot view
-            await expect(page.locator('[data-testid="autopilot-view"]')).toBeVisible();
+            await expect(page.locator('[data-testid="autopilot-view"]')).toBeVisible({ timeout: 10000 });
         }
 
         // 5. Navigate to Portfolio

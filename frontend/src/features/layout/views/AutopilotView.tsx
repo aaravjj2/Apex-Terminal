@@ -1,8 +1,13 @@
 /**
- * Autopilot View - Main container with tab navigation
+ * Autopilot View – v2 UI Overhaul
+ * Tab-based container for autopilot dashboard, positions, activity, settings.
  */
 
 import { useState } from 'react';
+import { Bot, BarChart3, Activity, Settings } from 'lucide-react';
+import { PageHeader } from '../../../ui/PageHeader';
+import { Badge } from '../../../ui/Badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
 import {
   AutopilotDashboard,
   AutopilotPositions,
@@ -10,57 +15,53 @@ import {
   AutopilotSettings,
 } from '../../autopilot/components';
 
-type TabId = 'dashboard' | 'positions' | 'activity' | 'settings';
-
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'positions', label: 'Positions' },
-  { id: 'activity', label: 'Activity' },
-  { id: 'settings', label: 'Settings' },
-];
-
 export function AutopilotView() {
-  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
-    <div className="h-full w-full flex flex-col" data-testid="autopilot-view">
-      {/* Tab Bar */}
-      <div className="flex border-b border-gray-700 bg-gray-800 shrink-0">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            data-testid={`autopilot-tab-${tab.id}`}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
-              activeTab === tab.id
-                ? 'border-blue-500 text-blue-400 bg-gray-900'
-                : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+    <div className="h-full w-full flex flex-col bg-background" data-testid="autopilot-view">
+      <PageHeader
+        title="Autopilot"
+        subtitle="AI-driven autonomous trading engine"
+        icon={<Bot size={20} />}
+        badge={<Badge variant="info" dot size="sm">AI</Badge>}
+        data-testid="autopilot-header"
+      />
 
-      {/* Tab Content */}
-      <div className="flex-1 overflow-auto">
-        {activeTab === 'dashboard' && <AutopilotDashboard />}
-        {activeTab === 'positions' && (
-          <div className="h-full p-4 bg-gray-900">
-            <AutopilotPositions />
-          </div>
-        )}
-        {activeTab === 'activity' && (
-          <div className="h-full p-4 bg-gray-900">
-            <AutopilotActivity />
-          </div>
-        )}
-        {activeTab === 'settings' && (
-          <div className="h-full p-4 bg-gray-900">
-            <AutopilotSettings />
-          </div>
-        )}
-      </div>
+      <Tabs
+        defaultValue="dashboard"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1 flex flex-col min-h-0"
+      >
+        <TabsList className="px-6">
+          <TabsTrigger value="dashboard" icon={<BarChart3 size={12} />} data-testid="autopilot-tab-dashboard">
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="positions" icon={<Activity size={12} />} data-testid="autopilot-tab-positions">
+            Positions
+          </TabsTrigger>
+          <TabsTrigger value="activity" icon={<Activity size={12} />} data-testid="autopilot-tab-activity">
+            Activity
+          </TabsTrigger>
+          <TabsTrigger value="settings" icon={<Settings size={12} />} data-testid="autopilot-tab-settings">
+            Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="flex-1 overflow-auto">
+          <AutopilotDashboard />
+        </TabsContent>
+        <TabsContent value="positions" className="flex-1 overflow-auto p-4">
+          <AutopilotPositions />
+        </TabsContent>
+        <TabsContent value="activity" className="flex-1 overflow-auto p-4">
+          <AutopilotActivity />
+        </TabsContent>
+        <TabsContent value="settings" className="flex-1 overflow-auto p-4">
+          <AutopilotSettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

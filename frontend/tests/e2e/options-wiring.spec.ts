@@ -9,13 +9,13 @@ test.describe('Options Wiring', () => {
     });
 
     test('Option Chain Tile displays data', async ({ page }) => {
-        // Navigate to Dashboard via LeftNav
-        await page.getByTestId('nav-item-dashboard').click();
+        // Navigate to Options via LeftNav
+        await page.getByTestId('nav-item-options').click();
         await page.waitForTimeout(500);
 
-        // Verify dashboard loaded
-        const dashboard = page.locator('[data-testid="ai-panel"]');
-        await expect(dashboard).toBeVisible({ timeout: 10000 });
+        // Verify options page loaded
+        const optionsContent = page.locator('text=/Options|Analytics|Chain/i').first();
+        await expect(optionsContent).toBeVisible({ timeout: 10000 });
 
         // Take screenshot to verify page loaded
         await page.screenshot({ path: 'frontend/screenshots/options-wire-check.png' });

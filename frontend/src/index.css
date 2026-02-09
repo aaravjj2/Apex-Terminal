@@ -1,0 +1,305 @@
+@import "tailwindcss";
+
+/* ===== CSS Custom Properties ===== */
+:root {
+  /* Colors */
+  --color-background: #0C0E12;
+  --color-panel: #131722;
+  --color-element: #1E222D;
+  --color-border: #2A2E39;
+  --color-border-active: #434651;
+
+  --color-brand: #2962FF;
+  --color-up: #089981;
+  --color-down: #F23645;
+  --color-warn: #F7931A;
+
+  --color-text: #D1D4DC;
+  --color-text-secondary: #787B86;
+  --color-text-muted: #5D606B;
+
+  /* Mode colors */
+  --color-live: #089981;
+  --color-replay: #9333EA;
+  --color-backtest: #06B6D4;
+  --color-paper: #F59E0B;
+
+  /* Trade semantics */
+  --color-bullish: #089981;
+  --color-bearish: #F23645;
+  --bg-terminal: #131722;
+
+  /* Spacing */
+  --spacing-unit: 8px;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace;
+
+  /* Z-index scale */
+  --z-base: 0;
+  --z-content: 10;
+  --z-dock: 20;
+  --z-header: 30;
+  --z-dropdown: 40;
+  --z-overlay: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+  --z-tooltip: 80;
+
+  /* Transitions */
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+/* ===== Base Styles ===== */
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Typography ===== */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-price {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ===== Custom Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #363a45;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4e59;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #363a45 transparent;
+}
+
+/* ===== Focus States ===== */
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(41, 98, 255, 0.5);
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(41, 98, 255, 0.5);
+}
+
+/* ===== Selection ===== */
+::selection {
+  background-color: rgba(41, 98, 255, 0.3);
+}
+
+/* ===== Utility Classes ===== */
+.text-xxs {
+  font-size: 10px;
+  line-height: 14px;
+}
+
+/* Truncate with ellipsis */
+.truncate-fade {
+  mask-image: linear-gradient(to right, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Glassmorphism for overlays */
+.glass {
+  background: rgba(19, 23, 34, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Mode-specific backgrounds */
+.mode-live {
+  --mode-color: var(--color-live);
+  --mode-bg: rgba(8, 153, 129, 0.1);
+}
+
+.mode-replay {
+  --mode-color: var(--color-replay);
+  --mode-bg: rgba(147, 51, 234, 0.1);
+}
+
+.mode-backtest {
+  --mode-color: var(--color-backtest);
+  --mode-bg: rgba(6, 182, 212, 0.1);
+}
+
+.mode-paper {
+  --mode-color: var(--color-paper);
+  --mode-bg: rgba(245, 158, 11, 0.1);
+}
+
+/* ===== Component Base Styles ===== */
+/* Panel base */
+.panel {
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+/* Card base */
+.card {
+  background-color: var(--color-element);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+/* Divider */
+.divider-h {
+  height: 1px;
+  width: 100%;
+  background-color: var(--color-border);
+}
+
+.divider-v {
+  width: 1px;
+  height: 100%;
+  background-color: var(--color-border);
+}
+
+/* ===== Animation Classes ===== */
+@keyframes skeleton-pulse {
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.skeleton {
+  background-color: var(--color-element);
+  border-radius: 4px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.2s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.2s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.2s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== E2E Deterministic Mode ===== */
+body.e2e-mode *,
+body.e2e-mode ::before,
+body.e2e-mode ::after {
+  animation: none !important;
+  transition: none !important;
+  /* Disable blinking cursors to avoid flaky snapshots */
+  caret-color: transparent !important; 
+}

@@ -1,0 +1,8 @@
+symbol,option_type,strike,expiry,quantity,side,multiplier
+AAPL,call,220,2025-03-21,10,buy,100
+AAPL,put,210,2025-03-21,-5,sell,100
+MSFT,call,430,2025-04-17,3,buy,100
+TSLA,put,250,2025-03-21,-2,sell,100
+BRK.B,call,420,2025-06-20,1,buy,100
+AMZN,call,190,2025-03-21,4,buy,100
+GOOGL,put,155,2025-04-17,-3,sell,100

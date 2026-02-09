@@ -1,0 +1,285 @@
+"""
+FastAPI application for REST and WebSocket APIs.
+"""
+
+# Load environment before any other imports that might read os.environ
+from pathlib import Path
+from dotenv import load_dotenv
+_keys_path = Path(__file__).parent.parent.parent / "keys.env"
+if _keys_path.exists():
+    load_dotenv(_keys_path)
+
+import asyncio
+from contextlib import asynccontextmanager
+from typing import Optional
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import structlog
+
+from ..config import get_settings
+from ..persistence import init_database, get_database
+from .routes import bars, ingest, parity, debug, clock, drawings, strategies, portfolio, alerts, versions, runs, packages, metrics, incidents, notes, reports, options, profiles, patterns, fundamentals, automation, forecast, intelligence, risk_desk, strategy_lab, backtest, unified_runs, ticker, market_data_v1_13
+from .websocket import router as ws_router
+from .health_router import router as health_router
+from .verification_routes import router as verification_router
+# UNIFIED AUTOPILOT ROUTER - This is the ONLY autopilot API
+from ..autopilot.unified_router import router as unified_autopilot_router
+
+
+logger = structlog.get_logger()
+
+
+from ..ingestion.main import IngestionService
+from ..autopilot.service import get_autopilot_service
+import os
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler."""
+    logger.info("application_startup")
+    
+    # Initialize database
+    await init_database()
+    logger.info("database_initialized")
+    
+    # Initialize autopilot DB tables
+    from ..autopilot.repository import init_autopilot_db
+    init_autopilot_db()
+    logger.info("autopilot_db_initialized")
+    
+    # Start Autopilot Service (Background)
+    # This runs the cycle every 60 seconds autonomously
+    try:
+        autopilot_service = get_autopilot_service()
+        await autopilot_service.start_background_loop(interval_seconds=60)
+        # Start continuous position monitoring (every 15 seconds)
+        await autopilot_service.start_monitoring_loop(interval_seconds=15)
+    except Exception as e:
+        logger.error(f"Failed to start autopilot service: {e}")
+    
+    # Start Ingestion Service (Background)
+    settings = get_settings()
+    
+    # Determine mode based on configured provider keys
+    mode = "mock"
+    csv_path = None
+    provider_override = None
+
+    if settings.apca_api_key_id and not os.environ.get("E2E_MODE"):
+        mode = "live"
+        provider_override = "alpaca"
+        logger.info("using_alpaca_live_data")
+    elif settings.finnhub_api_key and not os.environ.get("E2E_MODE"):
+        mode = "live"
+        provider_override = "finnhub"
+        logger.info("using_finnhub_live_data")
+    else:
+        # Fallback to mock with sample CSV
+        mode = "mock"
+        csv_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "sample_ticks.csv")
+        logger.info("using_mock_csv_data", path=csv_path)
+
+    ingestion = IngestionService(mode=mode, symbols=["AAPL", "TSLA", "MSFT"], provider=provider_override) # Default symbols
+    
+    # Start ingestion
+    try:
+        await ingestion.start()
+
+        # Expose ingestion on app state for status endpoints
+        try:
+            app.state.ingestion = ingestion
+        except Exception:
+            pass
+        
+        if mode == "mock" and csv_path and os.path.exists(csv_path):
+            # Run replay in background task
+            asyncio.create_task(ingestion.run_mock_replay(csv_path))
+            
+    except Exception as e:
+        logger.error("ingestion_startup_failed", error=str(e))
+
+    # Start WebSocket manager heartbeat
+    try:
+        from .websocket import get_manager as get_ws_manager
+        ws_manager = get_ws_manager()
+        await ws_manager.start()
+        app.state.ws_manager = ws_manager
+        
+        # Start Autopilot WebSocket Manager
+        from .autopilot_websocket import get_autopilot_ws_manager
+        auto_ws = get_autopilot_ws_manager()
+        await auto_ws.start()
+        app.state.auto_ws = auto_ws
+    except Exception as e:
+        logger.error("ws_manager_start_failed", error=str(e))
+    
+    # Start health monitoring
+    try:
+        from ..monitoring.health import get_health_monitor
+        health_monitor = get_health_monitor()
+        await health_monitor.start_monitoring()
+        app.state.health_monitor = health_monitor
+    except Exception as e:
+        logger.error("health_monitor_start_failed", error=str(e))
+    
+    yield
+    
+    # Cleanup Ingestion
+    await ingestion.stop()
+
+    # Stop health monitoring
+    try:
+        health_monitor = getattr(app.state, 'health_monitor', None)
+        if health_monitor:
+            await health_monitor.stop_monitoring()
+    except Exception as e:
+        logger.error("health_monitor_stop_failed", error=str(e))
+
+    # Stop WebSocket manager
+    try:
+        ws_manager = getattr(app.state, 'ws_manager', None)
+        if ws_manager:
+            await ws_manager.stop()
+        
+        auto_ws = getattr(app.state, 'auto_ws', None)
+        if auto_ws:
+            await auto_ws.stop()
+    except Exception as e:
+        logger.error("ws_manager_stop_failed", error=str(e))
+    
+    # Cleanup Autopilot
+    await autopilot_service.stop_background_loop()
+    
+    # Cleanup DB
+    db = get_database()
+    await db.close()
+    logger.info("application_shutdown")
+
+
+def create_app() -> FastAPI:
+    """Create and configure FastAPI application."""
+    settings = get_settings()
+    
+    app = FastAPI(
+        title="Phase 1: Deterministic Bar Engine API",
+        description="REST and WebSocket APIs for bar data",
+        version="1.0.0",
+        lifespan=lifespan,
+    )
+    
+    # CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    # Include routers
+    app.include_router(bars.router, prefix="/api/v1/bars", tags=["bars"])
+    app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["ingest"])
+    app.include_router(parity.router, prefix="/api/v1/parity", tags=["parity"])
+    app.include_router(debug.router, prefix="/api/v1/debug", tags=["debug"])
+    app.include_router(clock.router, prefix="/api/v1/clock", tags=["clock"])
+    app.include_router(drawings.router, prefix="/api/v1/drawings", tags=["drawings"])
+    app.include_router(strategies.router, prefix="/api/v1/strategies", tags=["strategies"])
+    app.include_router(portfolio.router, prefix="/api/v1/portfolio", tags=["portfolio"])
+    app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["alerts"])
+    app.include_router(versions.router, prefix="/api/v1", tags=["versions"])
+    app.include_router(runs.router, prefix="/api/v1", tags=["runs"])
+    app.include_router(packages.router, prefix="/api/v1", tags=["packages"])
+    app.include_router(metrics.router, prefix="/api/v1", tags=["metrics"])
+    app.include_router(incidents.router, prefix="/api/v1", tags=["incidents"])
+    app.include_router(notes.router, prefix="/api/v1", tags=["notes"])
+    app.include_router(reports.router, prefix="/api/v1", tags=["reports"])
+    app.include_router(health_router, prefix="/api/v1", tags=["health"])
+    app.include_router(options.router, prefix="/api/v1", tags=["options"])
+    app.include_router(profiles.router, prefix="/api/v1/profiles", tags=["profiles"])
+    app.include_router(patterns.router, prefix="/api/v1/patterns", tags=["patterns"])
+    app.include_router(fundamentals.router, prefix="/api/v1/fundamentals", tags=["fundamentals"])
+    # Ticker Resolution (v1.10)
+    app.include_router(ticker.router, prefix="/api/v1/ticker", tags=["ticker"])
+    # Market Data with Record/Replay (v1.13) - available at both v1 and v2 for backward compatibility
+    app.include_router(market_data_v1_13.router, prefix="/api/v1/market-data", tags=["market-data-v1.13"])
+    app.include_router(market_data_v1_13.router, prefix="/api/v2/market-data", tags=["market-data-v1.13-v2"])
+    app.include_router(automation.router, prefix="/api/v1", tags=["automation"])
+    app.include_router(forecast.router, prefix="/api/v1", tags=["forecast"])
+    app.include_router(intelligence.router, prefix="/api/v1", tags=["intelligence"])
+    app.include_router(risk_desk.router, prefix="/api", tags=["risk-desk"])    
+    # Strategy Lab and Backtest (NEW)
+    app.include_router(strategy_lab.router, tags=["strategy_lab"])
+    app.include_router(backtest.router, tags=["backtest"])
+    # Unified Run Ledger (v1.5)
+    app.include_router(unified_runs.router, tags=["unified-runs"])
+    # UNIFIED AUTOPILOT ROUTER - This is the ONLY autopilot API
+    app.include_router(unified_autopilot_router, prefix="/api/v1", tags=["autopilot"])
+    app.include_router(ws_router, prefix="/ws", tags=["websocket"])
+    from .autopilot_websocket import router as autopilot_ws_router
+    app.include_router(autopilot_ws_router, prefix="/ws", tags=["autopilot-websocket"])
+    app.include_router(autopilot_ws_router, prefix="/ws", tags=["autopilot-websocket"])
+    app.include_router(verification_router, tags=["verification"])
+    
+    # ElevenLabs TTS
+    from .tts_routes import router as tts_router
+    app.include_router(tts_router, prefix="/api/v1/tts", tags=["tts"])
+    
+    # Global exception handler
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        logger.error("unhandled_exception", error=str(exc), path=request.url.path)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal server error", "detail": str(exc)},
+        )
+    
+    # Health check with data source status
+    @app.get("/health")
+    async def health_check():
+        settings = get_settings()
+        
+        # Check Alpaca connectivity
+        alpaca_connected = False
+        if settings.apca_api_key_id and settings.apca_api_secret_key:
+            try:
+                alpaca_connected = True
+            except Exception:
+                pass
+        
+        # Check Tradier connectivity
+        tradier_connected = False
+        if settings.tradier_brokerage_key:
+            try:
+                tradier_connected = True
+            except Exception:
+                pass
+        
+        # Determine options provider
+        options_provider = settings.options_data_provider if hasattr(settings, 'options_data_provider') else 'yfinance'
+        
+        return {
+            "status": "healthy",
+            "alpaca_configured": bool(settings.apca_api_key_id),
+            "alpaca_connected": alpaca_connected,
+            "tradier_configured": bool(settings.tradier_brokerage_key),
+            "tradier_connected": tradier_connected,
+            "options_provider": options_provider,
+            "bars_source": "alpaca" if alpaca_connected else "mock_csv",
+            "mode": "paper" if settings.apca_api_key_id else "mock",
+        }
+    
+    # Root endpoint
+    @app.get("/")
+    async def root():
+        return {
+            "name": "Phase 1 Bar Engine API",
+            "version": "1.0.0",
+            "docs": "/docs",
+        }
+    
+    return app
+
+
+# Create default app instance
+app = create_app()

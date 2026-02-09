@@ -1,0 +1,136 @@
+{
+  "canonical_tickers": [
+    {
+      "ticker": "AAPL",
+      "company": "Apple Inc.",
+      "aliases": ["AAPL", "aapl"],
+      "collision": false
+    },
+    {
+      "ticker": "MSFT",
+      "company": "Microsoft Corporation",
+      "aliases": ["MSFT", "msft"],
+      "collision": false
+    },
+    {
+      "ticker": "GOOGL",
+      "company": "Alphabet Inc. (Class A)",
+      "aliases": ["GOOGL", "googl"],
+      "collision": false
+    },
+    {
+      "ticker": "GOOG",
+      "company": "Alphabet Inc. (Class C)",
+      "aliases": ["GOOG", "goog"],
+      "collision": false
+    },
+    {
+      "ticker": "AMZN",
+      "company": "Amazon.com Inc.",
+      "aliases": ["AMZN", "amzn"],
+      "collision": false
+    },
+    {
+      "ticker": "TSLA",
+      "company": "Tesla Inc.",
+      "aliases": ["TSLA", "tsla"],
+      "collision": false
+    },
+    {
+      "ticker": "NVDA",
+      "company": "NVIDIA Corporation",
+      "aliases": ["NVDA", "nvda"],
+      "collision": false
+    },
+    {
+      "ticker": "META",
+      "company": "Meta Platforms Inc.",
+      "aliases": ["META", "meta", "FB", "fb"],
+      "collision": false
+    },
+    {
+      "ticker": "BRK.B",
+      "company": "Berkshire Hathaway Inc. (Class B)",
+      "aliases": ["BRK.B", "BRK-B", "BRK/B", "BRKB", "brk.b", "brk-b", "brk/b", "brkb"],
+      "collision": false,
+      "notes": "Multiple notations for BRK.B are common; OCC standard is BRK.B"
+    },
+    {
+      "ticker": "BRK.A",
+      "company": "Berkshire Hathaway Inc. (Class A)",
+      "aliases": ["BRK.A", "BRK-A", "BRK/A", "BRKA", "brk.a", "brk-a", "brk/a", "brka"],
+      "collision": false,
+      "notes": "Multiple notations for BRK.A are common; OCC standard is BRK.A"
+    },
+    {
+      "ticker": "A",
+      "company": "Agilent Technologies Inc.",
+      "aliases": ["A"],
+      "collision": true,
+      "collision_note": "Single-letter ticker 'A' may be confused with the English article 'a'"
+    },
+    {
+      "ticker": "I",
+      "company": "Intelsat S.A.",
+      "aliases": ["I"],
+      "collision": true,
+      "collision_note": "Single-letter ticker 'I' may be confused with the pronoun 'I'"
+    },
+    {
+      "ticker": "ON",
+      "company": "ON Semiconductor Corporation",
+      "aliases": ["ON"],
+      "collision": true,
+      "collision_note": "Ticker 'ON' may be confused with the English word 'on'"
+    },
+    {
+      "ticker": "IT",
+      "company": "Gartner Inc.",
+      "aliases": ["IT"],
+      "collision": true,
+      "collision_note": "Ticker 'IT' may be confused with the pronoun 'it' or abbreviation for Information Technology"
+    },
+    {
+      "ticker": "ARE",
+      "company": "Alexandria Real Estate Equities Inc.",
+      "aliases": ["ARE"],
+      "collision": true,
+      "collision_note": "Ticker 'ARE' may be confused with the English verb 'are'"
+    },
+    {
+      "ticker": "SPY",
+      "company": "SPDR S&P 500 ETF Trust",
+      "aliases": ["SPY", "spy"],
+      "collision": false,
+      "notes": "Popular S&P 500 ETF"
+    },
+    {
+      "ticker": "QQQ",
+      "company": "Invesco QQQ Trust",
+      "aliases": ["QQQ", "qqq"],
+      "collision": false,
+      "notes": "Popular NASDAQ-100 ETF"
+    },
+    {
+      "ticker": "IWM",
+      "company": "iShares Russell 2000 ETF",
+      "aliases": ["IWM", "iwm"],
+      "collision": false,
+      "notes": "Russell 2000 small-cap ETF"
+    },
+    {
+      "ticker": "DIA",
+      "company": "SPDR Dow Jones Industrial Average ETF Trust",
+      "aliases": ["DIA", "dia"],
+      "collision": false,
+      "notes": "Dow Jones ETF"
+    },
+    {
+      "ticker": "VXX",
+      "company": "iPath Series B S&P 500 VIX Short-Term Futures ETN",
+      "aliases": ["VXX", "vxx"],
+      "collision": false,
+      "notes": "Volatility ETN"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "mode": "paper",
+  "auto_execute": true,
+  "paper_equity": 1000.0,
+  "continuous_run": false,
+  "focus_symbol": null,
+  "max_symbols_per_cycle": 5,
+  "contracts_per_trade": 1,
+  "weekly_expiry_only": true,
+  "risk_limits": {
+    "max_risk_per_trade": 200.0,
+    "max_total_risk": 500.0,
+    "max_daily_loss": 100.0,
+    "max_open_positions": 5,
+    "max_positions_per_underlying": 1,
+    "max_positions_per_cluster": 2,
+    "max_cluster_risk_pct": 0.6
+  },
+  "universe": [
+    "AAPL",
+    "SPY",
+    "NVDA",
+    "GLD",
+    "GOOGL"
+  ],
+  "allowed_strategies": [
+    "long_call",
+    "long_put"
+  ],
+  "strategy_constraints": {
+    "min_dte": 3,
+    "max_dte": 14,
+    "min_short_delta": 0.25,
+    "max_short_delta": 0.5,
+    "min_spread_width": 1.0,
+    "max_spread_width": 5.0,
+    "take_profit_pct": 0.25,
+    "time_stop_dte": 1,
+    "loss_stop_multiplier": 1.0
+  },
+  "earnings_policy": {
+    "blackout_days_before": 7,
+    "auto_close_before_earnings": true,
+    "close_days_before": 2
+  },
+  "forecast_settings": {
+    "enabled": true,
+    "influence_weight": 0.5,
+    "min_confidence": 0.5
+  },
+  "llm_settings": {
+    "enabled": true,
+    "endpoint_url": null,
+    "fallback_to_deterministic": true
+  },
+  "scan_times": [
+    "09:35",
+    "10:30",
+    "13:00",
+    "15:00"
+  ],
+  "enable_debit_verticals": false
+}

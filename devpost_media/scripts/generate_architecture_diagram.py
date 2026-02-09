@@ -1,0 +1,168 @@
+"""
+Generate Architecture Diagram for Devpost Submission
+Creates a simple SVG diagram showing system architecture
+"""
+
+def generate_architecture_svg():
+    """Generate SVG architecture diagram"""
+    
+    svg = '''<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1280" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1920" height="1280" fill="#0f172a"/>
+  
+  <!-- Title -->
+  <text x="960" y="100" font-family="Arial, sans-serif" font-size="48" fill="#f1f5f9" text-anchor="middle" font-weight="bold">
+    VWAP Trading System Architecture
+  </text>
+  
+  <!-- Data Sources Layer -->
+  <g id="data-sources">
+    <rect x="100" y="200" width="300" height="150" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="3"/>
+    <text x="250" y="260" font-family="Arial" font-size="24" fill="#3b82f6" text-anchor="middle" font-weight="bold">Alpaca Markets</text>
+    <text x="250" y="290" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">Market Data API</text>
+    <text x="250" y="315" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">Paper Trading API</text>
+  </g>
+  
+  <!-- Ingestion Service -->
+  <g id="ingestion">
+    <rect x="550" y="200" width="300" height="150" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="3"/>
+    <text x="700" y="260" font-family="Arial" font-size="24" fill="#10b981" text-anchor="middle" font-weight="bold">Ingestion Service</text>
+    <text x="700" y="290" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">WebSocket Streaming</text>
+    <text x="700" y="315" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">Bar Aggregation</text>
+  </g>
+  
+  <!-- Backend API -->
+  <g id="backend">
+    <rect x="1000" y="200" width="300" height="150" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="3"/>
+    <text x="1150" y="260" font-family="Arial" font-size="24" fill="#f59e0b" text-anchor="middle" font-weight="bold">FastAPI Backend</text>
+    <text x="1150" y="290" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">REST API</text>
+    <text x="1150" y="315" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">WebSocket Server</text>
+  </g>
+  
+  <!-- Frontend -->
+  <g id="frontend">
+    <rect x="1450" y="200" width="300" height="150" rx="10" fill="#1e293b" stroke="#ec4899" stroke-width="3"/>
+    <text x="1600" y="260" font-family="Arial" font-size="24" fill="#ec4899" text-anchor="middle" font-weight="bold">React Frontend</text>
+    <text x="1600" y="290" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">TradingView Charts</text>
+    <text x="1600" y="315" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">Real-time Dashboard</text>
+  </g>
+  
+  <!-- Autopilot Engine -->
+  <g id="autopilot">
+    <rect x="325" y="500" width="450" height="200" rx="10" fill="#1e293b" stroke="#8b5cf6" stroke-width="3"/>
+    <text x="550" y="570" font-family="Arial" font-size="28" fill="#8b5cf6" text-anchor="middle" font-weight="bold">Autopilot Engine</text>
+    <text x="550" y="610" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">• Candidate Generation (VWAP Strategy)</text>
+    <text x="550" y="640" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">• Signal Scoring & Selection</text>
+    <text x="550" y="670" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">• Paper Trade Execution</text>
+  </g>
+  
+  <!-- Database -->
+  <g id="database">
+    <rect x="900" y="500" width="450" height="200" rx="10" fill="#1e293b" stroke="#06b6d4" stroke-width="3"/>
+    <text x="1125" y="570" font-family="Arial" font-size="28" fill="#06b6d4" text-anchor="middle" font-weight="bold">Data Storage</text>
+    <text x="1125" y="610" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">• SQLite (Trades, Positions, Runs)</text>
+    <text x="1125" y="640" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">• Parquet (Market Data Archive)</text>
+    <text x="1125" y="670" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">• Redis Cache (Session State)</text>
+  </g>
+  
+  <!-- Arrows - Data Flow -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#64748b"/>
+    </marker>
+  </defs>
+  
+  <!-- Alpaca → Ingestion -->
+  <line x1="400" y1="275" x2="550" y2="275" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <text x="475" y="265" font-family="Arial" font-size="14" fill="#94a3b8" text-anchor="middle">Real-time</text>
+  
+  <!-- Ingestion → Backend -->
+  <line x1="850" y1="275" x2="1000" y2="275" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <text x="925" y="265" font-family="Arial" font-size="14" fill="#94a3b8" text-anchor="middle">Bars</text>
+  
+  <!-- Backend → Frontend -->
+  <line x1="1300" y1="275" x2="1450" y2="275" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <text x="1375" y="265" font-family="Arial" font-size="14" fill="#94a3b8" text-anchor="middle">WebSocket</text>
+  
+  <!-- Backend ↔ Database -->
+  <line x1="1125" y1="350" x2="1125" y2="500" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <line x1="1135" y1="500" x2="1135" y2="350" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <text x="1050" y="425" font-family="Arial" font-size="14" fill="#94a3b8" text-anchor="middle">Persist</text>
+  
+  <!-- Autopilot ↔ Backend -->
+  <line x1="700" y1="350" x2="1070" y2="490" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <line x1="1060" y1="490" x2="710" y2="360" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <text x="850" y="410" font-family="Arial" font-size="14" fill="#94a3b8" text-anchor="middle">Orders/Data</text>
+  
+  <!-- Technology Stack -->
+  <g id="tech-stack">
+    <text x="960" y="900" font-family="Arial" font-size="32" fill="#f1f5f9" text-anchor="middle" font-weight="bold">Technology Stack</text>
+    
+    <rect x="200" y="950" width="280" height="80" rx="8" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+    <text x="340" y="980" font-family="Arial" font-size="18" fill="#f1f5f9" text-anchor="middle" font-weight="bold">Backend</text>
+    <text x="340" y="1005" font-family="Arial" font-size="14" fill="#cbd5e1" text-anchor="middle">Python 3.10 • FastAPI</text>
+    <text x="340" y="1025" font-family="Arial" font-size="14" fill="#cbd5e1" text-anchor="middle">SQLAlchemy • Pydantic</text>
+    
+    <rect x="520" y="950" width="280" height="80" rx="8" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+    <text x="660" y="980" font-family="Arial" font-size="18" fill="#f1f5f9" text-anchor="middle" font-weight="bold">Frontend</text>
+    <text x="660" y="1005" font-family="Arial" font-size="14" fill="#cbd5e1" text-anchor="middle">React 18 • TypeScript</text>
+    <text x="660" y="1025" font-family="Arial" font-size="14" fill="#cbd5e1" text-anchor="middle">Vite • Tailwind • Recharts</text>
+    
+    <rect x="840" y="950" width="280" height="80" rx="8" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+    <text x="980" y="980" font-family="Arial" font-size="18" fill="#f1f5f9" text-anchor="middle" font-weight="bold">Data</text>
+    <text x="980" y="1005" font-family="Arial" font-size="14" fill="#cbd5e1" text-anchor="middle">Alpaca Markets API</text>
+    <text x="980" y="1025" font-family="Arial" font-size="14" fill="#cbd5e1" text-anchor="middle">SQLite • Parquet</text>
+    
+    <rect x="1160" y="950" width="280" height="80" rx="8" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+    <text x="1300" y="980" font-family="Arial" font-size="18" fill="#f1f5f9" text-anchor="middle" font-weight="bold">Testing</text>
+    <text x="1300" y="1005" font-family="Arial" font-size="14" fill="#cbd5e1" text-anchor="middle">pytest • Playwright</text>
+    <text x="1300" y="1025" font-family="Arial" font-size="14" fill="#cbd5e1" text-anchor="middle">100% Paper Trading</text>
+  </g>
+  
+  <!-- Key Features -->
+  <g id="features">
+    <text x="960" y="1130" font-family="Arial" font-size="24" fill="#f1f5f9" text-anchor="middle" font-weight="bold">Key Features</text>
+    <text x="480" y="1170" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">✓ Real-time market data streaming</text>
+    <text x="480" y="1200" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">✓ VWAP-based trading signals</text>
+    <text x="1440" y="1170" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">✓ Automated candidate generation</text>
+    <text x="1440" y="1200" font-family="Arial" font-size="16" fill="#cbd5e1" text-anchor="middle">✓ Paper trading with Alpaca</text>
+  </g>
+  
+  <!-- Footer -->
+  <text x="960" y="1250" font-family="Arial" font-size="16" fill="#64748b" text-anchor="middle">
+    github.com/aaravjj2/tradingview-recreation • Free &amp; Open Source • Paper Trading Only
+  </text>
+</svg>'''
+    
+    return svg
+
+def main():
+    """Generate and save architecture diagram"""
+    import os
+    
+    output_dir = os.path.join(os.path.dirname(__file__), '../images')
+    os.makedirs(output_dir, exist_ok=True)
+    
+    svg_content = generate_architecture_svg()
+    svg_path = os.path.join(output_dir, '06_architecture.svg')
+    
+    with open(svg_path, 'w') as f:
+        f.write(svg_content)
+    
+    print(f"✓ Generated SVG: {svg_path}")
+    
+    # Try to convert to PNG using cairosvg if available
+    try:
+        import cairosvg
+        png_path = os.path.join(output_dir, '06_architecture.png')
+        cairosvg.svg2png(url=svg_path, write_to=png_path, output_width=1920, output_height=1280)
+        print(f"✓ Generated PNG: {png_path}")
+    except ImportError:
+        print("⚠ cairosvg not installed. To convert to PNG:")
+        print(f"  pip install cairosvg")
+        print(f"  Or use online converter: https://cloudconvert.com/svg-to-png")
+        print(f"  Upload: {svg_path}")
+
+if __name__ == '__main__':
+    main()

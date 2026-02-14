@@ -19,9 +19,11 @@ import { Badge } from '../../ui/Badge';
 import { IconButton } from '../../ui/IconButton';
 import { Table, type Column } from '../../ui/Table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../ui/Tabs';
+import { PageHeader } from '../../ui/PageHeader';
+import { Button } from '../../ui/Button';
 import { useToast } from '../../ui/Toast';
-
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+import { PortfolioCrudPanel } from './PortfolioCrudPanel';
+import { API_BASE } from '../../config/api';
 
 // Types
 interface UnifiedPosition {
@@ -97,8 +99,8 @@ function PortfolioSummaryCard({ stats, verification }: { stats: PortfolioStats |
     }).format(v);
 
     return (
-        <div className="grid grid-cols-5 gap-3 p-4 bg-panel-bg border-b border-border">
-            <div className="p-3 bg-element-bg rounded-lg">
+        <div className="grid grid-cols-5 gap-3 px-6 py-4 border-b border-border" data-testid="portfolio-summary">
+            <div data-testid="total-equity" className="p-3 bg-element-bg rounded-lg border border-border border-l-2 border-l-brand">
                 <div className="flex items-center gap-2 text-text-secondary mb-1.5">
                     <Wallet size={14} />
                     <span className="text-[10px] uppercase tracking-wider font-medium">Total Equity</span>
@@ -108,17 +110,17 @@ function PortfolioSummaryCard({ stats, verification }: { stats: PortfolioStats |
                 </div>
             </div>
 
-            <div className="p-3 bg-element-bg rounded-lg">
+            <div data-testid="open-pnl" className="p-3 bg-element-bg rounded-lg border border-border border-l-2 border-l-up">
                 <div className="flex items-center gap-2 text-text-secondary mb-1.5">
                     {(stats?.open_pnl || 0) >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                    <span className="text-[10px] uppercase tracking-wider font-medium">Open P&L</span>
+                    <span className="text-[10px] uppercase tracking-wider font-medium">Open P&amp;L</span>
                 </div>
                 <div className={`text-xl font-semibold tabular-nums ${(stats?.open_pnl || 0) >= 0 ? 'text-up' : 'text-down'}`}>
                     {stats ? `${stats.open_pnl >= 0 ? '+' : ''}${formatCurrency(stats.open_pnl)}` : '---'}
                 </div>
             </div>
 
-            <div className="p-3 bg-element-bg rounded-lg">
+            <div data-testid="buying-power" className="p-3 bg-element-bg rounded-lg">
                 <div className="flex items-center gap-2 text-text-secondary mb-1.5">
                     <DollarSign size={14} />
                     <span className="text-[10px] uppercase tracking-wider font-medium">Buying Power</span>
@@ -336,7 +338,7 @@ export function EnhancedPortfolioView() {
     const fetchPortfolio = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_BASE}/portfolio/unified`);
+            const response = await fetch(`${API_BASE}/api/v1/portfolio/unified`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch portfolio');
@@ -435,7 +437,7 @@ export function EnhancedPortfolioView() {
 
     const fetchVerification = useCallback(async () => {
         try {
-            const response = await fetch(`${API_BASE}/verification/broker`);
+            const response = await fetch(`${API_BASE}/api/v1/verification/broker`);
             if (response.ok) {
                 const data = await response.json();
                 setVerification(data);
@@ -459,7 +461,7 @@ export function EnhancedPortfolioView() {
 
     const handleExitPosition = async (positionId: string) => {
         try {
-            const response = await fetch(`${API_BASE}/portfolio/positions/${positionId}/exit`, {
+            const response = await fetch(`${API_BASE}/api/v1/portfolio/positions/${positionId}/exit`, {
                 method: 'POST',
             });
 
@@ -495,7 +497,20 @@ export function EnhancedPortfolioView() {
     });
 
     return (
-        <div className="h-full flex flex-col bg-background overflow-hidden">
+        <div data-testid="portfolio-view" className="h-full flex flex-col bg-background overflow-hidden">
+            {/* Page Header */}
+            <PageHeader
+                title="Portfolio"
+                subtitle="Unified positions, orders &amp; broker verification"
+                icon={<Wallet size={20} />}
+                actions={
+                    <Button variant="ghost" size="icon" onClick={fetchPortfolio} disabled={loading}>
+                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                    </Button>
+                }
+                data-testid="portfolio-header"
+            />
+
             {/* Summary Cards */}
             <PortfolioSummaryCard stats={stats} verification={verification} />
 
@@ -509,13 +524,17 @@ export function EnhancedPortfolioView() {
             <Tabs defaultValue="positions" className="flex-1 flex flex-col min-h-0">
                 <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
                     <TabsList>
-                        <TabsTrigger value="positions">
+                        <TabsTrigger value="positions" data-testid="tab-positions">
                             <Activity size={12} className="mr-1.5" />
                             Positions ({positions.length})
                         </TabsTrigger>
-                        <TabsTrigger value="orders">
+                        <TabsTrigger value="orders" data-testid="tab-orders">
                             <Clock size={12} className="mr-1.5" />
                             Orders ({orders.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="manage" data-testid="tab-manage">
+                            <Wallet size={12} className="mr-1.5" />
+                            Manage
                         </TabsTrigger>
                     </TabsList>
                     <div className="flex items-center gap-2">
@@ -629,6 +648,11 @@ export function EnhancedPortfolioView() {
                         data={orders}
                         keyExtractor={(row) => row.id}
                     />
+                </TabsContent>
+
+                {/* v1.23: Manage tab — Portfolio CRUD with Import/Export */}
+                <TabsContent value="manage" className="flex-1 overflow-auto">
+                    <PortfolioCrudPanel />
                 </TabsContent>
             </Tabs>
         </div>

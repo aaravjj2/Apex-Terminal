@@ -87,11 +87,17 @@ def resolve_ticker(input_str: str) -> Dict[str, any]:
         
         # If collision ticker, require user confirmation
         confidence = "low" if is_collision else "high"
-        reason = (
-            f"Resolved '{input_str}' → '{canonical}' (collision: {entry.get('collision_note', 'English word')})"
-            if is_collision
-            else f"Resolved '{input_str}' → '{canonical}'"
-        )
+        
+        # Determine reason string
+        if is_collision:
+            reason = f"Ambiguous input: '{input_str}' is a collision ticker ({canonical}) — also an English word"
+        elif normalized != upper:
+            # Separator normalization happened (e.g. BRK-B → BRK.B)
+            reason = f"Normalized '{input_str}' → '{canonical}' (separator standardized)"
+        elif input_str.strip() != canonical:
+            reason = f"Normalized '{input_str}' → '{canonical}'"
+        else:
+            reason = f"Resolved '{input_str}' → '{canonical}'"
         
         return {
             "ticker": canonical,

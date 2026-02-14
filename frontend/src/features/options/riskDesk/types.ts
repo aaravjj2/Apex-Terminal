@@ -2,6 +2,8 @@
  * Risk Desk types — mirrors backend schemas (Week 1 + Week 2).
  */
 
+import type { ProvenanceInfo } from '../../../components/ProvenanceDisplay';
+
 export type Severity = 'error' | 'warning';
 
 export interface ValidationIssue {
@@ -129,6 +131,7 @@ export interface RiskRunResult {
   verification: VerifierResult | null;
   compliance: ComplianceResult | null;
   tool_trace: ToolTraceEntry[];
+  provenance?: ProvenanceInfo | null;
 }
 
 export interface ScenarioOption {

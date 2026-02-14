@@ -1,5 +1,5 @@
 """
-Backtest API Router
+Backtest API Router (v1.32+)
 """
 
 from fastapi import APIRouter, HTTPException, Response
@@ -15,6 +15,7 @@ from ...backtest_engine.models import (
 from ...backtest_engine.engine import get_engine
 from ...backtest_engine.storage import get_storage
 from ...backtest_engine.report_generator import generate_html_report, generate_readme_txt
+from ...strategy_lab.export_bundler import build_strategy_bundle_manifest, build_hash_ledger
 
 router = APIRouter(prefix="/api/backtest", tags=["Backtest"])
 
@@ -124,6 +125,39 @@ async def download_artifacts(run_id: str):
             zipf.writestr(f"{run_id}/README.txt", readme)
         except Exception as e:
             zipf.writestr(f"{run_id}/README.txt", f"Error generating README: {str(e)}")
+
+        # v1.32: Strategy spec + validation enrichment
+        extra_files = {}
+        if run_json:
+            extra_files["run.json"] = run_json.encode()
+        
+        manifest = build_strategy_bundle_manifest(
+            run_id=run_id,
+            strategy_id=run.config.strategy_id,
+        )
+        
+        if "strategy_spec" in manifest:
+            spec_bytes = json.dumps(manifest["strategy_spec"], indent=2, sort_keys=True).encode()
+            zipf.writestr(f"{run_id}/strategy/spec.json", spec_bytes)
+        
+        if "strategy_validation" in manifest:
+            val_bytes = json.dumps(manifest["strategy_validation"], indent=2, sort_keys=True).encode()
+            zipf.writestr(f"{run_id}/strategy/validation.json", val_bytes)
+        
+        # v1.32: Bundle manifest
+        manifest_bytes = json.dumps(manifest, indent=2, sort_keys=True).encode()
+        zipf.writestr(f"{run_id}/manifest.json", manifest_bytes)
+
+        # v1.36: Hash ledger
+        ledger = build_hash_ledger(
+            run_id=run_id,
+            config_hash=run.config_hash if hasattr(run, 'config_hash') else None,
+            bars_source_hash=run.provenance.checksum if run.provenance else None,
+            provenance_hash=run.provenance.checksum if run.provenance else None,
+            report_manifest_hash=manifest.get("manifest_checksum"),
+        )
+        ledger_bytes = json.dumps(ledger, indent=2, sort_keys=True).encode()
+        zipf.writestr(f"{run_id}/ledger.json", ledger_bytes)
     
     # Return ZIP as downloadable file
     zip_buffer.seek(0)

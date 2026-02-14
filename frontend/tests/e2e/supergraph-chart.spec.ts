@@ -18,7 +18,7 @@ test.describe('Supergraph Chart', () => {
     test.beforeEach(async ({ page }) => {
         // Navigate to chart/monitor view
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         
         // Monitor view should be default, but click to be sure
         const monitorNav = page.locator('[data-testid="nav-item-monitor"]');
@@ -30,19 +30,19 @@ test.describe('Supergraph Chart', () => {
 
     test('displays chart canvas', async ({ page }) => {
         // Look for chart container
-        const chartContainer = page.locator('canvas').first();
+        const chartContainer = page.getByTestId('chart-canvas');
         await expect(chartContainer).toBeVisible({ timeout: 10000 });
     });
 
     test('displays chart header with symbol and price', async ({ page }) => {
         // Look for symbol display (default is AAPL or similar)
-        const headerArea = page.locator('text=/[A-Z]{1,5}/').first();
+        const headerArea = page.getByTestId('chart-symbol-display');
         await expect(headerArea).toBeVisible();
     });
 
     test('chart canvas renders candlesticks', async ({ page }) => {
         // Verify canvas has been drawn
-        const canvas = page.locator('canvas').first();
+        const canvas = page.getByTestId('chart-canvas');
         await expect(canvas).toBeVisible();
         
         // Canvas should have content (non-zero dimensions)
@@ -66,13 +66,13 @@ test.describe('Supergraph Chart', () => {
 test.describe('Chart Overlay Controls', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         await page.locator('[data-testid="nav-item-monitor"]').click();
         await page.waitForTimeout(2000);
     });
 
     test('VWAP toggle button exists and works', async ({ page }) => {
-        const vwapToggle = page.locator('button:has-text("VWAP")');
+        const vwapToggle = page.getByTestId('overlay-toggle-vwap');
         
         if (await vwapToggle.isVisible()) {
             // Click to toggle off
@@ -86,7 +86,7 @@ test.describe('Chart Overlay Controls', () => {
     });
 
     test('MA20 toggle button exists and works', async ({ page }) => {
-        const ma20Toggle = page.locator('button:has-text("MA20")');
+        const ma20Toggle = page.getByTestId('overlay-toggle-ma20');
         
         if (await ma20Toggle.isVisible()) {
             await ma20Toggle.click();
@@ -96,7 +96,7 @@ test.describe('Chart Overlay Controls', () => {
     });
 
     test('MA50 toggle button exists and works', async ({ page }) => {
-        const ma50Toggle = page.locator('button:has-text("MA50")');
+        const ma50Toggle = page.getByTestId('overlay-toggle-ma50');
         
         if (await ma50Toggle.isVisible()) {
             await ma50Toggle.click();
@@ -108,13 +108,13 @@ test.describe('Chart Overlay Controls', () => {
 test.describe('Chart Interactions', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         await page.locator('[data-testid="nav-item-monitor"]').click();
         await page.waitForTimeout(2000);
     });
 
     test('crosshair shows on mouse move', async ({ page }) => {
-        const canvas = page.locator('canvas').first();
+        const canvas = page.getByTestId('chart-canvas');
         
         if (await canvas.isVisible()) {
             const box = await canvas.boundingBox();
@@ -127,7 +127,7 @@ test.describe('Chart Interactions', () => {
     });
 
     test('chart is responsive to window resize', async ({ page }) => {
-        const canvas = page.locator('canvas').first();
+        const canvas = page.getByTestId('chart-canvas');
         const initialBox = await canvas.boundingBox();
         
         // Resize viewport
@@ -145,7 +145,7 @@ test.describe('Chart Interactions', () => {
 test.describe('Dashboard with Supergraph', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         
         // Navigate to dashboard
         const dashboardNav = page.locator('[data-testid="nav-item-dashboard"]');
@@ -155,13 +155,13 @@ test.describe('Dashboard with Supergraph', () => {
 
     test('dashboard view loads', async ({ page }) => {
         // Dashboard should have tiles - use .first() to avoid strict mode violation
-        await expect(page.locator('text=/Dashboard|Watchlist|Positions|Orders/').first()).toBeVisible({ timeout: 10000 });
+        await expect(page.getByTestId('dashboard-heading')).toBeVisible({ timeout: 10000 });
     });
 
     test('dashboard displays grid layout', async ({ page }) => {
-        // Look for grid structure
-        const tiles = page.locator('[class*="grid"]').first();
-        await expect(tiles).toBeVisible();
+        // Verify dashboard content is visible
+        const dashboardContent = page.getByTestId('dashboard-content');
+        await expect(dashboardContent).toBeVisible();
     });
 
     test('takes screenshot of dashboard', async ({ page }) => {

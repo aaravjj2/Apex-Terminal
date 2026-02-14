@@ -23,7 +23,7 @@ async function waitForAutopilotAPI(page: Page) {
 test.describe('Autopilot Feature', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');  // Uses baseURL from playwright.config.ts
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         await page.waitForSelector('nav', { timeout: 10000 });
     });
 
@@ -93,11 +93,19 @@ test.describe('Autopilot Feature', () => {
         });
 
         test('run cycle button is clickable', async ({ page }) => {
+            // Deactivate kill switch first (active by default in demo)
+            const killSwitch = page.getByTestId('kill-switch-btn');
+            if (await killSwitch.textContent().then(t => t?.includes('Deactivate'))) {
+                await killSwitch.click();
+                await page.waitForTimeout(500);
+            }
+
             const runButton = page.getByTestId('run-cycle-btn');
             await expect(runButton).toBeVisible();
+            await expect(runButton).toBeEnabled();
             
-            // Button may be disabled in demo/paper mode - verify it exists and force-click
-            await runButton.click({ force: true });
+            // Click the button
+            await runButton.click();
             
             // Snapshot: After clicking run cycle
             await page.waitForTimeout(1000);
@@ -108,14 +116,21 @@ test.describe('Autopilot Feature', () => {
         });
 
         test('pause/resume button toggles state', async ({ page }) => {
+            // Deactivate kill switch first (active by default in demo)
+            const killSwitch = page.getByTestId('kill-switch-btn');
+            if (await killSwitch.textContent().then(t => t?.includes('Deactivate'))) {
+                await killSwitch.click();
+                await page.waitForTimeout(500);
+            }
+
             const pauseBtn = page.getByTestId('pause-resume-btn');
             await expect(pauseBtn).toBeVisible();
             
             // Get initial text
             const initialText = await pauseBtn.textContent();
             
-            // Click to toggle (force in case disabled)
-            await pauseBtn.click({ force: true });
+            // Click to toggle
+            await pauseBtn.click();
             await page.waitForTimeout(500);
             
             // Snapshot: After pause/resume toggle
@@ -129,9 +144,9 @@ test.describe('Autopilot Feature', () => {
             const killSwitch = page.getByTestId('kill-switch-btn');
             await expect(killSwitch).toBeVisible();
             
-            // Verify it has appropriate styling (red for active/danger or green for inactive)
+            // Kill switch may be active (green) or inactive (red) in demo mode
             const classes = await killSwitch.getAttribute('class');
-            expect(classes).toMatch(/bg-(red|green)/);
+            expect(classes).toMatch(/bg-red|bg-green/);
             
             // Snapshot: Kill switch button
             await page.screenshot({ 
@@ -382,16 +397,20 @@ test.describe('Autopilot Feature', () => {
         test('save button enables when changes made', async ({ page }) => {
             const saveBtn = page.getByTestId('save-btn');
             
-            // Initially might be disabled
-            const initialDisabled = await saveBtn.isDisabled();
+            // Wait for config to finish loading (button must show "Save Changes" not "Saving...")
+            await expect(saveBtn).toContainText('Save', { timeout: 10000 });
+            // Also wait for the equity input to be populated by the config sync
+            const equityInput = page.getByTestId('paper-equity-input');
+            await expect(equityInput).not.toHaveValue('', { timeout: 5000 });
+            // Allow config sync useEffect to settle
+            await page.waitForTimeout(500);
             
             // Make a change
-            const equityInput = page.getByTestId('paper-equity-input');
             await equityInput.clear();
             await equityInput.fill('1500');
             
             // Save should now be enabled
-            await expect(saveBtn).toBeEnabled();
+            await expect(saveBtn).toBeEnabled({ timeout: 5000 });
             
             // Snapshot: Save enabled
             await page.screenshot({ 
@@ -474,7 +493,7 @@ test.describe('Autopilot Feature', () => {
             // Wait for content to load
             await page.waitForSelector('[data-testid="autopilot-dashboard"]');
             
-            expect(await page.screenshot()).toMatchSnapshot('autopilot-dashboard-full.png', { maxDiffPixelRatio: 0.10 });
+            await expect(page).toHaveScreenshot('autopilot-dashboard-full.png', { maxDiffPixelRatio: 0.05 });
         });
 
         test('full positions view snapshot', async ({ page }) => {
@@ -483,7 +502,7 @@ test.describe('Autopilot Feature', () => {
             await page.getByTestId('autopilot-tab-positions').click();
             await page.waitForTimeout(500);
             
-            expect(await page.screenshot()).toMatchSnapshot('autopilot-positions-full.png', { maxDiffPixelRatio: 0.05 });
+            await expect(page).toHaveScreenshot('autopilot-positions-full.png', { maxDiffPixelRatio: 0.05 });
         });
 
         test('full activity view snapshot', async ({ page }) => {
@@ -492,7 +511,7 @@ test.describe('Autopilot Feature', () => {
             await page.getByTestId('autopilot-tab-activity').click();
             await page.waitForTimeout(500);
             
-            expect(await page.screenshot()).toMatchSnapshot('autopilot-activity-full.png', { maxDiffPixelRatio: 0.05 });
+            await expect(page).toHaveScreenshot('autopilot-activity-full.png', { maxDiffPixelRatio: 0.05 });
         });
 
         test('full settings view snapshot', async ({ page }) => {
@@ -501,7 +520,7 @@ test.describe('Autopilot Feature', () => {
             await page.getByTestId('autopilot-tab-settings').click();
             await page.waitForTimeout(500);
             
-            expect(await page.screenshot()).toMatchSnapshot('autopilot-settings-full.png', { maxDiffPixelRatio: 0.05 });
+            await expect(page).toHaveScreenshot('autopilot-settings-full.png', { maxDiffPixelRatio: 0.05 });
         });
     });
 });
@@ -509,7 +528,7 @@ test.describe('Autopilot Feature', () => {
 test.describe('Autopilot Accessibility', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');  // Use baseURL from config
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         await page.getByTestId('nav-item-autopilot').click();
         await page.waitForTimeout(500);
     });

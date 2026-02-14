@@ -84,12 +84,13 @@ test.describe('Ticker Resolution v1.10', () => {
   test('T3: Batch resolution handles mixed confidence inputs', async ({ page, request }) => {
     const response = await request.post(`${API_BASE}/api/v1/ticker/resolve/batch`, {
       data: { 
-        symbols: ['AAPL', 'brk-b', 'ON', 'I', 'FAKESYM']
+        tickers: ['AAPL', 'brk-b', 'ON', 'I', 'FAKESYM']
       }
     });
 
     expect(response.ok()).toBeTruthy();
-    const data = await response.json();
+    const body = await response.json();
+    const data = body.results;
 
     // Validate results array
     expect(data).toHaveLength(5);

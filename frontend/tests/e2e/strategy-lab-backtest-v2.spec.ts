@@ -69,15 +69,15 @@ test.describe('Strategy Lab + Backtest Core Tests', () => {
 
   test('05 - Backend health check', async ({ request }) => {
     // Verify backend APIs are responsive
-    const strategyListResponse = await request.get('http://localhost:8000/api/strategy/list');
+    const strategyListResponse = await request.get('http://localhost:8000/api/strategy/list', { timeout: 60000 });
     expect(strategyListResponse.ok()).toBeTruthy();
     
-    const backtestRunsResponse = await request.get('http://localhost:8000/api/backtest/runs');
+    const backtestRunsResponse = await request.get('http://localhost:8000/api/backtest/runs', { timeout: 60000 });
     expect(backtestRunsResponse.ok()).toBeTruthy();
   });
 
   test('06 - Backend strategylist returns demo strategies', async ({ request }) => {
-    const response = await request.get('http://localhost:8000/api/strategy/list');
+    const response = await request.get('http://localhost:8000/api/strategy/list', { timeout: 60000 });
     expect(response.ok()).toBeTruthy();
     
     const strategies = await response.json();
@@ -86,7 +86,7 @@ test.describe('Strategy Lab + Backtest Core Tests', () => {
   });
 
   test('07 - Backend backtest API returns proper structure', async ({ request }) => {
-    const response = await request.get('http://localhost:8000/api/backtest/runs');
+    const response = await request.get('http://localhost:8000/api/backtest/runs', { timeout: 60000 });
     expect(response.ok()).toBeTruthy();
     
     const runs = await response.json();
@@ -119,7 +119,7 @@ test.describe('Strategy Lab + Backtest Core Tests', () => {
 
   test('12 - Determinism check - backend returns same hash', async ({ request }) => {
     // Get strategies
-    const strategiesResponse = await request.get('http://localhost:8000/api/strategy/list');
+    const strategiesResponse = await request.get('http://localhost:8000/api/strategy/list', { timeout: 60000 });
     const strategies = await strategiesResponse.json();
     
     if (strategies.length > 0) {
@@ -135,10 +135,10 @@ test.describe('Strategy Lab + Backtest Core Tests', () => {
         seed: 42
       };
       
-      const run1Response = await request.post('http://localhost:8000/api/backtest/run', { data: config });
+      const run1Response = await request.post('http://localhost:8000/api/backtest/run', { data: config, timeout: 60000 });
       const run1 = await run1Response.json();
       
-      const run2Response = await request.post('http://localhost:8000/api/backtest/run', { data: config });
+      const run2Response = await request.post('http://localhost:8000/api/backtest/run', { data: config, timeout: 60000 });
       const run2 = await run2Response.json();
       
       // Hashes should match

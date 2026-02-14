@@ -6,15 +6,19 @@
  * Export: Download JSON buttons (risk_run, tool_trace, ticket)
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { PortfolioUpload } from './PortfolioUpload';
 import { RunStatusHeader } from './RunStatusHeader';
 import { PremiumRiskCharts } from './PremiumRiskCharts';
-import { fetchDemoCsv, runRiskPipeline, buildTicket } from './api';
+import * as RiskDeskAPI from './api';
 import { ProvenanceDisplay } from '../../../components/ProvenanceDisplay';
+import { ProviderPill } from '../../shared/ProviderPill';
+import { ProviderRegistryPanel } from '../../shared/ProviderRegistryPanel';
+import { API_BASE } from '../../../config/api';
+import { PortfolioAttachSelector, PortfolioValuationCards, MultiPortfolioSelector, MultiValuationCards } from '../../portfolio';
 import type {
   RiskRunResult,
   RunState,
@@ -33,12 +37,47 @@ export function RiskDeskPanel() {
   const [ticket, setTicket] = useState<TicketDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   
+  // v1.21: Attached portfolio (session-only)
+  const [attachedPortfolioId, setAttachedPortfolioId] = useState<string>('DEMO-PORT-001');
+  
+  // v1.25: Multi-portfolio selection
+  const [multiPortfolioIds, setMultiPortfolioIds] = useState<string[]>(['DEMO-PORT-001']);
+  
   // Run history (in-memory for demo)
   const [runHistory, setRunHistory] = useState<RiskRunResult[]>([]);
   
   // Compliance fix state
   const [beforeFixResult, setBeforeFixResult] = useState<RiskRunResult | null>(null);
   const [showBeforeAfter, setShowBeforeAfter] = useState<'before' | 'after'>('after');
+
+  // Provider info state
+  const [providerInfo, setProviderInfo] = useState<{ 
+    mode: 'DEMO'; 
+    provider: 'demo'; 
+    source: 'demo' | 'replay'; 
+  }>({ 
+    mode: 'DEMO', 
+    provider: 'demo', 
+    source: 'demo'
+  });
+
+  // Fetch provider info on mount
+  useEffect(() => {
+    fetch(`${API_BASE}/api/v1/market-data/providers`)
+      .then(r => r.json())
+      .then(data => {
+        const providers = Array.isArray(data) ? data : [];
+        const demo = providers.find((p: any) => p.name === 'demo');
+        if (demo) {
+          setProviderInfo({
+            mode: demo.mode,
+            provider: 'demo',
+            source: demo.replay_available ? 'replay' : 'demo'
+          });
+        }
+      })
+      .catch(err => console.error('Failed to fetch provider info:', err));
+  }, []);
 
   // ── File handling ──────────────────────────────────────────────────
   const handleFileSelected = useCallback((f: File) => {
@@ -56,7 +95,7 @@ export function RiskDeskPanel() {
   const handleLoadDemo = useCallback(async () => {
     try {
       setError(null);
-      const csv = await fetchDemoCsv();
+      const csv = await RiskDeskAPI.fetchDemoCsv();
       setCsvText(csv);
       setFileName('demo_portfolio.csv');
       setResult(null);
@@ -76,7 +115,7 @@ export function RiskDeskPanel() {
       setRunState('running');
       setError(null);
       setTicket(null);
-      const res = await runRiskPipeline(csvText, scenarioId);
+      const res = await RiskDeskAPI.runRiskPipeline(csvText, scenarioId);
       setResult(res);
       setRunState('done');
       // Add to run history
@@ -91,7 +130,7 @@ export function RiskDeskPanel() {
   const handleBuildTicket = useCallback(async (hedgeId: string) => {
     if (!result) return;
     try {
-      const t = await buildTicket(result.run_id, hedgeId);
+      const t = await RiskDeskAPI.buildTicket(result.run_id, hedgeId);
       setTicket(t);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ticket build failed');
@@ -157,7 +196,7 @@ export function RiskDeskPanel() {
       
       // Re-run pipeline with fixed portfolio
       setRunState('running');
-      const res = await runRiskPipeline(fixedCsv, scenarioId);
+      const res = await RiskDeskAPI.runRiskPipeline(fixedCsv, scenarioId);
       setResult(res);
       setRunState('done');
       setRunHistory(prev => [res, ...prev]);
@@ -177,13 +216,27 @@ export function RiskDeskPanel() {
 
   return (
     <div className="h-full overflow-auto p-4" data-testid="risk-desk-panel">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-text" data-testid="risk-desk-title">
-          Risk Desk
-        </h2>
+      <div className="flex items-start justify-between mb-4 gap-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold text-text" data-testid="risk-desk-title">
+            Risk Desk
+          </h2>
+          <ProviderPill {...providerInfo} testIdPrefix="riskdesk-provider" />
+        </div>
+        
+        {/* v1.21: Portfolio Attach Selector + Valuation Cards */}
+        <div className="flex flex-col gap-2">
+          <PortfolioAttachSelector
+            onPortfolioChange={setAttachedPortfolioId}
+            currentPortfolioId={attachedPortfolioId}
+          />
+          {attachedPortfolioId && (
+            <PortfolioValuationCards portfolioId={attachedPortfolioId} />
+          )}
+        </div>
         
         {/* Subtabs */}
-        <div className="flex gap-2" role="tablist" aria-label="Risk Desk tabs">
+        <div className="flex gap-2" role="tablist" aria-label="Risk Desk tabs" data-testid="riskdesk-tablist">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -257,6 +310,22 @@ export function RiskDeskPanel() {
               {error}
             </div>
           )}
+
+          {/* v1.25: Multi-Portfolio Analysis */}
+          <div className="bg-surface border border-border rounded p-3" data-testid="multi-portfolio-section">
+            <label className="text-xs text-text-secondary font-medium block mb-2">
+              Multi-Portfolio Analysis (v1.25)
+            </label>
+            <MultiPortfolioSelector
+              onSelectionChange={setMultiPortfolioIds}
+              selectedIds={multiPortfolioIds}
+            />
+            {multiPortfolioIds.length > 0 && (
+              <div className="mt-3">
+                <MultiValuationCards portfolioIds={multiPortfolioIds} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ═══ MIDDLE COLUMN: OUTPUTS ═══ */}
@@ -287,16 +356,17 @@ export function RiskDeskPanel() {
           )}
 
           {runState === 'done' && result && (
-            <>
+            <div data-testid="riskdesk-ready">
               {/* Provenance Display */}
               <ProvenanceDisplay 
-                provenance={{
-                  source: 'DEMO',
-                  cache_key: undefined,
-                  provider: 'Demo Data',
-                }}
+                provenance={result.provenance || null}
                 className="mx-auto"
               />
+              
+              {/* v1.37: Provider Registry */}
+              <div className="my-3">
+                <ProviderRegistryPanel />
+              </div>
               
               {/* Run status */}
               <div className={`p-3 rounded border text-sm ${
@@ -581,7 +651,7 @@ export function RiskDeskPanel() {
                   </pre>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
 
@@ -698,6 +768,7 @@ export function RiskDeskPanel() {
       {/* ═══ EXPORT TAB ═══ */}
       {activeTab === 'export' && (
         <div className="h-[calc(100%-5rem)]" data-testid="export-tab" role="tabpanel" id="riskdesk-tabpanel-export">
+          <span data-testid="riskdesk-export-ready">✓</span>
           <h3 className="text-sm font-semibold text-text mb-3">Export Risk Desk Data</h3>
           
           {!result && (
@@ -785,6 +856,36 @@ export function RiskDeskPanel() {
                 data-testid="export-ticket"
               >
                 Download ticket.json
+              </button>
+            </div>
+
+            {/* v1.22: Export ZIP Bundle */}
+            <div className="bg-surface border border-border rounded p-3">
+              <h4 className="text-sm font-medium text-text mb-2">Complete Export Bundle (v1.22)</h4>
+              <p className="text-xs text-text-secondary mb-2">
+                Institutional-grade ZIP archive with all artifacts, portfolio data, and SHA256 manifest.
+              </p>
+              <button
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={async () => {
+                  if (!result) return;
+                  try {
+                    const blob = await RiskDeskAPI.exportRiskRun(result.run_id);
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `risk-export-${result.run_id}.zip`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  } catch (err) {
+                    console.error('[Risk Desk] Export failed:', err);
+                    alert('Export failed. Ensure backend is running.');
+                  }
+                }}
+                disabled={!result}
+                data-testid="export-bundle-zip"
+              >
+                Download ZIP Bundle
               </button>
             </div>
 

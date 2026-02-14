@@ -56,6 +56,7 @@ export const VoiceControl = () => {
                     value={volume}
                     onChange={(e) => setVolume(parseFloat(e.target.value))}
                     className="w-16 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                    data-testid="voice-volume-slider"
                 />
             )}
         </div>

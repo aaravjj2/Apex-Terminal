@@ -268,7 +268,7 @@ export const V1TerminalPanel: React.FC<V1TerminalPanelProps> = ({
       {/* P&L Display */}
       <div className="bg-gray-800 rounded-lg p-4 mb-4 text-center" data-testid="v1-pnl-display">
         <div className="text-xs text-gray-400 mb-1">SESSION P&L</div>
-        <div className={`text-3xl font-mono font-bold ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+        <div className={`text-3xl font-mono font-bold ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`} data-testid="pnl-indicator">
           {pnl >= 0 ? '+' : ''}{formatCurrency(pnl)}
         </div>
       </div>

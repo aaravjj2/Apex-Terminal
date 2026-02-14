@@ -24,7 +24,7 @@ test.describe('Ticker Disambiguation (v1.9)', () => {
     await openCommandPalette(page);
 
     // Type "ON" — an ambiguous ticker
-    await page.locator('input[placeholder*="command"]').fill('ON');
+    await page.getByTestId('command-palette-input').fill('ON');
     await page.waitForTimeout(200);
 
     // Select the "Switch to ON" item
@@ -40,7 +40,7 @@ test.describe('Ticker Disambiguation (v1.9)', () => {
 
   test('v1.9-disambig-02 - Confirm disambiguation applies the ticker', async ({ page }) => {
     await openCommandPalette(page);
-    await page.locator('input[placeholder*="command"]').fill('ON');
+    await page.getByTestId('command-palette-input').fill('ON');
     await page.waitForTimeout(200);
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
@@ -57,7 +57,7 @@ test.describe('Ticker Disambiguation (v1.9)', () => {
 
   test('v1.9-disambig-03 - Cancel disambiguation does not apply ticker', async ({ page }) => {
     await openCommandPalette(page);
-    await page.locator('input[placeholder*="command"]').fill('IT');
+    await page.getByTestId('command-palette-input').fill('IT');
     await page.waitForTimeout(200);
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
@@ -77,7 +77,7 @@ test.describe('Ticker Disambiguation (v1.9)', () => {
 
   test('v1.9-disambig-04 - Well-known ticker bypasses dialog (AAPL)', async ({ page }) => {
     await openCommandPalette(page);
-    await page.locator('input[placeholder*="command"]').fill('AAPL');
+    await page.getByTestId('command-palette-input').fill('AAPL');
     await page.waitForTimeout(200);
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
@@ -90,7 +90,7 @@ test.describe('Ticker Disambiguation (v1.9)', () => {
 
   test('v1.9-disambig-05 - Dollar-prefix bypasses dialog ($ON)', async ({ page }) => {
     await openCommandPalette(page);
-    await page.locator('input[placeholder*="command"]').fill('$ON');
+    await page.getByTestId('command-palette-input').fill('$ON');
     await page.waitForTimeout(200);
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
@@ -103,7 +103,7 @@ test.describe('Ticker Disambiguation (v1.9)', () => {
 
   test('v1.9-disambig-06 - Disambiguation dialog has tip about $ prefix', async ({ page }) => {
     await openCommandPalette(page);
-    await page.locator('input[placeholder*="command"]').fill('AI');
+    await page.getByTestId('command-palette-input').fill('AI');
     await page.waitForTimeout(200);
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
@@ -119,7 +119,7 @@ test.describe('Ticker Disambiguation (v1.9)', () => {
 
   test('v1.9-disambig-07 - Backdrop click cancels disambiguation', async ({ page }) => {
     await openCommandPalette(page);
-    await page.locator('input[placeholder*="command"]').fill('SO');
+    await page.getByTestId('command-palette-input').fill('SO');
     await page.waitForTimeout(200);
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);

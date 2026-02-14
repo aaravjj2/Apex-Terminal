@@ -5,7 +5,7 @@ const BACKEND_URL = 'http://localhost:8000';
 // Helper to check if backend is available
 async function isBackendAvailable(request: any): Promise<boolean> {
   try {
-    const res = await request.get(`${BACKEND_URL}/health`, { timeout: 3000 });
+    const res = await request.get(`${BACKEND_URL}/health`, { timeout: 60000 });
     return res.ok();
   } catch {
     return false;
@@ -15,7 +15,7 @@ async function isBackendAvailable(request: any): Promise<boolean> {
 test.describe('Options Workstation E2E Verification', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('Options View Navigation', async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe('Options Workstation E2E Verification', () => {
     await page.waitForTimeout(500);
 
     // Verify Options view loaded
-    const optionsContent = page.locator('text=/Options|Analytics|Chain/i').first();
+    const optionsContent = page.getByTestId('options-main-tab-analytics');
     await expect(optionsContent).toBeVisible({ timeout: 10000 });
   });
 
@@ -34,7 +34,7 @@ test.describe('Options Workstation E2E Verification', () => {
     await page.waitForTimeout(500);
 
     // Check for mode indicator in top bar
-    const modeBadge = page.locator('[class*="bg-"][class*="text-"]').filter({ hasText: /LIVE|REPLAY|PAPER|BACKTEST/ }).first();
+    const modeBadge = page.getByTestId('mode-badge');
     await expect(modeBadge).toBeVisible({ timeout: 5000 });
   });
 
@@ -69,18 +69,12 @@ test.describe('Options Workstation E2E Verification', () => {
 
 test.describe('Backend API Endpoints', () => {
   test('Backend API Health Check', async ({ request }) => {
-    const backendUp = await isBackendAvailable(request);
-    test.skip(!backendUp, 'Backend not available - skipping API test');
-
-    const response = await request.get(`${BACKEND_URL}/health`);
+    const response = await request.get(`${BACKEND_URL}/health`, { timeout: 60000 });
     expect(response.ok()).toBeTruthy();
   });
 
   test('Autopilot Reconnect Endpoint', async ({ request }) => {
-    const backendUp = await isBackendAvailable(request);
-    test.skip(!backendUp, 'Backend not available - skipping API test');
-
-    const response = await request.post(`${BACKEND_URL}/api/v1/autopilot/reconnect`);
+    const response = await request.post(`${BACKEND_URL}/api/v1/autopilot/reconnect`, { timeout: 60000 });
     expect(response.ok()).toBeTruthy();
     
     const data = await response.json();

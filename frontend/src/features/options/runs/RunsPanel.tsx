@@ -39,7 +39,7 @@ export function RunsPanel() {
       if (filters.dateFilter !== 'all') params.set('date_filter', filters.dateFilter);
       if (filters.search) params.set('search', filters.search);
       const url = `/api/unified-runs${params.toString() ? '?' + params.toString() : ''}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setRuns(Array.isArray(data) ? data : []);
@@ -218,9 +218,9 @@ function LedgerView({
           className="px-3 py-1.5 bg-element-bg border border-border rounded text-sm text-text focus:ring-1 focus:ring-brand"
           data-testid="runs-filter-type"
         >
-          <option value="all">All Types</option>
-          <option value="risk">Risk Only</option>
-          <option value="backtest">Backtest Only</option>
+          <option value="all" data-testid="filter-type-option-all">All Types</option>
+          <option value="risk" data-testid="filter-type-option-risk">Risk Only</option>
+          <option value="backtest" data-testid="filter-type-option-backtest">Backtest Only</option>
         </select>
 
         <select
@@ -229,10 +229,10 @@ function LedgerView({
           className="px-3 py-1.5 bg-element-bg border border-border rounded text-sm text-text focus:ring-1 focus:ring-brand"
           data-testid="runs-filter-date"
         >
-          <option value="all">All Time</option>
-          <option value="today">Today</option>
-          <option value="7d">Last 7 Days</option>
-          <option value="30d">Last 30 Days</option>
+          <option value="all" data-testid="filter-date-option-all">All Time</option>
+          <option value="today" data-testid="filter-date-option-today">Today</option>
+          <option value="7d" data-testid="filter-date-option-7d">Last 7 Days</option>
+          <option value="30d" data-testid="filter-date-option-30d">Last 30 Days</option>
         </select>
 
         <input

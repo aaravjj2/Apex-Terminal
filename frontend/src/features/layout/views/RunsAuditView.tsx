@@ -1,7 +1,11 @@
 // RunsAuditView.tsx - Runs / Audit Log page (A2 requirement)
 import React, { useState, useEffect } from 'react';
+import { RefreshCw, Download, ClipboardList } from 'lucide-react';
+import { API_BASE } from '../../../config/api';
 import { Badge } from '../../../ui/Badge';
 import { Button } from '../../../ui/Button';
+import { PageHeader } from '../../../ui/PageHeader';
+import { cn } from '../../../ui/utils';
 
 interface RunRecord {
   run_id: string;
@@ -45,8 +49,8 @@ export const RunsAuditView: React.FC = () => {
   const fetchData = async () => {
     try {
       const [runsRes, auditRes] = await Promise.all([
-        fetch('/api/v1/autopilot/runs'),
-        fetch('/api/v1/autopilot/logs?limit=200')
+        fetch(`${API_BASE}/api/v1/autopilot/runs`),
+        fetch(`${API_BASE}/api/v1/autopilot/logs?limit=200`)
       ]);
 
       if (runsRes.ok) {
@@ -249,50 +253,59 @@ export const RunsAuditView: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-surface min-h-full">
+    <div className="p-6 space-y-6 bg-surface min-h-full" data-testid="runs-audit-view">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text">Runs & Audit Log</h1>
-          <p className="text-sm text-text-secondary mt-1">
-            View autopilot execution history and system events
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="secondary" size="sm" onClick={fetchData}>
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
-          </Button>
-          <Button variant="secondary" size="sm">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Export
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Runs & Audit Log"
+        subtitle="View autopilot execution history and system events"
+        icon={<ClipboardList size={20} />}
+        badge={
+          runs.filter(r => r.status === 'running').length > 0 ? (
+            <Badge variant="success" dot>{runs.filter(r => r.status === 'running').length} running</Badge>
+          ) : (
+            <Badge variant="outline">{runs.length} total</Badge>
+          )
+        }
+        actions={
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" size="sm" onClick={fetchData}>
+              <RefreshCw size={14} className="mr-1" />
+              Refresh
+            </Button>
+            <Button variant="secondary" size="sm">
+              <Download size={14} className="mr-1" />
+              Export
+            </Button>
+          </div>
+        }
+        data-testid="runs-audit-header"
+      />
 
       {/* Tab Switcher */}
       <div className="flex items-center gap-4 border-b border-border">
         <button
           onClick={() => setActiveTab('runs')}
-          className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'runs'
+          className={cn(
+            'pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5',
+            activeTab === 'runs'
               ? 'border-brand text-brand'
               : 'border-transparent text-text-secondary hover:text-text'
-            }`}
+          )}
         >
-          Runs ({runs.length})
+          Runs
+          <Badge size="sm" variant={activeTab === 'runs' ? 'brand' : 'default'}>{runs.length}</Badge>
         </button>
         <button
           onClick={() => setActiveTab('audit')}
-          className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'audit'
+          className={cn(
+            'pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5',
+            activeTab === 'audit'
               ? 'border-brand text-brand'
               : 'border-transparent text-text-secondary hover:text-text'
-            }`}
+          )}
         >
-          Audit Log ({auditEvents.length})
+          Audit Log
+          <Badge size="sm" variant={activeTab === 'audit' ? 'brand' : 'default'}>{auditEvents.length}</Badge>
         </button>
       </div>
 

@@ -175,7 +175,7 @@ test.describe('Backtest Visual Regression', () => {
     await backtestCreateRun(page);
 
     // Click Analyze on row 0
-    await page.getByTestId('backtest-runs-row-0').locator('button:has-text("Analyze")').click();
+    await page.getByTestId('backtest-runs-row-0').locator('[data-testid^="analyze-run-"]').click();
     await expect(page.getByTestId('backtest-analyze-chart-equity')).toBeVisible({ timeout: 15000 });
 
     // Take full page to capture all 5 charts
@@ -189,7 +189,7 @@ test.describe('Backtest Visual Regression', () => {
     await gotoOptions(page);
     await backtestCreateRun(page);
 
-    await page.getByTestId('backtest-runs-row-0').locator('button:has-text("Analyze")').click();
+    await page.getByTestId('backtest-runs-row-0').locator('[data-testid^="analyze-run-"]').click();
     const metrics = page.getByTestId('analyze-metrics');
     await expect(metrics).toBeVisible({ timeout: 15000 });
 
@@ -207,7 +207,7 @@ test.describe('Navigation Visual Regression', () => {
   test('VR-12 Full Page Default Load', async ({ page }) => {
     await page.goto('http://localhost:5100');
     await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; }' });
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await expect(page).toHaveScreenshot('vr-12-full-page-default.png', {
       fullPage: true,

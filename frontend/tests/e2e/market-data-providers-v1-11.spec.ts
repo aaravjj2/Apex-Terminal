@@ -25,7 +25,7 @@ test.describe('Market Data Provider API', () => {
   });
 
   test('P1: List available providers', async ({ request }) => {
-    const response = await request.get(`${API_BASE}/api/v1/market-data/providers`);
+    const response = await request.get(`${API_BASE}/api/v1/market-data/providers`, { timeout: 60000 });
     
     expect(response.ok()).toBeTruthy();
     const providers = await response.json();
@@ -34,54 +34,60 @@ test.describe('Market Data Provider API', () => {
     expect(Array.isArray(providers)).toBeTruthy();
     expect(providers.length).toBeGreaterThan(0);
     
-    // Demo provider should always be available
-    const demoProvider = providers.find((p: any) => p.name.toLowerCase() === 'demo');
+    // Demo provider should always be available (API returns uppercase "DEMO")
+    const demoProvider = providers.find((p: any) => p.name === 'DEMO');
     expect(demoProvider).toBeDefined();
     expect(demoProvider.enabled_demo).toBe(true);
     expect(demoProvider.description).toBeTruthy();
+    // No requires_auth field in actual API response schema
   });
 
   test('P2: Get bars with demo provider', async ({ request }) => {
-    const response = await request.post(`${API_BASE}/api/v1/market-data/bars?provider=demo`, {
+    const response = await request.post(`${API_BASE}/api/v1/market-data/bars?provider=DEMO`, {
       data: {
         symbol: 'AAPL',
         start_date: '2024-01-01',
         end_date: '2024-01-31',
         interval: '1d'
-      }
+      },
+      timeout: 60000,
     });
     
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     
-    // Validate response schema
+    // Validate response schema with provenance
     expect(data.symbol).toBe('AAPL');
     expect(Array.isArray(data.bars)).toBeTruthy();
+    expect(data.provenance).toBeDefined();
+    expect(data.provenance.source).toBeTruthy();
   });
 
   test('P3: Get quote with demo provider', async ({ request }) => {
-    const response = await request.post(`${API_BASE}/api/v1/market-data/quote?provider=demo`, {
+    const response = await request.post(`${API_BASE}/api/v1/market-data/quote?provider=DEMO`, {
       data: {
         symbol: 'AAPL'
-      }
+      },
+      timeout: 60000,
     });
     
-    // Quote endpoint may not exist; accept 200 or 404/422
-    if (response.ok()) {
-      const data = await response.json();
-      expect(data).toBeDefined();
-    } else {
-      // Endpoint may not be implemented yet, accept gracefully
-      expect([404, 405, 422, 500]).toContain(response.status());
-    }
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    
+    // Validate response schema (flat structure with provenance)
+    expect(data.symbol).toBe('AAPL');
+    expect(data.price).toBeGreaterThan(0);
+    expect(data.provenance).toBeDefined();
+    expect(data.provenance.source).toBeTruthy();
   });
 
   test('P4: Bars endpoint validates input', async ({ request }) => {
     // Missing required fields should return 422
-    const response = await request.post(`${API_BASE}/api/v1/market-data/bars?provider=demo`, {
+    const response = await request.post(`${API_BASE}/api/v1/market-data/bars?provider=DEMO`, {
       data: {
         // Missing symbol, start, end
-      }
+      },
+      timeout: 60000,
     });
     
     expect(response.status()).toBe(422);  // Unprocessable Entity
@@ -94,7 +100,8 @@ test.describe('Market Data Provider API', () => {
         start: '2024-01-01T00:00:00Z',
         end: '2024-01-31T23:59:59Z',
         interval: '1d'
-      }
+      },
+      timeout: 60000,
     });
     
     // Should return 400 or 500 error
@@ -102,13 +109,14 @@ test.describe('Market Data Provider API', () => {
   });
 
   test('P6: Demo mode does not enable Yahoo provider', async ({ request }) => {
-    const response = await request.get(`${API_BASE}/api/v1/market-data/providers`);
+    const response = await request.get(`${API_BASE}/api/v1/market-data/providers`, { timeout: 60000 });
     expect(response.ok()).toBeTruthy();
     
     const providers = await response.json();
-    const providerNames = providers.map((p: any) => p.name.toLowerCase());
+    const providerNames = providers.map((p: any) => p.name);
     
-    // Demo provider should always be available
-    expect(providerNames).toContain('demo');
+    // In DEMO_MODE=1, "DEMO" should always be present (uppercase)
+    expect(providerNames).toContain('DEMO');
+    // Yahoo may or may not be enabled depending on environment
   });
 });

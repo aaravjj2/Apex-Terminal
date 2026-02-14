@@ -34,7 +34,7 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
     await page.waitForTimeout(500);
     
     // Verify Strategy Lab panel loaded - check heading specifically
-    await expect(page.locator('h2:has-text("Strategy Lab")')).toBeVisible();
+    await expect(page.getByTestId('strategy-lab-heading')).toBeVisible();
     
     // Screenshot
     await page.screenshot({ path: 'e2e-results/01-strategy-lab-main.png', fullPage: true });
@@ -62,13 +62,12 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
     await page.waitForTimeout(500);
     
     // Verify table exists
-    const table = page.locator('[data-testid="strategy-library-table"]');
+    const table = page.getByTestId('strategy-library-table');
     await expect(table).toBeVisible();
     
     // Verify at least one demo strategy (SMA Crossover or RSI Mean Reversion)
-    const rows = page.locator('[data-testid="strategy-library-table"] tbody tr');
-    const count = await rows.count();
-    expect(count).toBeGreaterThan(0);
+    const firstRow = page.getByTestId('library-item-0');
+    await expect(firstRow).toBeVisible({ timeout: 3000 });
     
     await page.screenshot({ path: 'e2e-results/03-strategy-library.png', fullPage: true });
   });
@@ -117,7 +116,7 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
     await page.fill('[data-testid="strategy-json-input"]', validJSON);
     
     // Click Validate
-    await page.click('[data-testid="validate-json-btn"]');
+    await page.click('[data-testid="strategy-validation-run"]');
     await page.waitForTimeout(500);
     
     // Screenshot result
@@ -176,9 +175,8 @@ await page.screenshot({ path: 'e2e-results/06-backtest-main.png', fullPage: true
     const table = page.locator('[data-testid="backtest-runs-table"]');
     await expect(table).toBeVisible();
     
-    const rows = page.locator('[data-testid="backtest-runs-table"] tbody tr');
-    const count = await rows.count();
-    expect(count).toBeGreaterThan(0);
+    const firstRow = page.getByTestId('backtest-runs-row-0');
+    await expect(firstRow).toBeVisible({ timeout: 3000 });
     
     await page.screenshot({ path: 'e2e-results/07b-backtest-run-complete.png', fullPage: true });
   });
@@ -192,13 +190,13 @@ await page.screenshot({ path: 'e2e-results/06-backtest-main.png', fullPage: true
     await page.waitForTimeout(500);
     
     // Verify table
-    const table = page.locator('[data-testid="backtest-runs-table"]');
+    const table = page.getByTestId('backtest-runs-table');
     await expect(table).toBeVisible();
     
     // Verify columns
-    await expect(page.locator('text=Run ID')).toBeVisible();
-    await expect(page.locator('text=Symbol')).toBeVisible();
-    await expect(page.locator('text=Status')).toBeVisible();
+    await expect(page.getByTestId('runs-header-run-id')).toBeVisible();
+    await expect(page.getByTestId('runs-header-symbol')).toBeVisible();
+    await expect(page.getByTestId('runs-header-status')).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/08-backtest-runs-table.png', fullPage: true });
   });
@@ -218,11 +216,11 @@ await page.screenshot({ path: 'e2e-results/06-backtest-main.png', fullPage: true
     
     // Should be on Analyze tab now
     // Verify metrics displayed
-    const metricsPanel = page.locator('[data-testid="analyze-metrics"]');
+    const metricsPanel = page.getByTestId('analyze-metrics');
     await expect(metricsPanel).toBeVisible();
     
     // Verify trade blotter
-    const blotter = page.locator('[data-testid="trade-blotter"]');
+    const blotter = page.getByTestId('trade-blotter');
     await expect(blotter).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/09-backtest-analyze.png', fullPage: true });
@@ -237,7 +235,7 @@ await page.screenshot({ path: 'e2e-results/06-backtest-main.png', fullPage: true
     await page.waitForTimeout(300);
     
     // Verify compare panel (placeholder for v1)
-    await expect(page.locator('[data-testid="backtest-tab-compare"]')).toBeVisible();
+    await expect(page.getByTestId('backtest-tab-compare')).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/10-backtest-compare.png', fullPage: true });
   });
@@ -290,9 +288,10 @@ await page.screenshot({ path: 'e2e-results/06-backtest-main.png', fullPage: true
     await page.waitForTimeout(500);
     
     // Get first two run IDs (should have same metrics)
-    const rows = page.locator('[data-testid="backtest-runs-table"] tbody tr');
-    const count = await rows.count();
-    expect(count).toBeGreaterThanOrEqual(2);
+    const row0 = page.getByTestId('backtest-runs-row-0');
+    const row1 = page.getByTestId('backtest-runs-row-1');
+    await expect(row0).toBeVisible();
+    await expect(row1).toBeVisible();
     
     // Screenshot showing multiple runs with same config
     await page.screenshot({ path: 'e2e-results/12-determinism-check.png', fullPage: true });
@@ -305,7 +304,7 @@ await page.screenshot({ path: 'e2e-results/06-backtest-main.png', fullPage: true
     await page.waitForTimeout(500);
     
     // Verify Risk Desk loaded
-    await expect(page.locator('text=Risk Desk').first()).toBeVisible();
+    await expect(page.getByTestId('risk-desk-title')).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/13-risk-desk-regression.png', fullPage: true });
   });
@@ -317,7 +316,7 @@ await page.screenshot({ path: 'e2e-results/06-backtest-main.png', fullPage: true
     await page.waitForTimeout(500);
     
     // Verify dashboard loaded
-    await expect(page.locator('text=Dashboard').or(page.locator('text=Command Center'))).toBeVisible();
+    await expect(page.getByTestId('dashboard-heading')).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/14-dashboard-regression.png', fullPage: true });
   });

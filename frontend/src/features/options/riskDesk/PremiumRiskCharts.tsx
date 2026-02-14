@@ -93,9 +93,10 @@ export const PremiumRiskCharts: React.FC<PremiumRiskChartsProps> = ({ result }) 
       {/* Payoff Curve */}
       {payoffData.length > 0 && (
         <div className="bg-element-bg border border-border rounded p-3" data-testid="payoff-curve-chart">
-          <h4 className="text-xs font-semibold text-text-secondary mb-2">
+          <h4 className="text-xs font-semibold text-text-secondary mb-2" data-testid="chart-heading">
             Payoff Curve — Strategy P/L vs Underlying
           </h4>
+          <div data-testid="chart-svg">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={payoffData} margin={{ top: 5, right: 15, left: 15, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -106,15 +107,17 @@ export const PremiumRiskCharts: React.FC<PremiumRiskChartsProps> = ({ result }) 
               <Line type="monotone" dataKey="pnl" stroke="#818cf8" strokeWidth={2} dot={false} isAnimationActive={!noAnimation} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       {/* Greeks vs Underlying */}
       {greeksData.length > 0 && (
         <div className="bg-element-bg border border-border rounded p-3" data-testid="greeks-vs-underlying-chart">
-          <h4 className="text-xs font-semibold text-text-secondary mb-2">
+          <h4 className="text-xs font-semibold text-text-secondary mb-2" data-testid="chart-heading">
             Greeks vs Underlying
           </h4>
+          <div data-testid="chart-svg">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={greeksData} margin={{ top: 5, right: 15, left: 15, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -127,15 +130,17 @@ export const PremiumRiskCharts: React.FC<PremiumRiskChartsProps> = ({ result }) 
               <Line type="monotone" dataKey="vega" stroke="#f59e0b" strokeWidth={2} dot={false} name="Vega" isAnimationActive={!noAnimation} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       {/* Scenario Ladder */}
       {scenarioData.length > 0 && (
         <div className="bg-element-bg border border-border rounded p-3" data-testid="scenario-ladder-chart">
-          <h4 className="text-xs font-semibold text-text-secondary mb-2">
+          <h4 className="text-xs font-semibold text-text-secondary mb-2" data-testid="chart-heading">
             Scenario Ladder — P/L Across Stress Scenarios
           </h4>
+          <div data-testid="chart-svg">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={scenarioData} margin={{ top: 5, right: 15, left: 15, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -150,6 +155,7 @@ export const PremiumRiskCharts: React.FC<PremiumRiskChartsProps> = ({ result }) 
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
       )}
     </div>

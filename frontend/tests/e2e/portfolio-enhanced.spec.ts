@@ -12,7 +12,7 @@ test.describe('Enhanced Portfolio', () => {
     test.beforeEach(async ({ page }) => {
         // Navigate to portfolio view
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         
         // Click on Portfolio nav item
         const portfolioNav = page.locator('[data-testid="nav-item-portfolio"]');
@@ -21,29 +21,26 @@ test.describe('Enhanced Portfolio', () => {
     });
 
     test('displays portfolio summary cards', async ({ page }) => {
-        // Verify summary cards are visible using .first() to avoid strict mode
-        await expect(page.locator('text=Total Equity').first()).toBeVisible({ timeout: 10000 });
-        await expect(page.locator('text=Open P&L').first()).toBeVisible();
-        await expect(page.locator('text=Buying Power').first()).toBeVisible();
+        // Verify summary cards are visible
+        await expect(page.getByTestId('total-equity')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByTestId('open-pnl')).toBeVisible();
+        await expect(page.getByTestId('buying-power')).toBeVisible();
     });
 
     test('shows positions tab with position data', async ({ page }) => {
         // Positions tab should be active by default
-        const positionsTab = page.locator('button:has-text("Positions")').first();
-        await expect(positionsTab).toBeVisible();
+        await expect(page.getByTestId('tab-positions')).toBeVisible();
     });
 
     test('can switch between Positions and Orders tabs', async ({ page }) => {
         // Find and click Orders tab
-        const ordersTab = page.locator('button:has-text("Orders")').first();
-        await ordersTab.click();
+        await page.getByTestId('tab-orders').click();
         
         // Verify tab switching worked (orders tab should be active)
         await page.waitForTimeout(300);
         
         // Click back to Positions
-        const positionsTab = page.locator('button:has-text("Positions")').first();
-        await positionsTab.click();
+        await page.getByTestId('tab-positions').click();
     });
 
     test('takes screenshot of portfolio view', async ({ page }) => {

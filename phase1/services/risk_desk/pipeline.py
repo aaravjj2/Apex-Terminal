@@ -22,6 +22,7 @@ from .schemas_w2 import (
     RiskRunResult,
     ToolTraceEntry,
 )
+from ..backtest_engine.models import ProvenanceInfo
 from .validator import validate_portfolio, load_default_snapshot, parse_csv
 from .greeks_calculator import calculate_greeks
 from .stress_tester import run_stress_test, DEFAULT_SCENARIO_ID
@@ -117,6 +118,7 @@ def execute_risk_run(
             config_hash=c_hash,
             portfolio_hash=p_hash,
             tool_trace=trace,
+            provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
         )
 
     if not validation.valid:
@@ -129,6 +131,7 @@ def execute_risk_run(
             portfolio_hash=p_hash,
             validation=validation,
             tool_trace=trace,
+            provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
         )
 
     # Re-parse CSV to get PortfolioRow objects for downstream tools
@@ -177,6 +180,7 @@ def execute_risk_run(
             portfolio_hash=p_hash,
             validation=validation,
             tool_trace=trace,
+            provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
         )
 
     # ── T3: Stress Tester ────────────────────────────────────────────────
@@ -220,6 +224,7 @@ def execute_risk_run(
             validation=validation,
             greeks=greeks,
             tool_trace=trace,
+            provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
         )
 
     # ── T4: Greeks Verifier ──────────────────────────────────────────────
@@ -264,6 +269,7 @@ def execute_risk_run(
             greeks=greeks,
             stress=stress,
             tool_trace=trace,
+            provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
         )
 
     # ── T5: Compliance Checker ───────────────────────────────────────────
@@ -309,6 +315,7 @@ def execute_risk_run(
             stress=stress,
             verification=verification,
             tool_trace=trace,
+            provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
         )
 
     # ── Assemble result ──────────────────────────────────────────────────
@@ -324,4 +331,11 @@ def execute_risk_run(
         verification=verification,
         compliance=compliance,
         tool_trace=trace,
+        provenance=ProvenanceInfo(
+            source="DEMO",
+            provider="Demo Data",
+            cache_key=None,
+            checksum=None,
+            fetched_at=None,
+        ),
     )

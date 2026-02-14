@@ -61,6 +61,10 @@ interface AppState {
     toggleLeftNav: () => void;
     toggleRightDock: () => void;
     toggleBottomDock: () => void;
+
+    // v1.31: Strategy-to-Backtest binding
+    pendingStrategyArtifactId: string | null;
+    setPendingStrategyArtifactId: (id: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -168,6 +172,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     toggleLeftNav: () => set((s) => ({ leftNavExpanded: !s.leftNavExpanded })),
     toggleRightDock: () => set((s) => ({ rightDockOpen: !s.rightDockOpen })),
     toggleBottomDock: () => set((s) => ({ bottomDockOpen: !s.bottomDockOpen })),
+
+    // v1.31: Strategy-to-Backtest binding
+    pendingStrategyArtifactId: null,
+    setPendingStrategyArtifactId: (id) => set({ pendingStrategyArtifactId: id }),
 }));
 
 // Selectors

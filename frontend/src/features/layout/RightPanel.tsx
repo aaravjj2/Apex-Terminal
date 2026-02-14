@@ -152,7 +152,7 @@ export function RightPanel() {
             <Tabs defaultValue="data" className="flex-1">
                 <TabsList className="px-1">
                     <TabsTrigger value="data" icon={<Database size={14} />}>Data</TabsTrigger>
-                    <TabsTrigger value="indicators" icon={<TrendingUp size={14} />}>Ind</TabsTrigger>
+                    <TabsTrigger value="indicators" icon={<TrendingUp size={14} />} data-testid="right-dock-tab-ind">Ind</TabsTrigger>
                     <TabsTrigger value="drawings" icon={<PenTool size={14} />}>Draw</TabsTrigger>
                     <TabsTrigger value="alerts" icon={<Bell size={14} />}>Alerts</TabsTrigger>
                     <div className="flex-1" />

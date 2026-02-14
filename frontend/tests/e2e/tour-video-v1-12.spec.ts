@@ -22,7 +22,7 @@ test.describe('APEX Terminal Tour v1.12 - Full Recording', () => {
     // ============================================================
     
     await page.goto('http://localhost:5100');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000); // Stabilize for recording
     
     // Verify dashboard loaded

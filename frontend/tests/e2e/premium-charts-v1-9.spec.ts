@@ -47,7 +47,7 @@ test.describe('v1.9 – Premium Risk Charts', () => {
     const chart = page.getByTestId('payoff-curve-chart');
     await expect(chart).toBeVisible();
     // Chart should have its heading
-    await expect(chart.locator('h4')).toContainText('Payoff Curve');
+    await expect(chart.getByTestId('chart-heading')).toContainText('Payoff Curve');
     // Recharts container verified via parent testid
   });
 
@@ -56,7 +56,7 @@ test.describe('v1.9 – Premium Risk Charts', () => {
     await loadDemoAndRun(page);
     const chart = page.getByTestId('greeks-vs-underlying-chart');
     await expect(chart).toBeVisible();
-    await expect(chart.locator('h4')).toContainText('Greeks vs Underlying');
+    await expect(chart.getByTestId('chart-heading')).toContainText('Greeks vs Underlying');
     // Recharts container verified via parent testid
   });
 
@@ -65,7 +65,7 @@ test.describe('v1.9 – Premium Risk Charts', () => {
     await loadDemoAndRun(page);
     const chart = page.getByTestId('scenario-ladder-chart');
     await expect(chart).toBeVisible();
-    await expect(chart.locator('h4')).toContainText('Scenario Ladder');
+    await expect(chart.getByTestId('chart-heading')).toContainText('Scenario Ladder');
     // Recharts container verified via parent testid
   });
 
@@ -90,7 +90,7 @@ test.describe('v1.9 – Premium Risk Charts', () => {
     await expect(page.getByTestId('premium-risk-charts')).toBeVisible();
     // Verify SVG paths exist (charts rendered their data even without animation)
     const payoff = page.getByTestId('payoff-curve-chart');
-    await expect(payoff.locator('svg')).toBeVisible();
+    await expect(payoff.getByTestId('chart-svg')).toBeVisible();
   });
 
   test('v1.9-C07 – Charts not visible before run', async ({ page }) => {

@@ -15,7 +15,9 @@ import type {
   DailyReport,
 } from './types';
 
-const API_BASE = '/api/v1/autopilot';
+import { API_BASE as BASE_URL } from '../../config/api';
+
+const API_BASE = `${BASE_URL}/api/v1/autopilot`;
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -24,6 +26,7 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
+    signal: options?.signal ?? AbortSignal.timeout(5000),
   });
 
   if (!response.ok) {

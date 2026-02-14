@@ -14,6 +14,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from .schemas import ValidationResult
+from ..backtest_engine.models import ProvenanceInfo
 
 
 # ── Tool trace ──────────────────────────────────────────────────────────────
@@ -181,3 +182,6 @@ class RiskRunResult(BaseModel):
 
     # Trace
     tool_trace: list[ToolTraceEntry] = Field(default_factory=list)
+
+    # v1.13: Provenance
+    provenance: Optional[ProvenanceInfo] = None

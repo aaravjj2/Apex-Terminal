@@ -43,7 +43,7 @@ test.describe('Backtest Panel Debug', () => {
 
     if (selectVisible) {
       // Get options count
-      const options = await strategySelect.locator('option').count();
+      const options = await strategySelect.locator('[data-testid^="strategy-option"]').count();
       console.log('Strategy options count:', options);
     }
 

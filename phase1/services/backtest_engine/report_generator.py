@@ -109,6 +109,32 @@ def generate_html_report(run: BacktestRun) -> str:
             <p><em>This run is fully reproducible with the above parameters.</em></p>
         </div>
 
+        <h2>Data Provenance</h2>
+        <div class="metadata">
+"""
+    
+    # Add provenance information (v1.18)
+    if run.provenance:
+        html += f"""            <p><strong>Data Source:</strong> <code>{run.provenance.source}</code></p>
+"""
+        if run.provenance.provider:
+            html += f"""            <p><strong>Provider:</strong> {run.provenance.provider}</p>
+"""
+        if run.provenance.cache_key:
+            html += f"""            <p><strong>Cache Key:</strong> <code>{run.provenance.cache_key}</code></p>
+"""
+        if run.provenance.checksum:
+            html += f"""            <p><strong>Checksum:</strong> <code>{run.provenance.checksum}</code></p>
+"""
+        if run.provenance.fetched_at:
+            html += f"""            <p><strong>Fetched At:</strong> {run.provenance.fetched_at}</p>
+"""
+    else:
+        html += """            <p><em>No provenance data available</em></p>
+"""
+    
+    html += """        </div>
+
         <h2>Performance Metrics</h2>
         <div class="metrics-grid">
 """

@@ -23,7 +23,7 @@ test.describe('Industrial UI/UX - New Components Only E2E Suite', () => {
   });
 
   test('01 - E2E mode CSS is applied (body.e2e-mode class)', async ({ page }) => {
-    const body = page.locator('body');
+    const body = page.getByTestId('app-shell');
     await expect(body).toHaveClass(/e2e-mode/);
     
     await page.screenshot({ path: 'e2e-results/new-comp-01-e2e-mode.png', fullPage: true });
@@ -131,10 +131,9 @@ test.describe('Industrial UI/UX - New Components Only E2E Suite', () => {
     await page.getByTestId('nav-item-dashboard').click();
     await page.waitForTimeout(1000);
     
-    // Verify dashboard loads (any h1 present)
-    const headings = page.locator('h1');
-    const count = await headings.count();
-    expect(count).toBeGreaterThan(0);
+    // Verify dashboard loads (any heading present)
+    const headings = page.getByTestId('dashboard-heading');
+    await expect(headings).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/new-comp-07-dashboard-regression.png', fullPage: true });
   });
@@ -154,16 +153,14 @@ test.describe('Industrial UI/UX - New Components Only E2E Suite', () => {
     // Dashboard
     await page.getByTestId('nav-item-dashboard').click();
     await page.waitForTimeout(500);
-    let headings = page.locator('h1');
-    let count = await headings.count();
-    expect(count).toBeGreaterThan(0);
+    let dashHeading = page.getByTestId('dashboard-heading');
+    await expect(dashHeading).toBeVisible();
     
     // Options
     await page.getByTestId('nav-item-options').click();
     await page.waitForTimeout(500);
-    headings = page.locator('h1');
-    count = await headings.count();
-    expect(count).toBeGreaterThan(0);
+    const optionsHeading = page.getByTestId('options-heading');
+    await expect(optionsHeading).toBeVisible();
     
     // Risk Desk tab (if accessible within Options)
     const riskDeskTab = page.getByTestId('options-main-tab-risk-desk');

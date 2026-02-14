@@ -2,6 +2,8 @@
  * Backtest TypeScript types
  */
 
+import type { ProvenanceInfo } from '../../components/ProvenanceDisplay';
+
 export type BacktestStatus = 'pending' | 'running' | 'completed' | 'failed';
 export type BacktestTab = 'configure' | 'runs' | 'analyze' | 'compare' | 'export';
 
@@ -14,6 +16,7 @@ export interface BacktestConfig {
   slippage_bps: number;
   fee_per_trade: number;
   seed: number;
+  strategy_artifact_id?: string | null;  // v1.31
 }
 
 export interface BacktestMetrics {
@@ -55,6 +58,7 @@ export interface BacktestRun {
   equity_curve: EquityPoint[];
   metrics?: BacktestMetrics;
   config_hash: string;
+  provenance?: ProvenanceInfo | null;
   started_at?: string;
   completed_at?: string;
   error?: string;

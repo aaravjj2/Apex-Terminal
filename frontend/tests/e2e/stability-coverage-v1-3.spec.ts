@@ -210,11 +210,12 @@ test.describe('Strategy Lab Workflows (5 tests)', () => {
     const jsonInput = page.getByTestId('strategy-json-input');
     await jsonInput.fill('{ invalid json }');
 
-    // Click validate
-    await page.getByTestId('validate-json-btn').click();
+    // Click validate (on Validate tab, button is strategy-validation-run)
+    await page.getByTestId('strategy-validation-run').click();
 
     // Verify error message appears
-    await expect(page.locator('text=/error|invalid/i').first()).toBeVisible();
+    await expect(page.getByTestId('validate-result')).toBeVisible();
+    await expect(page.getByTestId('validate-result')).toContainText(/invalid|error/i);
   });
 
   test('12 - Strategy Lab: Validate Accepts Valid JSON', async ({ page }) => {
@@ -232,7 +233,7 @@ test.describe('Strategy Lab Workflows (5 tests)', () => {
     const jsonInput = page.getByTestId('strategy-json-input');
     await jsonInput.fill(validStrategy);
 
-    await page.getByTestId('validate-json-btn').click();
+    await page.getByTestId('strategy-validation-run').click();
 
     // Verify success result
     const validateResult = page.getByTestId('validate-result');
@@ -281,7 +282,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await expect(row0).toBeVisible();
 
     // Status should show completed
-    await expect(row0.locator('span:has-text("completed")')).toBeVisible();
+    await expect(row0.getByTestId('run-status-badge')).toBeVisible();
 
     await page.screenshot({ path: 'e2e-results/backtest_run_done.png', fullPage: true });
   });
@@ -293,7 +294,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await expect(page.getByTestId('backtest-runs-row-0')).toBeVisible();
 
     // Click Analyze on row 0
-    await page.getByTestId('backtest-runs-row-0').locator('button:has-text("Analyze")').click();
+    await page.getByTestId('backtest-runs-row-0').locator('[data-testid^="analyze-run-"]').click();
 
     await expect(page.getByTestId('backtest-tab-analyze')).toHaveClass(/bg-brand/);
 
@@ -305,7 +306,7 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await backtestCreateRun(page);
 
     // Open Analyze via row action
-    await page.getByTestId('backtest-runs-row-0').locator('button:has-text("Analyze")').click();
+    await page.getByTestId('backtest-runs-row-0').locator('[data-testid^="analyze-run-"]').click();
 
     await expect(page.getByTestId('backtest-analyze-chart-equity')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('backtest-analyze-chart-drawdown')).toBeVisible();
@@ -321,14 +322,14 @@ test.describe('Backtest Comprehensive Workflows (11 tests)', () => {
     await backtestCreateRun(page, { endDate: '2023-06-30' });
 
     // Open Analyze
-    await page.getByTestId('backtest-runs-row-0').locator('button:has-text("Analyze")').click();
+    await page.getByTestId('backtest-runs-row-0').locator('[data-testid^="analyze-run-"]').click();
 
     // Wait for equity chart
     const equityChart = page.getByTestId('backtest-analyze-chart-equity');
     await expect(equityChart).toBeVisible({ timeout: 15000 });
 
     // Recharts renders SVG inside the container
-    await expect(equityChart.locator('svg')).toBeVisible({ timeout: 5000 });
+    await expect(equityChart.getByTestId('chart-svg')).toBeVisible({ timeout: 5000 });
 
     // Verify metrics displayed
     const metricsSection = page.getByTestId('analyze-metrics');

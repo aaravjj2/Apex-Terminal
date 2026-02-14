@@ -28,7 +28,7 @@ export function ReplayControlBar() {
     };
 
     return (
-        <div className="h-12 bg-panel-bg border-t border-border flex items-center px-4 justify-between shrink-0">
+        <div data-testid="replay-control-bar" className="h-12 bg-panel-bg border-t border-border flex items-center px-4 justify-between shrink-0">
             {/* Left: Playback Controls */}
             <div className="flex items-center gap-2">
                 <IconButton
@@ -37,6 +37,7 @@ export function ReplayControlBar() {
                     isActive={isReplayPlaying}
                     tooltip="Play (Space)"
                     className={cn(isReplayPlaying && "hidden")}
+                    data-testid="replay-play-btn"
                 />
                 <IconButton
                     icon={<Pause className={cn("fill-current", !isReplayPlaying && "hidden")} size={20} />}
@@ -44,6 +45,7 @@ export function ReplayControlBar() {
                     isActive={!isReplayPlaying}
                     tooltip="Pause (Space)"
                     className={cn(!isReplayPlaying && "hidden")}
+                    data-testid="replay-pause-btn"
                 />
 
                 <div className="h-4 w-px bg-border mx-1" />
@@ -52,7 +54,7 @@ export function ReplayControlBar() {
 
                 {/* Speed Dropdown */}
                 <div className="relative group">
-                    <button className="flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text px-2 py-1 rounded hover:bg-element-bg transition-colors">
+                    <button data-testid="replay-speed-btn" className="flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text px-2 py-1 rounded hover:bg-element-bg transition-colors">
                         <span>{replaySpeed}x</span>
                         <ChevronDown size={12} />
                     </button>
@@ -77,12 +79,12 @@ export function ReplayControlBar() {
             {/* Center: Scrubber / Timeline */}
             <div className="flex-1 flex items-center justify-center gap-4 px-8">
                 <div className="flex flex-col items-center">
-                    <div className="text-xs font-mono text-text">{formatDate(replayTime)}</div>
-                    <div className="text-xxs text-text-secondary">{formatTime(replayTime)}</div>
+                    <div data-testid="replay-date" className="text-xs font-mono text-text">{formatDate(replayTime)}</div>
+                    <div data-testid="replay-time" className="text-xxs text-text-secondary">{formatTime(replayTime)}</div>
                 </div>
 
                 {/* Fake progress bar for now */}
-                <div className="flex-1 h-1.5 bg-element-bg rounded-full overflow-hidden relative group cursor-pointer">
+                <div data-testid="replay-scrubber" className="flex-1 h-1.5 bg-element-bg rounded-full overflow-hidden relative group cursor-pointer">
                     <div className="absolute inset-y-0 left-0 bg-replay w-1/3" />
                     <div className="absolute inset-y-0 left-1/3 w-2 h-2 -ml-1 top-1/2 -translate-y-1/2 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" />
                 </div>

@@ -34,7 +34,7 @@ export const UniverseEditor: React.FC<UniverseEditorProps> = ({ onClose }) => {
                     }
                 }
             } catch (err) {
-                console.error('Failed to load universe:', err);
+                console.warn('Failed to load universe:', err);
             }
         };
         loadUniverse();

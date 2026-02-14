@@ -11,22 +11,22 @@ const API_BASE = 'http://localhost:8000/api/v1';
 test.describe('Automation View', () => {
     test.beforeEach(async ({ page, request }) => {
         // Reset automation state before each test (ignore errors if endpoint doesn't exist)
-        await request.post(`${API_BASE}/automation/reset`).catch(() => {});
-        await request.post(`${API_BASE}/automation/disarm`).catch(() => {});
+        await request.post(`${API_BASE}/automation/reset`, { timeout: 3000 }).catch(() => {});
+        await request.post(`${API_BASE}/automation/disarm`, { timeout: 3000 }).catch(() => {});
 
         await page.goto('/');
         // Navigate to Autopilot view via left nav item (Automation is deprecated)
         await page.getByTestId('nav-item-autopilot').click();
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(500); // Wait for component to fetch status
+        await page.waitForLoadState('domcontentloaded');
+        await expect(page.getByTestId('autopilot-heading')).toBeVisible({ timeout: 15000 });
     });
 
     test('Automation view loads with correct initial state', async ({ page }) => {
         // Check header is visible (Autopilot header)
-        await expect(page.locator('h1:has-text("AI Options Autopilot")')).toBeVisible();
+        await expect(page.getByTestId('autopilot-heading')).toBeVisible();
 
         // Check status badge is visible (IDLE is the default state)
-        await expect(page.locator('text=IDLE').first()).toBeVisible();
+        await expect(page.getByTestId('autopilot-status-badge')).toBeVisible();
 
         // Take screenshot
         await page.screenshot({ path: 'screenshots/automation-initial.png' });
@@ -61,7 +61,7 @@ test.describe('Automation View', () => {
 
         // Kill switch should now be active or show deactivate option
         // The button text changes when kill switch is active
-        await expect(page.locator('button:has-text("Kill Switch"), button:has-text("Deactivate")')).toBeVisible();
+        await expect(page.getByTestId('kill-switch-btn')).toBeVisible();
 
         // Take screenshot
         await page.screenshot({ path: 'screenshots/automation-kill-switch.png' });

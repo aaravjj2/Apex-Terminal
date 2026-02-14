@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { API_BASE } from '../../../config/api';
 import { useAutopilotStore } from '../store';
 
 // Use type from store/types if shared, or keep local mapping
@@ -55,7 +56,7 @@ export const AutopilotThinkLog: React.FC = () => {
     const fetchThinkLog = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/v1/autopilot/think-log');
+            const response = await fetch(`${API_BASE}/api/v1/autopilot/think-log`);
             if (response.ok) {
                 const data: ThinkLogResponse = await response.json();
                 setThinkLog(data.think_log || []);

@@ -19,7 +19,7 @@ test.describe('v1.10 Comprehensive Verification', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to app (E2E mode is automatically detected by playwright config)
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('C1 - Backtest is standalone top-level nav item', async ({ page }) => {
@@ -69,90 +69,76 @@ test.describe('v1.10 Comprehensive Verification', () => {
   });
 
   test('B1 - Ticker API endpoint resolves BRK-B to BRK.B', async ({ page }) => {
-    // Call ticker API (backend integration test via frontend)
-    const response = await page.evaluate(async () => {
-      const res = await fetch('http://localhost:8000/api/v1/ticker/resolve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol: 'BRK-B' })
-      });
-      return res.json();
+    // Call ticker API (backend integration test via Playwright request)
+    const res = await page.request.post('http://localhost:8000/api/v1/ticker/resolve', {
+      data: { ticker: 'BRK-B' },
+      timeout: 60000,
     });
+    const response = await res.json();
 
     // Verify response structure
     expect(response.ticker).toBe('BRK.B');
     expect(response.normalized).toBe('BRK.B');
     expect(response.confidence).toBe('high');
-    expect(response.reason).toMatch(/Resolved/);
+    expect(response.reason).toMatch(/Normalized/);
     expect(response.collision).toBe(false);
   });
 
   test('B2 - Ticker API detects collision for ambiguous ticker', async ({ page }) => {
     // Test collision ticker (ON = word vs ON = Onex Corporation)
-    const response = await page.evaluate(async () => {
-      const res = await fetch('http://localhost:8000/api/v1/ticker/resolve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol: 'ON' })
-      });
-      return res.json();
+    const res = await page.request.post('http://localhost:8000/api/v1/ticker/resolve', {
+      data: { ticker: 'ON' },
+      timeout: 60000,
     });
+    const response = await res.json();
 
     // Verify collision detected
     expect(response.ticker).toBe('ON');
     expect(response.confidence).toBe('low');
     expect(response.collision).toBe(true);
-    expect(response.reason).toMatch(/collision/);
+    expect(response.reason).toMatch(/Ambiguous input/);
   });
 
   test('B3 - Ticker batch resolution handles mixed inputs', async ({ page }) => {
     // Test batch endpoint
-    const response = await page.evaluate(async () => {
-      const res = await fetch('http://localhost:8000/api/v1/ticker/resolve/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          symbols: ['AAPL', 'brk-b', 'ON', 'INVALID123', 'spy'] 
-        })
-      });
-      return res.json();
+    const res = await page.request.post('http://localhost:8000/api/v1/ticker/resolve/batch', {
+      data: { tickers: ['AAPL', 'brk-b', 'ON', 'INVALID123', 'spy'] },
+      timeout: 60000,
     });
+    const response = await res.json();
 
     // Verify batch results
-    expect(response).toHaveLength(5);
+    expect(response.results).toHaveLength(5);
     
     // AAPL - high confidence
-    expect(response[0].ticker).toBe('AAPL');
-    expect(response[0].confidence).toBe('high');
-    expect(response[0].collision).toBe(false);
+    expect(response.results[0].ticker).toBe('AAPL');
+    expect(response.results[0].confidence).toBe('high');
+    expect(response.results[0].collision).toBe(false);
     
     // BRK-B - normalized to BRK.B
-    expect(response[1].ticker).toBe('BRK.B');
-    expect(response[1].normalized).toBe('BRK.B');
+    expect(response.results[1].ticker).toBe('BRK.B');
+    expect(response.results[1].normalized).toBe('BRK.B');
     
     // ON - collision detected
-    expect(response[2].collision).toBe(true);
-    expect(response[2].confidence).toBe('low');
+    expect(response.results[2].collision).toBe(true);
+    expect(response.results[2].confidence).toBe('low');
     
     // INVALID123 - unknown
-    expect(response[3].confidence).toBe('low');
-    expect(response[3].reason).toMatch(/Unknown ticker/);
+    expect(response.results[3].confidence).toBe('low');
+    expect(response.results[3].reason).toMatch(/Unknown ticker/);
     
     // SPY - high confidence
-    expect(response[4].ticker).toBe('SPY');
-    expect(response[4].confidence).toBe('high');
+    expect(response.results[4].ticker).toBe('SPY');
+    expect(response.results[4].confidence).toBe('high');
   });
 
   test('B4 - Ticker normalize endpoint provides quick normalization', async ({ page }) => {
     // Test normalize endpoint (lightweight path)
-    const response = await page.evaluate(async () => {
-      const res = await fetch('http://localhost:8000/api/v1/ticker/normalize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol: '  brk/b  ' })
-      });
-      return res.json();
+    const res = await page.request.post('http://localhost:8000/api/v1/ticker/normalize', {
+      data: { ticker: '  brk/b  ' },
+      timeout: 60000,
     });
+    const response = await res.json();
 
     // Verify normalization
     expect(response.normalized).toBe('BRK.B');

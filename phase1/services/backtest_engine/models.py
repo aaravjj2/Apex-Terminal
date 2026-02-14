@@ -32,9 +32,11 @@ class BacktestConfig(BaseModel):
     slippage_bps: float = Field(default=5.0, ge=0, description="Slippage in basis points")
     fee_per_trade: float = Field(default=1.0, ge=0, description="Fee per trade")
     seed: int = Field(default=42, description="Random seed for determinism")
+    # v1.31: bind to a strategy artifact by content-hash ID
+    strategy_artifact_id: Optional[str] = Field(default=None, description="Strategy artifact content-hash ID (v1.31)")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "strategy_id": "demo-sma-crossover",
                 "symbol": "SPY",
@@ -46,6 +48,7 @@ class BacktestConfig(BaseModel):
                 "seed": 42
             }
         }
+    }
 
 
 class TradeFill(BaseModel):
@@ -59,8 +62,8 @@ class TradeFill(BaseModel):
     fees: float
     pnl: Optional[float] = None  # Only for exit trades
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "trade_id": "trade-001",
                 "timestamp": "2023-03-15T14:30:00Z",
@@ -71,6 +74,7 @@ class TradeFill(BaseModel):
                 "fees": 1.0
             }
         }
+    }
 
 
 class BacktestMetrics(BaseModel):
@@ -88,8 +92,8 @@ class BacktestMetrics(BaseModel):
     profit_factor: float
     final_equity: float
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "total_return_pct": 15.3,
                 "cagr_pct": 15.1,
@@ -105,12 +109,22 @@ class BacktestMetrics(BaseModel):
                 "final_equity": 115300.0
             }
         }
+    }
 
 
 class EquityPoint(BaseModel):
     """Single point in equity curve"""
     timestamp: datetime
     equity: float
+
+
+class ProvenanceInfo(BaseModel):
+    """Market data provenance information"""
+    source: str = Field(..., description="Data source: DEMO, LOCAL_CACHE, LOCAL_REPLAY, LOCAL_FETCH")
+    cache_key: Optional[str] = None
+    checksum: Optional[str] = None
+    fetched_at: Optional[str] = None
+    provider: Optional[str] = None
 
 
 class BacktestRun(BaseModel):
@@ -127,13 +141,16 @@ class BacktestRun(BaseModel):
     # Determinism
     config_hash: str = Field(..., description="Hash of config for reproducibility")
     
+    # Data Provenance (v1.13)
+    provenance: Optional[ProvenanceInfo] = None
+    
     # Metadata
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     error: Optional[str] = None
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "run_id": "run-abc123",
                 "status": "completed",
@@ -142,6 +159,7 @@ class BacktestRun(BaseModel):
                 "completed_at": "2024-01-01T10:00:05Z"
             }
         }
+    }
 
 
 class CompareResult(BaseModel):

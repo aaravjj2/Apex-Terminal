@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Page Navigation and Rendering', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
     });
 
     test('Monitor page renders chart', async ({ page }) => {
@@ -23,8 +23,7 @@ test.describe('Page Navigation and Rendering', () => {
         await page.waitForTimeout(300);
 
         // Replay badge should be visible
-        const replayBadge = page.locator('text=/REPLAY/i').first();
-        await expect(replayBadge).toBeVisible({ timeout: 3000 });
+        await expect(page.getByTestId('mode-badge')).toBeVisible({ timeout: 3000 });
 
         await expect(page).toHaveScreenshot('page-replay.png', { animations: 'disabled' });
     });
@@ -34,8 +33,7 @@ test.describe('Page Navigation and Rendering', () => {
         await page.waitForTimeout(300);
 
         // Strategies heading or list should be visible
-        const strategiesContent = page.locator('text=/Strategies|Strategy/i').first();
-        await expect(strategiesContent).toBeVisible({ timeout: 3000 });
+        await expect(page.getByTestId('strategies-view')).toBeVisible({ timeout: 3000 });
 
         await expect(page).toHaveScreenshot('page-strategies.png', { animations: 'disabled' });
     });
@@ -44,8 +42,7 @@ test.describe('Page Navigation and Rendering', () => {
         await page.getByTestId('nav-item-alerts').click();
         await page.waitForTimeout(300);
 
-        const alertsContent = page.locator('text=/Alerts|Alert/i').first();
-        await expect(alertsContent).toBeVisible({ timeout: 3000 });
+        await expect(page.getByTestId('alerts-view')).toBeVisible({ timeout: 3000 });
 
         await expect(page).toHaveScreenshot('page-alerts.png', { animations: 'disabled', maxDiffPixelRatio: 0.1 });
     });
@@ -55,8 +52,7 @@ test.describe('Page Navigation and Rendering', () => {
         await page.waitForTimeout(300);
 
         // Portfolio should show value or positions
-        const portfolioContent = page.locator('text=/Portfolio|Positions|Value/i').first();
-        await expect(portfolioContent).toBeVisible({ timeout: 3000 });
+        await expect(page.getByTestId('portfolio-view')).toBeVisible({ timeout: 3000 });
 
         await expect(page).toHaveScreenshot('page-portfolio.png', { animations: 'disabled' });
     });
@@ -66,8 +62,7 @@ test.describe('Page Navigation and Rendering', () => {
         await page.getByTestId('nav-item-runs').click();
         await page.waitForTimeout(300);
 
-        const runsContent = page.locator('text=/Run|Audit|Log|History/i').first();
-        await expect(runsContent).toBeVisible({ timeout: 3000 });
+        await expect(page.getByTestId('runs-audit-view')).toBeVisible({ timeout: 3000 });
 
         await expect(page).toHaveScreenshot('page-runs.png', { animations: 'disabled' });
     });
@@ -76,8 +71,7 @@ test.describe('Page Navigation and Rendering', () => {
         await page.getByTestId('nav-item-settings').click();
         await page.waitForTimeout(300);
 
-        const settingsContent = page.locator('text=/Settings|API|Keys/i').first();
-        await expect(settingsContent).toBeVisible({ timeout: 3000 });
+        await expect(page.getByTestId('settings-view')).toBeVisible({ timeout: 3000 });
 
         await expect(page).toHaveScreenshot('page-settings.png', { animations: 'disabled' });
     });

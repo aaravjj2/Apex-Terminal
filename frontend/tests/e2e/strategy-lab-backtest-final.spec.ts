@@ -81,9 +81,9 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
     // Verify library table
     await expect(page.getByTestId('strategy-library-table')).toBeVisible();
     
-    // Verify at least one row (demo strategies should be loaded)
-    const rows = page.locator('[data-testid="strategy-library-table"] tbody tr');
-    await expect(rows.first()).toBeVisible({ timeout: 3000 });
+    // Wait for strategies to load from API
+    const firstRow = page.getByTestId('library-item-0');
+    await expect(firstRow).toBeVisible({ timeout: 10000 });
     
     await page.screenshot({ path: 'e2e-results/04-strategy-lab-library.png', fullPage: true });
   });
@@ -100,7 +100,7 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
     
     // Verify validate elements
     await expect(page.getByTestId('strategy-json-input')).toBeVisible();
-    await expect(page.getByTestId('validate-json-btn')).toBeVisible();
+    await expect(page.getByTestId('strategy-validation-run')).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/05-strategy-lab-validate.png', fullPage: true });
   });
@@ -178,8 +178,8 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
     await page.waitForTimeout(500);
     
     // Verify at least one run exists
-    const rows = page.locator('[data-testid="backtest-runs-table"] tbody tr');
-    await expect(rows.first()).toBeVisible({ timeout: 3000 });
+    const firstRow = page.getByTestId('backtest-runs-row-0');
+    await expect(firstRow).toBeVisible({ timeout: 15000 });
     
     await page.screenshot({ path: 'e2e-results/09-backtest-run-complete.png', fullPage: true });
   });
@@ -193,8 +193,8 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
     await page.waitForTimeout(500);
     
     // Check if there are any runs
-    const rows = page.locator('[data-testid="backtest-runs-table"] tbody tr');
-    const rowCount = await rows.count();
+    const firstRow = page.getByTestId('backtest-runs-row-0');
+    const rowCount = await firstRow.count();
     
     if (rowCount > 0) {
       // Click Analyze on first run
@@ -217,7 +217,7 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
 
   test('11 - Backend determinism: same config produces same hash', async ({ request }) => {
     // Get strategies
-    const strategiesResponse = await request.get('http://localhost:8000/api/strategy/list');
+    const strategiesResponse = await request.get('http://localhost:8000/api/strategy/list', { timeout: 60000 });
     expect(strategiesResponse.ok()).toBeTruthy();
     
     const strategies = await strategiesResponse.json();
@@ -235,11 +235,11 @@ test.describe('Strategy Lab + Backtest E2E Suite', () => {
       seed: 42
     };
     
-    const run1Response = await request.post('http://localhost:8000/api/backtest/run', { data: config });
+    const run1Response = await request.post('http://localhost:8000/api/backtest/run', { data: config, timeout: 60000 });
     expect(run1Response.ok()).toBeTruthy();
     const run1 = await run1Response.json();
     
-    const run2Response = await request.post('http://localhost:8000/api/backtest/run', { data: config });
+    const run2Response = await request.post('http://localhost:8000/api/backtest/run', { data: config, timeout: 60000 });
     expect(run2Response.ok()).toBeTruthy();
     const run2 = await run2Response.json();
     

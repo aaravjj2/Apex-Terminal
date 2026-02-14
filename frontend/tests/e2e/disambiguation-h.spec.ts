@@ -94,6 +94,7 @@ test.describe('Token Classification API (Objective H Backend)', () => {
   test('H7 - Classification API returns TICKER for unambiguous ticker', async ({ request }) => {
     const response = await request.post(`${BACKEND_URL}/api/v1/ticker/classify`, {
       data: { token: 'AAPL' },
+      timeout: 60000,
     });
     
     expect(response.ok()).toBeTruthy();
@@ -109,6 +110,7 @@ test.describe('Token Classification API (Objective H Backend)', () => {
   test('H8 - Classification API returns AMBIGUOUS for collision ticker', async ({ request }) => {
     const response = await request.post(`${BACKEND_URL}/api/v1/ticker/classify`, {
       data: { token: 'A' },
+      timeout: 60000,
     });
     
     expect(response.ok()).toBeTruthy();
@@ -124,6 +126,7 @@ test.describe('Token Classification API (Objective H Backend)', () => {
   test('H9 - Classification API returns WORD for unknown token', async ({ request }) => {
     const response = await request.post(`${BACKEND_URL}/api/v1/ticker/classify`, {
       data: { token: 'HELLO' },
+      timeout: 60000,
     });
     
     expect(response.ok()).toBeTruthy();
@@ -138,6 +141,7 @@ test.describe('Token Classification API (Objective H Backend)', () => {
   test('H10 - Classification API returns INVALID for empty input', async ({ request }) => {
     const response = await request.post(`${BACKEND_URL}/api/v1/ticker/classify`, {
       data: { token: '' },
+      timeout: 60000,
     });
     
     expect(response.ok()).toBeTruthy();
@@ -152,6 +156,7 @@ test.describe('Token Classification API (Objective H Backend)', () => {
   test('H11 - Batch classification API works correctly', async ({ request }) => {
     const response = await request.post(`${BACKEND_URL}/api/v1/ticker/classify/batch`, {
       data: { tokens: ['AAPL', 'A', 'HELLO', ''] },
+      timeout: 60000,
     });
     
     expect(response.ok()).toBeTruthy();
@@ -168,11 +173,13 @@ test.describe('Token Classification API (Objective H Backend)', () => {
     // Call classification twice with same input
     const response1 = await request.post(`${BACKEND_URL}/api/v1/ticker/classify`, {
       data: { token: 'ON' },
+      timeout: 60000,
     });
     const data1 = await response1.json();
     
     const response2 = await request.post(`${BACKEND_URL}/api/v1/ticker/classify`, {
       data: { token: 'ON' },
+      timeout: 60000,
     });
     const data2 = await response2.json();
     

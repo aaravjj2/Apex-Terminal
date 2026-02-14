@@ -7,7 +7,7 @@ test.describe('Full System Walkthrough', () => {
         await page.waitForLoadState('domcontentloaded');
         
         // Verify shell is loaded
-        await expect(page.locator('[data-testid="app-shell"]')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByTestId('app-shell')).toBeVisible({ timeout: 10000 });
 
         // 2. Navigate to Monitor (Chart view)
         const monitorNav = page.locator('[data-testid="nav-item-monitor"]');
@@ -25,12 +25,12 @@ test.describe('Full System Walkthrough', () => {
 
         // 4. Navigate to Autopilot
         const autopilotNav = page.locator('[data-testid="nav-item-autopilot"]');
-        if (await autopilotNav.isVisible().catch(() => false)) {
+        if (await autopilotNav.isVisible({ timeout: 2000 }).catch(() => false)) {
             await autopilotNav.click();
-            await page.waitForTimeout(1000);
+            await page.waitForTimeout(500);
             
             // Verify autopilot view
-            await expect(page.locator('[data-testid="autopilot-view"]')).toBeVisible({ timeout: 10000 });
+            await expect(page.locator('[data-testid="autopilot-view"]')).toBeVisible();
         }
 
         // 5. Navigate to Portfolio

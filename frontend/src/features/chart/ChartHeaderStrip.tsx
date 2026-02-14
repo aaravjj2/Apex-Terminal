@@ -22,7 +22,7 @@ export function ChartHeaderStrip() {
                 className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-element-bg transition-colors"
                 onClick={() => setIsSymbolSearchOpen(true)}
             >
-                <span className="text-sm font-semibold text-text">{symbol}</span>
+                <span className="text-sm font-semibold text-text" data-testid="chart-symbol-display">{symbol}</span>
                 <span className="text-xxs text-text-secondary">NASDAQ</span>
                 <ChevronDown size={12} className="text-text-secondary" />
             </button>
@@ -56,7 +56,7 @@ export function ChartHeaderStrip() {
                 <TrendingUp size={14} />
                 <span className="text-xs">Indicators</span>
                 {activeIndicators.length > 0 && (
-                    <Badge size="sm">{activeIndicators.length}</Badge>
+                    <Badge size="sm" data-testid="indicator-count-badge">{activeIndicators.length}</Badge>
                 )}
             </button>
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import {
     Bell, Plus, Search, MoreVertical, Trash2,
-    Clock
+    Clock, BellRing
 } from 'lucide-react';
 import { Button } from '../../../ui/Button';
 import { Badge } from '../../../ui/Badge';
@@ -10,6 +10,8 @@ import { IconButton } from '../../../ui/IconButton';
 import { EmptyState } from '../../../ui/EmptyState';
 import { Drawer } from '../../../ui/Drawer';
 import { Input } from '../../../ui/Input';
+import { PageHeader } from '../../../ui/PageHeader';
+import { cn } from '../../../ui/utils';
 import { ApiClient } from '../../../data/ApiClient';
 import { useToast } from '../../../ui/Toast';
 
@@ -34,7 +36,11 @@ function AlertList({
         <div className="h-full flex flex-col bg-panel-bg border-r border-border">
             {/* Header */}
             <div className="p-3 border-b border-border flex items-center justify-between shrink-0">
-                <h2 className="text-sm font-semibold text-text">Alerts</h2>
+                <div className="flex items-center gap-2">
+                    <BellRing size={14} className="text-brand" />
+                    <h2 className="text-sm font-semibold text-text">Alerts</h2>
+                    <Badge size="sm" variant="outline">{alerts.length}</Badge>
+                </div>
                 <Button size="sm" variant="primary" className="gap-1" onClick={onNew}>
                     <Plus size={14} /> Create
                 </Button>
@@ -59,8 +65,13 @@ function AlertList({
                         <button
                             key={alert.id}
                             onClick={() => onSelect(alert.id)}
-                            className={`w-full text-left p-3 border-b border-border/50 transition-colors ${selectedId === alert.id ? 'bg-brand/10' : 'hover:bg-element-bg'
-                                }`}
+                            data-testid={`alert-item-${alert.id}`}
+                            className={cn(
+                                'w-full text-left p-3 border-b border-border/50 transition-all',
+                                selectedId === alert.id
+                                    ? 'bg-brand/10 border-l-2 border-l-brand'
+                                    : 'hover:bg-element-bg border-l-2 border-l-transparent'
+                            )}
                         >
                             <div className="flex items-center gap-2 mb-1">
                                 <span className={`w-2 h-2 rounded-full ${statusColors[alert.status] || 'bg-text-muted'}`} />
@@ -300,7 +311,22 @@ export function AlertsView() {
     const selectedAlert = alerts.find(a => a.id === selectedId) || null;
 
     return (
-        <div className="h-full bg-background flex flex-col">
+        <div className="h-full bg-background flex flex-col" data-testid="alerts-view">
+            {/* Page Header visible when no alert selected */}
+            {!selectedId && (
+                <PageHeader
+                    title="Alerts"
+                    subtitle="Configure price & volume alerts with delivery options"
+                    icon={<Bell size={20} />}
+                    badge={<Badge variant="brand">{alerts.filter(a => a.status === 'ACTIVE').length} active</Badge>}
+                    actions={
+                        <Button size="sm" variant="primary" onClick={() => setIsBuilderOpen(true)}>
+                            <Plus size={14} /> New Alert
+                        </Button>
+                    }
+                    data-testid="alerts-header"
+                />
+            )}
             {!selectedId ? (
                 <div className="flex-1 flex flex-col overflow-hidden">
                     <AlertList

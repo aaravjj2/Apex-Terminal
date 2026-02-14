@@ -75,7 +75,7 @@ export function TopBar() {
     };
 
     return (
-        <header className="h-14 bg-panel-bg border-b border-border flex items-center px-4 justify-between shrink-0 z-header">
+        <header className="h-14 bg-panel-bg border-b border-border flex items-center px-4 justify-between shrink-0 z-header" data-testid="topbar">
             {/* Left: Logo + Mode + Symbol */}
             <div className="flex items-center gap-4">
                 {/* Logo */}
@@ -94,8 +94,8 @@ export function TopBar() {
 
                 {/* Symbol + Timeframe */}
                 <button className="flex items-center gap-2 hover:bg-element-bg px-2 py-1.5 rounded transition-colors group">
-                    <span className="font-semibold text-text group-hover:text-white">{symbol}</span>
-                    <span className="text-xs text-text-secondary px-1.5 py-0.5 bg-element-bg rounded">{timeframe}</span>
+                    <span className="font-semibold text-text group-hover:text-white" data-testid="symbol-display">{symbol}</span>
+                    <span className="text-xs text-text-secondary px-1.5 py-0.5 bg-element-bg rounded" data-testid="timeframe-display">{timeframe}</span>
                     <ChevronDown size={14} className="text-text-secondary" />
                 </button>
             </div>

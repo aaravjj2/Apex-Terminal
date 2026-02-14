@@ -21,17 +21,38 @@ import { AutopilotView } from '../views/AutopilotView';
 import { BacktestPanel } from '../../backtest';
 import { OrdersView } from '../views/OrdersView';
 import { RunsAuditView } from '../views/RunsAuditView';
+import { CacheViewerPanel } from '../../cache/CacheViewerPanel';
+import { WatchlistPanel } from '../../watchlist/WatchlistPanel';
+import { CorrelationPanel } from '../../correlation/CorrelationPanel';
+import { JournalPanel } from '../../journal/JournalPanel';
+import { NotificationsPanel } from '../../notifications/NotificationsPanel';
+import { AuditLogPanel } from '../../audit/AuditLogPanel';
+import { AttributionPanel } from '../../attribution/AttributionPanel';
+import { RiskScenariosPanel } from '../../risk-scenarios/RiskScenariosPanel';
+import { DataQualityPanel } from '../../data-quality/DataQualityPanel';
+import { StrategyComparePanel } from '../../strategy-compare/StrategyComparePanel';
+import { PlatformHealthPanel } from '../../platform-health/PlatformHealthPanel';
+import { SearchPanel } from '../../search/SearchPanel';
+import { AgentsPanel } from '../../agents/AgentsPanel';
 import { ToastProvider } from '../../../ui/Toast';
 import { useAppStore } from '../../../state/appStore';
 import { useStore } from '../../../state/store';
 import { useWorkspaceStore } from '../../../state/workspaceStore';
 import { TrustUX } from './TrustUX';
+import { ModeBanner } from '../../shared/ProviderPill';
 
 export function Shell() {
     const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
     const [activeView, setActiveView] = useState<ViewId>('dashboard');
     const { rightDockOpen, bottomDockOpen, setMode } = useAppStore();
     const { setActiveWorkspace } = useWorkspaceStore();
+
+    // Provider/mode info state
+    const [modeInfo, setModeInfo] = useState({ 
+        mode: 'DEMO' as const, 
+        replayAvailable: false, 
+        replayEnabled: false 
+    });
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -105,6 +126,8 @@ export function Shell() {
     // Listen for Risk Desk navigation event from Dashboard quick action
     useEffect(() => {
         const handleNavigateRiskDesk = () => {
+            // Set a flag that OptionsView reads on mount to know it should show risk-desk tab
+            (window as any).__navigateToRiskDesk = true;
             setActiveView('options');
         };
 
@@ -115,11 +138,18 @@ export function Shell() {
             }
         };
 
+        // v1.31: Navigate to backtest with strategy artifact preselected
+        const handleNavigateToBacktest = () => {
+            setActiveView('backtest');
+        };
+
         window.addEventListener('navigate-risk-desk', handleNavigateRiskDesk as EventListener);
         window.addEventListener('navigate-view', handleNavigateView as EventListener);
+        window.addEventListener('navigate-to-backtest', handleNavigateToBacktest as EventListener);
         return () => {
             window.removeEventListener('navigate-risk-desk', handleNavigateRiskDesk as EventListener);
             window.removeEventListener('navigate-view', handleNavigateView as EventListener);
+            window.removeEventListener('navigate-to-backtest', handleNavigateToBacktest as EventListener);
         };
     }, []);
 
@@ -137,6 +167,21 @@ export function Shell() {
         useAppStore.getState().syncBackendHealth();
         // Initialize WebSocket connection for market data
         useStore.getState().connect();
+        
+        // Fetch provider info
+        fetch('/api/v1/market_data/providers')
+            .then(r => r.json())
+            .then(data => {
+                const demo = data.find((p: any) => p.name === 'demo');
+                if (demo) {
+                    setModeInfo({
+                        mode: demo.mode,
+                        replayAvailable: demo.replay_available,
+                        replayEnabled: demo.replay_enabled
+                    });
+                }
+            })
+            .catch(err => console.error('Failed to fetch provider info:', err));
     }, []);
 
     const renderMainView = () => {
@@ -200,6 +245,32 @@ export function Shell() {
                 return <AutomationView />;
             case 'incidents':
                 return <IncidentsView />;
+            case 'cache':
+                return <CacheViewerPanel />;
+            case 'search':
+                return <SearchPanel />;
+            case 'agents':
+                return <AgentsPanel />;
+            case 'watchlist':
+                return <WatchlistPanel />;
+            case 'correlation':
+                return <CorrelationPanel />;
+            case 'journal':
+                return <JournalPanel />;
+            case 'notifications':
+                return <NotificationsPanel />;
+            case 'audit':
+                return <AuditLogPanel />;
+            case 'attribution':
+                return <AttributionPanel />;
+            case 'risk-scenarios':
+                return <RiskScenariosPanel />;
+            case 'data-quality':
+                return <DataQualityPanel />;
+            case 'strategy-compare':
+                return <StrategyComparePanel />;
+            case 'platform-health':
+                return <PlatformHealthPanel />;
             case 'settings':
                 return <SettingsView />;
             default:
@@ -207,15 +278,18 @@ export function Shell() {
         }
     };
 
+    const isE2E = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('e2e') === '1';
+
     return (
         <ToastProvider>
-            <div className="h-screen w-screen flex flex-col bg-background text-text overflow-hidden font-sans selection:bg-brand/30" data-testid="app-shell">
+            <div className={`h-screen w-screen flex flex-col bg-background text-text overflow-hidden font-sans selection:bg-brand/30${isE2E ? ' e2e-mode' : ''}`} data-testid="app-shell">
                 <TopAppBarEnhanced />
+                <ModeBanner {...modeInfo} />
 
                 <div className="flex-1 flex overflow-hidden">
                     <LeftNavEnhanced activeView={activeView} onViewChange={setActiveView} />
 
-                    <main className="flex-1 overflow-hidden">
+                    <main className="flex-1 overflow-hidden" data-testid="main-content">
                         {renderMainView()}
                     </main>
                 </div>

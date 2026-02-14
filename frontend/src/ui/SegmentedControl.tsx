@@ -1,52 +1,66 @@
+import { type ReactNode } from 'react';
 import { cn } from './utils';
 
-export interface SegmentedControlProps {
-    options: { value: string; label: string; icon?: React.ReactNode }[];
-    value: string;
-    onChange: (value: string) => void;
-    size?: 'sm' | 'md';
-    className?: string;
-    'data-testid'?: string;
+export interface SegmentedControlItem {
+  value: string;
+  label: ReactNode;
+  disabled?: boolean;
+  'data-testid'?: string;
 }
 
+export interface SegmentedControlProps {
+  items: SegmentedControlItem[];
+  value: string;
+  onValueChange: (value: string) => void;
+  size?: 'sm' | 'md';
+  className?: string;
+  'data-testid'?: string;
+}
+
+/**
+ * iOS-style segmented control / toggle group.
+ * Use for mutually exclusive filter switches (e.g. "All | Calls | Puts").
+ */
 export function SegmentedControl({
-    options,
-    value,
-    onChange,
-    size = 'md',
-    className,
-    'data-testid': testId,
+  items,
+  value,
+  onValueChange,
+  size = 'md',
+  className,
+  ...props
 }: SegmentedControlProps) {
-    return (
-        <div
+  return (
+    <div
+      data-testid={props['data-testid'] ?? 'segmented-control'}
+      className={cn(
+        'inline-flex items-center rounded bg-background border border-border overflow-hidden',
+        className,
+      )}
+      role="radiogroup"
+    >
+      {items.map((item) => {
+        const isActive = item.value === value;
+        return (
+          <button
+            key={item.value}
+            role="radio"
+            aria-checked={isActive}
+            disabled={item.disabled}
+            onClick={() => onValueChange(item.value)}
+            data-testid={item['data-testid']}
             className={cn(
-                'inline-flex items-center rounded-lg bg-element-bg border border-border p-0.5',
-                className
+              'transition-colors font-medium whitespace-nowrap',
+              size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm',
+              isActive
+                ? 'bg-element-bg text-text border-r border-l border-border first:border-l-0 last:border-r-0'
+                : 'text-text-muted hover:text-text-secondary border-r border-border last:border-r-0',
+              item.disabled && 'opacity-40 cursor-not-allowed',
             )}
-            data-testid={testId}
-            role="tablist"
-        >
-            {options.map((option) => {
-                const isActive = option.value === value;
-                return (
-                    <button
-                        key={option.value}
-                        onClick={() => onChange(option.value)}
-                        role="tab"
-                        aria-selected={isActive}
-                        className={cn(
-                            'inline-flex items-center gap-1.5 rounded-md font-medium transition-all',
-                            size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm',
-                            isActive
-                                ? 'bg-brand text-white shadow-sm'
-                                : 'text-text-secondary hover:text-text'
-                        )}
-                    >
-                        {option.icon}
-                        {option.label}
-                    </button>
-                );
-            })}
-        </div>
-    );
+          >
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }

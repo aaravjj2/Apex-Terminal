@@ -102,7 +102,7 @@ test.describe('ElevenLabs TTS Integration', () => {
 
         // Check local storage persistence implied by state change
         // Volume slider should appear
-        await expect(page.locator('input[type="range"]')).toBeVisible();
+        await expect(page.getByTestId('voice-volume-slider')).toBeVisible();
     });
 
     test('Clicking speak button triggers API and playback', async ({ page }) => {
@@ -122,7 +122,7 @@ test.describe('ElevenLabs TTS Integration', () => {
         await page.getByTestId('autopilot-proposals').waitFor({ timeout: 30000 });
 
         // Find Speak button
-        const speakBtn = page.locator('button[title="Read Rationale"]');
+        const speakBtn = page.getByTestId('speak-rationale-btn');
         await expect(speakBtn).toBeVisible();
 
         // Click it

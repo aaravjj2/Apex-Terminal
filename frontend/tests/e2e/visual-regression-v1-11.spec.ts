@@ -65,7 +65,7 @@ test.describe('Dashboard Visual Regression v1.11', () => {
 
   test('VR11-02: Dashboard navigation bar', async ({ page }) => {
     await gotoPage(page);
-    const navbar = page.locator('nav').first();
+    const navbar = page.getByTestId('left-nav');
     await expect(navbar).toBeVisible();
 
     await expect(navbar).toHaveScreenshot('vr11-02-dashboard-navbar.png', {

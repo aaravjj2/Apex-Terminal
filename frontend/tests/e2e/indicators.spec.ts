@@ -38,9 +38,9 @@ test.describe('Indicator System', () => {
     await page.getByTestId('add-to-chart-btn').click();
 
     // 6. Verify Indicator is Active in Right Panel
-    // Click "Ind" tab in the right dock panel (exact match to avoid hitting "Indicators" button)
+    // Click "Ind" tab in the right dock panel
     await page.waitForTimeout(300);
-    const indTab = page.locator('button').filter({ hasText: /^Ind$/ }).first();
+    const indTab = page.getByTestId('right-dock-tab-ind');
     await indTab.click();
     await expect(page.getByTestId('active-indicator-RSI')).toBeVisible({ timeout: 3000 });
   });
@@ -65,26 +65,18 @@ test.describe('Indicator System', () => {
     await page.waitForTimeout(500);
 
     // Ensure badge shows a number
-    const badgeNum = await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const indBtn = btns.find(b => (b.textContent || '').includes('Indicators'));
-      if (!indBtn) return null;
-      const spans = Array.from(indBtn.querySelectorAll('span'));
-      const num = spans.find(s => (/^\d+$/.test(s.textContent || '')));
-      return num ? num.textContent : null;
-    });
-    expect(badgeNum).toBeTruthy();
+    const badgeText = await page.getByTestId('indicator-count-badge').innerText();
+    expect(badgeText).toMatch(/^\d+$/);
 
     // Click "Ind" tab in right panel to view added indicators
-    // Use a more specific selector that targets the tab and NOT the "Indicators" header button
-    const indTab = page.locator('button').filter({ hasText: /^Ind$/ }).first();
+    const indTab = page.getByTestId('right-dock-tab-ind');
     await indTab.click();
     
     // Wait for indicator list to render - check for indicator item by data-testid
     await expect(page.getByTestId('active-indicator-SMA')).toBeVisible({ timeout: 5000 });
 
     // Remove the indicator using the trash button within the indicator item
-    await page.getByTestId('active-indicator-SMA').locator('button[title="Remove"]').click();
-    await expect(page.locator('text=No indicators added')).toBeVisible({ timeout: 5000 });
+    await page.getByTestId('remove-indicator-SMA').click();
+    await expect(page.getByTestId('no-indicators-msg')).toBeVisible({ timeout: 5000 });
   });
 });

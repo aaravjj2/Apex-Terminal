@@ -34,6 +34,7 @@ export const ModeBadge = forwardRef<HTMLDivElement, ModeBadgeProps>(
         return (
             <div
                 ref={ref}
+                data-testid="mode-badge"
                 className={cn(
                     'inline-flex items-center font-semibold uppercase tracking-wider border rounded',
                     config.className,

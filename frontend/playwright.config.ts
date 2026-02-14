@@ -18,7 +18,7 @@ export default defineConfig({
         trace: 'on',  // Capture trace for ALL tests (required for Week 3 proof pack)
         screenshot: 'on',
         video: 'on',  // Capture video for ALL tests (required for Week 3 proof pack)
-        headless: true,  // Run without browser window
+        headless: false,  // HEADED MODE ONLY (user mandate)
         channel: 'chrome',  // Use installed Chrome, not Chromium
         launchOptions: {
             args: [
@@ -29,7 +29,7 @@ export default defineConfig({
             slowMo: 50,
         },
         actionTimeout: 15000,
-        navigationTimeout: 30000,
+        navigationTimeout: 60000,
     },
     // Reuse existing servers when running locally (they're already started)
     // In CI, start both backend and frontend

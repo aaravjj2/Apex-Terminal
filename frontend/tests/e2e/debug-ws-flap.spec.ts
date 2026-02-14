@@ -14,7 +14,7 @@ test('debug: reproduce WS flap', async ({ page, request }) => {
   });
 
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   // Open the Monitor/Chart view which initializes the data connection
   await page.getByTestId('nav-item-monitor').click();
   await page.waitForTimeout(2000);
@@ -23,7 +23,7 @@ test('debug: reproduce WS flap', async ({ page, request }) => {
   console.log('Starting ws_status polling...');
   for (let i = 0; i < 12; i++) {
     try {
-      const res = await request.get('http://localhost:8000/api/v1/autopilot/ws_status');
+      const res = await request.get('http://localhost:8000/api/v1/autopilot/ws_status', { timeout: 3000 });
       const json = await res.json();
       console.log('ws_status', i, JSON.stringify(json));
     } catch (e) {

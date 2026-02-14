@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Unified Autopilot + Forecast Integration', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');  // Uses baseURL from playwright.config.ts
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         // Wait for nav to be visible
         await page.waitForSelector('nav', { timeout: 10000 });
     });

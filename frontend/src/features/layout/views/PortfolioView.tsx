@@ -81,7 +81,7 @@ export function PortfolioView() {
             setPositions(posData);
             setOrders(ordData);
         } catch (error) {
-            console.error('Failed to load portfolio data', error);
+            console.warn('Failed to load portfolio data', error);
             addToast({ message: 'Failed to update portfolio', variant: 'error' });
         }
     };

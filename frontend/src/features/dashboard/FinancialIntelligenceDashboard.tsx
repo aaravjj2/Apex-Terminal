@@ -17,8 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../ui/utils';
 import { Badge } from '../../ui/Badge';
-
-const API_BASE = '/api/v1';
+import { API_BASE } from '../../config/api';
 
 // Types
 interface PortfolioMetrics {
@@ -268,7 +267,7 @@ export function FinancialIntelligenceDashboard() {
         setLoading(true);
         try {
             // Fetch portfolio unified data
-            const res = await fetch(`${API_BASE}/portfolio/unified`);
+            const res = await fetch(`${API_BASE}/api/v1/portfolio/unified`);
             if (res.ok) {
                 const data = await res.json();
                 
@@ -311,7 +310,7 @@ export function FinancialIntelligenceDashboard() {
             }
 
             // Fetch autopilot status for sentiment
-            const statusRes = await fetch(`${API_BASE}/autopilot/status`);
+            const statusRes = await fetch(`${API_BASE}/api/v1/autopilot/status`);
             if (statusRes.ok) {
                 const status = await statusRes.json();
                 if (status.sentiment) {

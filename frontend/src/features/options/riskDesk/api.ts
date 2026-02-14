@@ -36,7 +36,7 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
     stress: {
       scenario: {
         id: scenarioId,
-        label: scenarioId === 'moderate_selloff' ? 'Moderate Selloff' : 'Market Crash',
+        label: scenarioId === 'moderate_selloff' ? 'Moderate Selloff' : scenarioId === 'severe_crash' ? 'Severe Crash' : 'Market Crash',
         spot_shift_pct: -5,
         vol_shift_pct: -10,
       },
@@ -44,13 +44,13 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
       leg_results: [],
       hedge_candidates: [
         {
-          id: 'hedge_1',
-          name: 'Protective Call Spread',
+          id: 'hedge_A',
+          name: 'Protective Put Spread',
           strategy_type: 'spread',
           legs: [
             {
               symbol: 'SPY',
-              option_type: 'CALL',
+              option_type: 'PUT',
               strike: 450,
               expiry: '2026-03-20',
               side: 'BUY',
@@ -62,16 +62,35 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
           max_loss_reduction_est: 6000.0,
           explanation: 'Reduces downside risk by hedging short delta exposure',
         },
+        {
+          id: 'hedge_B',
+          name: 'Call Spread Collar',
+          strategy_type: 'collar',
+          legs: [
+            {
+              symbol: 'SPY',
+              option_type: 'CALL',
+              strike: 460,
+              expiry: '2026-03-20',
+              side: 'SELL',
+              quantity: 2,
+              premium_est: 2.50,
+            },
+          ],
+          net_cost_est: 500.0,
+          max_loss_reduction_est: 4000.0,
+          explanation: 'Caps upside while protecting downside via collar',
+        },
       ],
     },
     compliance: {
       status: numPositions > 5 ? 'blocked' : 'approved',
       violations: numPositions > 5 ? [
         {
-          code: 'max_loss',
+          code: 'UNCOVERED_SHORT',
           severity: 'critical',
-          message: 'Stress P&L exceeds max loss threshold (-12500 > -10000)',
-          suggested_fix: 'Add protective long leg at strike +/-$5',
+          message: 'Row 1: Uncovered short put on AAPL (-10 contracts, strike 440)',
+          suggested_fix: 'Add a long put on AAPL to create a spread, or close the naked short position',
         },
       ] : [],
     },
@@ -84,7 +103,7 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
     },
     tool_trace: [
       { 
-        tool_id: 't1_greeks', 
+        tool_id: 'T1', 
         tool_name: 'Greeks Calculator',
         started_at: now,
         ended_at: now,
@@ -95,7 +114,7 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
         cache_hit: false,
       },
       { 
-        tool_id: 't2_stress', 
+        tool_id: 'T2', 
         tool_name: 'Stress Tester',
         started_at: now,
         ended_at: now,
@@ -106,7 +125,7 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
         cache_hit: false,
       },
       { 
-        tool_id: 't3_compliance', 
+        tool_id: 'T3', 
         tool_name: 'Compliance Check',
         started_at: now,
         ended_at: now,
@@ -117,7 +136,7 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
         cache_hit: false,
       },
       { 
-        tool_id: 't4_hedges', 
+        tool_id: 'T4', 
         tool_name: 'Hedge Generator',
         started_at: now,
         ended_at: now,
@@ -128,7 +147,7 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
         cache_hit: false,
       },
       { 
-        tool_id: 't5_verify', 
+        tool_id: 'T5', 
         tool_name: 'Verifier',
         started_at: now,
         ended_at: now,
@@ -139,6 +158,13 @@ function createMockRiskRunResult(csvText: string, scenarioId: string): RiskRunRe
         cache_hit: false,
       },
     ],
+    provenance: {
+      source: 'DEMO',
+      provider: 'Demo Data',
+      cache_key: undefined,
+      checksum: undefined,
+      fetched_at: undefined,
+    },
   };
 }
 
@@ -195,7 +221,7 @@ export async function validatePortfolioText(csvText: string): Promise<Validation
  */
 export async function fetchDemoCsv(): Promise<string> {
   try {
-    const res = await fetch(`${BASE}/api/risk-desk/demo-csv`, { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(`${BASE}/api/risk-desk/demo-csv`, { signal: AbortSignal.timeout(3000) });
     if (!res.ok) throw new Error(`Failed to fetch demo CSV: ${res.status}`);
     const data = await res.json();
     return data.csv;
@@ -280,4 +306,26 @@ export async function buildTicket(
     await new Promise(resolve => setTimeout(resolve, 200));
     return createMockTicket(runId, selectedHedgeId);
   }
+}
+
+/**
+ * v1.22: Export Risk Run as ZIP bundle
+ * Includes portfolio artifacts + manifest with checksums.
+ * Returns blob for download.
+ */
+export async function exportRiskRun(
+  runId: string,
+  portfolioId: string = 'DEMO-PORT-001'
+): Promise<Blob> {
+  const res = await fetch(
+    `${BASE}/api/v1/risk-desk/export/${runId}?portfolio_id=${encodeURIComponent(portfolioId)}`,
+    {
+      method: 'GET',
+      signal: AbortSignal.timeout(10000),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(`Export failed: ${res.status} ${res.statusText}`);
+  }
+  return res.blob();
 }

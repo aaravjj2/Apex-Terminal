@@ -43,4 +43,4 @@ export interface ValidationResult {
   warnings: ValidationError[];
 }
 
-export type StrategyLabTab = 'builder' | 'library' | 'validate';
+export type StrategyLabTab = 'builder' | 'library' | 'validate' | 'artifacts' | 'diff';

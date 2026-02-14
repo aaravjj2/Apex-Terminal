@@ -42,14 +42,14 @@ test('check page loads without critical errors', async ({ page }) => {
         }
     });
 
-    await page.goto('index.html');
+    await page.goto('/');
 
     // Wait for page to stabilize
     await page.waitForTimeout(2000);
 
     // Verify shell renders
     await page.waitForTimeout(2000);
-    await expect(page.locator('header.bg-panel-bg, nav, [data-testid="nav-item-monitor"]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[data-testid="topbar"], [data-testid="left-nav"], [data-testid="nav-item-monitor"]').first()).toBeVisible({ timeout: 10000 });
 
     // Assert no critical page errors (ignore WS)
     expect(criticalErrors, 'Should have no critical errors').toEqual([]);

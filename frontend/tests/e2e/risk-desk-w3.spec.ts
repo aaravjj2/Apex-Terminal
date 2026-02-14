@@ -40,7 +40,7 @@ async function navigateToOptions(page: Page) {
 // Helper to navigate to Risk Desk main tab
 async function navigateToRiskDesk(page: Page) {
   await navigateToOptions(page);
-  const riskDeskTab = page.locator('button').filter({ hasText: 'Risk Desk' }).first();
+  const riskDeskTab = page.locator('[data-testid="options-main-tab-risk-desk"]');
   await expect(riskDeskTab).toBeVisible({ timeout: 5000 });
   await riskDeskTab.click();
   await page.waitForTimeout(300);
@@ -48,7 +48,7 @@ async function navigateToRiskDesk(page: Page) {
 
 // Helper to load demo portfolio in Risk Desk
 async function loadDemoPortfolio(page: Page) {
-  const loadDemoBtn = page.locator('button').filter({ hasText: 'Load Demo Portfolio' }).first();
+  const loadDemoBtn = page.getByTestId('load-demo-btn');
   await expect(loadDemoBtn).toBeVisible({ timeout: 5000 });
   await loadDemoBtn.click();
   await page.waitForTimeout(1000);
@@ -61,7 +61,7 @@ async function loadDemoPortfolio(page: Page) {
 test.describe('Risk Desk Week 3 - UI/UX Features', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('W3-1: Options Main Tab Switcher (Analytics ↔ Risk Desk)', async ({ page }) => {
@@ -71,11 +71,11 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.screenshot({ path: 'artifacts/w3-screenshots/01-options-analytics-tab.png', fullPage: true });
     
     // Verify Analytics tab is active (check for Chain, IV Skew, etc. subtabs)
-    const chainSubtab = page.locator('button').filter({ hasText: 'Chain' }).first();
+    const chainSubtab = page.getByTestId('options-tab-chain');
     await expect(chainSubtab).toBeVisible({ timeout: 5000 });
     
     // Click Risk Desk main tab
-    const riskDeskTab = page.locator('button').filter({ hasText: 'Risk Desk' }).first();
+    const riskDeskTab = page.getByTestId('options-main-tab-risk-desk');
     await expect(riskDeskTab).toBeVisible({ timeout: 5000 });
     await riskDeskTab.click();
     await page.waitForTimeout(300);
@@ -84,14 +84,14 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.screenshot({ path: 'artifacts/w3-screenshots/02-options-risk-desk-tab.png', fullPage: true });
     
     // Verify Risk Desk content loaded (check for Load Demo Portfolio button or Run subtab)
-    const loadDemoBtn = page.locator('button').filter({ hasText: 'Load Demo Portfolio' }).first();
+    const loadDemoBtn = page.getByTestId('load-demo-btn');
     await expect(loadDemoBtn).toBeVisible({ timeout: 5000 });
     
     // Verify Analytics subtabs are NOT visible when Risk Desk is active
     await expect(chainSubtab).not.toBeVisible();
     
     // Switch back to Analytics
-    const analyticsTab = page.locator('button').filter({ hasText: 'Analytics' }).first();
+    const analyticsTab = page.getByTestId('options-main-tab-analytics');
     await analyticsTab.click();
     await page.waitForTimeout(300);
     
@@ -104,15 +104,15 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
   test('W3-2: Risk Desk Subtabs (Run | Runs | Export)', async ({ page }) => {
     await navigateToRiskDesk(page);
     
-    // Verify Run subtab is active by default (use testid)
-    const runSubtab = page.locator('[data-testid="riskdesk-subtab-run"]');
+    // Verify Run subtab is active by default
+    const runSubtab = page.getByTestId('riskdesk-subtab-run');
     await expect(runSubtab).toBeVisible({ timeout: 5000 });
     
     // Take screenshot of Run subtab
     await page.screenshot({ path: 'artifacts/w3-screenshots/03-risk-desk-run-subtab.png', fullPage: true });
     
     // Click Runs subtab
-    const runsSubtab = page.locator('[data-testid="riskdesk-subtab-runs"]');
+    const runsSubtab = page.getByTestId('riskdesk-subtab-runs');
     await expect(runsSubtab).toBeVisible({ timeout: 5000 });
     await runsSubtab.click();
     await page.waitForTimeout(300);
@@ -121,11 +121,11 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.screenshot({ path: 'artifacts/w3-screenshots/04-risk-desk-runs-subtab-empty.png', fullPage: true });
     
     // Verify Runs empty state
-    const emptyMessage = page.locator('text=/No runs yet|No risk runs/i').first();
+    const emptyMessage = page.getByTestId('runs-empty-state');
     await expect(emptyMessage).toBeVisible({ timeout: 5000 });
     
     // Click Export subtab
-    const exportSubtab = page.locator('[data-testid="riskdesk-subtab-export"]');
+    const exportSubtab = page.getByTestId('riskdesk-subtab-export');
     await expect(exportSubtab).toBeVisible({ timeout: 5000 });
     await exportSubtab.click();
     await page.waitForTimeout(300);
@@ -134,7 +134,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.screenshot({ path: 'artifacts/w3-screenshots/05-risk-desk-export-subtab.png', fullPage: true });
     
     // Verify Export content (should show "No data available" or download buttons disabled)
-    const exportMessage = page.locator('text=/No data|Download|Export/i').first();
+    const exportMessage = page.getByTestId('riskdesk-export-ready');
     await expect(exportMessage).toBeVisible({ timeout: 5000 });
     
     // Navigate back to Run subtab
@@ -142,7 +142,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.waitForTimeout(300);
     
     // Verify back on Run subtab
-    const loadDemoBtn = page.locator('button').filter({ hasText: 'Load Demo Portfolio' }).first();
+    const loadDemoBtn = page.getByTestId('load-demo-btn');
     await expect(loadDemoBtn).toBeVisible({ timeout: 5000 });
     
     console.log('✅ W3-2: Risk Desk subtabs navigation verified');
@@ -180,8 +180,8 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.waitForTimeout(500);
     
     // Verify navigated back to Run subtab
-    const runSubtab = page.locator('button').filter({ hasText: /^Run$/i }).first();
-    const loadDemoBtn = page.locator('button').filter({ hasText: 'Load Demo Portfolio' }).first();
+    const runSubtab = page.getByTestId('riskdesk-subtab-run');
+    const loadDemoBtn = page.getByTestId('load-demo-btn');
     // After replay, we should be on Run tab and see the replayed results
     // The Load Demo button should not be visible since we have a result loaded
     
@@ -231,7 +231,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await loadDemoPortfolio(page);
     
     // Execute run (should potentially trigger compliance block in demo)
-    const runButton = page.locator('button').filter({ hasText: /^Run$/i }).first();
+    const runButton = page.getByTestId('run-button');
     await runButton.click();
     await page.waitForTimeout(3000);
     
@@ -239,12 +239,12 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.screenshot({ path: 'artifacts/w3-screenshots/10-risk-desk-initial-run.png', fullPage: true });
     
     // Check if compliance card shows violations
-    const complianceCard = page.locator('text=/Compliance|Violations|Blocked/i').first();
+    const complianceCard = page.getByTestId('compliance-card');
     const complianceVisible = await complianceCard.isVisible().catch(() => false);
     
     if (complianceVisible) {
       // Look for Apply Fix button
-      const applyFixBtn = page.locator('button').filter({ hasText: /Apply.*Fix/i }).first();
+      const applyFixBtn = page.getByTestId('apply-fix-button');
       const fixBtnVisible = await applyFixBtn.isVisible().catch(() => false);
       
       if (fixBtnVisible) {
@@ -272,12 +272,12 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await loadDemoPortfolio(page);
     
     // Execute run
-    const runButton = page.locator('button').filter({ hasText: /^Run$/i }).first();
+    const runButton = page.getByTestId('run-button');
     await runButton.click();
     await page.waitForTimeout(3000);
     
     // Check if Apply Fix button exists and click it
-    const applyFixBtn = page.locator('button').filter({ hasText: /Apply.*Fix/i }).first();
+    const applyFixBtn = page.getByTestId('apply-fix-button');
     const fixBtnVisible = await applyFixBtn.isVisible().catch(() => false);
     
     if (fixBtnVisible) {
@@ -285,8 +285,8 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
       await page.waitForTimeout(3000);
       
       // Look for Before/After toggle buttons
-      const beforeBtn = page.locator('button').filter({ hasText: /^Before$/i }).first();
-      const afterBtn = page.locator('button').filter({ hasText: /^After$/i }).first();
+      const beforeBtn = page.getByTestId('toggle-before');
+      const afterBtn = page.getByTestId('toggle-after');
       
       const toggleVisible = await beforeBtn.isVisible().catch(() => false);
       
@@ -328,7 +328,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.waitForTimeout(1000);
     
     // Verify navigated to Options → Risk Desk
-    const riskDeskContent = page.locator('text=/Load Demo Portfolio|Risk Desk|Run/i').first();
+    const riskDeskContent = page.getByTestId('risk-desk-panel');
     await expect(riskDeskContent).toBeVisible({ timeout: 5000 });
     
     // Take screenshot after navigation
@@ -350,7 +350,7 @@ test.describe('Risk Desk Week 3 - UI/UX Features', () => {
     await page.screenshot({ path: 'artifacts/w3-screenshots/17-export-empty-state.png', fullPage: true });
     
     // Verify empty state message or disabled buttons
-    const emptyMessage = page.locator('text=/No data|Run.*first|Export/i').first();
+    const emptyMessage = page.getByTestId('riskdesk-export-ready');
     await expect(emptyMessage).toBeVisible({ timeout: 5000 });
     
     console.log('✅ W3-8: Export tab empty state verified');

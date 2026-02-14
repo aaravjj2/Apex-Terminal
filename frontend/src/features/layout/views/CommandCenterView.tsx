@@ -14,8 +14,7 @@ import { cn } from '../../../ui/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
 import { Badge } from '../../../ui/Badge';
 import { useAutopilotStore } from '../../autopilot/store';
-
-const API_BASE = '/api/v1';
+import { API_BASE } from '../../../config/api';
 
 // Types
 interface Position {
@@ -80,7 +79,7 @@ export function CommandCenterView() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/portfolio/unified`);
+            const res = await fetch(`${API_BASE}/api/v1/portfolio/unified`);
             if (res.ok) {
                 const data = await res.json();
                 setPositions(data.positions || []);

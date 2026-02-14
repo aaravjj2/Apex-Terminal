@@ -101,6 +101,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate }) => {
             }}
             className="mb-3 px-2 py-1 text-xs bg-brand/20 hover:bg-brand/30 text-brand rounded flex items-center gap-1 transition-colors w-full justify-center"
             title="Read Rationale"
+            data-testid="speak-rationale-btn"
           >
             <span>🔊</span> Speak Rationale
           </button>

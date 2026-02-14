@@ -342,6 +342,15 @@ export function TopAppBarEnhanced() {
                         </div>
                     </div>
 
+                    {/* Mode Badge */}
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" data-testid="mode-badge">
+                        {accountInfo?.label || 'DEMO'}
+                    </span>
+
+                    {/* Symbol & Timeframe */}
+                    <span className="text-xs font-medium text-text" data-testid="symbol-display">SPY</span>
+                    <span className="text-xs text-text-secondary" data-testid="timeframe-display">1D</span>
+
                     <div className="h-6 w-px bg-border" />
 
                     {/* Broker Info */}
@@ -483,6 +492,7 @@ export function TopAppBarEnhanced() {
                                 wsReconnecting && "animate-pulse"
                             )}
                             title="Force WebSocket Reconnect"
+                            aria-label="Reconnect WebSocket"
                             data-testid="ws-reconnect-btn"
                         >
                             <RefreshCw
@@ -549,6 +559,7 @@ export function TopAppBarEnhanced() {
                         <button
                             onClick={() => setNotificationsOpen(!notificationsOpen)}
                             className="relative p-1.5 rounded hover:bg-element-bg transition-colors"
+                            aria-label="Notifications"
                             data-testid="notifications-btn"
                         >
                             <Bell size={18} className="text-text-secondary" />

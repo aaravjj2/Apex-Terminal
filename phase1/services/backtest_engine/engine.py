@@ -12,7 +12,7 @@ import numpy as np
 
 from .models import (
     BacktestConfig, BacktestRun, BacktestStatus, TradeFill, Side,
-    BacktestMetrics, EquityPoint
+    BacktestMetrics, EquityPoint, ProvenanceInfo
 )
 from .fixtures import get_demo_bars
 from ..strategy_lab.models import StrategyDefinition
@@ -101,6 +101,13 @@ class BacktestEngine:
             run.trades = trades
             run.equity_curve = equity_curve
             run.metrics = metrics
+            run.provenance = ProvenanceInfo(
+                source="DEMO",
+                provider="Demo Data",
+                cache_key=None,
+                checksum=None,
+                fetched_at=None
+            )
             run.status = BacktestStatus.COMPLETED
             run.completed_at = datetime.utcnow()
             

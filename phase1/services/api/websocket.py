@@ -268,6 +268,7 @@ async def websocket_bars(
 
     logger.info("ws_client_connected", symbol=symbol, timeframe=timeframe, client=id(websocket))
 
+    history_task = None
     try:
         # Auto-subscribe to requested symbol/timeframe
         try:
@@ -321,7 +322,7 @@ async def websocket_bars(
                 logger.info("ws_history_task_end", symbol=symbol, timeframe=timeframe)
 
         # Send history immediately after connection (don't wait)
-        asyncio.create_task(_send_history_task())
+        history_task = asyncio.create_task(_send_history_task())
 
         # Listen for messages
         while True:
@@ -335,6 +336,13 @@ async def websocket_bars(
                 logger.exception("ws_receive_error", error=str(e), symbol=symbol, timeframe=timeframe)
                 break
     finally:
+        # Cancel any in-flight history task to prevent orphaned coroutines
+        if history_task is not None and not history_task.done():
+            history_task.cancel()
+            try:
+                await history_task
+            except (asyncio.CancelledError, Exception):
+                pass
         await manager.disconnect(websocket)
         logger.info("ws_cleanup_complete", symbol=symbol, timeframe=timeframe, client=id(websocket))
 

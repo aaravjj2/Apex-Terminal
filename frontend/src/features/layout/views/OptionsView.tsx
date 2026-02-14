@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { TrendingUp, Shield, FlaskConical, History, BarChart3 } from 'lucide-react';
 import { OptionsChain } from '../../options/OptionsChain';
 import { IVSkewChart } from '../../options/IVSkewChart';
 import { IVTermStructure } from '../../options/IVTermStructure';
@@ -13,10 +12,6 @@ import { QuickActions } from '../../options/QuickActions';
 import { IndicatorManager } from '../../indicators/IndicatorManager';
 import { useAppStore } from '../../../state/appStore';
 import { useOptionsStore } from '../../options/store';
-import { PageHeader } from '../../../ui/PageHeader';
-import { Badge } from '../../../ui/Badge';
-import { Button } from '../../../ui/Button';
-import { cn } from '../../../ui/utils';
 
 type OptionsTab = 'chain' | 'iv-skew' | 'iv-term' | 'strategy' | 'fundamentals';
 type MainTab = 'analytics' | 'risk-desk' | 'strategy-lab' | 'runs';
@@ -31,10 +26,23 @@ export function OptionsView() {
     chainLoading
   } = useOptionsStore();
 
-  const [mainTab, setMainTab] = useState<MainTab>('analytics');
+  // Check if navigated here via Risk Desk quick action
+  const initialTab = (window as any).__navigateToRiskDesk ? 'risk-desk' : 'analytics';
+  if ((window as any).__navigateToRiskDesk) {
+    delete (window as any).__navigateToRiskDesk;
+  }
+
+  const [mainTab, setMainTab] = useState<MainTab>(initialTab as MainTab);
   const [activeTab, setActiveTab] = useState<OptionsTab>('chain');
   const [indicatorManagerOpen, setIndicatorManagerOpen] = useState(false);
   const [, setIndicators] = useState<unknown[]>([]);
+
+  // Listen for navigate-risk-desk event from Shell
+  useEffect(() => {
+    const handler = () => setMainTab('risk-desk');
+    window.addEventListener('navigate-risk-desk', handler);
+    return () => window.removeEventListener('navigate-risk-desk', handler);
+  }, []);
 
   // Fetch all data when app-wide symbol changes
   useEffect(() => {
@@ -80,79 +88,67 @@ export function OptionsView() {
   return (
     <div className="h-full w-full flex flex-col bg-background">
       {/* Header with main tabs */}
-      <PageHeader
-        title={`Options — ${appSymbol}`}
-        icon={<TrendingUp size={20} />}
-        badge={chainLoading ? <Badge variant="info" dot size="sm">Loading</Badge> : undefined}
-        actions={
-          <div className="flex items-center gap-2">
-            <QuickActions
-              onStartDemo={handleStartDemo}
-              onRunBacktest={handleRunBacktest}
-              onExportLastRun={handleExportLastRun}
-            />
-            {mainTab === 'analytics' && (
-              <Button
-                variant={indicatorManagerOpen ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setIndicatorManagerOpen(!indicatorManagerOpen)}
+      <div className="flex items-center justify-between border-b border-border px-4 py-2 bg-panel-bg">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-semibold text-text" data-testid="options-heading">Options - {appSymbol}</h1>
+
+          {/* Main tab switcher */}
+          <div className="flex gap-2" role="tablist" aria-label="Options main tabs">
+            {mainTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setMainTab(tab.id)}
+                data-testid={`options-main-tab-${tab.id}`}
+                role="tab"
+                aria-selected={mainTab === tab.id}
+                tabIndex={mainTab === tab.id ? 0 : -1}
+                className={`px-4 py-1.5 text-sm font-medium rounded transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 ${mainTab === tab.id
+                  ? 'bg-brand text-white'
+                  : 'bg-element-bg text-text-secondary hover:text-text hover:bg-element-bg/80'
+                  }`}
               >
-                <BarChart3 size={14} />
-                Indicators
-              </Button>
-            )}
-          </div>
-        }
-        data-testid="options-header"
-      />
-
-      {/* Main tab switcher */}
-      <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border bg-panel-bg shrink-0" role="tablist" aria-label="Options main tabs">
-        {mainTabs.map(tab => {
-          const icons: Record<string, React.ReactNode> = {
-            'analytics': <BarChart3 size={13} />,
-            'risk-desk': <Shield size={13} />,
-            'strategy-lab': <FlaskConical size={13} />,
-            'runs': <History size={13} />,
-          };
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setMainTab(tab.id)}
-              data-testid={`options-main-tab-${tab.id}`}
-              role="tab"
-              aria-selected={mainTab === tab.id}
-              tabIndex={mainTab === tab.id ? 0 : -1}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all',
-                mainTab === tab.id
-                  ? 'bg-brand/10 text-brand border border-brand/20 shadow-sm'
-                  : 'text-text-secondary hover:text-text hover:bg-element-bg'
-              )}
-            >
-              {icons[tab.id]}
-              {tab.label}
-            </button>
-          );
-        })}
-
-        {/* Expiration selector (only in Analytics mode) */}
-        {mainTab === 'analytics' && chain && chain.expirations.length > 0 && (activeTab === 'chain' || activeTab === 'iv-skew' || activeTab === 'iv-term') && (
-          <select
-            value={selectedExpiration || ''}
-            onChange={(e) => setSelectedExpiration(e.target.value)}
-            className="ml-3 px-3 py-1.5 bg-element-bg border border-border rounded-md text-xs text-text focus:outline-none focus:ring-1 focus:ring-brand"
-          >
-            {chain.expirations.map(exp => (
-              <option key={exp} value={exp}>{exp}</option>
+                {tab.label}
+              </button>
             ))}
-          </select>
+          </div>
+
+          {/* Expiration selector (only in Analytics mode) */}
+          {mainTab === 'analytics' && chain && chain.expirations.length > 0 && (activeTab === 'chain' || activeTab === 'iv-skew' || activeTab === 'iv-term') && (
+            <select
+              value={selectedExpiration || ''}
+              onChange={(e) => setSelectedExpiration(e.target.value)}
+              className="px-3 py-1.5 bg-element-bg border border-border rounded text-sm text-text focus:outline-none focus:ring-1 focus:ring-brand"
+            >
+              {chain.expirations.map(exp => (
+                <option key={exp} value={exp}>{exp}</option>
+              ))}
+            </select>
+          )}
+
+          {chainLoading && <span className="text-xs text-text-muted animate-pulse">Loading...</span>}
+
+          {/* Quick Actions Strip */}
+          <QuickActions
+            onStartDemo={handleStartDemo}
+            onRunBacktest={handleRunBacktest}
+            onExportLastRun={handleExportLastRun}
+          />
+        </div>
+
+        {/* Indicator Manager Toggle (only in Analytics mode) */}
+        {mainTab === 'analytics' && (
+          <button
+            onClick={() => setIndicatorManagerOpen(!indicatorManagerOpen)}
+            className="px-3 py-1.5 bg-brand/10 hover:bg-brand/20 text-brand rounded text-sm font-medium transition-colors"
+          >
+            {indicatorManagerOpen ? 'Hide Indicators' : 'Show Indicators'}
+          </button>
         )}
       </div>
 
       {/* Secondary tabs (only show in Analytics mode) */}
       {mainTab === 'analytics' && (
-        <div className="flex items-center gap-0 border-b border-border px-4 bg-panel-bg/80 shrink-0" role="tablist" aria-label="Analytics tabs">
+        <div className="flex items-center gap-2 border-b border-border px-4 bg-panel-bg" role="tablist" aria-label="Analytics tabs">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -161,12 +157,10 @@ export function OptionsView() {
               role="tab"
               aria-selected={activeTab === tab.id}
               tabIndex={activeTab === tab.id ? 0 : -1}
-              className={cn(
-                'px-4 py-2 text-xs font-medium border-b-2 transition-all',
-                activeTab === tab.id
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-text-secondary hover:text-text hover:border-border-active'
-              )}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 ${activeTab === tab.id
+                ? 'border-brand text-brand'
+                : 'border-transparent text-text-secondary hover:text-text hover:border-border'
+                }`}
             >
               {tab.label}
             </button>

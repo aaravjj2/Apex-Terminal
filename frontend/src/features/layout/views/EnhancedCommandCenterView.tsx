@@ -1,5 +1,5 @@
 /**
- * Enhanced Command Center View – v2 UI Overhaul
+ * Enhanced Command Center View
  * 
  * Unified dashboard combining:
  * - Financial Intelligence Dashboard
@@ -17,14 +17,11 @@ import {
 import { cn } from '../../../ui/utils';
 import { Badge } from '../../../ui/Badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
-import { PageHeader } from '../../../ui/PageHeader';
-import { Button } from '../../../ui/Button';
 import { FinancialIntelligenceDashboard } from '../../dashboard/FinancialIntelligenceDashboard';
 import { MultiAgentFinancePanel } from '../../dashboard/MultiAgentFinancePanel';
 import { RealTimePnLAnalytics } from '../../dashboard/RealTimePnLAnalytics';
 import { useAutopilotStore } from '../../autopilot/store';
-
-const API_BASE = '/api/v1';
+import { API_BASE } from '../../../config/api';
 
 // Types
 interface QuickStats {
@@ -47,7 +44,7 @@ interface MarketStatus {
 const formatCurrency = (v: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 
-// Quick Stat Pill – v2 with subtle gradient and better spacing
+// Quick Stat Pill
 function StatPill({ icon: Icon, label, value, trend, compact = false }: {
     icon: React.ElementType;
     label: string;
@@ -57,8 +54,7 @@ function StatPill({ icon: Icon, label, value, trend, compact = false }: {
 }) {
     return (
         <div className={cn(
-            "flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/50 transition-colors hover:border-border-active",
-            trend === 'up' ? 'bg-up/5' : trend === 'down' ? 'bg-down/5' : 'bg-element-bg/70',
+            "flex items-center gap-2 px-3 py-1.5 bg-element-bg rounded-lg",
             compact ? "gap-1.5" : "gap-2"
         )}>
             <Icon size={compact ? 12 : 14} className={cn(
@@ -66,7 +62,7 @@ function StatPill({ icon: Icon, label, value, trend, compact = false }: {
                 trend === 'down' ? 'text-down' :
                 'text-text-secondary'
             )} />
-            {!compact && <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium">{label}</span>}
+            {!compact && <span className="text-[10px] text-text-secondary uppercase">{label}</span>}
             <span className={cn(
                 "text-sm font-semibold tabular-nums",
                 trend === 'up' ? 'text-up' :
@@ -120,7 +116,7 @@ export function EnhancedCommandCenterView() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/portfolio/unified`);
+            const res = await fetch(`${API_BASE}/api/v1/portfolio/unified`);
             if (res.ok) {
                 const data = await res.json();
                 setStats({
@@ -162,7 +158,7 @@ export function EnhancedCommandCenterView() {
             {/* Enhanced Header with PageHeader */}
             <PageHeader
                 title="Command Center"
-                subtitle="Real-time portfolio intelligence & analytics"
+                subtitle="Real-time portfolio intelligence &amp; analytics"
                 icon={<Activity size={20} />}
                 badge={
                     <div className="flex items-center gap-2">
@@ -207,52 +203,48 @@ export function EnhancedCommandCenterView() {
             {/* Quick Stats Ribbon */}
             <div className="shrink-0 px-4 py-2 flex items-center gap-2 bg-panel-bg/50 border-b border-border/60 overflow-x-auto">
                 <StatPill
-                        icon={Wallet}
-                        label="Equity"
-                        value={stats ? formatCurrency(stats.total_equity) : '---'}
-                    />
-                    <StatPill
-                        icon={isPnlPositive ? TrendingUp : TrendingDown}
-                        label="P&L"
-                        value={stats ? formatCurrency(stats.open_pnl) : '---'}
-                        trend={isPnlPositive ? 'up' : 'down'}
-                    />
-                    <StatPill
-                        icon={Target}
-                        label="Win Rate"
-                        value={stats ? `${(stats.win_rate * 100).toFixed(0)}%` : '---'}
-                        trend={(stats?.win_rate ?? 0) >= 0.5 ? 'up' : 'down'}
-                    />
-                    <StatPill
-                        icon={BarChart2}
-                        label="Positions"
-                        value={stats?.position_count?.toString() ?? '---'}
-                    />
-                    <StatPill
-                        icon={FileText}
-                        label="Orders"
-                        value={stats?.active_orders?.toString() ?? '---'}
-                    />
-
-                    <div className="flex-1" />
-
-                    {/* Sentiment indicator */}
-                    {autopilotStatus?.sentiment && (
-                        <div className={cn(
-                            "flex items-center gap-2 px-3 py-1 rounded-lg text-xs",
-                            (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) > 0.3 ? 'bg-up/20 text-up' :
-                            (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) < -0.3 ? 'bg-down/20 text-down' :
-                            'bg-border text-text-secondary'
-                        )}>
-                            <Globe size={12} />
-                            <span>
-                                {(autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) > 0.3 ? '🐂 Bullish' :
-                                 (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) < -0.3 ? '🐻 Bearish' :
-                                 '⚖️ Neutral'}
-                            </span>
-                        </div>
-                    )}
-                </div>
+                    icon={Wallet}
+                    label="Equity"
+                    value={stats ? formatCurrency(stats.total_equity) : '---'}
+                />
+                <StatPill
+                    icon={isPnlPositive ? TrendingUp : TrendingDown}
+                    label="P&L"
+                    value={stats ? formatCurrency(stats.open_pnl) : '---'}
+                    trend={isPnlPositive ? 'up' : 'down'}
+                />
+                <StatPill
+                    icon={Target}
+                    label="Win Rate"
+                    value={stats ? `${(stats.win_rate * 100).toFixed(0)}%` : '---'}
+                    trend={(stats?.win_rate ?? 0) >= 0.5 ? 'up' : 'down'}
+                />
+                <StatPill
+                    icon={BarChart2}
+                    label="Positions"
+                    value={stats?.position_count?.toString() ?? '---'}
+                />
+                <StatPill
+                    icon={FileText}
+                    label="Orders"
+                    value={stats?.active_orders?.toString() ?? '---'}
+                />
+                <div className="flex-1" />
+                {autopilotStatus?.sentiment && (
+                    <div className={cn(
+                        "flex items-center gap-2 px-3 py-1 rounded-md text-xs border border-border/50",
+                        (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) > 0.3 ? 'bg-up/5 text-up' :
+                        (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) < -0.3 ? 'bg-down/5 text-down' :
+                        'bg-element-bg text-text-secondary'
+                    )}>
+                        <Globe size={12} />
+                        <span>
+                            {(autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) > 0.3 ? '🐂 Bullish' :
+                             (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) < -0.3 ? '🐻 Bearish' :
+                             '⚖️ Neutral'}
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Tabbed Content */}
@@ -274,7 +266,6 @@ export function EnhancedCommandCenterView() {
                     </TabsTrigger>
                 </TabsList>
 
-                {/* Tab Contents */}
                 <TabsContent value="overview" className="flex-1 overflow-hidden m-0 p-0">
                     <FinancialIntelligenceDashboard />
                 </TabsContent>

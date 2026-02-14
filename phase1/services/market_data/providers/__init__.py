@@ -27,11 +27,18 @@ def _init_providers():
     """Initialize all providers based on environment."""
     global _providers
     
-    # Demo provider always available
-    _providers[ProviderName.DEMO] = DemoProvider()
+    # Determine mode
+    demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+    enable_replay_save = not demo_mode  # LOCAL mode can save replays
+    
+    # Demo provider always available (checks replay, optionally saves in LOCAL)
+    _providers[ProviderName.DEMO] = DemoProvider(enable_replay_save=enable_replay_save)
+    logger.info(
+        "Demo provider initialized",mode=("DEMO" if demo_mode else "LOCAL"),
+        enable_replay_save=enable_replay_save
+    )
     
     # Yahoo provider only in LOCAL mode
-    demo_mode = os.getenv("DEMO_MODE", "0") == "1"
     if not demo_mode:
         try:
             _providers[ProviderName.YAHOO] = YahooProvider()
@@ -90,13 +97,23 @@ async def get_market_data(provider_name: ProviderName, request) -> any:
 
 def list_providers() -> list[ProviderInfo]:
     """
-    List all available providers.
+    List all available providers with replay status.
     
     Returns:
         List of ProviderInfo
     """
     if not _providers:
         _init_providers()
+    
+    # Get replay metadata
+    from ..replay import list_replays
+    replay_count = len(list_replays())
+    replay_available = replay_count > 0
+    
+    # Determine mode
+    demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+    mode = "DEMO" if demo_mode else "LOCAL"
+    replay_enabled = not demo_mode  # Can save replays in LOCAL
     
     providers_info = []
     
@@ -105,9 +122,12 @@ def list_providers() -> list[ProviderInfo]:
         providers_info.append(ProviderInfo(
             name=ProviderName.DEMO,
             enabled=True,
-            description="Demo provider using CSV fixtures",
+            description="Demo provider using CSV fixtures (replay-first)",
             requires_auth=False,
-            supports_realtime=False
+            supports_realtime=False,
+            replay_available=replay_available,
+            replay_enabled=replay_enabled,
+            mode=mode
         ))
     
     # Yahoo provider
@@ -117,7 +137,10 @@ def list_providers() -> list[ProviderInfo]:
             enabled=True,
             description="Yahoo Finance provider with caching",
             requires_auth=False,
-            supports_realtime=True
+            supports_realtime=True,
+            replay_available=False,  # Yahoo doesn't use replay cache
+            replay_enabled=False,
+            mode=mode
         ))
     
     return providers_info

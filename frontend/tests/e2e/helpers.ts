@@ -253,10 +253,8 @@ export async function navigateToView(
 ): Promise<void> {
     const timeout = options?.timeout ?? 15000;
     
-    // Find and click the nav item
-    const navItem = page.locator('[data-testid="left-nav"], [data-testid="leftnav"]')
-        .locator(`button, a, [role="button"]`)
-        .filter({ hasText: navItemText });
+    // Find and click the nav item by testid
+    const navItem = page.getByTestId(`nav-item-${navItemText.toLowerCase().replace(/\s+/g, '-')}`);
     
     await expect(navItem.first()).toBeVisible({ timeout: 5000 });
     await navItem.first().click();

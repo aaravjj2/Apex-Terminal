@@ -21,8 +21,7 @@ import { cn } from '../../../ui/utils';
 import { SupergraphModule } from './SupergraphModule';
 import { AIPanel } from './AIPanel';
 import { TradeLifecycleDrawer } from './TradeLifecycleDrawer';
-
-const API_BASE = '/api/v1';
+import { API_BASE } from '../../../config/api';
 
 // Types
 interface DailyStats {
@@ -131,7 +130,7 @@ export function UnifiedDashboardView() {
     // Fetch daily stats
     const fetchDailyStats = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/autopilot/report`);
+            const res = await fetch(`${API_BASE}/api/v1/autopilot/report`);
             if (res.ok) {
                 const data = await res.json();
                 const report = data.report || {};
@@ -155,7 +154,7 @@ export function UnifiedDashboardView() {
     // Fetch positions
     const fetchPositions = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/autopilot/positions?status=open`);
+            const res = await fetch(`${API_BASE}/api/v1/autopilot/positions?status=open`);
             if (res.ok) {
                 const data = await res.json();
                 const pos = (data.positions || []).slice(0, 10).map((p: any) => ({
@@ -180,7 +179,7 @@ export function UnifiedDashboardView() {
     // Fetch orders
     const fetchOrders = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/portfolio/orders?status=open`);
+            const res = await fetch(`${API_BASE}/api/v1/portfolio/orders?status=open`);
             if (res.ok) {
                 const data = await res.json();
                 const ords = (data.orders || []).slice(0, 10).map((o: any) => ({
@@ -205,7 +204,7 @@ export function UnifiedDashboardView() {
     // Fetch event log
     const fetchEventLog = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/autopilot/logs?limit=20`);
+            const res = await fetch(`${API_BASE}/api/v1/autopilot/logs?limit=20`);
             if (res.ok) {
                 const data = await res.json();
                 const logs = (data.logs || []).map((l: any, idx: number) => ({
@@ -227,7 +226,7 @@ export function UnifiedDashboardView() {
     // Fetch config
     const fetchConfig = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/autopilot/config`);
+            const res = await fetch(`${API_BASE}/api/v1/autopilot/config`);
             if (res.ok) {
                 const data = await res.json();
                 const config = data.config || {};
@@ -250,7 +249,7 @@ export function UnifiedDashboardView() {
     const runAutopilotNow = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_BASE}/autopilot/cycle`, {
+            const response = await fetch(`${API_BASE}/api/v1/autopilot/cycle`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ dry_run: false, force: false })
@@ -268,7 +267,7 @@ export function UnifiedDashboardView() {
     const runMonitoringNow = async () => {
         setLoading(true);
         try {
-            await fetch(`${API_BASE}/autopilot/cycle`, {
+            await fetch(`${API_BASE}/api/v1/autopilot/cycle`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ force: true })

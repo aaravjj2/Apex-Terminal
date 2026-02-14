@@ -30,7 +30,7 @@ test.describe('Devpost Media Generation', () => {
         await page.click('[data-testid="nav-item-monitor"]');
 
         // Wait for chart and sidebar
-        await page.waitForSelector('canvas', { state: 'visible', timeout: 30000 });
+        await page.waitForSelector('[data-testid="chart-canvas"]', { state: 'visible', timeout: 30000 });
         // Try to wait for something specific if possible, like header
         await page.waitForTimeout(5000); // Let animations settle
 
@@ -40,7 +40,7 @@ test.describe('Devpost Media Generation', () => {
         console.log('Step 2: Switching Symbol');
         // Assuming there is a symbol search or we can click a watchlist item
         // Trying to find a watchlist item - adapt selector as needed
-        const watchlistSelector = '[data-testid="watchlist-item-AAPL"], [role="button"]:has-text("AAPL")';
+        const watchlistSelector = '[data-testid="watchlist-item-AAPL"], [data-testid="symbol-selector-AAPL"]';
         try {
             if (await page.isVisible(watchlistSelector)) {
                 await page.click(watchlistSelector);
@@ -56,17 +56,18 @@ test.describe('Devpost Media Generation', () => {
         console.log('Step 3: Autopilot Run');
         // Click run button if available
         // Look for "Run Autopilot" or similar
-        const runButtonSelector = 'button:has-text("Run Cycle"), button:has-text("Start Autopilot")';
+        const runButtonSelector = '[data-testid="run-cycle-btn"], [data-testid="start-autopilot-btn"]';
         if (await page.isVisible(runButtonSelector)) {
             await page.click(runButtonSelector);
             // Wait for candidates to appear
             await page.waitForTimeout(5000);
         }
 
-        // Navigate to Autopilot via left nav
-        const autopilotNav = page.getByTestId('nav-item-autopilot');
-        if (await autopilotNav.isVisible()) {
-            await autopilotNav.click();
+        // Navigate or ensure we see the autopilot tab/panel
+        // Assuming there's a tab or link for Autopilot
+        const autopilotLinkSelector = '[data-testid="nav-item-autopilot"]';
+        if (await page.isVisible(autopilotLinkSelector)) {
+            await page.click(autopilotLinkSelector);
             await page.waitForTimeout(2000);
         }
 
@@ -75,7 +76,7 @@ test.describe('Devpost Media Generation', () => {
         // 4. Trade Execution (Simulated visual)
         console.log('Step 4: Trade Execution');
         // If we can select a candidate, do it
-        const candidateSelector = '[data-testid^="candidate-row"], .candidate-card';
+        const candidateSelector = '[data-testid^="candidate-row"]';
         if (await page.isVisible(candidateSelector)) {
             // Hover to show interactivity
             await page.hover(candidateSelector);
@@ -87,7 +88,7 @@ test.describe('Devpost Media Generation', () => {
         // 5. Monitoring
         console.log('Step 5: Monitoring');
         // Switch to portfolio/positions view
-        const portfolioLinkSelector = 'a[href="/portfolio"], button:has-text("Portfolio")';
+        const portfolioLinkSelector = '[data-testid="nav-item-portfolio"]';
         if (await page.isVisible(portfolioLinkSelector)) {
             await page.click(portfolioLinkSelector);
             await page.waitForTimeout(2000);

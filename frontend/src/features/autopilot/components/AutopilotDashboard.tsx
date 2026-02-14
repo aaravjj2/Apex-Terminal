@@ -32,7 +32,7 @@ interface StatusBadgeProps {
 const StatusBadge: React.FC<StatusBadgeProps> = ({ state, killSwitch }) => {
   if (killSwitch) {
     return (
-      <span className="px-3 py-1 text-sm font-bold bg-red-600 text-white rounded-full animate-pulse">
+      <span className="px-3 py-1 text-sm font-bold bg-red-600 text-white rounded-full animate-pulse" data-testid="autopilot-status-badge">
         🛑 KILL SWITCH ACTIVE
       </span>
     );
@@ -48,7 +48,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ state, killSwitch }) => {
   const safeState = state || 'idle';
 
   return (
-    <span className={`px-3 py-1 text-sm font-semibold text-white rounded-full ${colors[safeState] || colors.idle}`}>
+    <span className={`px-3 py-1 text-sm font-semibold text-white rounded-full ${colors[safeState] || colors.idle}`} data-testid="autopilot-status-badge">
       {safeState.toUpperCase()}
     </span>
   );
@@ -143,7 +143,7 @@ export const AutopilotDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">🤖 AI Options Autopilot</h1>
+          <h1 className="text-2xl font-bold" data-testid="autopilot-heading">🤖 AI Options Autopilot</h1>
           {status && <StatusBadge state={status.state} killSwitch={status.kill_switch} />}
           <div className={`px-2 py-1 rounded-full text-xs font-bold ${connectionStatus === 'CONNECTED' ? 'bg-green-900 text-green-200 border border-green-700' :
             connectionStatus === 'CONNECTING' ? 'bg-yellow-900 text-yellow-200 border border-yellow-700 animate-pulse' :
@@ -154,8 +154,8 @@ export const AutopilotDashboard: React.FC = () => {
 
           {status?.sentiment && (
             <div className="flex items-center gap-2 px-3 py-1 bg-gray-700 rounded-full border border-gray-600" title={`Score: ${status.sentiment.sentiment_scores?.MARKET?.toFixed(2) ?? 'N/A'}`}>
-              <span className="text-xs text-gray-400">MARKET:</span>
-              <span className={`text-xs font-bold ${(status.sentiment.sentiment_scores?.MARKET ?? 0) > 0.4 ? 'text-green-400' :
+              <span className="text-xs text-gray-400" data-testid="sentiment-market-label">MARKET:</span>
+              <span data-testid="sentiment-badge" className={`text-xs font-bold ${(status.sentiment.sentiment_scores?.MARKET ?? 0) > 0.4 ? 'text-green-400' :
                 (status.sentiment.sentiment_scores?.MARKET ?? 0) < -0.4 ? 'text-red-400' :
                   'text-gray-200'
                 }`}>

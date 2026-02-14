@@ -46,10 +46,10 @@ async function backtestCreateRun(page: import('@playwright/test').Page) {
 test.describe('App Shell Screenshots (2 tests)', () => {
   test('v1.6-01 - App loads: full shell visible', async ({ page }) => {
     await page.goto('http://localhost:5100');
-    await expect(page.locator('[data-testid="main-shell"]').or(page.locator('body'))).toBeVisible();
+    await expect(page.locator('[data-testid="main-shell"]').or(page.getByTestId('app-shell'))).toBeVisible();
     await page.screenshot({ path: 'test-results/v1.6-01-app-loaded.png', fullPage: true });
     // Screenshot assertion: app loads without blank screen
-    const body = page.locator('body');
+    const body = page.getByTestId('app-shell');
     const box = await body.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.height).toBeGreaterThan(100);

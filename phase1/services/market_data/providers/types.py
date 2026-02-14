@@ -82,3 +82,6 @@ class ProviderInfo(BaseModel):
     description: str
     requires_auth: bool = Field(False, description="True if API keys required")
     supports_realtime: bool = Field(False, description="True if real-time quotes supported")
+    replay_available: bool = Field(False, description="True if replay artifacts available")
+    replay_enabled: bool = Field(False, description="True if replay save enabled (LOCAL mode)")
+    mode: str = Field("DEMO", description="Current mode (DEMO/LOCAL)")

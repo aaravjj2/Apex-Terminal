@@ -5,7 +5,16 @@
 
 import React from 'react';
 import { useOptionsStore } from '../store';
-import { ProvenanceDisplay } from '../../../components/ProvenanceDisplay';
+import { ProvenanceDisplay, type ProvenanceInfo } from '../../../components/ProvenanceDisplay';
+
+// Demo mode provenance (deterministic fixtures)
+const DEMO_PROVENANCE: ProvenanceInfo = {
+  source: 'DEMO',
+  cache_key: undefined,
+  provider: 'Demo Data',
+  checksum: undefined,
+  fetched_at: undefined,
+};
 
 interface IVGaugeProps {
   label: string;
@@ -100,7 +109,7 @@ export const IVAnalyticsPanel: React.FC<IVAnalyticsPanelProps> = ({ className = 
   }
 
   return (
-    <div className={`bg-gray-800 rounded-lg p-4 ${className}`}>
+    <div className={`bg-gray-800 rounded-lg p-4 ${className}`} data-testid="analytics-ready">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-sm font-semibold text-gray-300">IV Analytics</h3>
         <span className="text-xs text-gray-500">{symbol}</span>
@@ -137,11 +146,7 @@ export const IVAnalyticsPanel: React.FC<IVAnalyticsPanelProps> = ({ className = 
         {/* Data Provenance */}
         <div className="mt-3">
           <ProvenanceDisplay 
-            provenance={{
-              source: 'DEMO',
-              cache_key: undefined,
-              provider: 'Demo Data',
-            }}
+            provenance={DEMO_PROVENANCE}
           />
         </div>
       </div>

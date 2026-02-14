@@ -20,12 +20,30 @@ router = APIRouter()
 # Request/Response Models
 class TickerResolveRequest(BaseModel):
     """Request model for single ticker resolution."""
-    symbol: str = Field(..., description="Raw ticker symbol input from user")
+    ticker: str = Field(..., description="Raw ticker symbol input from user", alias="ticker")
+
+    class Config:
+        populate_by_name = True
+
+    def __init__(self, **data):
+        # Accept both 'symbol' and 'ticker' for backward compat
+        if 'symbol' in data and 'ticker' not in data:
+            data['ticker'] = data.pop('symbol')
+        super().__init__(**data)
 
 
 class TickerResolveBatchRequest(BaseModel):
     """Request model for batch ticker resolution."""
-    symbols: List[str] = Field(..., description="List of raw ticker symbols")
+    tickers: List[str] = Field(..., description="List of raw ticker symbols")
+
+    class Config:
+        populate_by_name = True
+
+    def __init__(self, **data):
+        # Accept both 'symbols' and 'tickers' for backward compat
+        if 'symbols' in data and 'tickers' not in data:
+            data['tickers'] = data.pop('symbols')
+        super().__init__(**data)
 
 
 class TickerResolveResponse(BaseModel):
@@ -40,7 +58,16 @@ class TickerResolveResponse(BaseModel):
 
 class TickerResolveNormalizeRequest(BaseModel):
     """Request model for quick normalization."""
-    symbol: str = Field(..., description="Raw ticker symbol input")
+    ticker: str = Field(..., description="Raw ticker symbol input")
+
+    class Config:
+        populate_by_name = True
+
+    def __init__(self, **data):
+        # Accept both 'symbol' and 'ticker' for backward compat
+        if 'symbol' in data and 'ticker' not in data:
+            data['ticker'] = data.pop('symbol')
+        super().__init__(**data)
 
 
 class TickerResolveNormalizeResponse(BaseModel):
@@ -86,37 +113,43 @@ async def resolve_ticker_endpoint(req: TickerResolveRequest) -> TickerResolveRes
     requiring user confirmation in UX.
     """
     try:
-        result = resolve_ticker(req.symbol)
+        result = resolve_ticker(req.ticker)
         logger.info(
             "ticker_resolved",
-            input=req.symbol,
+            input=req.ticker,
             ticker=result["ticker"],
             confidence=result["confidence"],
             collision=result["collision"]
         )
         return TickerResolveResponse(**result)
     except Exception as e:
-        logger.error("ticker_resolution_failed", input=req.symbol, error=str(e))
+        logger.error("ticker_resolution_failed", input=req.ticker, error=str(e))
         raise HTTPException(status_code=500, detail=f"Ticker resolution failed: {str(e)}")
 
 
-@router.post("/resolve/batch", response_model=List[TickerResolveResponse])
-async def resolve_ticker_batch_endpoint(req: TickerResolveBatchRequest) -> List[TickerResolveResponse]:
+class TickerBatchResponseWrapper(BaseModel):
+    """Wrapper for batch response with results array."""
+    results: List[TickerResolveResponse] = Field(..., description="Array of resolution results")
+
+
+@router.post("/resolve/batch", response_model=TickerBatchResponseWrapper)
+async def resolve_ticker_batch_endpoint(req: TickerResolveBatchRequest) -> TickerBatchResponseWrapper:
     """
     Resolve multiple ticker symbols in batch.
     
     Same resolution rules as single endpoint, applied to each symbol.
+    Returns {results: [...]} wrapper.
     """
     try:
-        results = resolve_ticker_batch(req.symbols)
+        results = resolve_ticker_batch(req.tickers)
         logger.info(
             "ticker_batch_resolved",
-            count=len(req.symbols),
+            count=len(req.tickers),
             low_confidence_count=sum(1 for r in results if r["confidence"] == "low")
         )
-        return [TickerResolveResponse(**r) for r in results]
+        return TickerBatchResponseWrapper(results=[TickerResolveResponse(**r) for r in results])
     except Exception as e:
-        logger.error("ticker_batch_resolution_failed", count=len(req.symbols), error=str(e))
+        logger.error("ticker_batch_resolution_failed", count=len(req.tickers), error=str(e))
         raise HTTPException(status_code=500, detail=f"Batch ticker resolution failed: {str(e)}")
 
 
@@ -129,10 +162,10 @@ async def normalize_ticker_endpoint(req: TickerResolveNormalizeRequest) -> Ticke
     Useful for frontend display before user confirmation.
     """
     try:
-        normalized = get_normalized_form(req.symbol)
+        normalized = get_normalized_form(req.ticker)
         return TickerResolveNormalizeResponse(normalized=normalized)
     except Exception as e:
-        logger.error("ticker_normalization_failed", input=req.symbol, error=str(e))
+        logger.error("ticker_normalization_failed", input=req.ticker, error=str(e))
         raise HTTPException(status_code=500, detail=f"Ticker normalization failed: {str(e)}")
 
 

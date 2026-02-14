@@ -25,7 +25,7 @@ test.describe('Industrial UI/UX + Analytics + Reporting E2E Suite', () => {
 
   test('01 - E2E mode disables animations', async ({ page }) => {
     // Verify body has e2e-mode class
-    const body = page.locator('body');
+    const body = page.getByTestId('app-shell');
     await expect(body).toHaveClass(/e2e-mode/);
     
     await page.screenshot({ path: 'e2e-results/01-e2e-mode.png', fullPage: true });
@@ -130,7 +130,7 @@ test.describe('Industrial UI/UX + Analytics + Reporting E2E Suite', () => {
     await expect(equityCurve).toBeVisible({ timeout: 5000 });
     
     // Check for Recharts SVG elements
-    const svg = equityCurve.locator('svg').first();
+    const svg = equityCurve.getByTestId('chart-svg');
     await expect(svg).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/06-equity-curve-detail.png', fullPage: true });
@@ -257,7 +257,7 @@ test.describe('Industrial UI/UX + Analytics + Reporting E2E Suite', () => {
     await expect(tradeBlotter).toBeVisible();
     
     // Check for table headers
-    await expect(tradeBlotter.locator('thead')).toBeVisible();
+    await expect(tradeBlotter.getByTestId('blotter-thead')).toBeVisible();
     
     await page.screenshot({ path: 'e2e-results/11-trade-blotter.png', fullPage: true });
   });

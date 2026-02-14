@@ -5,12 +5,12 @@ test.describe('Canonical P1 Contract', () => {
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
         page.on('pageerror', err => console.log(`BROWSER ERROR: ${err}`));
         // 1. Load with e2e flag to ensure deterministic mode
-        await page.goto('/?e2e=1');
+        await page.goto('http://127.0.0.1:5100/?e2e=1');
     });
 
     test('should enter deterministic mode and connect websockets', async ({ page }) => {
         // Verify E2E mode class
-        await expect(page.locator('body')).toHaveClass(/e2e-mode/);
+        await expect(page.getByTestId('app-shell')).toHaveClass(/e2e-mode/);
 
         // Verify Data Feed connects
         // Wait for Status Indicator to reflect CONNECTED state via data attribute
@@ -20,13 +20,12 @@ test.describe('Canonical P1 Contract', () => {
 
     test('should trigger strategy run', async ({ page }) => {
         // Verify E2E mode
-        await expect(page.locator('body')).toHaveClass(/e2e-mode/);
+        await expect(page.getByTestId('app-shell')).toHaveClass(/e2e-mode/);
 
-        // Find autopilot toggle button (may be disabled in demo mode)
+        // Find and click start button (Autopilot toggle)
         const startBtn = page.getByTestId('autopilot-toggle');
         await expect(startBtn).toBeVisible();
-
-        // Force-click even if disabled to verify UI doesn't crash
+        // Enable button if disabled (kill_switch may be active in demo)
         await startBtn.click({ force: true });
 
         // Ensure UI doesn't crash on click

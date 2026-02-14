@@ -133,16 +133,19 @@ function OverlayToggle({
     label, 
     color, 
     active, 
-    onClick 
+    onClick,
+    'data-testid': testId
 }: { 
     label: string; 
     color: string; 
     active: boolean; 
     onClick: () => void;
+    'data-testid'?: string;
 }) {
     return (
         <button
             onClick={onClick}
+            data-testid={testId}
             className={`
                 px-2 py-1 text-[10px] font-medium rounded border
                 transition-all duration-150
@@ -487,7 +490,7 @@ export function SupergraphChart({
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-white">{symbol}</span>
+                        <span className="text-lg font-bold text-white" data-testid="chart-symbol-display">{symbol}</span>
                         <span className="text-xs text-gray-500 px-1.5 py-0.5 bg-gray-800 rounded">{timeframe}</span>
                     </div>
                     {lastCandle && (
@@ -512,6 +515,7 @@ export function SupergraphChart({
                                 color={overlay.color}
                                 active={overlay.visible}
                                 onClick={() => toggleOverlay(overlay.id)}
+                                data-testid={`overlay-toggle-${overlay.id}`}
                             />
                         ))}
                     </div>

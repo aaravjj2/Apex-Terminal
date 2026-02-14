@@ -17,7 +17,7 @@ export const ReplayControls = () => {
     const isRunning = replayState.running && !replayState.frozen;
 
     return (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-[#1e222d] border border-[#2a2e39] rounded-lg shadow-lg p-2 flex items-center space-x-2 z-50">
+        <div data-testid="replay-controls" className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-[#1e222d] border border-[#2a2e39] rounded-lg shadow-lg p-2 flex items-center space-x-2 z-50">
             <div className="flex items-center space-x-1 border-r border-[#2a2e39] pr-2">
                 <span className={`text-xs font-bold ${isVirtual ? 'text-blue-500' : 'text-gray-500'}`}>
                     {isVirtual ? 'REPLAY' : 'LIVE'}
@@ -37,11 +37,11 @@ export const ReplayControls = () => {
                     </button>
 
                     {isRunning ? (
-                        <button onClick={() => controlReplay('freeze')} className="p-1 hover:bg-[#2a2e39] rounded text-yellow-500" title="Pause">
+                        <button data-testid="replay-pause-btn" onClick={() => controlReplay('freeze')} className="p-1 hover:bg-[#2a2e39] rounded text-yellow-500" title="Pause">
                             <Pause size={16} />
                         </button>
                     ) : (
-                        <button onClick={() => controlReplay('start')} className="p-1 hover:bg-[#2a2e39] rounded text-green-500" title="Play">
+                        <button data-testid="replay-play-btn" onClick={() => controlReplay('start')} className="p-1 hover:bg-[#2a2e39] rounded text-green-500" title="Play">
                             <Play size={16} />
                         </button>
                     )}
@@ -51,6 +51,7 @@ export const ReplayControls = () => {
                     </button>
 
                     <select
+                        data-testid="replay-speed-select"
                         value={replayState.speed_multiplier}
                         onChange={(e) => setReplaySpeed(Number(e.target.value))}
                         className="bg-[#2a2e39] text-gray-300 text-xs rounded px-1 py-1 outline-none"
@@ -65,7 +66,7 @@ export const ReplayControls = () => {
                 </>
             )}
 
-            <div className="text-xs text-gray-500 ml-2">
+            <div data-testid="replay-timestamp" className="text-xs text-gray-500 ml-2">
                 {new Intl.DateTimeFormat('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',

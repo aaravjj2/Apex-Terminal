@@ -200,7 +200,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(500);
     
     // Switch to Library subtab
-    await page.getByTestId('strategylab-subtab-library').click();
+    await page.getByTestId('strategy-lab-tab-library').click();
     await page.waitForTimeout(1000); // Wait for strategies to load
     
     // Verify at least one strategy is listed
@@ -221,7 +221,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(500);
     
     // Go to Library
-    await page.getByTestId('strategylab-subtab-library').click();
+    await page.getByTestId('strategy-lab-tab-library').click();
     await page.waitForTimeout(1000);
     
     // Click first strategy's load button (if present)
@@ -231,7 +231,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
       await page.waitForTimeout(500);
       
       // Should switch to Builder tab
-      await page.getByTestId('strategylab-subtab-builder').click();
+      await page.getByTestId('strategy-lab-tab-builder').click();
       await page.waitForTimeout(300);
       
       // Verify strategy name is populated
@@ -251,7 +251,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(500);
     
     // Go to Validate
-    await page.getByTestId('strategylab-subtab-validate').click();
+    await page.getByTestId('strategy-lab-tab-validate').click();
     await page.waitForTimeout(300);
     
     // Enter invalid JSON if there's a textarea
@@ -280,7 +280,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(500);
     
     // Go to Validate
-    await page.getByTestId('strategylab-subtab-validate').click();
+    await page.getByTestId('strategy-lab-tab-validate').click();
     await page.waitForTimeout(300);
     
     const validJSON = JSON.stringify({
@@ -313,7 +313,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(500);
     
     // Should be on Configure subtab by default
-    await expect(page.getByTestId('backtest-subtab-configure')).toHaveClass(/bg-brand/);
+    await expect(page.getByTestId('backtest-tab-configure')).toHaveClass(/bg-brand/);
     
     // Select a strategy (wait for strategies to load)
     await page.waitForTimeout(1500);
@@ -358,7 +358,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(3000);
     
     // Switch to Runs subtab
-    await page.getByTestId('backtest-subtab-runs').click();
+    await page.getByTestId('backtest-tab-runs').click();
     await page.waitForTimeout(1000); // Wait for runs to load
     
     // Verify at least one run exists
@@ -388,7 +388,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(3000);
     
     // Switch to Analyze subtab
-    await page.getByTestId('backtest-subtab-analyze').click();
+    await page.getByTestId('backtest-tab-analyze').click();
     await page.waitForTimeout(1500);
     
     // Verify charts container exists
@@ -420,13 +420,13 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(3000);
     
     // Second run (same config for determinism)
-    await page.getByTestId('backtest-subtab-configure').click();
+    await page.getByTestId('backtest-tab-configure').click();
     await page.waitForTimeout(300);
     await page.getByTestId('run-backtest-btn').click();
     await page.waitForTimeout(3000);
     
     // Switch to Compare subtab
-    await page.getByTestId('backtest-subtab-compare').click();
+    await page.getByTestId('backtest-tab-compare').click();
     await page.waitForTimeout(1000);
     
     // Verify compare UI exists
@@ -454,7 +454,7 @@ test.describe('UI E2E Reconciliation v1.2 - Options Workstation', () => {
     await page.waitForTimeout(3000);
     
     // Switch to Export subtab
-    await page.getByTestId('backtest-subtab-export').click();
+    await page.getByTestId('backtest-tab-export').click();
     await page.waitForTimeout(500);
     
     // Verify export button exists

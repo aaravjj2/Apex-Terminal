@@ -58,7 +58,7 @@ test.describe('Autopilot MCP Testing', () => {
     await expect(page.getByTestId('position-ledger-heading')).toBeVisible();
     
     // Take snapshot
-    await expect(page.locator('main')).toHaveScreenshot('autopilot-positions.png');
+    await expect(page.getByTestId('main-content')).toHaveScreenshot('autopilot-positions.png');
   });
 
   test('should switch to activity tab', async ({ page }) => {
@@ -69,7 +69,7 @@ test.describe('Autopilot MCP Testing', () => {
     await expect(page.getByTestId('activity-log-heading')).toBeVisible();
     
     // Take snapshot
-    await expect(page.locator('main')).toHaveScreenshot('autopilot-activity.png');
+    await expect(page.getByTestId('main-content')).toHaveScreenshot('autopilot-activity.png');
   });
 
   test('should switch to settings tab', async ({ page }) => {
@@ -85,6 +85,15 @@ test.describe('Autopilot MCP Testing', () => {
 
   test('should toggle autopilot state', async ({ page }) => {
     await page.click('[data-testid="nav-item-autopilot"]');
+    
+    // Deactivate kill switch first if active (buttons disabled when kill switch is on)
+    const killSwitch = page.getByTestId('kill-switch-btn');
+    if (await killSwitch.isVisible().catch(() => false)) {
+      if (await killSwitch.textContent().then(t => t?.includes('Deactivate'))) {
+        await killSwitch.click();
+        await page.waitForTimeout(500);
+      }
+    }
     
     // Click Pause/Resume button using data-testid
     await page.getByTestId('pause-resume-btn').click();

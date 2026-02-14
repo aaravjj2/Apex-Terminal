@@ -19,12 +19,14 @@ import structlog
 
 from ..config import get_settings
 from ..persistence import init_database, get_database
-from .routes import bars, ingest, parity, debug, clock, drawings, strategies, portfolio, alerts, versions, runs, packages, metrics, incidents, notes, reports, options, profiles, patterns, fundamentals, automation, forecast, intelligence, risk_desk, strategy_lab, backtest, unified_runs, ticker, market_data_v1_13
+from .routes import bars, ingest, parity, debug, clock, drawings, strategies, portfolio, alerts, versions, runs, packages, metrics, incidents, notes, reports, options, profiles, patterns, fundamentals, automation, forecast, intelligence, risk_desk, strategy_lab, strategy_artifacts, backtest, unified_runs, ticker, market_data_v1_13, cache, provider_registry, citations, search, agents, watchlist, correlation, journal, notifications, audit_log, attribution, risk_scenarios, data_quality, strategy_compare, platform_health
 from .websocket import router as ws_router
 from .health_router import router as health_router
 from .verification_routes import router as verification_router
 # UNIFIED AUTOPILOT ROUTER - This is the ONLY autopilot API
 from ..autopilot.unified_router import router as unified_autopilot_router
+# v1.19 + v1.20: Portfolio CRUD
+from ..portfolio import portfolio_router
 
 
 logger = structlog.get_logger()
@@ -208,11 +210,16 @@ def create_app() -> FastAPI:
     app.include_router(forecast.router, prefix="/api/v1", tags=["forecast"])
     app.include_router(intelligence.router, prefix="/api/v1", tags=["intelligence"])
     app.include_router(risk_desk.router, prefix="/api", tags=["risk-desk"])    
+    # v1.19 + v1.20: Portfolio CRUD (different from legacy /api/v1/portfolio)
+    app.include_router(portfolio_router, tags=["portfolios-v19-v20"])
     # Strategy Lab and Backtest (NEW)
     app.include_router(strategy_lab.router, tags=["strategy_lab"])
+    app.include_router(strategy_artifacts.router, tags=["strategy_artifacts"])
     app.include_router(backtest.router, tags=["backtest"])
     # Unified Run Ledger (v1.5)
     app.include_router(unified_runs.router, tags=["unified-runs"])
+    # Cache API (v1.16)
+    app.include_router(cache.router, tags=["cache"])
     # UNIFIED AUTOPILOT ROUTER - This is the ONLY autopilot API
     app.include_router(unified_autopilot_router, prefix="/api/v1", tags=["autopilot"])
     app.include_router(ws_router, prefix="/ws", tags=["websocket"])
@@ -220,6 +227,34 @@ def create_app() -> FastAPI:
     app.include_router(autopilot_ws_router, prefix="/ws", tags=["autopilot-websocket"])
     app.include_router(autopilot_ws_router, prefix="/ws", tags=["autopilot-websocket"])
     app.include_router(verification_router, tags=["verification"])
+    # v1.37: Provider Registry
+    app.include_router(provider_registry.router, tags=["provider-registry"])
+    # v1.38: Citations
+    app.include_router(citations.router, tags=["citations"])
+    # v1.39: Search Index
+    app.include_router(search.router, tags=["search"])
+    # v1.40: Agent Runner
+    app.include_router(agents.router, tags=["agents"])
+    # v1.41: Watchlist Manager
+    app.include_router(watchlist.router, tags=["watchlists"])
+    # v1.42: Correlation Matrix
+    app.include_router(correlation.router, tags=["correlation"])
+    # v1.43: Trade Journal
+    app.include_router(journal.router, tags=["journal"])
+    # v1.44: Notifications Center
+    app.include_router(notifications.router, tags=["notifications"])
+    # v1.45: System Audit Log
+    app.include_router(audit_log.router, tags=["audit"])
+    # v1.46: Performance Attribution
+    app.include_router(attribution.router, tags=["attribution"])
+    # v1.47: Risk Scenarios
+    app.include_router(risk_scenarios.router, tags=["risk-scenarios"])
+    # v1.48: Data Quality Monitor
+    app.include_router(data_quality.router, tags=["data-quality"])
+    # v1.49: Strategy Comparison Matrix
+    app.include_router(strategy_compare.router, tags=["strategy-compare"])
+    # v1.50: Platform Health Dashboard
+    app.include_router(platform_health.router, tags=["platform-health"])
     
     # ElevenLabs TTS
     from .tts_routes import router as tts_router

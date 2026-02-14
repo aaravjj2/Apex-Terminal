@@ -114,21 +114,21 @@ export function AnalyzeTab({ run }: AnalyzeTabProps) {
       {/* Metrics Summary */}
   {run.metrics && (
         <div className="grid grid-cols-4 gap-4" data-testid="analyze-metrics">
-          <div className="bg-panel-bg border border-border rounded p-4">
+          <div className="bg-panel-bg border border-border rounded p-4" data-testid="metric-card-total-return">
             <div className="text-xs text-text-secondary uppercase tracking-wide">Total Return</div>
             <div className={`text-2xl font-bold mt-1 ${(run.metrics.total_return_pct ?? 0) >= 0 ? 'text-up' : 'text-down'}`}>
               {formatPercentSafe(run.metrics.total_return_pct)}
             </div>
           </div>
-          <div className="bg-panel-bg border border-border rounded p-4">
+          <div className="bg-panel-bg border border-border rounded p-4" data-testid="metric-card-sharpe-ratio">
             <div className="text-xs text-text-secondary uppercase tracking-wide">Sharpe Ratio</div>
             <div className="text-2xl font-bold text-text mt-1">{formatNumberSafe(run.metrics.sharpe_ratio)}</div>
           </div>
-          <div className="bg-panel-bg border border-border rounded p-4">
+          <div className="bg-panel-bg border border-border rounded p-4" data-testid="metric-card-max-drawdown">
             <div className="text-xs text-text-secondary uppercase tracking-wide">Max Drawdown</div>
             <div className="text-2xl font-bold text-down mt-1">{formatPercentSafe(run.metrics.max_drawdown_pct)}</div>
           </div>
-          <div className="bg-panel-bg border border-border rounded p-4">
+          <div className="bg-panel-bg border border-border rounded p-4" data-testid="metric-card-win-rate">
             <div className="text-xs text-text-secondary uppercase tracking-wide">Win Rate</div>
             <div className="text-2xl font-bold text-text mt-1">{formatPercentSafe(run.metrics.win_rate_pct, 1)}</div>
           </div>
@@ -138,6 +138,7 @@ export function AnalyzeTab({ run }: AnalyzeTabProps) {
       {/* Chart 1: Equity Curve with Zoom */}
       <div className="bg-panel-bg border border-border rounded p-4" data-testid="backtest-analyze-chart-equity">
         <h3 className="text-sm font-semibold text-text mb-4">Equity Curve</h3>
+        <div data-testid="equity-curve-chart"><div data-testid="chart-svg">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={equityData} margin={{ top: 5, right: 30, left: 20, bottom: 35 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -175,11 +176,13 @@ border: '1px solid var(--color-border)',
             />
           </LineChart>
         </ResponsiveContainer>
+        </div></div>
       </div>
 
       {/* Chart 2: Drawdown (Underwater Plot) */}
       <div className="bg-panel-bg border border-border rounded p-4" data-testid="backtest-analyze-chart-drawdown">
         <h3 className="text-sm font-semibold text-text mb-4">Drawdown (Underwater Plot)</h3>
+        <div data-testid="drawdown-chart">
         <ResponsiveContainer width="100%" height={250}>
           <AreaChart data={drawdownData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -210,11 +213,13 @@ border: '1px solid var(--color-border)',
             />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Chart 3: Daily Returns Histogram */}
       <div className="bg-panel-bg border border-border rounded p-4" data-testid="backtest-analyze-chart-histogram">
         <h3 className="text-sm font-semibold text-text mb-4">Daily Returns Distribution</h3>
+        <div data-testid="returns-histogram-chart">
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={histogramData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -244,12 +249,13 @@ border: '1px solid var(--color-border)',
             />
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Chart 4: Monthly Returns Heatmap (Simplified Grid) */}
       <div className="bg-panel-bg border border-border rounded p-4" data-testid="backtest-analyze-chart-heatmap">
         <h3 className="text-sm font-semibold text-text mb-4">Monthly Returns</h3>
-        <div className="grid grid-cols-6 gap-2">
+        <div className="grid grid-cols-6 gap-2" data-testid="monthly-returns-heatmap">
           {monthlyReturns.map(({month, return: ret}) => {
             const safeRet = ret ?? 0;
             const intensity = Math.min(Math.abs(safeRet) / 10, 1); // Normalize to 0-1
@@ -275,6 +281,7 @@ border: '1px solid var(--color-border)',
       {/* Chart 5: Rolling Sharpe Ratio */}
       <div className="bg-panel-bg border border-border rounded p-4" data-testid="backtest-analyze-chart-rolling-sharpe">
         <h3 className="text-sm font-semibold text-text mb-4">Rolling 30-Day Sharpe Ratio</h3>
+        <div data-testid="rolling-sharpe-chart">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={rollingMetrics} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -304,6 +311,7 @@ border: '1px solid var(--color-border)',
             />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Trade Blotter */}
@@ -313,7 +321,7 @@ border: '1px solid var(--color-border)',
         </div>
         <div className="overflow-auto max-h-96">
           <table className="w-full" data-testid="trade-blotter">
-            <thead className="bg-element-bg sticky top-0">
+            <thead className="bg-element-bg sticky top-0" data-testid="blotter-thead">
               <tr>
                 <th className="px-4 py-2 text-left text-xs font-medium text-text">Trade ID</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-text">Timestamp</th>

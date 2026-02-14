@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE } from '../../../config/api';
 
 interface AgentStatus {
     symbol: string;
@@ -20,7 +21,7 @@ export const AutopilotAgents: React.FC = () => {
 
     const fetchAgents = async () => {
         try {
-            const res = await fetch('/api/v1/autopilot/agents');
+            const res = await fetch(`${API_BASE}/api/v1/autopilot/agents`);
             if (res.ok) {
                 const json = await res.json();
                 setData(json);

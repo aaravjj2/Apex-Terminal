@@ -7,8 +7,8 @@ export function IndicatorDock() {
 
     if (activeIndicators.length === 0) {
         return (
-            <div className="p-4 text-center">
-                <p className="text-sm text-text-muted">No indicators added</p>
+            <div data-testid="indicator-dock-empty" className="p-4 text-center">
+                <p data-testid="no-indicators-msg" className="text-sm text-text-muted">No indicators added</p>
                 <p className="text-xs text-text-tertiary mt-1">
                     Use the Indicators button in the chart header
                 </p>
@@ -55,6 +55,7 @@ export function IndicatorDock() {
                                     <Eye size={14} />
                                 </button>
                                 <button
+                                    data-testid={`remove-indicator-${ind.type}`}
                                     onClick={() => removeIndicator(ind.id)}
                                     className="p-1 rounded hover:bg-panel-bg transition-colors text-text-secondary hover:text-error"
                                     title="Remove"

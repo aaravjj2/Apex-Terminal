@@ -192,7 +192,7 @@ test.describe('v1.8 - Accessibility (ARIA / Keyboard)', () => {
   test('v1.8-17 - Risk Desk subtabs have ARIA tablist', async ({ page }) => {
     await gotoOptions(page);
     await page.getByTestId('options-main-tab-risk-desk').click();
-    const tablist = page.locator('[role="tablist"][aria-label="Risk Desk tabs"]');
+    const tablist = page.getByTestId('riskdesk-tablist');
     await expect(tablist).toBeVisible();
     const runTab = page.getByTestId('riskdesk-subtab-run');
     await expect(runTab).toHaveAttribute('role', 'tab');
@@ -201,7 +201,7 @@ test.describe('v1.8 - Accessibility (ARIA / Keyboard)', () => {
 
   test('v1.8-18 - Backtest subtabs have ARIA tablist', async ({ page }) => {
     await gotoBacktest(page);
-    const tablist = page.locator('[role="tablist"][aria-label="Backtest tabs"]');
+    const tablist = page.getByTestId('backtest-tablist');
     await expect(tablist).toBeVisible();
     const configTab = page.getByTestId('backtest-tab-configure');
     await expect(configTab).toHaveAttribute('role', 'tab');

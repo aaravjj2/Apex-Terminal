@@ -23,6 +23,12 @@ from ...risk_desk.schemas_w2 import (
     TicketRequest,
     TicketDraft,
 )
+
+# v1.22: Portfolio exports
+from ...portfolio import (
+    get_demo_store,
+    compute_portfolio_valuation,
+)
 from ...risk_desk.pipeline import execute_risk_run
 from ...risk_desk.ticket_builder import build_ticket
 from ...risk_desk.stress_tester import SCENARIOS
@@ -120,11 +126,13 @@ async def generate_ticket(req: TicketRequest) -> dict:
 
 
 @router.get("/export/{run_id}")
-async def export_risk_run(run_id: str):
+async def export_risk_run(run_id: str, portfolio_id: Optional[str] = "DEMO-PORT-001"):
     """
-    Export Risk Desk run as a ZIP bundle (v1.7 institutional-ready).
+    Export Risk Desk run as a ZIP bundle (v1.7 institutional-ready + v1.22 portfolio artifacts).
     Includes: risk_run.json, tool_trace.json, compliance.json, portfolio.csv,
-              snapshot.json, config_hash.txt, report.html, README.txt
+              snapshot.json, config_hash.txt, report.html, README.txt,
+              portfolio/portfolio.json, portfolio/valuation_inputs.json,
+              MANIFEST.json (with checksums)
     """
     run = _run_store.get(run_id)
     if run is None:
@@ -132,17 +140,40 @@ async def export_risk_run(run_id: str):
     
     run_data = run.model_dump()
     
+    # v1.22: Load attached portfolio
+    store = get_demo_store()
+    portfolio = store.get_portfolio(portfolio_id)
+    if portfolio is None:
+        # Use deterministic default if not found
+        portfolio_id = "DEMO-PORT-001"
+        portfolio = store.get_portfolio(portfolio_id)
+    
+    valuation = None
+    if portfolio:
+        valuation = compute_portfolio_valuation(portfolio)
+    
+    # Manifest tracking (file path → checksum)
+    manifest = {}
+    
+    # Helper to add file to manifest
+    def add_to_manifest(filepath: str, content: str) -> str:
+        checksum = hashlib.sha256(content.encode('utf-8')).hexdigest()
+        manifest[filepath] = checksum
+        return content
+    
     # Create ZIP in memory
     zip_buffer = io.BytesIO()
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
         # risk_run.json (main run data)
-        zipf.writestr(f"{run_id}/risk_run.json", json.dumps(run_data, indent=2, default=str))
+        content = add_to_manifest(f"{run_id}/risk_run.json", json.dumps(run_data, indent=2, default=str))
+        zipf.writestr(f"{run_id}/risk_run.json", content)
         
         # tool_trace.json (tool execution trace)
         tool_trace = run.tool_trace if hasattr(run, 'tool_trace') else []
         trace_data = [t.model_dump() if hasattr(t, 'model_dump') else t for t in tool_trace]
-        zipf.writestr(f"{run_id}/tool_trace.json", json.dumps(trace_data, indent=2, default=str))
+        content = add_to_manifest(f"{run_id}/tool_trace.json", json.dumps(trace_data, indent=2, default=str))
+        zipf.writestr(f"{run_id}/tool_trace.json", content)
         
         # compliance.json (compliance gate data)
         compliance_data = {
@@ -150,7 +181,8 @@ async def export_risk_run(run_id: str):
             "compliance_state": run.compliance.status if run.compliance else "approved",
             "compliance_issues": [v.model_dump() for v in run.compliance.violations] if run.compliance else [],
         }
-        zipf.writestr(f"{run_id}/compliance.json", json.dumps(compliance_data, indent=2))
+        content = add_to_manifest(f"{run_id}/compliance.json", json.dumps(compliance_data, indent=2))
+        zipf.writestr(f"{run_id}/compliance.json", content)
         
         # snapshot.json (market snapshot used)
         snapshot_data = {
@@ -158,20 +190,36 @@ async def export_risk_run(run_id: str):
             "config_hash": run.config_hash or "",
             "portfolio_hash": run.portfolio_hash or "",
             "scenario_id": run.stress.scenario.id if run.stress else "unknown",
-            "created_at": run.created_at or datetime.now(timezone.utc).isoformat(),
+            "created_at": run.created_at if run.created_at else datetime.now(timezone.utc).isoformat(),
         }
-        zipf.writestr(f"{run_id}/snapshot.json", json.dumps(snapshot_data, indent=2))
+        content = add_to_manifest(f"{run_id}/snapshot.json", json.dumps(snapshot_data, indent=2))
+        zipf.writestr(f"{run_id}/snapshot.json", content)
         
         # config_hash.txt
-        zipf.writestr(f"{run_id}/config_hash.txt", run.config_hash or "N/A")
+        content = add_to_manifest(f"{run_id}/config_hash.txt", run.config_hash or "N/A")
+        zipf.writestr(f"{run_id}/config_hash.txt", content)
         
         # portfolio.csv (reconstruct from validation if available)
         portfolio_csv = "# Portfolio CSV not available in this export\n"
-        zipf.writestr(f"{run_id}/portfolio.csv", portfolio_csv)
+        content = add_to_manifest(f"{run_id}/portfolio.csv", portfolio_csv)
+        zipf.writestr(f"{run_id}/portfolio.csv", content)
+        
+        # v1.22: portfolio/portfolio.json
+        if portfolio:
+            portfolio_json = json.dumps(portfolio.model_dump(), indent=2, default=str)
+            content = add_to_manifest(f"{run_id}/portfolio/portfolio.json", portfolio_json)
+            zipf.writestr(f"{run_id}/portfolio/portfolio.json", content)
+        
+        # v1.22: portfolio/valuation_inputs.json
+        if valuation:
+            valuation_inputs_json = json.dumps(valuation.valuation_inputs.model_dump(), indent=2, default=str)
+            content = add_to_manifest(f"{run_id}/portfolio/valuation_inputs.json", valuation_inputs_json)
+            zipf.writestr(f"{run_id}/portfolio/valuation_inputs.json", content)
         
         # report.html (self-contained institutional report)
         report_html = _generate_risk_report_html(run, run_data)
-        zipf.writestr(f"{run_id}/report.html", report_html)
+        content = add_to_manifest(f"{run_id}/report.html", report_html)
+        zipf.writestr(f"{run_id}/report.html", content)
         
         # README.txt
         readme = f"""RISK DESK RUN EXPORT - {run_id}
@@ -185,17 +233,21 @@ Portfolio Hash:  {run.portfolio_hash or 'N/A'}
 Scenario:        {run.stress.scenario.label if run.stress else 'N/A'}
 Compliance:      {run.compliance.status if run.compliance else 'approved'}
 Created:         {run.created_at or 'N/A'}
+Attached Portfolio: {portfolio_id}
 
 FILES IN THIS BUNDLE
 --------------------
-- README.txt          This file
-- risk_run.json       Complete risk run data
-- tool_trace.json     Tool execution trace (T1-T5) with timestamps
-- compliance.json     Compliance gate results
-- snapshot.json       Market snapshot & determinism metadata
-- config_hash.txt     Config hash for reproducibility
-- portfolio.csv       Input portfolio
-- report.html         Self-contained HTML report (open in browser)
+- README.txt                        This file
+- risk_run.json                     Complete risk run data
+- tool_trace.json                   Tool execution trace (T1-T5) with timestamps
+- compliance.json                   Compliance gate results
+- snapshot.json                     Market snapshot & determinism metadata
+- config_hash.txt                   Config hash for reproducibility
+- portfolio.csv                     Input portfolio (CSV)
+- portfolio/portfolio.json          Attached portfolio (structured)
+- portfolio/valuation_inputs.json   Valuation metadata & checksums
+- report.html                       Self-contained HTML report (open in browser)
+- MANIFEST.json                     File checksums (SHA256)
 
 TOOL PIPELINE (T1-T5)
 ---------------------
@@ -211,9 +263,15 @@ Config Hash:     {run.config_hash or 'N/A'}
 Portfolio Hash:  {run.portfolio_hash or 'N/A'}
 This run is fully reproducible with the same inputs.
 
-Generated: {datetime.now(timezone.utc).isoformat()}
+Generated: {run.created_at if run.created_at else datetime.now(timezone.utc).isoformat()}
 """
-        zipf.writestr(f"{run_id}/README.txt", readme)
+        content = add_to_manifest(f"{run_id}/README.txt", readme)
+        zipf.writestr(f"{run_id}/README.txt", content)
+        
+        # v1.22: MANIFEST.json (with stable ordering)
+        sorted_manifest = {k: manifest[k] for k in sorted(manifest.keys())}
+        manifest_json = json.dumps(sorted_manifest, indent=2)
+        zipf.writestr(f"{run_id}/MANIFEST.json", manifest_json)
     
     # Return ZIP as downloadable file
     zip_buffer.seek(0)
@@ -331,7 +389,7 @@ th {{ background: #f0f0f0; font-weight: 600; color: #555; }}
     {hedges_html}
     {trace_html}
     <div class="footer">
-        <p>Generated by Axiom Risk & Strategy Desk | {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+        <p>Generated by Axiom Risk & Strategy Desk | {run.created_at if run.created_at else datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
         <p>This report is self-contained. Config hash: <code>{run.config_hash or 'N/A'}</code></p>
     </div>
 </div>

@@ -86,7 +86,7 @@ export function OptionsView() {
   ];
 
   return (
-    <div className="h-full w-full flex flex-col bg-background">
+    <div className="h-full w-full flex flex-col bg-background" data-testid="options-view">
       {/* Header with main tabs */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2 bg-panel-bg">
         <div className="flex items-center gap-4">

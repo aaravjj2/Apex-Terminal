@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../../../ui/utils';
 import { Badge } from '../../../ui/Badge';
+import { Button } from '../../../ui/Button';
+import { PageHeader } from '../../../ui/PageHeader';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
 import { FinancialIntelligenceDashboard } from '../../dashboard/FinancialIntelligenceDashboard';
 import { MultiAgentFinancePanel } from '../../dashboard/MultiAgentFinancePanel';

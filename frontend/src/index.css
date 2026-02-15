@@ -1,110 +1,112 @@
 @import "tailwindcss";
+@import "./styles/design-tokens.css";
 
 /* ═══════════════════════════════════════════
-   DESIGN TOKENS  –  Terminal Design System
-   Single source of truth for all visual tokens.
+   APEX Terminal v1.51 - Professional UI System
+   Enhanced design tokens + legacy compatibility
    ═══════════════════════════════════════════ */
+
+/* Legacy token aliases for backward compatibility */
 :root {
-  /* ─── Colors ─── */
-  --color-background: #0C0E12;
-  --color-panel:      #131722;
-  --color-element:    #1E222D;
-  --color-surface:    #252A37;
-  --color-surface-hover: #2C3244;
-  --color-border:     #2A2E39;
-  --color-border-active: #434651;
+  --color-background: var(--bg-base);
+  --color-panel: var(--bg-panel);
+  --color-element: var(--bg-card);
+  --color-surface: var(--bg-hover);
+  --color-surface-hover: var(--bg-active);
+  --color-border: var(--border-subtle);
+  --color-border-active: var(--border-strong);
 
-  --color-brand:      #2962FF;
-  --color-brand-hover:#1E53E4;
-  --color-brand-muted: rgba(41, 98, 255, 0.15);
-  --color-up:         #089981;
-  --color-up-hover:   #0AAE8E;
-  --color-down:       #F23645;
-  --color-down-hover: #FF4757;
-  --color-warn:       #F7931A;
+  --color-brand: var(--color-brand-500);
+  --color-brand-hover: var(--color-brand-400);
+  --color-brand-muted: rgba(59, 130, 246, 0.15);
+  --color-up: var(--color-success-500);
+  --color-up-hover: var(--color-success-400);
+  --color-down: var(--color-danger-500);
+  --color-down-hover: var(--color-danger-400);
+  --color-warn: var(--color-warning-500);
 
-  --color-text:       #D1D4DC;
-  --color-text-secondary: #787B86;
-  --color-text-muted: #5D606B;
+  --color-text: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-tertiary);
 
   /* Mode palette */
-  --color-live:     #089981;
-  --color-replay:   #9333EA;
-  --color-backtest: #06B6D4;
-  --color-paper:    #F59E0B;
+  --color-live: var(--color-success-600);
+  --color-replay: #9333ea;
+  --color-backtest: var(--color-info-600);
+  --color-paper: var(--color-warning-600);
 
   /* Trade semantics */
-  --color-bullish:  #089981;
-  --color-bearish:  #F23645;
-  --bg-terminal:    #131722;
+  --color-bullish: var(--color-success-500);
+  --color-bearish: var(--color-danger-500);
+  --bg-terminal: var(--bg-panel);
 
-  /* ─── Spacing (8 px base) ─── */
+  /* Legacy spacing (keep for gradual migration) */
   --spacing-unit: 8px;
-  --space-1:  4px;
-  --space-2:  8px;
-  --space-3:  12px;
-  --space-4:  16px;
-  --space-5:  20px;
-  --space-6:  24px;
-  --space-8:  32px;
-  --space-10: 40px;
+  --space-1: var(--space-1);
+  --space-2: var(--space-2);
+  --space-3: var(--space-3);
+  --space-4: var(--space-4);
+  --space-5: var(--space-5);
+  --space-6: var(--space-6);
+  --space-8: var(--space-8);
+  --space-10: var(--space-10);
 
-  /* ─── Typography ─── */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace;
-  --fs-xxs:  10px;
-  --fs-xs:   12px;
-  --fs-sm:   14px;
-  --fs-base: 16px;
-  --fs-lg:   18px;
-  --fs-xl:   20px;
-  --fs-2xl:  24px;
-  --fs-3xl:  28px;
+  /* Legacy typography */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --fs-xxs: var(--text-xs);
+  --fs-xs: var(--text-sm);
+  --fs-sm: var(--text-base);
+  --fs-base: var(--text-lg);
+  --fs-lg: var(--text-xl);
+  --fs-xl: var(--text-2xl);
+  --fs-2xl: var(--text-3xl);
+  --fs-3xl: var(--text-4xl);
 
-  /* ─── Radii ─── */
-  --radius-sm:   2px;
-  --radius:      4px;
-  --radius-md:   6px;
-  --radius-lg:   8px;
-  --radius-xl:   12px;
-  --radius-full: 9999px;
+  /* Legacy radii */
+  --radius-sm: var(--radius-sm);
+  --radius: var(--radius-default);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
 
-  /* ─── Shadows / Elevation ─── */
-  --shadow-sm:    0 1px 3px rgba(0,0,0,0.25);
-  --shadow-md:    0 4px 12px rgba(0,0,0,0.35);
-  --shadow-lg:    0 8px 24px rgba(0,0,0,0.45);
-  --shadow-dock:  0 -4px 20px rgba(0,0,0,0.3);
-  --shadow-dropdown: 0 4px 20px rgba(0,0,0,0.4);
-  --shadow-modal: 0 8px 32px rgba(0,0,0,0.5);
-  --shadow-toast: 0 4px 12px rgba(0,0,0,0.3);
+  /* Legacy shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-dock: 0 -4px 20px rgba(0,0,0,0.3);
+  --shadow-dropdown: var(--shadow-md);
+  --shadow-modal: var(--shadow-xl);
+  --shadow-toast: var(--shadow-sm);
   --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.3);
 
-  /* ─── Z-index scale ─── */
-  --z-base:     0;
-  --z-content:  10;
-  --z-dock:     20;
-  --z-header:   30;
-  --z-dropdown: 40;
-  --z-overlay:  50;
-  --z-modal:    60;
-  --z-toast:    70;
-  --z-tooltip:  80;
+  /* Legacy z-index */
+  --z-base: var(--z-base);
+  --z-content: 10;
+  --z-dock: 20;
+  --z-header: 30;
+  --z-dropdown: var(--z-dropdown);
+  --z-overlay: 50;
+  --z-modal: var(--z-modal);
+  --z-toast: 70;
+  --z-tooltip: var(--z-tooltip);
 
-  /* ─── Transitions ─── */
-  --transition-fast:   0.1s ease;
-  --transition-normal: 0.2s ease;
-  --transition-slow:   0.3s ease;
+  /* Legacy transitions */
+  --transition-fast: var(--duration-100) var(--ease-out);
+  --transition-normal: var(--duration-200) var(--ease-out);
+  --transition-slow: var(--duration-300) var(--ease-out);
 }
 
 /* ═══════════════════════════════════════════
-   BASE STYLES
+   BASE STYLES (Enhanced v1.51)
    ═══════════════════════════════════════════ */
 body {
-  background-color: var(--color-background);
-  color: var(--color-text);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: var(--fs-sm);
-  line-height: 1.5;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;

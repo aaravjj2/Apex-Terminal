@@ -1,0 +1,489 @@
+/**
+ * Design System Tokens - v1.51
+ * 
+ * Professional-grade design system for financial applications
+ * Inspired by Bloomberg Terminal, Robinhood, and TradingView
+ * 
+ * Dark-first color palette with precision and clarity
+ */
+
+:root {
+  /* ========================================================================
+     COLOR PALETTE - DARK MODE (PRIMARY)
+     ======================================================================== */
+  
+  /* Neutrals - Dark charcoal base for professional terminal feel */
+  --color-neutral-950: #0a0a0b;
+  --color-neutral-900: #131316;
+  --color-neutral-850: #1a1a1e;
+  --color-neutral-800: #1f1f23;
+  --color-neutral-700: #2a2a2f;
+  --color-neutral-600: #3f3f46;
+  --color-neutral-500: #71717a;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-50: #fafafa;
+
+  /* Brand - Professional blue for primary actions */
+  --color-brand-600: #2563eb;
+  --color-brand-500: #3b82f6;
+  --color-brand-400: #60a5fa;
+  --color-brand-300: #93c5fd;
+
+  /* Success - Green for positive P&L and confirmations */
+  --color-success-700: #15803d;
+  --color-success-600: #16a34a;
+  --color-success-500: #22c55e;
+  --color-success-400: #4ade80;
+
+  /* Danger - Red for negative P&L and warnings */
+  --color-danger-700: #b91c1c;
+  --color-danger-600: #dc2626;
+  --color-danger-500: #ef4444;
+  --color-danger-400: #f87171;
+
+  /* Warning - Amber for cautions and pending states */
+  --color-warning-700: #b45309;
+  --color-warning-600: #d97706;
+  --color-warning-500: #f59e0b;
+  --color-warning-400: #fbbf24;
+
+  /* Info - Cyan for informational states */
+  --color-info-600: #0891b2;
+  --color-info-500: #06b6d4;
+  --color-info-400: #22d3ee;
+
+  /* ========================================================================
+     SEMANTIC TOKENS - MAPPED TO PALETTE
+     ======================================================================== */
+  
+  /* Background layers */
+  --bg-base: var(--color-neutral-950);
+  --bg-elevated: var(--color-neutral-900);
+  --bg-panel: var(--color-neutral-850);
+  --bg-card: var(--color-neutral-800);
+  --bg-hover: var(--color-neutral-700);
+  --bg-active: var(--color-neutral-600);
+
+  /* Text colors */
+  --text-primary: var(--color-neutral-100);
+  --text-secondary: var(--color-neutral-400);
+  --text-tertiary: var(--color-neutral-500);
+  --text-disabled: var(--color-neutral-600);
+  --text-inverse: var(--color-neutral-950);
+
+  /* Border colors */
+  --border-subtle: var(--color-neutral-800);
+  --border-default: var(--color-neutral-700);
+  --border-strong: var(--color-neutral-600);
+  --border-brand: var(--color-brand-500);
+
+  /* Interactive colors */
+  --interactive-primary: var(--color-brand-500);
+  --interactive-primary-hover: var(--color-brand-400);
+  --interactive-primary-active: var(--color-brand-600);
+  --interactive-secondary: var(--color-neutral-700);
+  --interactive-secondary-hover: var(--color-neutral-600);
+
+  /* Status colors */
+  --status-success: var(--color-success-500);
+  --status-success-subtle: var(--color-success-600);
+  --status-danger: var(--color-danger-500);
+  --status-danger-subtle: var(--color-danger-600);
+  --status-warning: var(--color-warning-500);
+  --status-warning-subtle: var(--color-warning-600);
+  --status-info: var(--color-info-500);
+
+  /* ========================================================================
+     TYPOGRAPHY - OPTIMIZED FOR FINANCIAL DATA
+     ======================================================================== */
+  
+  /* Font families */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Font sizes - Scale */
+  --text-xs: 0.6875rem;    /* 11px */
+  --text-sm: 0.8125rem;    /* 13px */
+  --text-base: 0.875rem;   /* 14px */
+  --text-md: 0.9375rem;    /* 15px */
+  --text-lg: 1rem;         /* 16px */
+  --text-xl: 1.125rem;     /* 18px */
+  --text-2xl: 1.25rem;     /* 20px */
+  --text-3xl: 1.5rem;      /* 24px */
+  --text-4xl: 1.875rem;    /* 30px */
+
+  /* Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Line heights */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* Letter spacing */
+  --tracking-tighter: -0.025em;
+  --tracking-tight: -0.0125em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.0125em;
+
+  /* ========================================================================
+     SPACING - 4px BASE SCALE
+     ======================================================================== */
+  
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0-5: 0.125rem;    /* 2px */
+  --space-1: 0.25rem;       /* 4px */
+  --space-1-5: 0.375rem;    /* 6px */
+  --space-2: 0.5rem;        /* 8px */
+  --space-2-5: 0.625rem;    /* 10px */
+  --space-3: 0.75rem;       /* 12px */
+  --space-4: 1rem;          /* 16px */
+  --space-5: 1.25rem;       /* 20px */
+  --space-6: 1.5rem;        /* 24px */
+  --space-7: 1.75rem;       /* 28px */
+  --space-8: 2rem;          /* 32px */
+  --space-10: 2.5rem;       /* 40px */
+  --space-12: 3rem;         /* 48px */
+  --space-14: 3.5rem;       /* 56px */
+  --space-16: 4rem;         /* 64px */
+  --space-20: 5rem;         /* 80px */
+
+  /* ========================================================================
+     BORDERS & RADII
+     ======================================================================== */
+  
+  /* Border widths */
+  --border-width-0: 0;
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+  --border-width-4: 4px;
+
+  /* Border radius - Subtle for professional look */
+  --radius-none: 0;
+  --radius-sm: 0.1875rem;   /* 3px */
+  --radius-default: 0.25rem; /* 4px */
+  --radius-md: 0.375rem;    /* 6px */
+  --radius-lg: 0.5rem;      /* 8px */
+  --radius-xl: 0.75rem;     /* 12px */
+  --radius-full: 9999px;
+
+  /* ========================================================================
+     ELEVATION - SHADOWS FOR DEPTH
+     ======================================================================== */
+  
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.25);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-default: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+
+  /* ========================================================================
+     LAYOUT
+     ======================================================================== */
+  
+  /* Container widths */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+
+  /* Z-index scale */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-fixed: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-popover: 1500;
+  --z-tooltip: 1600;
+
+  /* Transition durations */
+  --duration-75: 75ms;
+  --duration-100: 100ms;
+  --duration-150: 150ms;
+  --duration-200: 200ms;
+  --duration-300: 300ms;
+  --duration-500: 500ms;
+  --duration-700: 700ms;
+
+  /* Transition timing functions */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ========================================================================
+     COMPONENT-SPECIFIC TOKENS
+     ======================================================================== */
+  
+  /* Nav rail */
+  --nav-width-collapsed: 3.5rem;   /* 56px */
+  --nav-width-expanded: 14rem;     /* 224px */
+  --nav-bg: var(--bg-elevated);
+  --nav-border: var(--border-subtle);
+  --nav-item-hover: var(--bg-hover);
+  --nav-item-active: var(--bg-active);
+
+  /* Top bar */
+  --topbar-height: 3.5rem;         /* 56px */
+  --topbar-bg: var(--bg-panel);
+  --topbar-border: var(--border-subtle);
+
+  /* Card */
+  --card-bg: var(--bg-card);
+  --card-border: var(--border-subtle);
+  --card-radius: var(--radius-md);
+  --card-padding: var(--space-4);
+
+  /* Table */
+  --table-header-bg: var(--bg-panel);
+  --table-row-hover: var(--bg-hover);
+  --table-border: var(--border-subtle);
+
+  /* Input */
+  --input-bg: var(--bg-elevated);
+  --input-border: var(--border-default);
+  --input-focus-border: var(--border-brand);
+  --input-radius: var(--radius-sm);
+
+  /* Badge */
+  --badge-radius: var(--radius-default);
+  --badge-padding-x: var(--space-2);
+  --badge-padding-y: var(--space-0-5);
+}
+
+/* ========================================================================
+   UTILITY CLASSES - CRITICAL HELPERS
+   ======================================================================== */
+
+/* Tabular numerals for financial data consistency */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Monospace for precise numeric alignment */
+.font-mono-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Reduced motion for E2E and accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* E2E mode - disable all animations deterministically */
+[data-e2e-mode="true"] *,
+[data-e2e-mode="true"] *::before,
+[data-e2e-mode="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* ========================================================================
+   GLOBAL BASE STYLES
+   ======================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-700);
+  border-radius: var(--radius-default);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-600);
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-brand-500);
+  color: var(--text-inverse);
+}
+
+/* Focus visible */
+*:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Links */
+a {
+  color: var(--color-brand-400);
+  text-decoration: none;
+  transition: color var(--duration-150) var(--ease-out);
+}
+
+a:hover {
+  color: var(--color-brand-300);
+}
+
+/* Code */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background-color: var(--bg-elevated);
+  padding: 0.125rem 0.25rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Tables - Default professional styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--table-header-bg);
+  border-bottom: 1px solid var(--table-border);
+}
+
+td {
+  padding: var(--space-2-5) var(--space-3);
+  border-bottom: 1px solid var(--table-border);
+  font-size: var(--text-sm);
+}
+
+tr:hover td {
+  background-color: var(--table-row-hover);
+}
+
+/* Numeric columns - right-aligned tabular */
+td.numeric,
+th.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Status badges in tables */
+td .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--badge-padding-y) var(--badge-padding-x);
+  border-radius: var(--badge-radius);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* ========================================================================
+   ANIMATION KEYFRAMES - SUBTLE & PROFESSIONAL
+   ======================================================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Disabled in E2E mode via data attribute check above */
+.animate-fade-in {
+  animation: fadeIn var(--duration-200) var(--ease-out);
+}
+
+.animate-slide-in-up {
+  animation: slideInUp var(--duration-300) var(--ease-out);
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--duration-300) var(--ease-out);
+}
+
+/* ========================================================================
+   PRINT STYLES
+   ======================================================================== */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}

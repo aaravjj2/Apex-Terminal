@@ -2,7 +2,7 @@
   "entries": [
     {
       "cache_key": "key1",
-      "captured_at": "2026-02-15T18:12:59.383597",
+      "captured_at": "2026-02-15T19:18:23.052722",
       "checksum": "8fe32e407a1038ee38753b70e5374b3a46d6ae9d5f16cd5b73c53abaca8f5ed0",
       "params": {
         "symbol": "A"
@@ -10,6 +10,6 @@
       "request_type": "bars"
     }
   ],
-  "updated_at": "2026-02-15T18:12:59.383597",
+  "updated_at": "2026-02-15T19:18:23.052722",
   "version": "1.0"
 }

@@ -99,8 +99,8 @@ function PortfolioSummaryCard({ stats, verification }: { stats: PortfolioStats |
     }).format(v);
 
     return (
-        <div className="grid grid-cols-5 gap-3 px-6 py-4 border-b border-border" data-testid="portfolio-summary">
-            <div data-testid="total-equity" className="p-3 bg-element-bg rounded-lg border border-border border-l-2 border-l-brand">
+        <div className="grid grid-cols-5 gap-3 px-6 py-4 border-b border-border/60 bg-gradient-to-r from-panel-bg/30 to-transparent" data-testid="portfolio-summary">
+            <div data-testid="total-equity" className="stat-card">
                 <div className="flex items-center gap-2 text-text-secondary mb-1.5">
                     <Wallet size={14} />
                     <span className="text-[10px] uppercase tracking-wider font-medium">Total Equity</span>
@@ -110,7 +110,7 @@ function PortfolioSummaryCard({ stats, verification }: { stats: PortfolioStats |
                 </div>
             </div>
 
-            <div data-testid="open-pnl" className="p-3 bg-element-bg rounded-lg border border-border border-l-2 border-l-up">
+            <div data-testid="open-pnl" className={`stat-card ${(stats?.open_pnl || 0) >= 0 ? 'accent-success' : 'accent-danger'}`}>
                 <div className="flex items-center gap-2 text-text-secondary mb-1.5">
                     {(stats?.open_pnl || 0) >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                     <span className="text-[10px] uppercase tracking-wider font-medium">Open P&amp;L</span>
@@ -120,7 +120,7 @@ function PortfolioSummaryCard({ stats, verification }: { stats: PortfolioStats |
                 </div>
             </div>
 
-            <div data-testid="buying-power" className="p-3 bg-element-bg rounded-lg">
+            <div data-testid="buying-power" className="stat-card accent-info">
                 <div className="flex items-center gap-2 text-text-secondary mb-1.5">
                     <DollarSign size={14} />
                     <span className="text-[10px] uppercase tracking-wider font-medium">Buying Power</span>
@@ -130,7 +130,7 @@ function PortfolioSummaryCard({ stats, verification }: { stats: PortfolioStats |
                 </div>
             </div>
 
-            <div className="p-3 bg-element-bg rounded-lg">
+            <div className="stat-card">
                 <div className="flex items-center gap-2 text-text-secondary mb-1.5">
                     <BarChart3 size={14} />
                     <span className="text-[10px] uppercase tracking-wider font-medium">Positions</span>
@@ -140,7 +140,7 @@ function PortfolioSummaryCard({ stats, verification }: { stats: PortfolioStats |
                 </div>
             </div>
 
-            <div className="p-3 bg-element-bg rounded-lg">
+            <div className="stat-card">
                 <div className="flex items-center gap-2 text-text-secondary mb-1.5">
                     <Shield size={14} />
                     <span className="text-[10px] uppercase tracking-wider font-medium">Broker</span>

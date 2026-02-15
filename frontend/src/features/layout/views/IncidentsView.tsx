@@ -167,17 +167,16 @@ export function IncidentsView() {
                 />
 
                 {/* Tab Switcher */}
-                <div className="flex items-center gap-6 border-b border-border">
+                <div className="pro-tab-bar">
                     <button
                         onClick={() => setActiveTab('alerts')}
+                        aria-selected={activeTab === 'alerts'}
                         className={cn(
-                            "pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-2",
-                            activeTab === 'alerts'
-                                ? "border-brand text-brand"
-                                : "border-transparent text-text-secondary hover:text-text"
+                            "pro-tab flex items-center gap-2",
+                            activeTab === 'alerts' && "active"
                         )}
                     >
-                        <ShieldAlert size={16} />
+                        <ShieldAlert size={14} />
                         System Alerts
                         {alerts.filter(a => !a.resolved).length > 0 && (
                             <Badge variant="error" className="ml-1 h-5 px-1.5">
@@ -187,14 +186,13 @@ export function IncidentsView() {
                     </button>
                     <button
                         onClick={() => setActiveTab('bundles')}
+                        aria-selected={activeTab === 'bundles'}
                         className={cn(
-                            "pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-2",
-                            activeTab === 'bundles'
-                                ? "border-brand text-brand"
-                                : "border-transparent text-text-secondary hover:text-text"
+                            "pro-tab flex items-center gap-2",
+                            activeTab === 'bundles' && "active"
                         )}
                     >
-                        <Database size={16} />
+                        <Database size={14} />
                         Replay Bundles
                     </button>
                 </div>

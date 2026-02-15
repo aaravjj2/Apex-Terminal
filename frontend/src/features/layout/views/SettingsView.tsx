@@ -173,7 +173,7 @@ function ShortcutsSection() {
 export function SettingsView() {
     return (
         <div className="h-full bg-background overflow-auto" data-testid="settings-view">
-            <div className="max-w-3xl mx-auto p-6">
+            <div className="max-w-3xl mx-auto p-6 pb-12">
                 <PageHeader
                     title="Settings"
                     subtitle="Configure API keys, UI preferences, and shortcuts"
@@ -181,7 +181,7 @@ export function SettingsView() {
                     data-testid="settings-header"
                 />
 
-                <Tabs defaultValue="keys" className="space-y-6 mt-4">
+                <Tabs defaultValue="keys" className="space-y-6 mt-5">
                     <TabsList>
                         <TabsTrigger value="keys" icon={<Key size={14} />}>API Keys</TabsTrigger>
                         <TabsTrigger value="ui" icon={<Palette size={14} />}>UI Preferences</TabsTrigger>

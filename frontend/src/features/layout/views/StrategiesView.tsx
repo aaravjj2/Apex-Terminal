@@ -45,9 +45,9 @@ function StrategyList({
     };
 
     return (
-        <div className="h-full flex flex-col bg-panel-bg border-r border-border">
+        <div className="h-full flex flex-col bg-panel-bg/80 border-r border-border/60">
             {/* Header */}
-            <div className="p-3 border-b border-border flex items-center justify-between shrink-0">
+            <div className="p-3 border-b border-border/60 flex items-center justify-between shrink-0 bg-gradient-to-r from-panel-bg to-panel-bg/80">
                 <div className="flex items-center gap-2">
                     <Zap size={14} className="text-brand" />
                     <h2 className="text-sm font-semibold text-text">Strategies</h2>

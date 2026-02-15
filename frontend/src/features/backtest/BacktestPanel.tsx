@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { FlaskConical } from 'lucide-react';
+import { cn } from '../../ui/utils';
 import type { BacktestTab, BacktestConfig, BacktestRun } from './types';
 import { AnalyzeTab } from './AnalyzeTab';
 import { BacktestStatusHeader } from './BacktestStatusHeader';
@@ -26,6 +27,7 @@ export function BacktestPanel() {
   const [runStatus, setRunStatus] = useState<'idle' | 'running' | 'complete' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
   
   // v1.21: Attached portfolio (session-only)
   const [attachedPortfolioId, setAttachedPortfolioId] = useState<string>('DEMO-PORT-001');
@@ -70,7 +72,7 @@ export function BacktestPanel() {
   ];
 
   useEffect(() => {
-    loadStrategies();
+    loadStrategies().finally(() => setIsReady(true));
   }, []);
 
   const loadStrategies = async () => {
@@ -159,9 +161,15 @@ export function BacktestPanel() {
 
   return (
     <div className="h-full flex flex-col bg-background" data-testid="backtest-panel">
+      {isReady && <div data-testid="backtest-ready" className="hidden" />}
       {/* Header with subtabs */}
-      <div className="flex items-start justify-between border-b border-border px-4 py-3 bg-panel-bg gap-4">
-        <h2 className="text-lg font-semibold text-text">Backtest</h2>
+      <div className="view-header-bar gap-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-brand/10">
+            <FlaskConical size={16} className="text-brand" />
+          </div>
+          <h2 className="text-lg font-semibold text-text tracking-tight">Backtest</h2>
+        </div>
         
         {/* v1.21: Portfolio Attach Selector + Valuation Cards */}
         <div className="flex flex-col gap-2">
@@ -174,7 +182,7 @@ export function BacktestPanel() {
           )}
         </div>
         
-        <div className="flex gap-2" role="tablist" aria-label="Backtest tabs">
+        <div className="flex gap-1.5 ml-auto" role="tablist" aria-label="Backtest tabs">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -186,17 +194,16 @@ export function BacktestPanel() {
               role="tab"
               aria-selected={activeTab === tab.id}
               tabIndex={activeTab === tab.id ? 0 : -1}
-              className={`px-4 py-1.5 text-sm font-medium rounded transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 ${
-                activeTab === tab.id
-                  ? 'bg-brand text-white'
-                  : 'bg-element-bg text-text-secondary hover:text-text'
-              }`}
+              className={cn(
+                "pill-tab",
+                activeTab === tab.id && "active"
+              )}
             >
               {tab.label}
             </button>
           ))}
         </div>
-        <span data-testid="backtest-run-status" className="text-xs text-text-secondary ml-2">{runStatus}</span>
+        <span data-testid="backtest-run-status" className="text-xs text-text-muted tabular-nums">{runStatus}</span>
       </div>
 
       {/* Backtest Status Header (v1.8) */}

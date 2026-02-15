@@ -253,7 +253,7 @@ export const RunsAuditView: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-surface min-h-full" data-testid="runs-audit-view">
+    <div className="h-full flex flex-col bg-background" data-testid="runs-audit-view">
       {/* Page Header */}
       <PageHeader
         title="Runs & Audit Log"
@@ -282,14 +282,13 @@ export const RunsAuditView: React.FC = () => {
       />
 
       {/* Tab Switcher */}
-      <div className="flex items-center gap-4 border-b border-border">
+      <div className="pro-tab-bar">
         <button
           onClick={() => setActiveTab('runs')}
+          aria-selected={activeTab === 'runs'}
           className={cn(
-            'pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5',
-            activeTab === 'runs'
-              ? 'border-brand text-brand'
-              : 'border-transparent text-text-secondary hover:text-text'
+            'pro-tab flex items-center gap-1.5',
+            activeTab === 'runs' && 'active'
           )}
         >
           Runs
@@ -297,11 +296,10 @@ export const RunsAuditView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('audit')}
+          aria-selected={activeTab === 'audit'}
           className={cn(
-            'pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5',
-            activeTab === 'audit'
-              ? 'border-brand text-brand'
-              : 'border-transparent text-text-secondary hover:text-text'
+            'pro-tab flex items-center gap-1.5',
+            activeTab === 'audit' && 'active'
           )}
         >
           Audit Log
@@ -309,8 +307,10 @@ export const RunsAuditView: React.FC = () => {
         </button>
       </div>
 
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
       {/* Filters */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -320,7 +320,7 @@ export const RunsAuditView: React.FC = () => {
             placeholder="Search runs, events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 bg-surface-elevated border border-border rounded-lg text-sm text-text placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand/50 w-64"
+            className="pl-10 pr-4 py-2 bg-element-bg border border-border rounded-lg text-sm text-text placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand/50 w-64"
           />
         </div>
 
@@ -329,7 +329,7 @@ export const RunsAuditView: React.FC = () => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 bg-surface-elevated border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
+              className="px-3 py-2 bg-element-bg border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
             >
               <option value="all">All Types</option>
               <option value="autopilot">Autopilot</option>
@@ -339,7 +339,7 @@ export const RunsAuditView: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-surface-elevated border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
+              className="px-3 py-2 bg-element-bg border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
             >
               <option value="all">All Statuses</option>
               <option value="running">Running</option>
@@ -352,7 +352,7 @@ export const RunsAuditView: React.FC = () => {
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-3 py-2 bg-surface-elevated border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
+            className="px-3 py-2 bg-element-bg border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
           >
             <option value="all">All Severities</option>
             <option value="info">Info</option>
@@ -370,9 +370,9 @@ export const RunsAuditView: React.FC = () => {
         </div>
       ) : activeTab === 'runs' ? (
         /* Runs Table */
-        <div className="bg-surface-elevated rounded-lg border border-border overflow-hidden">
+        <div className="bg-element-bg rounded-lg border border-border overflow-hidden">
           <table className="w-full">
-            <thead className="bg-surface border-b border-border">
+            <thead className="bg-element-bg/50 border-b border-border">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Run ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Type</th>
@@ -389,7 +389,7 @@ export const RunsAuditView: React.FC = () => {
                 <tr
                   key={run.run_id}
                   onClick={() => setSelectedRun(run)}
-                  className="hover:bg-surface cursor-pointer transition-colors"
+                  className="hover:bg-element-bg/50 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
                     <span className="font-mono text-sm text-brand">{run.run_id}</span>
@@ -436,9 +436,9 @@ export const RunsAuditView: React.FC = () => {
         </div>
       ) : (
         /* Audit Log */
-        <div className="bg-surface-elevated rounded-lg border border-border overflow-hidden">
+        <div className="bg-element-bg rounded-lg border border-border overflow-hidden">
           <table className="w-full">
-            <thead className="bg-surface border-b border-border">
+            <thead className="bg-element-bg/50 border-b border-border">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Time</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Severity</th>
@@ -449,14 +449,14 @@ export const RunsAuditView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredAuditEvents.map((evt) => (
-                <tr key={evt.id} className="hover:bg-surface transition-colors">
+                <tr key={evt.id} className="hover:bg-element-bg/50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="text-sm text-text">{formatTime(evt.timestamp)}</div>
                     <div className="text-xs text-text-secondary">{formatDate(evt.timestamp)}</div>
                   </td>
                   <td className="px-4 py-3">{getSeverityBadge(evt.severity)}</td>
                   <td className="px-4 py-3">
-                    <span className="font-mono text-xs text-text-secondary bg-surface px-2 py-1 rounded">
+                    <span className="font-mono text-xs text-text-secondary bg-element-bg/50 px-2 py-1 rounded">
                       {evt.event_type}
                     </span>
                   </td>
@@ -494,13 +494,13 @@ export const RunsAuditView: React.FC = () => {
       {selectedRun && (
         <div className="fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedRun(null)} />
-          <div className="absolute right-0 top-0 bottom-0 w-[500px] bg-surface-elevated border-l border-border overflow-y-auto">
+          <div className="absolute right-0 top-0 bottom-0 w-[500px] bg-element-bg border-l border-border overflow-y-auto">
             <div className="p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-text">Run Details</h2>
                 <button
                   onClick={() => setSelectedRun(null)}
-                  className="p-2 hover:bg-surface rounded-lg transition-colors"
+                  className="p-2 hover:bg-element-bg/50 rounded-lg transition-colors"
                 >
                   <svg className="w-5 h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -515,19 +515,19 @@ export const RunsAuditView: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-surface p-3 rounded-lg">
+                  <div className="bg-element-bg/50 p-3 rounded-lg">
                     <div className="text-xs text-text-secondary mb-1">Type</div>
                     <div className="text-sm text-text capitalize">{selectedRun.type}</div>
                   </div>
-                  <div className="bg-surface p-3 rounded-lg">
+                  <div className="bg-element-bg/50 p-3 rounded-lg">
                     <div className="text-xs text-text-secondary mb-1">Duration</div>
                     <div className="text-sm text-text">{formatDuration(selectedRun.duration_ms)}</div>
                   </div>
-                  <div className="bg-surface p-3 rounded-lg">
+                  <div className="bg-element-bg/50 p-3 rounded-lg">
                     <div className="text-xs text-text-secondary mb-1">Actions Taken</div>
                     <div className="text-sm text-text">{selectedRun.actions_taken}</div>
                   </div>
-                  <div className="bg-surface p-3 rounded-lg">
+                  <div className="bg-element-bg/50 p-3 rounded-lg">
                     <div className="text-xs text-text-secondary mb-1">Errors</div>
                     <div className={`text-sm ${selectedRun.errors > 0 ? 'text-down' : 'text-text'}`}>
                       {selectedRun.errors}
@@ -535,12 +535,12 @@ export const RunsAuditView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-surface p-3 rounded-lg">
+                <div className="bg-element-bg/50 p-3 rounded-lg">
                   <div className="text-xs text-text-secondary mb-1">Summary</div>
                   <div className="text-sm text-text">{selectedRun.summary}</div>
                 </div>
 
-                <div className="bg-surface p-3 rounded-lg">
+                <div className="bg-element-bg/50 p-3 rounded-lg">
                   <div className="text-xs text-text-secondary mb-1">Timeline</div>
                   <div className="space-y-2 mt-2">
                     <div className="flex items-center gap-2 text-sm">
@@ -565,7 +565,7 @@ export const RunsAuditView: React.FC = () => {
                     {auditEvents
                       .filter(evt => evt.run_id === selectedRun.run_id)
                       .map(evt => (
-                        <div key={evt.id} className="bg-surface p-3 rounded-lg">
+                        <div key={evt.id} className="bg-element-bg/50 p-3 rounded-lg">
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-mono text-xs text-text-secondary">{evt.event_type}</span>
                             {getSeverityBadge(evt.severity)}
@@ -581,6 +581,7 @@ export const RunsAuditView: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

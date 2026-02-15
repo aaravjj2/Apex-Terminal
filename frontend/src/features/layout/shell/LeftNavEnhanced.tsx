@@ -108,36 +108,36 @@ function NavItem({ id, icon, label, shortcut, badge, activeView, onViewChange, e
             title={!expanded ? `${label} ${shortcut}` : undefined}
             data-testid={`nav-item-${id}`}
             className={cn(
-                "relative flex items-center gap-3 rounded-lg transition-all w-full",
-                expanded ? "px-3 py-2.5" : "w-12 h-12 justify-center",
+                "relative flex items-center gap-3 rounded-lg transition-all w-full group",
+                expanded ? "px-3 py-2" : "w-12 h-12 justify-center",
                 isActive
-                    ? "text-brand bg-brand/10"
-                    : "text-text-secondary hover:text-text hover:bg-element-bg"
+                    ? "nav-item-active bg-brand/10"
+                    : "text-text-secondary hover:text-text-primary hover:bg-hover"
             )}
         >
-            {/* Active indicator */}
+            {/* Active indicator - gradient pill */}
             {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-brand rounded-r" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-gradient-to-b from-blue-400 to-blue-600" />
             )}
 
-            <span className="shrink-0">{icon}</span>
+            <span className={cn("shrink-0 transition-colors", isActive ? "text-brand" : "group-hover:text-text-primary")}>{icon}</span>
 
             {expanded && (
                 <>
-                    <span className="text-sm font-medium flex-1 text-left">{label}</span>
+                    <span className="text-[13px] font-medium flex-1 text-left tracking-tight">{label}</span>
                     {badge !== undefined && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-brand/20 text-brand">
+                        <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-brand/15 text-brand-400 ring-1 ring-brand/20">
                             {badge}
                         </span>
                     )}
                     {shortcut && !badge && (
-                        <span className="text-xxs text-text-muted">{shortcut}</span>
+                        <span className="text-xxs text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">{shortcut}</span>
                     )}
                 </>
             )}
 
             {!expanded && badge !== undefined && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 text-[9px] font-bold rounded-full bg-brand text-white flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 text-[9px] font-bold rounded-full bg-brand text-white flex items-center justify-center px-1">
                     {badge}
                 </span>
             )}
@@ -151,7 +151,7 @@ export function LeftNavEnhanced({ activeView, onViewChange }: LeftNavEnhancedPro
     return (
         <nav 
             className={cn(
-                "bg-panel-bg border-r border-border flex flex-col py-3 shrink-0 z-dock transition-all duration-200",
+                "bg-panel-bg border-r border-border/80 flex flex-col py-3 shrink-0 z-dock transition-all duration-200",
                 leftNavExpanded ? "w-56 px-2" : "w-16 items-center"
             )}
             data-testid="left-nav"
@@ -159,7 +159,8 @@ export function LeftNavEnhanced({ activeView, onViewChange }: LeftNavEnhancedPro
             {/* Primary navigation */}
             <div className="flex flex-col gap-0.5">
                 {leftNavExpanded && (
-                    <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-text-muted font-medium">
+                    <div className="px-3 py-1.5 mb-1 text-[10px] uppercase tracking-widest text-text-muted/70 font-semibold flex items-center gap-2">
+                        <span className="w-3 h-px bg-border" />
                         Main
                     </div>
                 )}
@@ -175,12 +176,13 @@ export function LeftNavEnhanced({ activeView, onViewChange }: LeftNavEnhancedPro
             </div>
 
             {/* Divider */}
-            <div className={cn("my-3", leftNavExpanded ? "mx-3 border-t border-border" : "w-8 border-t border-border")} />
+            <div className={cn("my-2", leftNavExpanded ? "mx-3 border-t border-border/60" : "w-8 border-t border-border/60")} />
 
             {/* Secondary navigation */}
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5 overflow-y-auto scrollbar-hide">
                 {leftNavExpanded && (
-                    <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-text-muted font-medium">
+                    <div className="px-3 py-1.5 mb-1 text-[10px] uppercase tracking-widest text-text-muted/70 font-semibold flex items-center gap-2">
+                        <span className="w-3 h-px bg-border" />
                         Tools
                     </div>
                 )}
@@ -213,13 +215,13 @@ export function LeftNavEnhanced({ activeView, onViewChange }: LeftNavEnhancedPro
                 <button
                     onClick={toggleLeftNav}
                     className={cn(
-                        "flex items-center justify-center text-text-secondary hover:text-text hover:bg-element-bg rounded-lg transition-colors mt-2",
+                        "flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-hover rounded-lg transition-colors mt-2 border border-transparent hover:border-border/50",
                         leftNavExpanded ? "py-2" : "w-12 h-10"
                     )}
                     title={leftNavExpanded ? "Collapse" : "Expand"}
                     data-testid="nav-toggle"
                 >
-                    {leftNavExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                    {leftNavExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
                 </button>
             </div>
         </nav>

@@ -46,7 +46,7 @@ interface MarketStatus {
 const formatCurrency = (v: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
 
-// Quick Stat Pill
+// Quick Stat Pill - Professional Bloomberg-style
 function StatPill({ icon: Icon, label, value, trend, compact = false }: {
     icon: React.ElementType;
     label: string;
@@ -56,23 +56,35 @@ function StatPill({ icon: Icon, label, value, trend, compact = false }: {
 }) {
     return (
         <div className={cn(
-            "flex items-center gap-2 px-3 py-1.5 bg-element-bg rounded-lg",
-            compact ? "gap-1.5" : "gap-2"
+            "flex items-center gap-2.5 px-3.5 py-2 rounded-lg border transition-colors",
+            compact ? "gap-1.5 px-2.5 py-1.5" : "gap-2.5",
+            trend === 'up' ? 'bg-green-500/5 border-green-500/15' :
+            trend === 'down' ? 'bg-red-500/5 border-red-500/15' :
+            'bg-element-bg/80 border-border/50'
         )}>
-            <Icon size={compact ? 12 : 14} className={cn(
-                trend === 'up' ? 'text-up' :
-                trend === 'down' ? 'text-down' :
-                'text-text-secondary'
-            )} />
-            {!compact && <span className="text-[10px] text-text-secondary uppercase">{label}</span>}
-            <span className={cn(
-                "text-sm font-semibold tabular-nums",
-                trend === 'up' ? 'text-up' :
-                trend === 'down' ? 'text-down' :
-                'text-text'
+            <div className={cn(
+                "flex items-center justify-center w-7 h-7 rounded-md",
+                trend === 'up' ? 'bg-green-500/10' :
+                trend === 'down' ? 'bg-red-500/10' :
+                'bg-brand/10'
             )}>
-                {value}
-            </span>
+                <Icon size={compact ? 12 : 14} className={cn(
+                    trend === 'up' ? 'text-up' :
+                    trend === 'down' ? 'text-down' :
+                    'text-brand'
+                )} />
+            </div>
+            <div className="flex flex-col">
+                {!compact && <span className="text-[10px] text-text-muted uppercase tracking-wider leading-none mb-0.5">{label}</span>}
+                <span className={cn(
+                    "text-sm font-semibold tabular-nums leading-none",
+                    trend === 'up' ? 'text-up' :
+                    trend === 'down' ? 'text-down' :
+                    'text-text'
+                )}>
+                    {value}
+                </span>
+            </div>
         </div>
     );
 }
@@ -203,7 +215,7 @@ export function EnhancedCommandCenterView() {
             />
 
             {/* Quick Stats Ribbon */}
-            <div className="shrink-0 px-4 py-2 flex items-center gap-2 bg-panel-bg/50 border-b border-border/60 overflow-x-auto">
+            <div className="shrink-0 px-5 py-2.5 flex items-center gap-2.5 bg-gradient-to-r from-panel-bg/80 to-panel-bg/40 border-b border-border/50 overflow-x-auto">
                 <StatPill
                     icon={Wallet}
                     label="Equity"
@@ -256,7 +268,7 @@ export function EnhancedCommandCenterView() {
                 onValueChange={setActiveTab}
                 className="flex-1 flex flex-col min-h-0"
             >
-                <TabsList className="px-6">
+                <TabsList className="px-6 mt-1">
                     <TabsTrigger value="overview" icon={<Brain size={12} />}>
                         Intelligence
                     </TabsTrigger>

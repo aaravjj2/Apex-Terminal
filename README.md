@@ -59,7 +59,8 @@
 > ./scripts/run_demo.sh
 > 
 > # 3. Open in browser
-> # Frontend: http://localhost:5100
+> # Frontend: http://localhost:5100  (UI2 loads by default)
+> # Legacy UI1: http://localhost:5100/legacy
 > # API Docs: http://localhost:8000/docs
 > ```
 > **Or run manually:**
@@ -93,6 +94,69 @@
 - 📊 **Financial Analysts** - Market data visualization and screening
 - 🎓 **Learning & Education** - Understanding market mechanics
 - 🧪 **Testing & Development** - Deterministic replay for testing strategies
+
+---
+
+## 🎨 UI2: Professional Trading Terminal (Primary)
+
+**Bloomberg Terminal-Grade Interface — Now the Default Experience**
+
+As of v1.53, UI2 is the **primary app** — the root URL (`/`) redirects to `/ui2/dashboard`. Legacy UI1 remains accessible at `/legacy`.
+
+### v1.53-v1.62: Feature Upgrades (February 2026)
+
+| Version | Feature | Highlights |
+|---------|---------|------------|
+| **v1.53** | UI2 Primary Route | Root redirects to UI2; legacy Shell at `/legacy` |
+| **v1.54** | Workspace Persistence | localStorage-backed layout & workspace state |
+| **v1.55** | Command Registry | 25+ commands (navigation, action, ticker, setting) in Ctrl+K palette |
+| **v1.56** | Market Tape | Real-time scrolling ticker tape with Mulberry32 PRNG stream |
+| **v1.57** | Order Ticket | Full order entry form with validation, preview, deterministic fills |
+| **v1.58** | Autopilot Kill Switch | Emergency kill switch with confirm modal, 4 risk rules, activity feed |
+| **v1.59** | Risk Scenario Builder | Deterministic scenario engine with export bundle + hash verification |
+| **v1.60** | Backtest Run Manager | Runs table with filters, offline report viewer with provenance |
+| **v1.61** | Strategies Artifacts | Strategy table, artifacts view, validation panel, diff viewer |
+| **v1.62** | Platform Health | Health dashboard, service monitoring, incidents, platform info |
+
+### Design System
+
+- **Professional Design System** - 7-layer depth system, comprehensive typography tiers (Display/Hero, Data numerals, UI/body), Bloomberg-grade color palette
+- **Command Palette (Ctrl+K)** - Instant navigation and action shortcuts across all 13 workspaces
+- **Enhanced App Shell** - Workspace navigation with section grouping (Main - Tools - System), status badges (DEMO/LOCAL, market status, connectivity)
+- **13 Workspaces** - Complete feature parity with UI1: Dashboard, Trading, Portfolio, Orders, Risk & Options, Research, Backtest, Autopilot, Alerts, Replay, Runs & Audit, Ops, Settings
+- **Panel Contract System** - Standardized headers with title, subtitle, actions, and status indicators
+- **Hero KPI Strips** - Financial data visualization with trend indicators and change metrics
+- **Professional Data Tables** - Sticky headers, zebra striping, tabular numerals, compact density
+- **Motion Control** - Reduced motion for E2E determinism, tasteful micro-interactions for production
+
+### 📺 See It In Action
+
+- **Screenshots**: `artifacts/media/ui2-redesign/screenshots/` (15 workspace + feature screenshots)
+- **Demo Video**: `artifacts/media/ui2-redesign/video/ui2-redesign-walkthrough-2026.webm` (3m 55s comprehensive walkthrough)
+
+### 🎯 Accessing UI2
+
+```bash
+# Start servers (backend + frontend)
+# Terminal 1: Backend
+cd phase1 && uvicorn services.api.main:app --port 8000
+
+# Terminal 2: Frontend
+cd frontend && npm run build && npm run preview -- --port 5100
+
+# Open UI2 in browser
+open http://localhost:5100/ui2
+```
+
+### ✅ UI2 Quality Gates
+
+All tests passing with 0 failures, 0 skipped:
+- **TypeScript**: 0 errors
+- **Vitest**: 135/135 tests passed
+- **Playwright E2E**: 39/39 tests passed (headed mode, video + trace + screenshots)
+- **Backend**: 367 tests collected
+
+**Test Artifacts**: `frontend/playwright-report/` (HTML report), `frontend/test-results/` (videos, traces, screenshots)
 
 ---
 

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Shell } from './features/layout/shell/Shell';
 import { ClockClient } from './data/ClockClient';
 import { WebSocketClient } from './data/WebSocketClient';
@@ -28,11 +28,15 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* UI v2 routes */}
+        {/* v1.53: UI2 is now the PRIMARY route */}
         <Route path="/ui2/*" element={<UI2Routes />} />
-        
-        {/* Default route: existing Shell app */}
-        <Route path="*" element={<Shell />} />
+
+        {/* v1.53: Legacy UI1 accessible at /legacy */}
+        <Route path="/legacy/*" element={<Shell />} />
+
+        {/* v1.53: Root and all unknown paths redirect to UI2 */}
+        <Route path="/" element={<Navigate to="/ui2/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/ui2/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

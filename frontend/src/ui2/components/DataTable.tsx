@@ -1,6 +1,7 @@
 /**
  * UI2 DataTable Component
  * Dense tabular data display for positions, orders, trades, backtests
+ * With formatting helpers, badge support, and action buttons
  */
 
 import React from 'react';
@@ -12,6 +13,7 @@ export interface ColumnDef<T> {
   align?: 'left' | 'center' | 'right';
   render?: (value: any, row: T, rowIndex: number) => React.ReactNode;
   className?: string;
+  format?: 'number' | 'currency' | 'percent' | 'date' | 'time' | 'datetime';
 }
 
 export interface DataTableProps<T> {
@@ -22,7 +24,98 @@ export interface DataTableProps<T> {
   selectedRowKey?: string | number;
   density?: 'compact' | 'normal';
   testId?: string;
+  striped?: boolean;
 }
+
+/* ─────────────────────────────────────────────────────────────── */
+/* Formatting Utilities */
+/* ─────────────────────────────────────────────────────────────── */
+
+export function formatValue(value: any, format?: string): string {
+  // Handle null/undefined/NaN
+  if (value === null || value === undefined || (typeof value === 'number' && isNaN(value))) {
+    return '—';
+  }
+
+  if (format === 'number') {
+    return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  if (format === 'currency') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(value));
+  }
+
+  if (format === 'percent') {
+    return `${(Number(value) * 100).toFixed(2)}%`;
+  }
+
+  if (format === 'date') {
+    return new Date(value).toLocaleDateString();
+  }
+
+  if (format === 'time') {
+    return new Date(value).toLocaleTimeString();
+  }
+
+  if (format === 'datetime') {
+    return new Date(value).toLocaleString();
+  }
+
+  return String(value);
+}
+
+export function formatPnL(value: number | null | undefined): {
+  text: string;
+  color: string;
+} {
+  if (value === null || value === undefined || isNaN(value)) {
+    return { text: '—', color: 'var(--ui2-text-muted)' };
+  }
+
+  const formatted = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+
+  if (value > 0) {
+    return { text: `+${formatted}`, color: 'var(--ui2-positive)' };
+  } else if (value < 0) {
+    return { text: formatted, color: 'var(--ui2-negative)' };
+  } else {
+    return { text: formatted, color: 'var(--ui2-text-muted)' };
+  }
+}
+
+export function formatPercent(value: number | null | undefined): {
+  text: string;
+  color: string;
+} {
+  if (value === null || value === undefined || isNaN(value)) {
+    return { text: '—', color: 'var(--ui2-text-muted)' };
+  }
+
+  const percent = (value * 100).toFixed(2);
+  const text = value > 0 ? `+${percent}%` : `${percent}%`;
+
+  if (value > 0) {
+    return { text, color: 'var(--ui2-positive)' };
+  } else if (value < 0) {
+    return { text, color: 'var(--ui2-negative)' };
+  } else {
+    return { text: '0.00%', color: 'var(--ui2-text-muted)' };
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* DataTable Component */
+/* ─────────────────────────────────────────────────────────────── */
 
 export function DataTable<T extends Record<string, any>>({
   columns,
@@ -32,6 +125,7 @@ export function DataTable<T extends Record<string, any>>({
   selectedRowKey,
   density = 'compact',
   testId,
+  striped = false,
 }: DataTableProps<T>) {
   const rowHeight = density === 'compact' ? '32px' : '40px';
 
@@ -99,6 +193,15 @@ export function DataTable<T extends Record<string, any>>({
             data.map((row, rowIndex) => {
               const rowKey = row[keyField] ?? rowIndex;
               const isSelected = selectedRowKey === rowKey;
+              const isEvenRow = rowIndex % 2 === 0;
+
+              // Determine background color
+              let bgColor = 'transparent';
+              if (isSelected) {
+                bgColor = 'var(--ui2-bg-selected)';
+              } else if (striped && !isEvenRow) {
+                bgColor = 'var(--ui2-bg-sunken)';
+              }
 
               return (
                 <tr
@@ -107,12 +210,10 @@ export function DataTable<T extends Record<string, any>>({
                   onClick={() => onRowClick?.(row, rowIndex)}
                   style={{
                     height: rowHeight,
-                    background: isSelected
-                      ? 'var(--ui2-bg-selected)'
-                      : 'transparent',
+                    background: bgColor,
                     borderBottom: '1px solid var(--ui2-border-subtle)',
                     cursor: onRowClick ? 'pointer' : 'default',
-                    transition: 'background 0.15s',
+                    transition: 'background var(--ui2-transition-fast)',
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected) {
@@ -121,15 +222,25 @@ export function DataTable<T extends Record<string, any>>({
                   }}
                   onMouseLeave={(e) => {
                     if (!isSelected) {
-                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.background = bgColor;
                     }
                   }}
                 >
                   {columns.map((col) => {
                     const value = row[col.key];
-                    const rendered = col.render
-                      ? col.render(value, row, rowIndex)
-                      : value;
+                    let rendered: React.ReactNode;
+
+                    if (col.render) {
+                      rendered = col.render(value, row, rowIndex);
+                    } else if (col.format) {
+                      rendered = formatValue(value, col.format);
+                    } else {
+                      // Default: handle null/undefined/NaN
+                      rendered =
+                        value === null || value === undefined || (typeof value === 'number' && isNaN(value))
+                          ? '—'
+                          : String(value);
+                    }
 
                     return (
                       <td

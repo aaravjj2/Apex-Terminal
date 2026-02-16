@@ -1,92 +1,350 @@
 /**
- * UI2 Design Tokens
- * Professional dark theme with Bloomberg/Robinhood-grade polish
+ * UI2 Design Tokens - Professional Trading Terminal
+ * Bloomberg/Robinhood-grade polish with depth, clarity, and sophistication
  */
 
 :root {
-  /* ─── Colors ─── */
-  --ui2-bg-base: #0a0e14;
-  --ui2-bg-elevated: #111418;
-  --ui2-bg-panel: #161a20;
-  --ui2-bg-hover: #1a1f26;
-  --ui2-bg-selected: #1e242c;
+  /* ─── Background Layers (7-layer depth system) ─── */
+  --ui2-bg-base: #09090b;           /* App foundation */
+  --ui2-bg-sunken: #0d0d10;         /* Recessed areas */
+  --ui2-bg-elevated: #131316;       /* Raised surfaces */
+  --ui2-bg-panel: #18181b;          /* Primary panels */
+  --ui2-bg-surface: #1c1c20;        /* Secondary surfaces */
+  --ui2-bg-hover: #212126;          /* Hover states */
+  --ui2-bg-selected: #27272d;       /* Active/selected */
+  --ui2-bg-input: #1a1a1e;          /* Form inputs */
   
-  --ui2-border: #2a3038;
-  --ui2-border-subtle: #1e242c;
-  --ui2-border-focus: #3d5afe;
+  /* ─── Border System ────────────────────────────────────── */
+  --ui2-border: #2a2a32;            /* Primary borders */
+  --ui2-border-subtle: #1e1e24;     /* Subtle dividers */
+  --ui2-border-strong: #3a3a42;     /* Emphasized borders */
+  --ui2-border-focus: #4f46e5;      /* Focus rings */
+  --ui2-border-focus-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
   
-  --ui2-text-primary: #e4e6eb;
-  --ui2-text-secondary: #9ba1a9;
-  --ui2-text-muted: #6b7280;
-  --ui2-text-disabled: #4b5563;
+  /* ─── Text Hierarchy ───────────────────────────────────── */
+  --ui2-text-primary: #f4f4f5;      /* Main content */
+  --ui2-text-secondary: #a1a1aa;    /* Supporting text */
+  --ui2-text-tertiary: #71717a;     /* Muted labels */
+  --ui2-text-muted: #52525b;        /* Deemphasized */
+  --ui2-text-disabled: #3f3f46;     /* Disabled */
+  --ui2-text-inverse: #09090b;      /* On colored backgrounds */
   
-  --ui2-brand: #3d5afe;
-  --ui2-brand-hover: #5370ff;
-  --ui2-brand-subtle: #1e3a8a;
+  /* ─── Brand Colors ─────────────────────────────────────── */
+  --ui2-brand-primary: #6366f1;     /* Primary brand */
+  --ui2-brand-hover: #7c3aed;       /* Brand hover */
+  --ui2-brand-active: #5b21b6;      /* Brand pressed */
+  --ui2-brand-subtle: #312e81;      /* Brand backgrounds */
+  --ui2-brand-ghost: rgba(99, 102, 241, 0.1);
   
-  --ui2-success: #10b981;
-  --ui2-success-bg: #064e3b;
+  /* ─── Semantic Colors (Rich status system) ─────────────── */
+  --ui2-success: #22c55e;
+  --ui2-success-bg: #14532d;
+  --ui2-success-border: #166534;
+  --ui2-success-hover: #16a34a;
+  --ui2-success-ghost: rgba(34, 197, 94, 0.1);
+  
   --ui2-danger: #ef4444;
   --ui2-danger-bg: #7f1d1d;
+  --ui2-danger-border: #991b1b;
+  --ui2-danger-hover: #dc2626;
+  --ui2-danger-ghost: rgba(239, 68, 68, 0.1);
+  
   --ui2-warning: #f59e0b;
   --ui2-warning-bg: #78350f;
+  --ui2-warning-border: #92400e;
+  --ui2-warning-hover: #d97706;
+  --ui2-warning-ghost: rgba(245, 158, 11, 0.1);
+  
   --ui2-info: #3b82f6;
   --ui2-info-bg: #1e3a8a;
+  --ui2-info-border: #1e40af;
+  --ui2-info-hover: #2563eb;
+  --ui2-info-ghost: rgba(59, 130, 246, 0.1);
   
-  /* ─── Typography ─── */
-  --ui2-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  --ui2-font-mono: 'SF Mono', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+  /* ─── Financial Data Colors (PnL, Greeks, etc.) ─────────── */
+  --ui2-positive: #10b981;          /* Profit, calls */
+  --ui2-negative: #f43f5e;          /* Loss, puts */
+  --ui2-neutral: #64748b;           /* Neutral sentiment */
+  --ui2-bid: #22c55e;               /* Bid prices */
+  --ui2-ask: #ef4444;               /* Ask prices */
   
-  /* ─── Spacing ─── */
-  --ui2-space-1: 0.25rem;  /* 4px */
-  --ui2-space-2: 0.5rem;   /* 8px */
+  /* ─── Typography Tiers (Premium Trading Terminal Scale) ─── */
+  /* Hero KPIs - Maximum impact for main metrics */
+  --ui2-font-hero: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --ui2-font-hero-size: 56px;
+  --ui2-font-hero-weight: 700;
+  --ui2-font-hero-tracking: -0.03em;
+  --ui2-font-hero-line: 1.1;
+  
+  /* Display - Large KPIs, section titles */
+  --ui2-font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --ui2-font-display-size: 32px;
+  --ui2-font-display-weight: 700;
+  --ui2-font-display-tracking: -0.02em;
+  --ui2-font-display-line: 1.2;
+  
+  /* Title - Panel headers, workspace titles */
+  --ui2-font-title-size: 20px;
+  --ui2-font-title-weight: 600;
+  --ui2-font-title-tracking: -0.015em;
+  --ui2-font-title-line: 1.3;
+  
+  /* Subhead - Section headers, table group headers */
+  --ui2-font-subhead-size: 14px;
+  --ui2-font-subhead-weight: 600;
+  --ui2-font-subhead-tracking: 0;
+  --ui2-font-subhead-line: 1.4;
+  
+  /* Data Numerals (tabular numbers for PnL/Greeks/prices) */
+  --ui2-font-data: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', 'Consolas', monospace;
+  --ui2-font-data-size: 13px;
+  --ui2-font-data-weight: 500;
+  --ui2-font-data-line: 1.5;
+  
+  /* UI/Body (readability) */
+  --ui2-font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --ui2-font-sans-size: 13px;
+  --ui2-font-sans-weight: 400;
+  --ui2-font-sans-line: 1.5;
+  
+  /* Micro - Table headers, badges, micro-labels */
+  --ui2-font-micro-size: 10px;
+  --ui2-font-micro-weight: 600;
+  --ui2-font-micro-tracking: 0.5px;
+  --ui2-font-micro-line: 1.4;
+  
+  /* Mono (code, logs) */
+  --ui2-font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', 'Consolas', monospace;
+  
+  /* ─── Spacing Scale (4px increments, 8px rhythm) ───────── */
+  --ui2-space-0: 0;
+  --ui2-space-1: 0.25rem;  /* 4px  */
+  --ui2-space-2: 0.5rem;   /* 8px  - main rhythm */
   --ui2-space-3: 0.75rem;  /* 12px */
   --ui2-space-4: 1rem;     /* 16px */
   --ui2-space-5: 1.25rem;  /* 20px */
   --ui2-space-6: 1.5rem;   /* 24px */
   --ui2-space-8: 2rem;     /* 32px */
+  --ui2-space-10: 2.5rem;  /* 40px */
+  --ui2-space-12: 3rem;    /* 48px */
+  --ui2-space-16: 4rem;    /* 64px */
   
-  /* ─── Radii ─── */
+  /* ─── Border Radius ────────────────────────────────────── */
+  --ui2-radius-none: 0;
   --ui2-radius-sm: 4px;
   --ui2-radius-md: 6px;
   --ui2-radius-lg: 8px;
+  --ui2-radius-xl: 12px;
+  --ui2-radius-full: 9999px;
   
-  /* ─── Shadows ─── */
-  --ui2-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --ui2-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --ui2-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  /* ─── Shadows (Depth system) ───────────────────────────── */
+  --ui2-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --ui2-shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.35);
+  --ui2-shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.4);
+  --ui2-shadow-lg: 0 8px 16px -4px rgba(0, 0, 0, 0.45);
+  --ui2-shadow-xl: 0 16px 32px -8px rgba(0, 0, 0, 0.5);
+  --ui2-shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.15);
   
-  /* ─── Z-index ─── */
+  /* ─── Transitions & Motion ─────────────────────────────── */
+  --ui2-transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ui2-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ui2-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ui2-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* ─── Z-index Layers ───────────────────────────────────── */
   --ui2-z-base: 0;
   --ui2-z-dropdown: 1000;
   --ui2-z-sticky: 1100;
-  --ui2-z-overlay: 1200;
-  --ui2-z-modal: 1300;
-  --ui2-z-toast: 1400;
+  --ui2-z-fixed: 1200;
+  --ui2-z-overlay: 1300;
+  --ui2-z-modal: 1400;
+  --ui2-z-popover: 1500;
+  --ui2-z-toast: 1600;
+  --ui2-z-tooltip: 1700;
+  
+  /* ─── Accent Glow System (Premium Active States) ─────── */
+  --ui2-glow-primary: 0 0 16px rgba(99, 102, 241, 0.3);
+  --ui2-glow-success: 0 0 12px rgba(34, 197, 94, 0.25);
+  --ui2-glow-danger: 0 0 12px rgba(239, 68, 68, 0.25);
+  --ui2-glow-focus: 0 0 0 3px rgba(99, 102, 241, 0.2), 0 0 20px rgba(99, 102, 241, 0.15);
+  
+  /* ─── Elevation Model (Gradient + Border + Shadow) ─────── */
+  /* Level 0 - Flat (base panels) */
+  --ui2-elevation-0-bg: var(--ui2-bg-panel);
+  --ui2-elevation-0-border: var(--ui2-border);
+  --ui2-elevation-0-shadow: none;
+  
+  /* Level 1 - Slightly raised (cards) */
+  --ui2-elevation-1-bg: linear-gradient(180deg, var(--ui2-bg-elevated) 0%, var(--ui2-bg-panel) 100%);
+  --ui2-elevation-1-border: var(--ui2-border);
+  --ui2-elevation-1-shadow: var(--ui2-shadow-sm);
+  
+  /* Level 2 - Raised (interactive panels) */
+  --ui2-elevation-2-bg: linear-gradient(180deg, var(--ui2-bg-surface) 0%, var(--ui2-bg-panel) 100%);
+  --ui2-elevation-2-border: var(--ui2-border-strong);
+  --ui2-elevation-2-shadow: var(--ui2-shadow-md);
+  
+  /* Level 3 - Floating (modals, popovers) */
+  --ui2-elevation-3-bg: linear-gradient(180deg, var(--ui2-bg-hover) 0%, var(--ui2-bg-surface) 100%);
+  --ui2-elevation-3-border: var(--ui2-border-strong);
+  --ui2-elevation-3-shadow: var(--ui2-shadow-lg);
+  
+  /* ─── Trading-Specific Status Colors ─────────────────── */
+  /* Order statuses */
+  --ui2-status-queued: #94a3b8;
+  --ui2-status-queued-bg: rgba(148, 163, 184, 0.1);
+  --ui2-status-working: #3b82f6;
+  --ui2-status-working-bg: rgba(59, 130, 246, 0.1);
+  --ui2-status-filled: #22c55e;
+  --ui2-status-filled-bg: rgba(34, 197, 94, 0.1);
+  --ui2-status-rejected: #ef4444;
+  --ui2-status-rejected-bg: rgba(239, 68, 68, 0.1);
+  --ui2-status-canceled: #64748b;
+  --ui2-status-canceled-bg: rgba(100, 116, 139, 0.1);
+  
+  /* Price flash colors (for real-time updates) */
+  --ui2-flash-up: #10b981;
+  --ui2-flash-down: #f43f5e;
+  --ui2-flash-neutral: #64748b;
 }
 
-/* ─── Base Styles ─── */
+/* ═══════════════════════════════════════════════════════════════
+   PRICE FLASH ANIMATIONS (disabled in E2E mode)
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes price-flash-up {
+  0% { background-color: rgba(16, 185, 129, 0.3); }
+  100% { background-color: transparent; }
+}
+
+@keyframes price-flash-down {
+  0% { background-color: rgba(244, 63, 94, 0.3); }
+  100% { background-color: transparent; }
+}
+
+.ui2-price-flash-up {
+  animation: price-flash-up 0.6s ease-out;
+}
+
+.ui2-price-flash-down {
+  animation: price-flash-down 0.6s ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES & MOTION CONTROL
+   ═══════════════════════════════════════════════════════════════ */
+
 .ui2-root {
   font-family: var(--ui2-font-sans);
   color: var(--ui2-text-primary);
   background: var(--ui2-bg-base);
-  font-size: 13px;
+  font-size: var(--ui2-font-sans-size);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1, 'liga' 1;
 }
 
-.ui2-tabular {
+/* ─── Motion Control (E2E determinism) ──────────────────────── */
+/* In E2E mode, disable animations for stable visual baselines */
+.ui2-root[data-e2e-mode="true"] *,
+.ui2-root[data-e2e-mode="true"] *::before,
+.ui2-root[data-e2e-mode="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0ms !important;
+}
+
+/* Outside E2E, allow tasteful micro-interactions */
+.ui2-root[data-e2e-mode="false"] *,
+.ui2-root[data-e2e-mode="false"] .ui2-interactive {
+  transition: var(--ui2-transition-fast);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Hero typography (maximum impact KPIs) */
+.ui2-hero {
+  font-family: var(--ui2-font-hero);
+  font-size: var(--ui2-font-hero-size);
+  font-weight: var(--ui2-font-hero-weight);
+  letter-spacing: var(--ui2-font-hero-tracking);
+  line-height: var(--ui2-font-hero-line);
+}
+
+/* Display/Hero typography (large KPIs, headlines) */
+.ui2-display {
+  font-family: var(--ui2-font-display);
+  font-size: var(--ui2-font-display-size);
+  font-weight: var(--ui2-font-display-weight);
+  letter-spacing: var(--ui2-font-display-tracking);
+  line-height: var(--ui2-font-display-line);
+}
+
+/* Title (panel headers) */
+.ui2-title {
+  font-family: var(--ui2-font-sans);
+  font-size: var(--ui2-font-title-size);
+  font-weight: var(--ui2-font-title-weight);
+  letter-spacing: var(--ui2-font-title-tracking);
+  line-height: var(--ui2-font-title-line);
+}
+
+/* Subhead (section headers, table groups) */
+.ui2-subhead {
+  font-family: var(--ui2-font-sans);
+  font-size: var(--ui2-font-subhead-size);
+  font-weight: var(--ui2-font-subhead-weight);
+  letter-spacing: var(--ui2-font-subhead-tracking);
+  line-height: var(--ui2-font-subhead-line);
+  text-transform: uppercase;
+}
+
+/* Data numerals (tabular numbers for tables, prices) */
+.ui2-tabular,
+.ui2-data {
+  font-family: var(--ui2-font-data);
+  font-size: var(--ui2-font-data-size);
+  font-weight: var(--ui2-font-data-weight);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: var(--ui2-font-data-line);
+}
+
+/* Monospace (code, logs) */
+.ui2-mono {
+  font-family: var(--ui2-font-mono);
   font-variant-numeric: tabular-nums;
 }
 
-.ui2-mono {
-  font-family: var(--ui2-font-mono);
+/* Micro labels (badges, table headers) */
+.ui2-micro {
+  font-size: var(--ui2-font-micro-size);
+  font-weight: var(--ui2-font-micro-weight);
+  letter-spacing: var(--ui2-font-micro-tracking);
+  line-height: var(--ui2-font-micro-line);
+  text-transform: uppercase;
 }
 
-/* ─── Scrollbar ─── */
+/* Text hierarchy helpers */
+.ui2-text-xs { font-size: 11px; }
+.ui2-text-sm { font-size: 12px; }
+.ui2-text-base { font-size: 13px; }
+.ui2-text-md { font-size: 14px; }
+.ui2-text-lg { font-size: 16px; }
+.ui2-text-xl { font-size: 20px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR STYLING
+   ═══════════════════════════════════════════════════════════════ */
+
 .ui2-scrollable {
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui2-bg-hover) var(--ui2-bg-base);
 }
 
 .ui2-scrollable::-webkit-scrollbar {
@@ -107,13 +365,33 @@
   background: var(--ui2-text-muted);
 }
 
-/* ─── Focus States ─── */
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS & INTERACTIVE STATES
+   ═══════════════════════════════════════════════════════════════ */
+
 .ui2-focus-ring:focus-visible {
   outline: 2px solid var(--ui2-border-focus);
   outline-offset: 2px;
+  box-shadow: var(--ui2-border-focus-shadow);
 }
 
-/* ─── Skeleton Animation ─── */
+.ui2-interactive {
+  cursor: pointer;
+  user-select: none;
+}
+
+.ui2-interactive:hover {
+  background: var(--ui2-bg-hover);
+}
+
+.ui2-interactive:active {
+  background: var(--ui2-bg-selected);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS & KEYFRAMES
+   ═══════════════════════════════════════════════════════════════ */
+
 @keyframes skeleton-pulse {
   0%, 100% {
     opacity: 1;
@@ -121,4 +399,316 @@
   50% {
     opacity: 0.5;
   }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.ui2-fade-in {
+  animation: fade-in var(--ui2-transition-fast);
+}
+
+.ui2-slide-up {
+  animation: slide-up var(--ui2-transition-base);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY CLASSES - Elevation & Surfaces
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Elevation levels */
+.ui2-elevation-0 {
+  background: var(--ui2-elevation-0-bg);
+  border: 1px solid var(--ui2-elevation-0-border);
+  box-shadow: var(--ui2-elevation-0-shadow);
+}
+
+.ui2-elevation-1 {
+  background: var(--ui2-elevation-1-bg);
+  border: 1px solid var(--ui2-elevation-1-border);
+  box-shadow: var(--ui2-elevation-1-shadow);
+}
+
+.ui2-elevation-2 {
+  background: var(--ui2-elevation-2-bg);
+  border: 1px solid var(--ui2-elevation-2-border);
+  box-shadow: var(--ui2-elevation-2-shadow);
+}
+
+.ui2-elevation-3 {
+  background: var(--ui2-elevation-3-bg);
+  border: 1px solid var(--ui2-elevation-3-border);
+  box-shadow: var(--ui2-elevation-3-shadow);
+}
+
+/* Accent glow states */
+.ui2-glow-active {
+  box-shadow: var(--ui2-glow-primary);
+}
+
+.ui2-glow-success {
+  box-shadow: var(--ui2-glow-success);
+}
+
+.ui2-glow-danger {
+  box-shadow: var(--ui2-glow-danger);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY CLASSES - Badges & Status
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Status badges */
+.ui2-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: var(--ui2-radius-full);
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.ui2-badge-success {
+  background: var(--ui2-success-ghost);
+  color: var(--ui2-success);
+  border: 1px solid var(--ui2-success-border);
+}
+
+.ui2-badge-danger {
+  background: var(--ui2-danger-ghost);
+  color: var(--ui2-danger);
+  border: 1px solid var(--ui2-danger-border);
+}
+
+.ui2-badge-warning {
+  background: var(--ui2-warning-ghost);
+  color: var(--ui2-warning);
+  border: 1px solid var(--ui2-warning-border);
+}
+
+.ui2-badge-info {
+  background: var(--ui2-info-ghost);
+  color: var(--ui2-info);
+  border: 1px solid var(--ui2-info-border);
+}
+
+.ui2-badge-neutral {
+  background: var(--ui2-bg-elevated);
+  color: var(--ui2-text-secondary);
+  border: 1px solid var(--ui2-border);
+}
+
+/* Trading-specific order status badges */
+.ui2-badge-queued {
+  background: var(--ui2-status-queued-bg);
+  color: var(--ui2-status-queued);
+  border: 1px solid var(--ui2-status-queued);
+}
+
+.ui2-badge-working {
+  background: var(--ui2-status-working-bg);
+  color: var(--ui2-status-working);
+  border: 1px solid var(--ui2-status-working);
+}
+
+.ui2-badge-filled {
+  background: var(--ui2-status-filled-bg);
+  color: var(--ui2-status-filled);
+  border: 1px solid var(--ui2-status-filled);
+}
+
+.ui2-badge-rejected {
+  background: var(--ui2-status-rejected-bg);
+  color: var(--ui2-status-rejected);
+  border: 1px solid var(--ui2-status-rejected);
+}
+
+.ui2-badge-canceled {
+  background: var(--ui2-status-canceled-bg);
+  color: var(--ui2-status-canceled);
+  border: 1px solid var(--ui2-status-canceled);
+}
+
+/* Buttons */
+.ui2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--ui2-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  gap: 6px;
+  transition: all var(--ui2-transition-fast);
+}
+
+.ui2-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ui2-btn-primary {
+  background: var(--ui2-brand-primary);
+  color: var(--ui2-text-inverse);
+}
+
+.ui2-btn-primary:hover:not(:disabled) {
+  background: var(--ui2-brand-hover);
+}
+
+.ui2-btn-secondary {
+  background: var(--ui2-bg-elevated);
+  color: var(--ui2-text-primary);
+  border-color: var(--ui2-border);
+}
+
+.ui2-btn-secondary:hover:not(:disabled) {
+  background: var(--ui2-bg-hover);
+  border-color: var(--ui2-border-strong);
+}
+
+.ui2-btn-ghost {
+  background: transparent;
+  color: var(--ui2-text-secondary);
+}
+
+.ui2-btn-ghost:hover:not(:disabled) {
+  background: var(--ui2-bg-hover);
+  color: var(--ui2-text-primary);
+}
+
+.ui2-btn-danger {
+  background: var(--ui2-danger);
+  color: var(--ui2-text-inverse);
+}
+
+.ui2-btn-danger:hover:not(:disabled) {
+  background: var(--ui2-danger-hover);
+}
+
+/* Icon buttons (for table actions) */
+.ui2-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--ui2-radius-md);
+  background: transparent;
+  color: var(--ui2-text-secondary);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--ui2-transition-fast);
+}
+
+.ui2-icon-btn:hover:not(:disabled) {
+  background: var(--ui2-bg-hover);
+  color: var(--ui2-text-primary);
+  border-color: var(--ui2-border);
+  box-shadow: var(--ui2-shadow-sm);
+}
+
+.ui2-icon-btn:active:not(:disabled) {
+  background: var(--ui2-bg-selected);
+  transform: scale(0.95);
+}
+
+.ui2-icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Progress bar */
+.ui2-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--ui2-bg-elevated);
+  border-radius: var(--ui2-radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.ui2-progress-bar {
+  height: 100%;
+  background: var(--ui2-brand-primary);
+  border-radius: var(--ui2-radius-sm);
+  transition: width var(--ui2-transition-base);
+}
+
+.ui2-progress-bar-success {
+  background: var(--ui2-success);
+}
+
+.ui2-progress-bar-danger {
+  background: var(--ui2-danger);
+}
+
+.ui2-progress-bar-warning {
+  background: var(--ui2-warning);
+}
+
+/* Confidence bar (thin variant for AI insights) */
+.ui2-confidence-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--ui2-bg-sunken);
+  border-radius: var(--ui2-radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.ui2-confidence-fill {
+  height: 100%;
+  border-radius: var(--ui2-radius-full);
+  transition: width var(--ui2-transition-base);
+}
+
+.ui2-confidence-fill-high {
+  background: linear-gradient(90deg, var(--ui2-success) 0%, var(--ui2-success-hover) 100%);
+}
+
+.ui2-confidence-fill-medium {
+  background: linear-gradient(90deg, var(--ui2-warning) 0%, var(--ui2-warning-hover) 100%);
+}
+
+.ui2-confidence-fill-low {
+  background: linear-gradient(90deg, var(--ui2-danger) 0%, var(--ui2-danger-hover) 100%);
+}
+
+/* Dividers */
+.ui2-divider-horizontal {
+  height: 1px;
+  background: var(--ui2-border-subtle);
+  margin: var(--ui2-space-2) 0;
+}
+
+.ui2-divider-vertical {
+  width: 1px;
+  background: var(--ui2-border-subtle);
+  margin: 0 var(--ui2-space-2);
 }

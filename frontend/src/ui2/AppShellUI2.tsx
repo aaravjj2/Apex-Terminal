@@ -1,13 +1,14 @@
 /**
  * UI2 AppShellUI2 Component
- * Main layout shell: TopBar + LeftRail + LeftDrawer + Center + RightSidebar + BottomDock
- * Wraps content with ToastProvider for embedded UI1 components
+ * Professional trading terminal shell with Bloomberg-grade polish
+ * TopBar + LeftRail + LeftDrawer + Center + RightSidebar + BottomDock + CommandPalette
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BottomDock, RightSidebar } from './components';
+import { BottomDock, RightSidebar, CommandPalette, MarketTape, type CommandItem } from './components';
 import { DEMO_USER, DEMO_MARKET_STATUS, DEMO_WS_STATUS } from './demo/constants';
+import { COMMAND_REGISTRY } from './stores/commandRegistry';
 import { ToastProvider } from '../ui/Toast';
 import { OrdersBlotter } from '../features/orders/OrdersBlotter';
 import { TradesLedger } from '../features/trades/TradesLedger';
@@ -18,30 +19,142 @@ interface WorkspaceConfig {
   icon: string;
   path: string;
   section?: 'main' | 'tools' | 'system';
+  description?: string;
+  keywords?: string[];
 }
 
 const WORKSPACES: WorkspaceConfig[] = [
   // Main section
-  { id: 'dashboard', label: 'Dashboard', icon: '🏠', path: '/ui2/dashboard', section: 'main' },
-  { id: 'trading', label: 'Trading', icon: '📈', path: '/ui2/trading', section: 'main' },
-  { id: 'portfolio', label: 'Portfolio', icon: '💼', path: '/ui2/portfolio', section: 'main' },
-  { id: 'orders', label: 'Orders', icon: '📋', path: '/ui2/orders', section: 'main' },
+  { 
+    id: 'dashboard', 
+    label: 'Dashboard', 
+    icon: '🏠', 
+    path: '/ui2/dashboard', 
+    section: 'main',
+    description: 'Command center with key metrics',
+    keywords: ['home', 'overview', 'metrics', 'kpi']
+  },
+  { 
+    id: 'trading', 
+    label: 'Trading', 
+    icon: '📈', 
+    path: '/ui2/trading', 
+    section: 'main',
+    description: 'Live chart and order execution',
+    keywords: ['chart', 'trade', 'order', 'execution']
+  },
+  { 
+    id: 'portfolio', 
+    label: 'Portfolio', 
+    icon: '💼', 
+    path: '/ui2/portfolio', 
+    section: 'main',
+    description: 'Positions and performance',
+    keywords: ['positions', 'pnl', 'performance', 'holdings']
+  },
+  { 
+    id: 'orders', 
+    label: 'Orders', 
+    icon: '📋', 
+    path: '/ui2/orders', 
+    section: 'main',
+    description: 'Order history and management',
+    keywords: ['order', 'history', 'fills', 'execution']
+  },
   // Tools section
-  { id: 'risk', label: 'Risk & Options', icon: '🛡️', path: '/ui2/risk', section: 'tools' },
-  { id: 'research', label: 'Research', icon: '🔬', path: '/ui2/research', section: 'tools' },
-  { id: 'backtest', label: 'Backtest', icon: '🧪', path: '/ui2/backtest', section: 'tools' },
-  { id: 'autopilot', label: 'Autopilot', icon: '🤖', path: '/ui2/autopilot', section: 'tools' },
-  { id: 'alerts', label: 'Alerts', icon: '🔔', path: '/ui2/alerts', section: 'tools' },
-  { id: 'replay', label: 'Replay', icon: '⏪', path: '/ui2/replay', section: 'tools' },
+  { 
+    id: 'risk', 
+    label: 'Risk & Options', 
+    icon: '🛡️', 
+    path: '/ui2/risk', 
+    section: 'tools',
+    description: 'Options chain and risk analysis',
+    keywords: ['options', 'greeks', 'risk', 'strategy']
+  },
+  { 
+    id: 'research', 
+    label: 'Research', 
+    icon: '🔬', 
+    path: '/ui2/research', 
+    section: 'tools',
+    description: 'Strategy lab and analysis',
+    keywords: ['strategies', 'backtest', 'research', 'analysis']
+  },
+  { 
+    id: 'backtest', 
+    label: 'Backtest', 
+    icon: '🧪', 
+    path: '/ui2/backtest', 
+    section: 'tools',
+    description: 'Historical strategy testing',
+    keywords: ['backtest', 'historical', 'test', 'simulation']
+  },
+  { 
+    id: 'autopilot', 
+    label: 'Autopilot', 
+    icon: '🤖', 
+    path: '/ui2/autopilot', 
+    section: 'tools',
+    description: 'Autonomous trading agent',
+    keywords: ['autopilot', 'agent', 'autonomous', 'auto']
+  },
+  { 
+    id: 'alerts', 
+    label: 'Alerts', 
+    icon: '🔔', 
+    path: '/ui2/alerts', 
+    section: 'tools',
+    description: 'Price and technical alerts',
+    keywords: ['alerts', 'notifications', 'triggers']
+  },
+  { 
+    id: 'replay', 
+    label: 'Replay', 
+    icon: '⏪', 
+    path: '/ui2/replay', 
+    section: 'tools',
+    description: 'Market replay and analysis',
+    keywords: ['replay', 'historical', 'playback']
+  },
   // System section
-  { id: 'runs', label: 'Runs & Audit', icon: '📜', path: '/ui2/runs', section: 'system' },
-  { id: 'ops', label: 'Ops', icon: '⚙️', path: '/ui2/ops', section: 'system' },
-  { id: 'settings', label: 'Settings', icon: '🔧', path: '/ui2/settings', section: 'system' },
+  { 
+    id: 'runs', 
+    label: 'Runs & Audit', 
+    icon: '📜', 
+    path: '/ui2/runs', 
+    section: 'system',
+    description: 'Execution audit trail',
+    keywords: ['runs', 'audit', 'history', 'log']
+  },
+  { 
+    id: 'ops', 
+    label: 'Ops', 
+    icon: '⚙️', 
+    path: '/ui2/ops', 
+    section: 'system',
+    description: 'System operations and monitoring',
+    keywords: ['ops', 'operations', 'system', 'monitoring']
+  },
+  { 
+    id: 'settings', 
+    label: 'Settings', 
+    icon: '🔧', 
+    path: '/ui2/settings', 
+    section: 'system',
+    description: 'Platform configuration',
+    keywords: ['settings', 'config', 'preferences']
+  },
 ];
 
 export function AppShellUI2() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const isE2EMode = typeof window !== 'undefined' && (
+    window.location.search.includes('e2e=1') || 
+    window.location.search.includes('PLAYWRIGHT_TEST_BASE_URL')
+  );
+
   const drawerVisible = true;
   const rightSidebarContent = (
     <div style={{ color: 'var(--ui2-text-muted)', fontSize: '13px' }}>
@@ -69,19 +182,55 @@ export function AppShellUI2() {
   const activeWorkspace =
     WORKSPACES.find((w) => location.pathname.startsWith(w.path))?.id || 'dashboard';
 
+  // Ctrl+K command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Build command palette items from COMMAND_REGISTRY + workspace navigation
+  const commands: CommandItem[] = [
+    ...WORKSPACES.map((ws) => ({
+      id: ws.id,
+      label: ws.label,
+      description: ws.description,
+      icon: ws.icon,
+      category: 'navigation' as const,
+      keywords: ws.keywords,
+      path: ws.path,
+    })),
+    ...COMMAND_REGISTRY.filter(c => c.category !== 'navigation').map(c => ({
+      id: c.id,
+      label: c.label,
+      description: c.description,
+      icon: c.icon,
+      category: c.category,
+      keywords: c.keywords,
+      path: c.path,
+    })),
+  ];
+
   return (
     <ToastProvider>
     <div
       className="ui2-root"
       data-testid="ui2-app-shell"
+      data-e2e-mode={isE2EMode ? 'true' : 'false'}
       style={{
         width: '100vw',
         height: '100vh',
         display: 'grid',
-        gridTemplateRows: '48px 1fr 240px',
+        gridTemplateRows: '48px 32px 1fr 240px',
         gridTemplateColumns: '56px auto 1fr auto',
         gridTemplateAreas: `
           "topbar topbar topbar topbar"
+          "tape tape tape tape"
           "rail drawer center sidebar"
           "rail dock dock dock"
         `,
@@ -102,44 +251,124 @@ export function AppShellUI2() {
           gap: '16px',
         }}
       >
+        {/* Brand */}
         <div
           style={{
-            fontSize: '16px',
-            fontWeight: 700,
-            color: 'var(--ui2-brand)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
           }}
         >
-          QuantCloud UI v2
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: 'var(--ui2-radius-md)',
+              background: 'linear-gradient(135deg, var(--ui2-brand-primary) 0%, var(--ui2-brand-hover) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: 'white',
+            }}
+          >
+            A
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: 'var(--ui2-text-primary)',
+                lineHeight: 1,
+              }}
+            >
+              Apex Terminal
+            </div>
+            <div
+              style={{
+                fontSize: '10px',
+                color: 'var(--ui2-text-tertiary)',
+                lineHeight: 1,
+                marginTop: '2px',
+              }}
+            >
+              Professional Edition
+            </div>
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder="Search or run command..."
-          data-testid="ui2-command-input"
+
+        {/* Command Search Input (triggers palette) */}
+        <button
+          onClick={() => setCommandPaletteOpen(true)}
+          data-testid="ui2-command-trigger"
           style={{
             flex: 1,
             maxWidth: '600px',
             padding: '6px 12px',
             fontSize: '13px',
-            background: 'var(--ui2-bg-panel)',
+            background: 'var(--ui2-bg-input)',
             border: '1px solid var(--ui2-border)',
             borderRadius: 'var(--ui2-radius-md)',
-            color: 'var(--ui2-text-primary)',
+            color: 'var(--ui2-text-tertiary)',
+            textAlign: 'left',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'border-color var(--ui2-transition-fast)',
           }}
-        />
-        <div style={{ flex: 1 }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px' }}>
-          <span
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--ui2-border-strong)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--ui2-border)';
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🔍</span>
+            <span>Search or run command...</span>
+          </div>
+          <div
             style={{
-              color: DEMO_MARKET_STATUS.isOpen
-                ? 'var(--ui2-success)'
-                : 'var(--ui2-text-muted)',
+              fontSize: '11px',
+              padding: '2px 6px',
+              background: 'var(--ui2-bg-elevated)',
+              borderRadius: 'var(--ui2-radius-sm)',
+              color: 'var(--ui2-text-secondary)',
             }}
           >
-            {DEMO_MARKET_STATUS.isOpen ? '● Market Open' : '○ Market Closed'}
-          </span>
-          <span style={{ color: 'var(--ui2-text-muted)' }}>
-            WS: {DEMO_WS_STATUS.latency}ms
-          </span>
+            Ctrl+K
+          </div>
+        </button>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Status Pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+          {/* Mode Badge */}
+          <div className="ui2-badge ui2-badge-info" data-testid="ui2-mode-badge">
+            <span>🎯</span>
+            <span>DEMO</span>
+          </div>
+
+          {/* Market Status */}
+          <div
+            className={`ui2-badge ${DEMO_MARKET_STATUS.isOpen ? 'ui2-badge-success' : 'ui2-badge-neutral'}`}
+            data-testid="ui2-market-status"
+          >
+            <span>{DEMO_MARKET_STATUS.isOpen ? '●' : '○'}</span>
+            <span>{DEMO_MARKET_STATUS.isOpen ? 'Market Open' : 'Market Closed'}</span>
+          </div>
+
+          {/* Connectivity */}
+          <div className="ui2-badge ui2-badge-success" data-testid="ui2-connectivity">
+            <span>⚡</span>
+            <span>WS {DEMO_WS_STATUS.latency}ms</span>
+          </div>
+
+          {/* User Profile */}
           <div
             style={{
               display: 'flex',
@@ -148,6 +377,7 @@ export function AppShellUI2() {
               padding: '4px 10px',
               background: 'var(--ui2-bg-panel)',
               borderRadius: 'var(--ui2-radius-md)',
+              border: '1px solid var(--ui2-border)',
             }}
           >
             <div
@@ -155,7 +385,7 @@ export function AppShellUI2() {
                 width: '24px',
                 height: '24px',
                 borderRadius: '50%',
-                background: 'var(--ui2-brand)',
+                background: 'linear-gradient(135deg, var(--ui2-brand-primary) 0%, var(--ui2-brand-hover) 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -166,11 +396,16 @@ export function AppShellUI2() {
             >
               {DEMO_USER.name.slice(0, 2).toUpperCase()}
             </div>
-            <span style={{ color: 'var(--ui2-text-primary)', fontSize: '13px' }}>
+            <span style={{ color: 'var(--ui2-text-primary)', fontSize: '13px', fontWeight: 500 }}>
               {DEMO_USER.name}
             </span>
           </div>
         </div>
+      </div>
+
+      {/* MarketTape */}
+      <div style={{ gridArea: 'tape' }}>
+        <MarketTape />
       </div>
 
       {/* LeftRail */}
@@ -292,6 +527,14 @@ export function AppShellUI2() {
           testId="ui2-bottom-dock"
         />
       </div>
+
+      {/* Command Palette (Ctrl+K) */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        commands={commands}
+        testId="ui2-command-palette"
+      />
     </div>
     </ToastProvider>
   );

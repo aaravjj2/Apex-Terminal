@@ -32,3 +32,30 @@ export type { BottomDockProps, BottomDockTab } from './BottomDock';
 
 export { RightSidebar } from './RightSidebar';
 export type { RightSidebarProps } from './RightSidebar';
+
+export { CommandPalette } from './CommandPalette';
+export type { CommandItem } from './CommandPalette';
+
+export { KPIStrip } from './KPIStrip';
+export type { KPIItem } from './KPIStrip';
+
+export { Button } from './Button';
+export type { ButtonProps } from './Button';
+
+export { StatusBadge } from './StatusBadge';
+export type { StatusBadgeProps, BadgeVariant } from './StatusBadge';
+
+export { ActionButton } from './ActionButton';
+export type { ActionButtonProps } from './ActionButton';
+
+export { ProgressBar, ConfidenceBar } from './ProgressBar';
+export type { ProgressBarProps, ConfidenceBarProps } from './ProgressBar';
+
+export { InsightsPanel } from './InsightsPanel';
+export type { InsightsPanelProps, Insight, InsightAction } from './InsightsPanel';
+
+// Re-export DataTable formatting utilities
+export { formatValue, formatPnL, formatPercent } from './DataTable';
+
+export { MarketTape } from './MarketTape';
+export { OrderTicket } from './OrderTicket';

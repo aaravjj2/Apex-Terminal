@@ -72,117 +72,128 @@ async function captureFeatures() {
 
     // 2. Navigate to Chart
     console.log('📷 Capturing: Chart View');
-    if (await safeClick('Chart ⌘1', 'Chart')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '02_chart_view.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/trading`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="trading-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '02_chart_view.png'),
+      fullPage: true
+    });
 
     // 3. Portfolio View
     console.log('📷 Capturing: Portfolio');
-    if (await safeClick('Portfolio ⌘P', 'Portfolio')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '03_portfolio_view.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/portfolio`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="portfolio-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '03_portfolio_view.png'),
+      fullPage: true
+    });
+
 
     // 4. Orders View
     console.log('📷 Capturing: Orders');
-    if (await safeClick('Orders ⌘O', 'Orders')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '04_orders_view.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/orders`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="orders-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '04_orders_view.png'),
+      fullPage: true
+    });
+
 
     // 5. Autopilot View
     console.log('📷 Capturing: Autopilot');
-    if (await safeClick('Autopilot ⌘A', 'Autopilot')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '05_autopilot_view.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/autopilot`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="autopilot-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '05_autopilot_view.png'),
+      fullPage: true
+    });
+
 
     // 6. Strategies & Rules
     console.log('📷 Capturing: Strategies & Rules');
-    if (await safeClick('Strategies & Rules ⌘S', 'Strategies')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '06_strategies_rules.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/research`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="research-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '06_strategies_rules.png'),
+      fullPage: true
+    });
+
 
     // 7. Runs / Audit Log
     console.log('📷 Capturing: Runs / Audit Log');
-    if (await safeClick('Runs / Audit Log ⌘R', 'Runs')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '07_runs_audit_log.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/runs`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="runs-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '07_runs_audit_log.png'),
+      fullPage: true
+    });
+
 
     // 8. Options Workstation
     console.log('📷 Capturing: Options Workstation');
-    if (await safeClick('Options ⌘2', 'Options')) {
-      await page.waitForTimeout(4000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '08_options_workstation.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/risk`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="risk-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '08_options_workstation.png'),
+      fullPage: true
+    });
+
 
     // 9. Backtests
     console.log('📷 Capturing: Backtests');
-    if (await safeClick('Backtests ⌘B', 'Backtests')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '09_backtests_view.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/backtest`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="backtest-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '09_backtests_view.png'),
+      fullPage: true
+    });
+
 
     // 10. Replay
     console.log('📷 Capturing: Replay');
-    if (await safeClick('Replay ⌘3', 'Replay')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '10_replay_view.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/replay`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="replay-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '10_replay_view.png'),
+      fullPage: true
+    });
+
 
     // 11. Alerts
     console.log('📷 Capturing: Alerts');
-    if (await safeClick('Alerts ⌘4', 'Alerts')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '11_alerts_view.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/alerts`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="alerts-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '11_alerts_view.png'),
+      fullPage: true
+    });
+
 
     // 12. Settings
     console.log('📷 Capturing: Settings');
-    if (await safeClick('Settings', 'Settings ')) {
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: path.join(SCREENSHOTS_DIR, '12_settings_view.png'),
-        fullPage: true
-      });
-    }
+    await page.goto(`${FRONTEND_URL}/ui2/settings`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="settings-ui2-page"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, '12_settings_view.png'),
+      fullPage: true
+    });
+
 
     // 13. Back to Dashboard for final view
     console.log('📷 Capturing: Dashboard Final');
-    await safeClick('Dashboard ⌘D', 'Dashboard');
+    await page.goto(`${FRONTEND_URL}/ui2/dashboard`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="dashboard-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(2000);
 
     // === NOW RECORD A COMPREHENSIVE DEMO VIDEO (3+ minutes) ===
@@ -203,7 +214,8 @@ async function captureFeatures() {
     await page.waitForTimeout(2000);
 
     console.log('🎬 Section 2: Chart & Technical Analysis (40s)');
-    await safeClick('Chart ⌘1', 'Chart');
+    await page.goto(`${FRONTEND_URL}/ui2/trading`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="trading-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(3000);
     
     // Try to interact with chart - change symbol if possible
@@ -228,7 +240,8 @@ async function captureFeatures() {
     }
 
     console.log('🎬 Section 3: Portfolio Management (25s)');
-    await safeClick('Portfolio ⌘P', 'Portfolio');
+    await page.goto(`${FRONTEND_URL}/ui2/portfolio`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="portfolio-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(5000);
     await page.evaluate(() => window.scrollTo(0, 300));
     await page.waitForTimeout(3000);
@@ -236,11 +249,13 @@ async function captureFeatures() {
     await page.waitForTimeout(2000);
 
     console.log('🎬 Section 4: Orders & Execution (20s)');
-    await safeClick('Orders ⌘O', 'Orders');
+    await page.goto(`${FRONTEND_URL}/ui2/orders`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="orders-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(5000);
 
     console.log('🎬 Section 5: Autopilot Intelligence (30s)');
-    await safeClick('Autopilot ⌘A', 'Autopilot');
+    await page.goto(`${FRONTEND_URL}/ui2/autopilot`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="autopilot-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(7000);
     await page.evaluate(() => window.scrollTo(0, 400));
     await page.waitForTimeout(3000);
@@ -248,11 +263,13 @@ async function captureFeatures() {
     await page.waitForTimeout(3000);
 
     console.log('🎬 Section 6: Strategy Development (25s)');
-    await safeClick('Strategies & Rules ⌘S', 'Strategies');
+    await page.goto(`${FRONTEND_URL}/ui2/research`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="research-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(6000);
     
     console.log('🎬 Section 7: Options Trading (25s)');
-    await safeClick('Options ⌘2', 'Options');
+    await page.goto(`${FRONTEND_URL}/ui2/risk`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="risk-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(6000);
     await page.evaluate(() => window.scrollTo(0, 400));
     await page.waitForTimeout(3000);
@@ -260,23 +277,28 @@ async function captureFeatures() {
     await page.waitForTimeout(2000);
 
     console.log('🎬 Section 8: Backtesting & Analysis (20s)');
-    await safeClick('Backtests ⌘B', 'Backtests');
+    await page.goto(`${FRONTEND_URL}/ui2/backtest`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="backtest-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(5000);
 
     console.log('🎬 Section 9: Runs & Monitoring (15s)');
-    await safeClick('Runs / Audit Log ⌘R', 'Runs');
+    await page.goto(`${FRONTEND_URL}/ui2/runs`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="runs-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(4000);
 
     console.log('🎬 Section 10: Replay Mode (15s)');
-    await safeClick('Replay ⌘3', 'Replay');
+    await page.goto(`${FRONTEND_URL}/ui2/replay`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="replay-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(4000);
 
     console.log('🎬 Section 11: Settings & Configuration (15s)');
-    await safeClick('Settings', 'Settings ');
+    await page.goto(`${FRONTEND_URL}/ui2/settings`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="settings-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(4000);
 
     console.log('🎬 Final: Return to Dashboard (10s)');
-    await safeClick('Dashboard ⌘D', 'Dashboard');
+    await page.goto(`${FRONTEND_URL}/ui2/dashboard`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="dashboard-ui2-page"]', { timeout: 10000 });
     await page.waitForTimeout(5000);
 
     console.log('\n✅ Video recording complete! Total duration: ~3.5 minutes\n');

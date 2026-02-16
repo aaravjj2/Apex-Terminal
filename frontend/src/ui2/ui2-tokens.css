@@ -1,0 +1,124 @@
+/**
+ * UI2 Design Tokens
+ * Professional dark theme with Bloomberg/Robinhood-grade polish
+ */
+
+:root {
+  /* ─── Colors ─── */
+  --ui2-bg-base: #0a0e14;
+  --ui2-bg-elevated: #111418;
+  --ui2-bg-panel: #161a20;
+  --ui2-bg-hover: #1a1f26;
+  --ui2-bg-selected: #1e242c;
+  
+  --ui2-border: #2a3038;
+  --ui2-border-subtle: #1e242c;
+  --ui2-border-focus: #3d5afe;
+  
+  --ui2-text-primary: #e4e6eb;
+  --ui2-text-secondary: #9ba1a9;
+  --ui2-text-muted: #6b7280;
+  --ui2-text-disabled: #4b5563;
+  
+  --ui2-brand: #3d5afe;
+  --ui2-brand-hover: #5370ff;
+  --ui2-brand-subtle: #1e3a8a;
+  
+  --ui2-success: #10b981;
+  --ui2-success-bg: #064e3b;
+  --ui2-danger: #ef4444;
+  --ui2-danger-bg: #7f1d1d;
+  --ui2-warning: #f59e0b;
+  --ui2-warning-bg: #78350f;
+  --ui2-info: #3b82f6;
+  --ui2-info-bg: #1e3a8a;
+  
+  /* ─── Typography ─── */
+  --ui2-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --ui2-font-mono: 'SF Mono', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+  
+  /* ─── Spacing ─── */
+  --ui2-space-1: 0.25rem;  /* 4px */
+  --ui2-space-2: 0.5rem;   /* 8px */
+  --ui2-space-3: 0.75rem;  /* 12px */
+  --ui2-space-4: 1rem;     /* 16px */
+  --ui2-space-5: 1.25rem;  /* 20px */
+  --ui2-space-6: 1.5rem;   /* 24px */
+  --ui2-space-8: 2rem;     /* 32px */
+  
+  /* ─── Radii ─── */
+  --ui2-radius-sm: 4px;
+  --ui2-radius-md: 6px;
+  --ui2-radius-lg: 8px;
+  
+  /* ─── Shadows ─── */
+  --ui2-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --ui2-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --ui2-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  
+  /* ─── Z-index ─── */
+  --ui2-z-base: 0;
+  --ui2-z-dropdown: 1000;
+  --ui2-z-sticky: 1100;
+  --ui2-z-overlay: 1200;
+  --ui2-z-modal: 1300;
+  --ui2-z-toast: 1400;
+}
+
+/* ─── Base Styles ─── */
+.ui2-root {
+  font-family: var(--ui2-font-sans);
+  color: var(--ui2-text-primary);
+  background: var(--ui2-bg-base);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ui2-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.ui2-mono {
+  font-family: var(--ui2-font-mono);
+}
+
+/* ─── Scrollbar ─── */
+.ui2-scrollable {
+  overflow: auto;
+}
+
+.ui2-scrollable::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.ui2-scrollable::-webkit-scrollbar-track {
+  background: var(--ui2-bg-base);
+}
+
+.ui2-scrollable::-webkit-scrollbar-thumb {
+  background: var(--ui2-border);
+  border-radius: 5px;
+}
+
+.ui2-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--ui2-text-muted);
+}
+
+/* ─── Focus States ─── */
+.ui2-focus-ring:focus-visible {
+  outline: 2px solid var(--ui2-border-focus);
+  outline-offset: 2px;
+}
+
+/* ─── Skeleton Animation ─── */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Shell } from './features/layout/shell/Shell';
 import { ClockClient } from './data/ClockClient';
-
 import { WebSocketClient } from './data/WebSocketClient';
+import { UI2Routes } from './ui2/routes';
+import './ui2/ui2-tokens.css';
 
 function App() {
   useEffect(() => {
@@ -24,8 +26,17 @@ function App() {
   }, []);
 
   return (
-    <Shell />
+    <BrowserRouter>
+      <Routes>
+        {/* UI v2 routes */}
+        <Route path="/ui2/*" element={<UI2Routes />} />
+        
+        {/* Default route: existing Shell app */}
+        <Route path="*" element={<Shell />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
 export default App;
+

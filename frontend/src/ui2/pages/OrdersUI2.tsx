@@ -1,16 +1,30 @@
 /**
  * OrdersUI2 Page - Premium Order Management
  * Showcases DataTable with status badges, progress indicators, and action buttons
+ * Wave 9: Now using real data from tradingStore
  */
 
-import React from 'react';
+import { useSyncExternalStore, useEffect } from 'react';
 import { Panel, StatusBadge, ActionButton, ProgressBar } from '../components';
 import { DataTable } from '../components/DataTable';
 import type { ColumnDef } from '../components/DataTable';
-import { DEMO_ORDERS } from '../demo/fixtures';
-import type { Order } from '../demo/fixtures';
+import { tradingStore } from '../stores/tradingStore';
 
-const statusVariantMap: Record<Order['status'], any> = {
+// Map backend order to UI format
+type UIOrder = {
+  id: string;
+  timestamp: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  type: 'market' | 'limit';
+  quantity: number;
+  price: number | null;
+  filled: number;
+  status: 'queued' | 'working' | 'filled' | 'rejected' | 'canceled';
+  source: string;
+};
+
+const statusVariantMap: Record<UIOrder['status'], any> = {
   queued: 'queued',
   working: 'working',
   filled: 'filled',
@@ -19,22 +33,42 @@ const statusVariantMap: Record<Order['status'], any> = {
 };
 
 export function OrdersUI2() {
-  const [orders, setOrders] = React.useState(DEMO_ORDERS);
+  // Subscribe to trading store for real orders
+  const backendOrders = useSyncExternalStore(tradingStore.subscribe, tradingStore.getOrders);
+  
+  // Map backend orders to UI format
+  const orders: UIOrder[] = backendOrders.map(order => ({
+    id: order.order_id,
+    timestamp: order.timestamp,
+    symbol: order.symbol,
+    side: order.side as 'buy' | 'sell',
+    type: order.price ? 'limit' : 'market',
+    quantity: order.quantity,
+    price: order.price || null,
+    filled: order.filled_quantity,
+    status: order.status as UIOrder['status'],
+    source: order.source,
+  }));
+
+  // Start polling on mount
+  useEffect(() => {
+    tradingStore.startPolling(5000);
+    return () => { tradingStore.stopPolling(); };
+  }, []);
 
   const handleCancelOrder = (orderId: string) => {
-    setOrders((prev) =>
-      prev.map((order) => (order.id === orderId ? { ...order, status: 'canceled' as const } : order))
-    );
+    console.log('Cancel order:', orderId);
+    // In real app, call backend API: DELETE /api/v1/trading/orders/{orderId}
   };
 
-  const ordersColumns: ColumnDef<Order>[] = [
+  const ordersColumns: ColumnDef<UIOrder>[] = [
     {
       key: 'id',
       label: 'Order ID',
       width: '140px',
-      render: (value) => (
+      render: (value?: unknown) => (
         <span className="ui2-mono" style={{ fontSize: '12px', color: 'var(--ui2-text-tertiary)' }}>
-          {value}
+          {String(value).slice(0, 8)}...
         </span>
       ),
     },
@@ -48,8 +82,8 @@ export function OrdersUI2() {
       key: 'symbol',
       label: 'Symbol',
       width: '100px',
-      render: (value) => (
-        <span style={{ fontWeight: 600, color: 'var(--ui2-text-primary)' }}>{value}</span>
+      render: (value?: unknown) => (
+        <span style={{ fontWeight: 600, color: 'var(--ui2-text-primary)' }}>{value as string}</span>
       ),
     },
     {
@@ -57,15 +91,15 @@ export function OrdersUI2() {
       label: 'Side',
       width: '80px',
       align: 'center',
-      render: (value: 'buy' | 'sell') => (
+      render: (value?: unknown) => (
         <span
           style={{
             fontWeight: 600,
-            color: value === 'buy' ? 'var(--ui2-success)' : 'var(--ui2-danger)',
+            color: (value as string) === 'buy' ? 'var(--ui2-success)' : 'var(--ui2-danger)',
             textTransform: 'uppercase',
           }}
         >
-          {value}
+          {value as string}
         </span>
       ),
     },
@@ -74,9 +108,9 @@ export function OrdersUI2() {
       label: 'Type',
       width: '80px',
       align: 'center',
-      render: (value) => (
+      render: (value?: unknown) => (
         <span className="ui2-micro" style={{ color: 'var(--ui2-text-secondary)' }}>
-          {value.toUpperCase()}
+          {String(value).toUpperCase()}
         </span>
       ),
     },
@@ -92,9 +126,9 @@ export function OrdersUI2() {
       label: 'Price',
       width: '100px',
       align: 'right',
-      render: (value) => {
+      render: (value?: unknown) => {
         if (value === null || value === undefined) return <span style={{ color: 'var(--ui2-text-muted)' }}>Market</span>;
-        return `$${value.toFixed(2)}`;
+        return `$${(value as number).toFixed(2)}`;
       },
     },
     {
@@ -102,12 +136,13 @@ export function OrdersUI2() {
       label: 'Filled',
       width: '140px',
       align: 'right',
-      render: (value, row) => {
-        const fillPercent = (value / row.quantity) * 100;
+      render: (value?: unknown, row?: UIOrder) => {
+        if (!row) return null;
+        const fillPercent = ((value as number) / row.quantity) * 100;
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="ui2-tabular" style={{ minWidth: '60px', textAlign: 'right' }}>
-              {value}/{row.quantity}
+              {value as number}/{row.quantity}
             </span>
             {row.status === 'working' && (
               <div style={{ flex: 1, minWidth: '40px' }}>
@@ -123,18 +158,22 @@ export function OrdersUI2() {
       label: 'Status',
       width: '120px',
       align: 'center',
-      render: (value: Order['status'], row) => (
-        <StatusBadge variant={statusVariantMap[value]} testId={`order-status-${row.id}`}>
-          {value}
-        </StatusBadge>
-      ),
+      render: (value?: unknown, row?: UIOrder) => {
+        if (!row) return null;
+        return (
+          <StatusBadge variant={statusVariantMap[value as UIOrder['status']]} testId={`order-status-${row.id}`}>
+            {value as string}
+          </StatusBadge>
+        );
+      },
     },
     {
       key: 'id',
       label: 'Actions',
       width: '120px',
       align: 'center',
-      render: (value, row) => {
+      render: (value?: unknown, row?: UIOrder) => {
+        if (!row) return null;
         const canCancel = row.status === 'queued' || row.status === 'working';
         return (
           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
@@ -153,7 +192,7 @@ export function OrdersUI2() {
             <ActionButton
               icon="×"
               title="Cancel Order"
-              onClick={() => handleCancelOrder(value)}
+              onClick={() => handleCancelOrder(value as string)}
               disabled={!canCancel}
               testId={`order-cancel-${value}`}
             />

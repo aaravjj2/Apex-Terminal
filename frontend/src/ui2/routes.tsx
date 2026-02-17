@@ -18,6 +18,23 @@ import {
   BacktestUI2,
   ReplayUI2,
   SettingsUI2,
+  AutomationUI2,
+  SearchUI2,
+  AgentUI2,
+  AutopilotV2UI2,
+  AutomationV2UI2,
+  ExportUI2,
+  PlatformHealthUI2,
+  TelemetryUI2,
+  AutopilotExplainUI2,
+  AutomationRunsUI2,
+  WorkflowBuilderUI2,
+  IncidentsUI2,
+  DecisionExplorerUI2,
+  PlatformHealthV4UI2,
+  AIProviderStatusUI2,
+  DecisionExplainerV2UI2,
+  NLWorkflowUI2,
 } from './pages';
 
 export function UI2Routes() {
@@ -38,6 +55,25 @@ export function UI2Routes() {
         <Route path="replay" element={<ReplayUI2 />} />
         <Route path="ops" element={<OpsUI2 />} />
         <Route path="settings" element={<SettingsUI2 />} />
+        <Route path="automation" element={<AutomationUI2 />} />
+        <Route path="search" element={<SearchUI2 />} />
+        <Route path="agent" element={<AgentUI2 />} />
+        <Route path="autopilot-v2" element={<AutopilotV2UI2 />} />
+        <Route path="automation-v2" element={<AutomationV2UI2 />} />
+        <Route path="export" element={<ExportUI2 />} />
+        <Route path="health" element={<PlatformHealthUI2 />} />
+        <Route path="telemetry" element={<TelemetryUI2 />} />
+        <Route path="autopilot-explain" element={<AutopilotExplainUI2 />} />
+        {/* Wave 13-14 */}
+        <Route path="automation-runs" element={<AutomationRunsUI2 />} />
+        <Route path="workflow-builder" element={<WorkflowBuilderUI2 />} />
+        <Route path="incidents" element={<IncidentsUI2 />} />
+        <Route path="decisions" element={<DecisionExplorerUI2 />} />
+        <Route path="health-v4" element={<PlatformHealthV4UI2 />} />
+        {/* Wave 17-18 */}
+        <Route path="ai-provider" element={<AIProviderStatusUI2 />} />
+        <Route path="decision-explainer" element={<DecisionExplainerV2UI2 />} />
+        <Route path="nl-workflow" element={<NLWorkflowUI2 />} />
       </Route>
     </Routes>
   );

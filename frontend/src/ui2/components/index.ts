@@ -48,6 +48,8 @@ export type { StatusBadgeProps, BadgeVariant } from './StatusBadge';
 export { ActionButton } from './ActionButton';
 export type { ActionButtonProps } from './ActionButton';
 
+export { ErrorBoundary } from './ErrorBoundary';
+
 export { ProgressBar, ConfidenceBar } from './ProgressBar';
 export type { ProgressBarProps, ConfidenceBarProps } from './ProgressBar';
 

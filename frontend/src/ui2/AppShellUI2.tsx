@@ -2,16 +2,18 @@
  * UI2 AppShellUI2 Component
  * Professional trading terminal shell with Bloomberg-grade polish
  * TopBar + LeftRail + LeftDrawer + Center + RightSidebar + BottomDock + CommandPalette
+ * v1.94: Real connection status from tradingStore
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BottomDock, RightSidebar, CommandPalette, MarketTape, type CommandItem } from './components';
-import { DEMO_USER, DEMO_MARKET_STATUS, DEMO_WS_STATUS } from './demo/constants';
+import { DEMO_USER, DEMO_MARKET_STATUS } from './demo/constants';
 import { COMMAND_REGISTRY } from './stores/commandRegistry';
 import { ToastProvider } from '../ui/Toast';
 import { OrdersBlotter } from '../features/orders/OrdersBlotter';
 import { TradesLedger } from '../features/trades/TradesLedger';
+import { tradingStore } from './stores/tradingStore';
 
 interface WorkspaceConfig {
   id: string;
@@ -144,6 +146,165 @@ const WORKSPACES: WorkspaceConfig[] = [
     description: 'Platform configuration',
     keywords: ['settings', 'config', 'preferences']
   },
+  // Wave 7 — v1.63+
+  {
+    id: 'automation',
+    label: 'Automation',
+    icon: '🔄',
+    path: '/ui2/automation',
+    section: 'tools',
+    description: 'Workflow automation studio',
+    keywords: ['workflow', 'automation', 'pipeline', 'trigger']
+  },
+  {
+    id: 'search',
+    label: 'Search',
+    icon: '🔍',
+    path: '/ui2/search',
+    section: 'tools',
+    description: 'Full-text entity search',
+    keywords: ['search', 'find', 'query', 'elasticsearch']
+  },
+  {
+    id: 'agent',
+    label: 'AI Agent',
+    icon: '💡',
+    path: '/ui2/agent',
+    section: 'tools',
+    description: 'AI assistant with tool execution',
+    keywords: ['agent', 'ai', 'assistant', 'nova', 'llm']
+  },
+  // Wave 8 — v1.73+
+  {
+    id: 'autopilot-v2',
+    label: 'Autopilot V2',
+    icon: '🚀',
+    path: '/ui2/autopilot-v2',
+    section: 'tools',
+    description: 'V2 pipeline: scoring, risk, sizing, execution sim',
+    keywords: ['autopilot', 'v2', 'pipeline', 'scoring', 'risk', 'execution']
+  },
+  {
+    id: 'automation-v2',
+    label: 'Automation V2',
+    icon: '⚡',
+    path: '/ui2/automation-v2',
+    section: 'tools',
+    description: 'DAG-based workflow automation engine',
+    keywords: ['automation', 'dag', 'workflow', 'trigger']
+  },
+  {
+    id: 'export',
+    label: 'Export',
+    icon: '📦',
+    path: '/ui2/export',
+    section: 'system',
+    description: 'Export bundles and compliance reports',
+    keywords: ['export', 'bundle', 'report', 'audit', 'compliance']
+  },
+  {
+    id: 'health',
+    label: 'Health',
+    icon: '💚',
+    path: '/ui2/health',
+    section: 'system',
+    description: 'Platform health and observability',
+    keywords: ['health', 'status', 'metrics', 'observability']
+  },
+  // Wave 12 — v1.115+
+  {
+    id: 'telemetry',
+    label: 'Telemetry',
+    icon: '📡',
+    path: '/ui2/telemetry',
+    section: 'system',
+    description: 'Event telemetry and observability',
+    keywords: ['telemetry', 'events', 'observability', 'tracing']
+  },
+  {
+    id: 'autopilot-explain',
+    label: 'Explain',
+    icon: '🧠',
+    path: '/ui2/autopilot-explain',
+    section: 'tools',
+    description: 'Autopilot decision explainability',
+    keywords: ['explain', 'autopilot', 'decision', 'reasoning']
+  },
+  // Wave 13-14 — v1.123+
+  {
+    id: 'automation-runs',
+    label: 'Automation Runs',
+    icon: '🏃',
+    path: '/ui2/automation-runs',
+    section: 'system',
+    description: 'Automation run history and logs',
+    keywords: ['runs', 'automation', 'execution', 'history', 'logs']
+  },
+  {
+    id: 'workflow-builder',
+    label: 'Workflow Builder',
+    icon: '🔨',
+    path: '/ui2/workflow-builder',
+    section: 'tools',
+    description: 'Visual workflow editor with templates',
+    keywords: ['workflow', 'builder', 'create', 'template', 'editor']
+  },
+  {
+    id: 'incidents',
+    label: 'Incidents',
+    icon: '🚨',
+    path: '/ui2/incidents',
+    section: 'system',
+    description: 'Incident tracking and response',
+    keywords: ['incidents', 'alert', 'outage', 'response']
+  },
+  {
+    id: 'decisions',
+    label: 'Decisions',
+    icon: '🧭',
+    path: '/ui2/decisions',
+    section: 'tools',
+    description: 'Autopilot decision explorer with portfolio impact',
+    keywords: ['decisions', 'autopilot', 'impact', 'portfolio']
+  },
+  {
+    id: 'health-v4',
+    label: 'Health V4',
+    icon: '💊',
+    path: '/ui2/health-v4',
+    section: 'system',
+    description: 'All-subsystem health with search, LLM, replay status',
+    keywords: ['health', 'v4', 'subsystem', 'status']
+  },
+  // Wave 17 — v1.150+
+  {
+    id: 'ai-provider',
+    label: 'AI Provider',
+    icon: '🧩',
+    path: '/ui2/ai-provider',
+    section: 'system',
+    description: 'LLM provider status, budget, cache, rate limits',
+    keywords: ['ai', 'llm', 'provider', 'budget', 'cache', 'nova']
+  },
+  // Wave 18 — v1.155+
+  {
+    id: 'decision-explainer',
+    label: 'Decision V2',
+    icon: '📊',
+    path: '/ui2/decision-explainer',
+    section: 'tools',
+    description: 'Decision explainer with feature attribution and confidence',
+    keywords: ['decision', 'explainer', 'attribution', 'confidence', 'post-trade']
+  },
+  {
+    id: 'nl-workflow',
+    label: 'NL Workflow',
+    icon: '✨',
+    path: '/ui2/nl-workflow',
+    section: 'tools',
+    description: 'Natural language workflow generator with validation',
+    keywords: ['nl', 'workflow', 'generate', 'natural', 'language', 'simulation']
+  },
 ];
 
 export function AppShellUI2() {
@@ -153,6 +314,12 @@ export function AppShellUI2() {
   const isE2EMode = typeof window !== 'undefined' && (
     window.location.search.includes('e2e=1') || 
     window.location.search.includes('PLAYWRIGHT_TEST_BASE_URL')
+  );
+
+  // Subscribe to trading store connection status (v1.94)
+  const connectionStatus = useSyncExternalStore(
+    tradingStore.subscribe, 
+    tradingStore.getConnectionStatus
   );
 
   const drawerVisible = true;
@@ -362,10 +529,24 @@ export function AppShellUI2() {
             <span>{DEMO_MARKET_STATUS.isOpen ? 'Market Open' : 'Market Closed'}</span>
           </div>
 
-          {/* Connectivity */}
-          <div className="ui2-badge ui2-badge-success" data-testid="ui2-connectivity">
-            <span>⚡</span>
-            <span>WS {DEMO_WS_STATUS.latency}ms</span>
+          {/* Connectivity (v1.94: Real status from tradingStore) */}
+          <div 
+            className={`ui2-badge ${
+              connectionStatus === 'connected' ? 'ui2-badge-success' :
+              connectionStatus === 'connecting' ? 'ui2-badge-warning' :
+              connectionStatus === 'fallback' ? 'ui2-badge-warning' :
+              'ui2-badge-neutral'
+            }`} 
+            data-testid="ui2-conn-status"
+            title={`Connection: ${connectionStatus}`}
+          >
+            <span>{connectionStatus === 'connected' ? '⚡' : connectionStatus === 'connecting' ? '⏳' : connectionStatus === 'fallback' ? '📡' : '○'}</span>
+            <span>
+              {connectionStatus === 'connected' ? 'WS' :
+               connectionStatus === 'connecting' ? 'Connecting' :
+               connectionStatus === 'fallback' ? 'Polling' :
+               'Offline'}
+            </span>
           </div>
 
           {/* User Profile */}

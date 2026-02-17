@@ -1,32 +1,78 @@
 /**
  * DashboardUI2 Page - Premium Trading Terminal Dashboard
  * Showcases KPI Strip, Insights Panel, and professional layout
+ * Wave 9: Now using real data from tradingStore
+ * v1.93: Removed DEMO_INSIGHTS, using insightsStore
+ * v1.114: Terminal-grade polish with design tokens & tabular numbers
  */
 
-import React from 'react';
+import React, { useSyncExternalStore, useEffect } from 'react';
 import { Panel, KPIStrip, InsightsPanel } from '../components';
-import { DEMO_KPIS, DEMO_INSIGHTS, DEMO_POSITIONS } from '../demo/fixtures';
-import { DataTable, formatPnL, formatPercent } from '../components/DataTable';
+import { DataTable } from '../components/DataTable';
 import type { ColumnDef } from '../components/DataTable';
+import { NumericValue } from '../components/NumericDisplay';
 import { EnhancedCommandCenterView } from '../../features/layout/views/EnhancedCommandCenterView';
+import { tradingStore, type Position } from '../stores/tradingStore';
+import { insightsStore } from '../stores/insightsStore';
 
 export function DashboardUI2() {
   const [dismissedInsights, setDismissedInsights] = React.useState<string[]>([]);
+  
+  // Subscribe to trading store for real data
+  const positions = useSyncExternalStore(tradingStore.subscribe, tradingStore.getPositions);
+  const pnl = useSyncExternalStore(tradingStore.subscribe, tradingStore.getPnL);
+  const orders = useSyncExternalStore(tradingStore.subscribe, tradingStore.getOrders);
+  
+  // Subscribe to insights store
+  const allInsights = useSyncExternalStore(insightsStore.subscribe, insightsStore.getInsights);
+  
+  // Start streaming (WebSocket preferred, polling fallback) on mount
+  useEffect(() => {
+    tradingStore.startStreaming();
+    return () => { tradingStore.stopStreaming(); };
+  }, []);
 
-  const visibleInsights = DEMO_INSIGHTS.filter((insight) => !dismissedInsights.includes(insight.id));
+  const visibleInsights = allInsights.filter((insight) => !dismissedInsights.includes(insight.id));
 
   const handleDismissInsight = (id: string) => {
     setDismissedInsights((prev) => [...prev, id]);
   };
 
-  // Define positions table columns
-  const positionsColumns: ColumnDef<typeof DEMO_POSITIONS[0]>[] = [
+  // KPIs from real data
+  const kpis = [
+    { 
+      id: 'total-pnl', 
+      label: 'Total P&L', 
+      value: `$${pnl.total_pnl.toFixed(2)}`, 
+      change: pnl.total_pnl !== 0 ? { 
+        value: `$${Math.abs(pnl.total_pnl).toFixed(2)}`, 
+        direction: pnl.total_pnl >= 0 ? 'up' as const : 'down' as const 
+      } : undefined,
+      testId: 'kpi-total-pnl' 
+    },
+    { 
+      id: 'unrealized-pnl', 
+      label: 'Unrealized P&L', 
+      value: `$${pnl.unrealized_pnl.toFixed(2)}`, 
+      change: pnl.unrealized_pnl !== 0 ? { 
+        value: `$${Math.abs(pnl.unrealized_pnl).toFixed(2)}`, 
+        direction: pnl.unrealized_pnl >= 0 ? 'up' as const : 'down' as const 
+      } : undefined,
+      testId: 'kpi-unrealized-pnl' 
+    },
+    { id: 'positions', label: 'Positions', value: `${pnl.positions_count}`, testId: 'kpi-positions-count' },
+    { id: 'orders', label: 'Orders Today', value: `${orders.length}`, testId: 'kpi-orders-count' },
+    { id: 'notional', label: 'Total Notional', value: `$${(pnl.total_notional / 1000).toFixed(1)}k`, testId: 'kpi-total-notional' },
+  ];
+
+  // Define positions table columns with tabular numeric formatting
+  const positionsColumns: ColumnDef<Position>[] = [
     {
       key: 'symbol',
       label: 'Symbol',
       width: '120px',
-      render: (value) => (
-        <span style={{ fontWeight: 600, color: 'var(--ui2-text-primary)' }}>{value}</span>
+      render: (value?: unknown) => (
+        <span className="font-semibold text-neutral-100">{value as string}</span>
       ),
     },
     {
@@ -34,57 +80,56 @@ export function DashboardUI2() {
       label: 'Quantity',
       align: 'right',
       width: '100px',
-      format: 'number',
+      render: (value?: unknown) => (
+        <NumericValue value={value as number} decimals={0} />
+      ),
     },
     {
-      key: 'marketPrice',
+      key: 'market_price',
       label: 'Price',
       align: 'right',
       width: '100px',
-      format: 'currency',
+      render: (value?: unknown) => (
+        <NumericValue value={value as number} format="currency" decimals={2} />
+      ),
     },
     {
-      key: 'marketValue',
-      label: 'Market Value',
+      key: 'avg_price',
+      label: 'Avg Price',
       align: 'right',
-      width: '120px',
-      format: 'currency',
+      width: '100px',
+      render: (value?: unknown) => (
+        <NumericValue value={value as number} format="currency" decimals={2} />
+      ),
     },
     {
-      key: 'pnl',
+      key: 'unrealized_pnl',
       label: 'P&L',
       align: 'right',
       width: '120px',
-      render: (value) => {
-        const { text, color } = formatPnL(value);
-        return <span style={{ color, fontWeight: 600 }}>{text}</span>;
-      },
+      render: (value?: unknown) => (
+        <NumericValue
+          value={value as number || 0}
+          format="currency"
+          decimals={2}
+          showSign
+          colorize
+        />
+      ),
     },
     {
-      key: 'pnlPercent',
-      label: 'P&L %',
-      align: 'right',
-      width: '100px',
-      render: (value) => {
-        const { text, color } = formatPercent(value);
-        return <span style={{ color }}>{text}</span>;
-      },
-    },
-    {
-      key: 'dayChange',
-      label: 'Day Change',
-      align: 'right',
+      key: 'sector',
+      label: 'Sector',
+      align: 'left',
       width: '120px',
-      render: (value) => {
-        const { text, color } = formatPnL(value);
-        return <span style={{ color }}>{text}</span>;
-      },
     },
   ];
 
   return (
     <div
       data-testid="dashboard-ui2-page"
+      data-ready="true"
+      data-ui2-dashboard-ready="true"
       style={{
         height: '100%',
         overflow: 'auto',
@@ -97,7 +142,7 @@ export function DashboardUI2() {
     >
       {/* Hero KPI Strip */}
       <div data-testid="dashboard-kpi-strip">
-        <KPIStrip items={DEMO_KPIS} variant="hero" testId="ui2-kpi-strip-hero" />
+        <KPIStrip items={kpis} variant="hero" testId="ui2-kpi-strip-hero" />
       </div>
 
       {/* Two-column layout: Insights + Positions */}
@@ -118,7 +163,7 @@ export function DashboardUI2() {
           padding="md"
         >
           <InsightsPanel
-            insights={visibleInsights}
+            insights={visibleInsights as any}
             testId="ui2-insights-panel"
             onDismiss={handleDismissInsight}
           />
@@ -127,14 +172,14 @@ export function DashboardUI2() {
         {/* Top Positions Table */}
         <Panel
           title="Top Positions"
-          subtitle="4 holdings"
+          subtitle={`${positions.length} holdings`}
           testId="dashboard-positions-panel"
           variant="elevated"
           padding="md"
         >
           <DataTable
             columns={positionsColumns}
-            data={DEMO_POSITIONS}
+            data={positions}
             keyField="symbol"
             density="normal"
             striped

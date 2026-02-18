@@ -171,7 +171,7 @@ function ShortcutsSection() {
 
 export function SettingsView() {
     return (
-        <div className="h-full bg-background overflow-auto">
+        <div className="h-full bg-background overflow-auto" data-testid="settings-view">
             <div className="max-w-3xl mx-auto p-6">
                 <h1 className="text-xl font-semibold text-text mb-6">Settings</h1>
 

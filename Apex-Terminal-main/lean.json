@@ -1,0 +1,23 @@
+{
+    "data-folder": "data",
+    "job-user-id": "1",
+    "api-access-token": "default",
+    "default-language": "python",
+    "environments": {
+        "backtesting": {
+            "live-mode": false,
+            "setup-handler": "QuantConnect.Lean.Engine.Setup.BacktestingSetupHandler",
+            "result-handler": "QuantConnect.Lean.Engine.Results.BacktestingResultHandler",
+            "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.FileSystemDataFeed",
+            "data-queue-handler": [
+                "QuantConnect.Lean.Engine.DataFeeds.Queues.LiveDataQueue"
+            ],
+            "messaging-handler": "QuantConnect.Lean.Engine.Messaging.Messaging",
+            "real-time-handler": "QuantConnect.Lean.Engine.RealTime.BacktestingRealTimeHandler",
+            "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler",
+            "history-provider": [
+                "QuantConnect.Lean.Engine.HistoricalData.SubscriptionDataReaderHistoryProvider"
+            ]
+        }
+    }
+}

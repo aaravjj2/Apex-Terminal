@@ -1,0 +1,14 @@
+{
+  "generated_at": "2025-01-15T12:00:00Z",
+  "entries": [
+    { "symbol": "AAPL",  "expiry": "2025-03-21", "strike": 220.0, "option_type": "call", "bid": 8.50,  "ask": 9.00,  "mid": 8.75,  "iv": 0.28, "delta": 0.45 },
+    { "symbol": "AAPL",  "expiry": "2025-03-21", "strike": 210.0, "option_type": "put",  "bid": 5.20,  "ask": 5.70,  "mid": 5.45,  "iv": 0.30, "delta": -0.35 },
+    { "symbol": "MSFT",  "expiry": "2025-04-17", "strike": 430.0, "option_type": "call", "bid": 12.00, "ask": 12.80, "mid": 12.40, "iv": 0.25, "delta": 0.52 },
+    { "symbol": "TSLA",  "expiry": "2025-03-21", "strike": 250.0, "option_type": "put",  "bid": 15.00, "ask": 16.00, "mid": 15.50, "iv": 0.55, "delta": -0.40 },
+    { "symbol": "BRK-B", "expiry": "2025-06-20", "strike": 420.0, "option_type": "call", "bid": 18.00, "ask": 19.50, "mid": 18.75, "iv": 0.18, "delta": 0.60 },
+    { "symbol": "AMZN",  "expiry": "2025-03-21", "strike": 190.0, "option_type": "call", "bid": 6.30,  "ask": 6.80,  "mid": 6.55,  "iv": 0.32, "delta": 0.48 },
+    { "symbol": "GOOGL", "expiry": "2025-04-17", "strike": 155.0, "option_type": "put",  "bid": 4.50,  "ask": 5.00,  "mid": 4.75,  "iv": 0.27, "delta": -0.30 },
+    { "symbol": "AAPL",  "expiry": "2025-03-21", "strike": 230.0, "option_type": "call", "bid": 4.00,  "ask": 4.50,  "mid": 4.25,  "iv": 0.31, "delta": 0.30 },
+    { "symbol": "TSLA",  "expiry": "2025-03-21", "strike": 260.0, "option_type": "put",  "bid": 20.00, "ask": 21.00, "mid": 20.50, "iv": 0.58, "delta": -0.50 }
+  ]
+}

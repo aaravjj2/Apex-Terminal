@@ -1,0 +1,2 @@
+symbol,option_type,strike,expiry,quantity,side,multiplier
+AAPL,call,220,03/21/2025,10,buy,100

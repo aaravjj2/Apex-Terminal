@@ -1,0 +1,61 @@
+#!/bin/bash
+# Pre-commit hook to prevent committing secrets and junk files
+# Install: cp .github/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+echo "Running pre-commit checks..."
+
+# Check for prohibited files
+PROHIBITED_PATTERNS=(
+    "keys.env"
+    "node_modules/"
+    "venv/"
+    ".venv/"
+    "*.db"
+    "*.sqlite"
+    "*.log"
+    "*.out"
+    "test-results/"
+    "playwright-report/"
+    "Zone.Identifier"
+)
+
+ERRORS=0
+
+for pattern in "${PROHIBITED_PATTERNS[@]}"; do
+    matches=$(git diff --cached --name-only | grep -E "$pattern" || true)
+    if [ -n "$matches" ]; then
+        echo -e "${RED}ERROR: Attempting to commit prohibited files matching '$pattern':${NC}"
+        echo "$matches"
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+
+# Check for potential secrets (simple patterns)
+SECRET_PATTERNS=(
+    "ALPACA_API_KEY=.{10,}"
+    "FINNHUB_TOKEN=.{10,}"
+    "sk-[a-zA-Z0-9]{20,}"
+    "api_key.*=.*['\"][a-zA-Z0-9]{20,}['\"]"
+)
+
+for pattern in "${SECRET_PATTERNS[@]}"; do
+    matches=$(git diff --cached -U0 | grep -E "^\+" | grep -E "$pattern" || true)
+    if [ -n "$matches" ]; then
+        echo -e "${RED}ERROR: Potential secret detected in staged changes:${NC}"
+        echo "(Pattern matched - value redacted for security)"
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+
+if [ $ERRORS -gt 0 ]; then
+    echo -e "${RED}Commit blocked: $ERRORS error(s) found${NC}"
+    echo "Remove prohibited files or secrets before committing."
+    exit 1
+fi
+
+echo -e "${GREEN}Pre-commit checks passed!${NC}"
+exit 0

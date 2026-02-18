@@ -1,5 +1,6 @@
 // RunsAuditView.tsx - Runs / Audit Log page (A2 requirement)
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../../../config/api';
 import { Badge } from '../../../ui/Badge';
 import { Button } from '../../../ui/Button';
 
@@ -45,8 +46,8 @@ export const RunsAuditView: React.FC = () => {
   const fetchData = async () => {
     try {
       const [runsRes, auditRes] = await Promise.all([
-        fetch('/api/v1/autopilot/runs'),
-        fetch('/api/v1/autopilot/logs?limit=200')
+        fetch(`${API_BASE}/api/v1/autopilot/runs`),
+        fetch(`${API_BASE}/api/v1/autopilot/logs?limit=200`)
       ]);
 
       if (runsRes.ok) {
@@ -249,7 +250,7 @@ export const RunsAuditView: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-surface min-h-full">
+    <div className="p-6 space-y-6 bg-surface min-h-full" data-testid="runs-audit-view">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>

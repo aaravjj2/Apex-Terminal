@@ -379,7 +379,7 @@ export function StrategiesView() {
     const selectedStrategy = strategies.find(s => s.id === selectedId) || null;
 
     return (
-        <div className="h-full bg-background flex flex-col">
+        <div className="h-full bg-background flex flex-col" data-testid="strategies-view">
             {!selectedId ? (
                 <div className="flex-1 flex flex-col overflow-hidden">
                     <StrategyList

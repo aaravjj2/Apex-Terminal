@@ -2,6 +2,7 @@
 Demo market data provider.
 
 Uses fixture files from phase1/data/equity/*.csv for deterministic, network-free operation.
+Replay-first policy: checks replay cache before loading fixtures.
 """
 
 import csv
@@ -15,25 +16,61 @@ from .types import (
     BarsRequest, BarsResponse, QuoteRequest, QuoteResponse,
     BarData, QuoteData, ProviderName
 )
+from ..replay import has_replay, get_replay, save_replay
 
 logger = structlog.get_logger(__name__)
 
 
 class DemoProvider(MarketDataProvider):
-    """Demo provider using CSV fixtures."""
+    """Demo provider using CSV fixtures with replay-first policy."""
     
-    def __init__(self, data_dir: str = "phase1/data/equity"):
+    def __init__(self, data_dir: str = "phase1/data/equity", enable_replay_save: bool = False):
         super().__init__(ProviderName.DEMO)
         self.data_dir = Path(data_dir)
-        logger.info(f"DemoProvider initialized with data_dir={self.data_dir.absolute()}")
+        self.enable_replay_save = enable_replay_save  # LOCAL mode flag
+        logger.info(
+            f"DemoProvider initialized",
+            data_dir=str(self.data_dir.absolute()),
+            enable_replay_save=enable_replay_save
+        )
     
     async def get_bars(self, request: BarsRequest) -> BarsResponse:
         """
-        Load bars from CSV fixture.
+        Load bars from replay cache (if exists) or CSV fixture.
         
+        REPLAY-FIRST POLICY: If replay exists, use it exclusively (no fixture fallback).
         Expected CSV format: timestamp,open,high,low,close,volume
         """
-        # Map symbol to fixture file
+        # Check replay cache first
+        replay_params = {
+            "symbol": request.symbol,
+            "start": request.start.isoformat(),
+            "end": request.end.isoformat(),
+            "interval": request.interval,
+        }
+        
+        replay_data = get_replay("bars", replay_params)
+        if replay_data:
+            # Replay HIT — deserialize and return
+            bars = [
+                BarData(
+                    timestamp=datetime.fromisoformat(b["timestamp"]),
+                    open=b["open"],
+                    high=b["high"],
+                    low=b["low"],
+                    close=b["close"],
+                    volume=b["volume"],
+                )
+                for b in replay_data.get("data", {}).get("bars", [])
+            ]
+            return BarsResponse(
+                symbol=request.symbol,
+                bars=bars,
+                provider=self.provider_name,
+                cached=True,  # Replay artifacts are cached
+            )
+        
+        # No replay — load from fixture
         fixture_file = self.data_dir / f"{request.symbol.lower()}_1d.csv"
         
         if not fixture_file.exists():
@@ -80,6 +117,23 @@ class DemoProvider(MarketDataProvider):
             logger.debug(f"Loaded {len(bars)} bars for {request.symbol} from {fixture_file.name}")
         except Exception as e:
             logger.error(f"Error loading fixture {fixture_file}: {e}")
+        
+        # Save replay artifact if enabled (LOCAL mode only)
+        if self.enable_replay_save and bars:
+            replay_data = {
+                "bars": [
+                    {
+                        "timestamp": b.timestamp.isoformat(),
+                        "open": b.open,
+                        "high": b.high,
+                        "low": b.low,
+                        "close": b.close,
+                        "volume": b.volume,
+                    }
+                    for b in bars
+                ]
+            }
+            save_replay("bars", replay_params, replay_data)
         
         return BarsResponse(
             symbol=request.symbol,

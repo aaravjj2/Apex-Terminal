@@ -26,10 +26,23 @@ export function OptionsView() {
     chainLoading
   } = useOptionsStore();
 
-  const [mainTab, setMainTab] = useState<MainTab>('analytics');
+  // Check if navigated here via Risk Desk quick action
+  const initialTab = (window as any).__navigateToRiskDesk ? 'risk-desk' : 'analytics';
+  if ((window as any).__navigateToRiskDesk) {
+    delete (window as any).__navigateToRiskDesk;
+  }
+
+  const [mainTab, setMainTab] = useState<MainTab>(initialTab as MainTab);
   const [activeTab, setActiveTab] = useState<OptionsTab>('chain');
   const [indicatorManagerOpen, setIndicatorManagerOpen] = useState(false);
   const [, setIndicators] = useState<unknown[]>([]);
+
+  // Listen for navigate-risk-desk event from Shell
+  useEffect(() => {
+    const handler = () => setMainTab('risk-desk');
+    window.addEventListener('navigate-risk-desk', handler);
+    return () => window.removeEventListener('navigate-risk-desk', handler);
+  }, []);
 
   // Fetch all data when app-wide symbol changes
   useEffect(() => {
@@ -77,7 +90,7 @@ export function OptionsView() {
       {/* Header with main tabs */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2 bg-panel-bg">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-text">Options - {appSymbol}</h1>
+          <h1 className="text-lg font-semibold text-text" data-testid="options-heading">Options - {appSymbol}</h1>
 
           {/* Main tab switcher */}
           <div className="flex gap-2" role="tablist" aria-label="Options main tabs">

@@ -9,6 +9,8 @@ import {
   AutopilotActivity,
   AutopilotSettings,
 } from '../../autopilot/components';
+import { AIPanel } from './AIPanel';
+import { useAppStore } from '../../../state/appStore';
 
 type TabId = 'dashboard' | 'positions' | 'activity' | 'settings';
 
@@ -21,6 +23,7 @@ const TABS: { id: TabId; label: string }[] = [
 
 export function AutopilotView() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const { symbol } = useAppStore();
 
   return (
     <div className="h-full w-full flex flex-col" data-testid="autopilot-view">
@@ -43,7 +46,8 @@ export function AutopilotView() {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto flex">
+        <div className="flex-1 overflow-auto">
         {activeTab === 'dashboard' && <AutopilotDashboard />}
         {activeTab === 'positions' && (
           <div className="h-full p-4 bg-gray-900">
@@ -60,6 +64,10 @@ export function AutopilotView() {
             <AutopilotSettings />
           </div>
         )}
+        </div>
+        <div className="w-80 shrink-0 border-l border-gray-700 overflow-auto">
+          <AIPanel symbol={symbol || 'SPY'} />
+        </div>
       </div>
     </div>
   );

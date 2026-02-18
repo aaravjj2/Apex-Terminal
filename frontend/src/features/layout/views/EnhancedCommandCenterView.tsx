@@ -21,8 +21,7 @@ import { FinancialIntelligenceDashboard } from '../../dashboard/FinancialIntelli
 import { MultiAgentFinancePanel } from '../../dashboard/MultiAgentFinancePanel';
 import { RealTimePnLAnalytics } from '../../dashboard/RealTimePnLAnalytics';
 import { useAutopilotStore } from '../../autopilot/store';
-
-const API_BASE = '/api/v1';
+import { API_BASE } from '../../../config/api';
 
 // Types
 interface QuickStats {
@@ -117,7 +116,7 @@ export function EnhancedCommandCenterView() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/portfolio/unified`);
+            const res = await fetch(`${API_BASE}/api/v1/portfolio/unified`);
             if (res.ok) {
                 const data = await res.json();
                 setStats({
@@ -155,15 +154,15 @@ export function EnhancedCommandCenterView() {
     const isPnlPositive = (stats?.open_pnl ?? 0) >= 0;
 
     return (
-        <div className="h-full flex flex-col bg-background overflow-hidden">
+        <div className="h-full flex flex-col bg-background overflow-hidden" data-testid="dashboard-view">
             {/* Enhanced Header */}
-            <div className="shrink-0 border-b border-border bg-panel-bg">
+            <div className="shrink-0 border-b border-border bg-panel-bg" data-testid="dashboard-content">
                 {/* Top row - Title and Status */}
                 <div className="h-12 px-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <Activity className="w-5 h-5 text-brand" />
-                            <h1 className="text-lg font-semibold text-text">Command Center</h1>
+                            <h1 className="text-lg font-semibold text-text" data-testid="dashboard-heading">Command Center</h1>
                         </div>
 
                         <MarketStatusBadge status={marketStatus} />

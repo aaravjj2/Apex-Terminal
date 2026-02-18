@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "@playwright/mcp": "^0.0.56",
+    "playwright": "^1.57.0"
+  },
+  "dependencies": {
+    "pixelmatch": "^7.1.0",
+    "pngjs": "^7.0.0"
+  }
+}

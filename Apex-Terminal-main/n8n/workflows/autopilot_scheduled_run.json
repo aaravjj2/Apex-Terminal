@@ -1,0 +1,166 @@
+{
+  "name": "Autopilot Scheduled Run",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9,12,15 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/api/v1/autopilot/status",
+        "options": {}
+      },
+      "id": "check-status",
+      "name": "Check Autopilot Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.kill_switch }}",
+              "value2": false
+            }
+          ]
+        }
+      },
+      "id": "if-not-killed",
+      "name": "Kill Switch Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/autopilot/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "force",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "trigger-run",
+      "name": "Trigger Autopilot Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [910, 240]
+    },
+    {
+      "parameters": {
+        "channel": "#trading-alerts",
+        "text": "=🛑 Autopilot BLOCKED: Kill switch is active.\nStatus: {{ $json.state }}\nLast cycle: {{ $json.last_cycle_at }}",
+        "otherOptions": {}
+      },
+      "id": "slack-kill-alert",
+      "name": "Slack Kill Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [910, 380],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "channel": "#trading-alerts",
+        "text": "=📊 Autopilot Cycle Complete\nCycle: {{ $json.cycle.cycle_id }}\nTrades: {{ $json.cycle.execution.filled }}\nSuccess: {{ $json.cycle.success }}",
+        "otherOptions": {}
+      },
+      "id": "slack-success",
+      "name": "Slack Success Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1130, 240],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Autopilot Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Autopilot Status": {
+      "main": [
+        [
+          {
+            "node": "Kill Switch Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kill Switch Check": {
+      "main": [
+        [
+          {
+            "node": "Trigger Autopilot Run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Kill Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Autopilot Run": {
+      "main": [
+        [
+          {
+            "node": "Slack Success Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "tradingview-recreation"
+  },
+  "tags": [
+    {
+      "name": "autopilot"
+    },
+    {
+      "name": "scheduled"
+    }
+  ]
+}

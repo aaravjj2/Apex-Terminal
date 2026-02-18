@@ -300,7 +300,7 @@ export function AlertsView() {
     const selectedAlert = alerts.find(a => a.id === selectedId) || null;
 
     return (
-        <div className="h-full bg-background flex flex-col">
+        <div className="h-full bg-background flex flex-col" data-testid="alerts-view">
             {!selectedId ? (
                 <div className="flex-1 flex flex-col overflow-hidden">
                     <AlertList

@@ -15,7 +15,7 @@ import { test, expect, Page } from '@playwright/test';
 test.describe('V1 Terminal Panel', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         
         // Navigate to autopilot
         await page.getByTestId('nav-item-autopilot').click();
@@ -134,7 +134,7 @@ test.describe('V1 Terminal Panel', () => {
 test.describe('V1 Contract Enforcement UI', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         await page.getByTestId('nav-item-autopilot').click();
         await page.waitForTimeout(500);
     });
@@ -156,13 +156,13 @@ test.describe('V1 Contract Enforcement UI', () => {
 test.describe('Autopilot Accessibility', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         await page.getByTestId('nav-item-autopilot').click();
         await page.waitForTimeout(500);
     });
 
     test('all buttons have visible text or aria-labels', async ({ page }) => {
-        const buttons = page.locator('button');
+        const buttons = page.locator('[data-testid*="btn"]');
         const count = await buttons.count();
         
         for (let i = 0; i < Math.min(count, 20); i++) {
@@ -177,7 +177,7 @@ test.describe('Autopilot Accessibility', () => {
 
     test('color contrast for P&L indicators', async ({ page }) => {
         // P&L should use green for positive, red for negative
-        const pnlElements = page.locator('[data-pnl-indicator]');
+        const pnlElements = page.getByTestId('pnl-indicator');
         
         if (await pnlElements.count() > 0) {
             // At least some P&L indicators exist

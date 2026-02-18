@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Play, FileText, Database, Download, CheckCircle, ShieldAlert } from 'lucide-react';
+import { API_BASE } from '../../../config/api';
 import { Button } from '../../../ui/Button';
 import { Badge } from '../../../ui/Badge';
 import { Panel } from '../../../ui/Panel';
@@ -65,7 +66,7 @@ export function IncidentsView() {
     const fetchAlerts = async () => {
         setAlertsLoading(true);
         try {
-            const res = await fetch('/api/v1/alerts?limit=50');
+            const res = await fetch(`${API_BASE}/api/v1/alerts?limit=50`);
             if (res.ok) {
                 const data = await res.json();
                 setAlerts(data);
@@ -87,7 +88,7 @@ export function IncidentsView() {
 
     const handleResolveAlert = async (id: string) => {
         try {
-            await fetch(`/api/v1/alerts/${id}/resolve?note=Manual resolution`, { method: 'POST' });
+            await fetch(`${API_BASE}/api/v1/alerts/${id}/resolve?note=Manual resolution`, { method: 'POST' });
             fetchAlerts();
         } catch (err) {
             console.error('Failed to resolve alert:', err);

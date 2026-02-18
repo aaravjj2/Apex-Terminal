@@ -1,0 +1,12 @@
+{
+    "manifest_version": 3,
+    "name": "Antigravity Extension",
+    "version": "1.0",
+    "description": "The official Antigravity browser extension",
+    "permissions": [
+        "activeTab"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    }
+}

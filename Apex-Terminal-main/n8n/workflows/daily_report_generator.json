@@ -1,0 +1,135 @@
+{
+  "name": "Daily Report Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 17 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "daily-trigger",
+      "name": "Daily 5PM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/api/v1/autopilot/report",
+        "options": {}
+      },
+      "id": "fetch-report",
+      "name": "Fetch Daily Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.report.trading_activity.trades_opened }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "if-has-activity",
+      "name": "Has Trading Activity?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#daily-reports",
+        "text": "=📈 **Daily Autopilot Report - {{ $json.report.report_date }}**\n\n💰 **P&L Summary**\n• Starting Equity: ${{ $json.report.pnl_summary.starting_equity }}\n• Ending Equity: ${{ $json.report.pnl_summary.ending_equity }}\n• Daily P&L: ${{ $json.report.pnl_summary.daily_pnl }} ({{ $json.report.pnl_summary.daily_return_pct }}%)\n\n📊 **Trading Activity**\n• Trades Opened: {{ $json.report.trading_activity.trades_opened }}\n• Trades Closed: {{ $json.report.trading_activity.trades_closed }}\n• Candidates Generated: {{ $json.report.trading_activity.candidates_generated }}\n\n📌 **Open Positions**: {{ $json.report.position_summary.open_positions }}\n💼 **Total Risk**: ${{ $json.report.position_summary.total_risk_outstanding }}",
+        "otherOptions": {}
+      },
+      "id": "slack-full-report",
+      "name": "Slack Full Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [910, 240],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "channel": "#daily-reports",
+        "text": "=📭 **Daily Autopilot Report - {{ $json.report.report_date }}**\n\nNo trades today.\n\n**Reasons:**\n{{ $json.report.notes.no_trade_reasons.join('\\n• ') }}",
+        "otherOptions": {}
+      },
+      "id": "slack-no-activity",
+      "name": "Slack No Activity Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [910, 380],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Daily 5PM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Daily Report": {
+      "main": [
+        [
+          {
+            "node": "Has Trading Activity?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Trading Activity?": {
+      "main": [
+        [
+          {
+            "node": "Slack Full Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack No Activity Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "tradingview-recreation"
+  },
+  "tags": [
+    {
+      "name": "autopilot"
+    },
+    {
+      "name": "reports"
+    }
+  ]
+}

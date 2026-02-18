@@ -1,14 +1,21 @@
 /**
  * Backtest Panel - Main backtesting UI
+ * v1.31: Strategy artifact binding
  */
 
 import { useState, useEffect } from 'react';
+import { FlaskConical } from 'lucide-react';
 import type { BacktestTab, BacktestConfig, BacktestRun } from './types';
 import { AnalyzeTab } from './AnalyzeTab';
 import { BacktestStatusHeader } from './BacktestStatusHeader';
 import { useTickerInput } from '../ticker/useTickerInput';
 import { TickerDisambiguationDialog } from '../ticker/TickerDisambiguationDialog';
 import { ProvenanceDisplay } from '../../components/ProvenanceDisplay';
+import { Skeleton, SkeletonTable } from '../../components/shared/Skeleton';
+import { EmptyState } from '../../components/shared/EmptyState';
+import { SeverityBanner } from '../../components/shared/SeverityBanner';
+import { PortfolioAttachSelector, PortfolioValuationCards } from '../portfolio';
+import { useAppStore } from '../../state/appStore';
 
 export function BacktestPanel() {
   const [activeTab, setActiveTab] = useState<BacktestTab>('configure');
@@ -17,6 +24,16 @@ export function BacktestPanel() {
   const [compareRunIds, setCompareRunIds] = useState<string[]>([]);
   const [strategies, setStrategies] = useState<any[]>([]);
   const [runStatus, setRunStatus] = useState<'idle' | 'running' | 'complete' | 'error'>('idle');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // v1.21: Attached portfolio (session-only)
+  const [attachedPortfolioId, setAttachedPortfolioId] = useState<string>('DEMO-PORT-001');
+
+  // v1.31: Consume pending strategy artifact ID from app store
+  const pendingStrategyArtifactId = useAppStore((s) => s.pendingStrategyArtifactId);
+  const setPendingStrategyArtifactId = useAppStore((s) => s.setPendingStrategyArtifactId);
+  
   const [config, setConfig] = useState<BacktestConfig>({
     strategy_id: '',
     symbol: 'SPY',
@@ -25,8 +42,17 @@ export function BacktestPanel() {
     initial_capital: 100000,
     slippage_bps: 5,
     fee_per_trade: 1,
-    seed: 42
+    seed: 42,
+    strategy_artifact_id: null,
   });
+
+  // v1.31: Pick up pending artifact ID when the panel mounts or the value changes
+  useEffect(() => {
+    if (pendingStrategyArtifactId) {
+      setConfig((prev) => ({ ...prev, strategy_artifact_id: pendingStrategyArtifactId }));
+      setPendingStrategyArtifactId(null); // consume it
+    }
+  }, [pendingStrategyArtifactId, setPendingStrategyArtifactId]);
 
   // Ticker disambiguation
   const tickerInput = useTickerInput({
@@ -48,22 +74,27 @@ export function BacktestPanel() {
   }, []);
 
   const loadStrategies = async () => {
+    setLoading(true);
     try {
       const res = await fetch('/api/v1/strategies');
       const data = await res.json();
       // Ensure data is array
       const strategiesArray = Array.isArray(data) ? data : [];
       setStrategies(strategiesArray);
-      if (strategiesArray.length > 0 && !config.strategy_id) {
-        setConfig({...config, strategy_id: strategiesArray[0].id});
+      if (strategiesArray.length > 0) {
+        setConfig((prev) => prev.strategy_id ? prev : { ...prev, strategy_id: strategiesArray[0].id });
       }
     } catch (e) {
       console.error('Failed to load strategies:', e);
       setStrategies([]); // Ensure empty array on error
+      setError('Failed to load strategies');
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadRuns = async () => {
+    setLoading(true);
     try {
       const res = await fetch('/api/backtest/runs');
       const data = await res.json();
@@ -71,29 +102,41 @@ export function BacktestPanel() {
     } catch (e) {
       console.error('Failed to load runs:', e);
       setRuns([]);
+      setError('Failed to load backtest runs');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRunBacktest = async () => {
     setRunStatus('running');
+    setError(null);
     try {
       const res = await fetch('/api/backtest/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.detail || errorData.error || `HTTP ${res.status}`);
+      }
+      
       const run = await res.json();
       if (run.status === 'completed') {
         setRunStatus('complete');
         setSelectedRun(run);
       } else {
         setRunStatus('error');
+        setError(`Backtest failed with status: ${run.status}`);
       }
       await loadRuns();
       setActiveTab('runs');
     } catch (e) {
       console.error('Failed to run backtest:', e);
       setRunStatus('error');
+      setError(e instanceof Error ? e.message : 'Failed to run backtest');
     }
   };
 
@@ -117,8 +160,19 @@ export function BacktestPanel() {
   return (
     <div className="h-full flex flex-col bg-background" data-testid="backtest-panel">
       {/* Header with subtabs */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-panel-bg">
+      <div className="flex items-start justify-between border-b border-border px-4 py-3 bg-panel-bg gap-4">
         <h2 className="text-lg font-semibold text-text">Backtest</h2>
+        
+        {/* v1.21: Portfolio Attach Selector + Valuation Cards */}
+        <div className="flex flex-col gap-2">
+          <PortfolioAttachSelector
+            onPortfolioChange={setAttachedPortfolioId}
+            currentPortfolioId={attachedPortfolioId}
+          />
+          {attachedPortfolioId && (
+            <PortfolioValuationCards portfolioId={attachedPortfolioId} />
+          )}
+        </div>
         
         <div className="flex gap-2" role="tablist" aria-label="Backtest tabs">
           {tabs.map(tab => (
@@ -157,9 +211,43 @@ export function BacktestPanel() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4">
+        {/* Error Banner */}
+        {error && (
+          <SeverityBanner
+            severity="error"
+            message={error}
+            onDismiss={() => setError(null)}
+            className="mb-4"
+            testId="backtest-error-banner"
+          />
+        )}
+        
+        {/* Success Banner */}
+        {runStatus === 'complete' && (
+          <SeverityBanner
+            severity="success"
+            message="Backtest completed successfully!"
+            onDismiss={() => setRunStatus('idle')}
+            className="mb-4"
+            testId="backtest-success-banner"
+          />
+        )}
+
         {activeTab === 'configure' && (
           <div className="max-w-3xl mx-auto space-y-4">
-            <div className="bg-panel-bg border border-border rounded p-4 space-y-4">
+            {loading ? (
+              <div className="bg-panel-bg border border-border rounded p-4 space-y-4">
+                <Skeleton height={60} />
+                <Skeleton height={60} />
+                <div className="grid grid-cols-2 gap-4">
+                  <Skeleton height={60} />
+                  <Skeleton height={60} />
+                </div>
+                <Skeleton height={60} />
+                <Skeleton height={48} />
+              </div>
+            ) : (
+              <div className="bg-panel-bg border border-border rounded p-4 space-y-4">
               {/* Strategy */}
               <div>
                 <label className="block text-sm font-medium text-text mb-1">Strategy</label>
@@ -174,6 +262,29 @@ export function BacktestPanel() {
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* v1.31: Strategy Artifact ID */}
+              <div>
+                <label className="block text-sm font-medium text-text mb-1">Strategy Artifact</label>
+                <div className="flex gap-2" data-testid="backtest-strategy-artifact-select">
+                  <input
+                    type="text"
+                    value={config.strategy_artifact_id || ''}
+                    onChange={(e) => setConfig({...config, strategy_artifact_id: e.target.value || null})}
+                    placeholder="Strategy artifact ID (optional)"
+                    data-testid="backtest-strategy-artifact-current"
+                    className="flex-1 px-3 py-2 bg-element-bg border border-border rounded text-text text-xs font-mono"
+                  />
+                  {config.strategy_artifact_id && (
+                    <button
+                      onClick={() => setConfig({...config, strategy_artifact_id: null})}
+                      className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded hover:bg-red-500/20"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Symbol */}
@@ -228,19 +339,35 @@ export function BacktestPanel() {
               {/* Run Button */}
               <button
                 onClick={handleRunBacktest}
-                disabled={!config.strategy_id}
+                disabled={!config.strategy_id || runStatus === 'running'}
                 data-testid="run-backtest-btn"
-                className="w-full px-4 py-2 bg-brand hover:bg-brand/90 disabled:opacity-50 text-white rounded font-medium"
+                className="w-full px-4 py-2 bg-brand hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded font-medium"
               >
-                Run Backtest
+                {runStatus === 'running' ? 'Running...' : 'Run Backtest'}
               </button>
             </div>
+            )}
           </div>
         )}
 
         {activeTab === 'runs' && (
           <div className="max-w-6xl mx-auto">
-            <div className="bg-panel-bg border border-border rounded overflow-hidden">
+            {loading ? (
+              <SkeletonTable rows={5} cols={5} />
+            ) : runs.length === 0 ? (
+              <EmptyState
+                icon={FlaskConical}
+                title="No backtest runs yet"
+                description="Configure and run a backtest to see results here."
+                action={{
+                  label: 'Configure Backtest',
+                  onClick: () => setActiveTab('configure'),
+                  testId: 'empty-configure-action'
+                }}
+                testId="backtest-empty-state"
+              />
+            ) : (
+              <div className="bg-panel-bg border border-border rounded overflow-hidden">
               <table className="w-full" data-testid="backtest-runs-table">
                 <thead className="bg-element-bg border-b border-border">
                   <tr>
@@ -252,14 +379,7 @@ export function BacktestPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {runs.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-text-secondary">
-                        No backtest runs yet. Configure and run a backtest.
-                      </td>
-                    </tr>
-                  ) : (
-                    runs.map((run, idx) => (
+                  {runs.map((run, idx) => (
                       <tr key={run.run_id} className="border-b border-border hover:bg-element-bg/50" data-testid={`backtest-runs-row-${idx}`}>
                         <td className="px-4 py-3 text-sm text-text font-mono">{run.run_id.slice(0, 16)}...</td>
                         <td className="px-4 py-3 text-sm text-text">{run.config.symbol}</td>
@@ -292,32 +412,67 @@ export function BacktestPanel() {
                           </button>
                         </td>
                       </tr>
-                    ))
-                  )}
+                    ))}
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         )}
 
         {activeTab === 'analyze' && (
-          <div className="overflow-auto">
-            <div className="max-w-7xl mx-auto p-4">
-              <ProvenanceDisplay 
-                provenance={{
-                  source: 'DEMO',
-                  cache_key: undefined,
-                  provider: 'Demo Data',
-                }}
-                className="mb-4"
-              />
+          selectedRun ? (
+            <div className="overflow-auto" data-testid="backtest-analyze-ready">
+              <div className="max-w-7xl mx-auto p-4">
+                <ProvenanceDisplay 
+                  provenance={selectedRun?.provenance || null}
+                  className="mb-4"
+                />
+                {/* v1.24: Portfolio Overlay in Backtest Analyze */}
+                <div className="mb-4 bg-surface border border-border rounded p-3" data-testid="backtest-portfolio-overlay">
+                  <h4 className="text-sm font-semibold text-text mb-2">Portfolio Context</h4>
+                  <div className="flex flex-wrap items-start gap-4">
+                    <PortfolioAttachSelector
+                      onPortfolioChange={setAttachedPortfolioId}
+                      currentPortfolioId={attachedPortfolioId}
+                    />
+                    {attachedPortfolioId && (
+                      <PortfolioValuationCards portfolioId={attachedPortfolioId} />
+                    )}
+                  </div>
+                </div>
+              </div>
+              <AnalyzeTab run={selectedRun} />
             </div>
-            <AnalyzeTab run={selectedRun!} />
-          </div>
+          ) : (
+            <EmptyState
+              icon={FlaskConical}
+              title="No run selected"
+              description="Select a run from the Runs tab to view detailed analysis."
+              action={{
+                label: 'View Runs',
+                onClick: () => setActiveTab('runs'),
+                testId: 'analyze-empty-action'
+              }}
+              testId="analyze-empty-state"
+            />
+          )
         )}
 
         {activeTab === 'compare' && (
-          <div className="max-w-6xl mx-auto space-y-4">
+          runs.length === 0 ? (
+            <EmptyState
+              icon={FlaskConical}
+              title="No runs available"description="Run at least two backtests to compare their results."
+              action={{
+                label: 'Run Backtest',
+                onClick: () => setActiveTab('configure'),
+                testId: 'compare-empty-action'
+              }}
+              testId="compare-empty-state"
+            />
+          ) : (
+            <div className="max-w-6xl mx-auto space-y-4">
             <div className="bg-panel-bg border border-border rounded p-4">
               <h3 className="text-sm font-semibold text-text mb-4">Select Runs to Compare</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -349,9 +504,6 @@ export function BacktestPanel() {
                   );
                 })}
               </div>
-              {runs.length === 0 && (
-                <p className="text-text-secondary text-center py-8">No runs available. Run a backtest first.</p>
-              )}
             </div>
 
             {compareRunIds.length === 2 && (() => {
@@ -419,6 +571,7 @@ export function BacktestPanel() {
               );
             })()}
           </div>
+          )
         )}
 
         {activeTab === 'export' && (

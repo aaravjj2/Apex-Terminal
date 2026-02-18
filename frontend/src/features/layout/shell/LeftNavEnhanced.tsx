@@ -13,7 +13,9 @@
 import {
     LayoutDashboard, Wallet, History, Layers, Settings,
     ChevronLeft, ChevronRight, BarChart3, ListOrdered, Bot, 
-    AlertTriangle, TrendingUp, Activity, Clock, FlaskConical
+    AlertTriangle, TrendingUp, Activity, Clock, FlaskConical, Database,
+    Search, Cpu, List, Grid3X3, BookOpen, Bell, Shield, PieChart,
+    Zap, BarChart, GitCompare, HeartPulse
 } from 'lucide-react';
 import { cn } from '../../../ui/utils';
 import { useAppStore } from '../../../state/appStore';
@@ -33,7 +35,20 @@ export type ViewId =
     | 'alerts'
     | 'reports'
     | 'automation'
-    | 'incidents';
+    | 'incidents'
+    | 'cache'
+    | 'search'
+    | 'agents'
+    | 'watchlist'
+    | 'correlation'
+    | 'journal'
+    | 'notifications'
+    | 'audit'
+    | 'attribution'
+    | 'risk-scenarios'
+    | 'data-quality'
+    | 'strategy-compare'
+    | 'platform-health';
 
 interface LeftNavEnhancedProps {
     activeView: ViewId;
@@ -69,6 +84,19 @@ const secondaryNavItems: { id: ViewId; icon: React.ReactNode; label: string; sho
     { id: 'replay', icon: <Clock size={20} />, label: 'Replay', shortcut: '⌘3' },
     { id: 'alerts', icon: <AlertTriangle size={20} />, label: 'Alerts', shortcut: '⌘4' },
     { id: 'incidents', icon: <Activity size={20} />, label: 'Incidents', shortcut: '⌘I' },
+    { id: 'search', icon: <Search size={20} />, label: 'Search', shortcut: '⌘F' },
+    { id: 'agents', icon: <Cpu size={20} />, label: 'Agents', shortcut: '⌘G' },
+    { id: 'cache', icon: <Database size={20} />, label: 'Cache', shortcut: '⌘C' },
+    { id: 'watchlist', icon: <List size={20} />, label: 'Watchlist', shortcut: '⌘W' },
+    { id: 'correlation', icon: <Grid3X3 size={20} />, label: 'Correlation', shortcut: '⌘5' },
+    { id: 'journal', icon: <BookOpen size={20} />, label: 'Journal', shortcut: '⌘J' },
+    { id: 'notifications', icon: <Bell size={20} />, label: 'Notifications', shortcut: '⌘N' },
+    { id: 'audit', icon: <Shield size={20} />, label: 'Audit Log', shortcut: '⌘6' },
+    { id: 'attribution', icon: <PieChart size={20} />, label: 'Attribution', shortcut: '⌘7' },
+    { id: 'risk-scenarios', icon: <Zap size={20} />, label: 'Risk Scenarios', shortcut: '⌘8' },
+    { id: 'data-quality', icon: <BarChart size={20} />, label: 'Data Quality', shortcut: '⌘9' },
+    { id: 'strategy-compare', icon: <GitCompare size={20} />, label: 'Strategy Compare', shortcut: '⌘0' },
+    { id: 'platform-health', icon: <HeartPulse size={20} />, label: 'Platform Health', shortcut: '⌘H' },
 ];
 
 function NavItem({ id, icon, label, shortcut, badge, activeView, onViewChange, expanded }: NavItemProps) {

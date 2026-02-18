@@ -271,12 +271,12 @@ export function DashboardView() {
     }, []);
 
     return (
-        <div className="h-full flex flex-col bg-background">
+        <div className="h-full flex flex-col bg-background" data-testid="dashboard-view">
             {/* Dashboard Header */}
             <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-panel-bg">
                 <div className="flex items-center gap-3">
                     <LayoutGrid size={18} className="text-brand" />
-                    <h1 className="text-sm font-semibold text-text">Dashboard</h1>
+                    <h1 className="text-sm font-semibold text-text" data-testid="dashboard-heading">Dashboard</h1>
                     <span className="text-xs text-text-muted">{tiles.length} tiles</span>
                 </div>
                 <div className="flex items-center gap-2">

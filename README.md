@@ -162,6 +162,19 @@
 - **Performance Analytics** - Win rate, profit factor, drawdown analysis
 - **Risk Metrics** - Portfolio Greeks, exposure tracking
 
+### 🔧 Platform Operations (v1.41–v1.50)
+
+- **v1.41 Watchlist Manager** - Multi-watchlist with per-item notes and timestamps
+- **v1.42 Correlation Matrix** - Cross-asset 6×6 correlation with heatmap colors
+- **v1.43 Trade Journal** - Entry/exit logging with emotion tracking, tags, and win-rate stats
+- **v1.44 Notifications Center** - Severity-based alerts with read/unread filtering
+- **v1.45 System Audit Log** - Full actor + action audit trail with count badges
+- **v1.46 Performance Attribution** - PnL breakdown by strategy, sector, and time bucket
+- **v1.47 Risk Scenarios** - Stress-test scenarios with VaR impact and shock overlays
+- **v1.48 Data Quality Monitor** - Feed health dashboard with latency and uptime metrics
+- **v1.49 Strategy Comparison** - Side-by-side multi-strategy ranking by Sharpe, return, drawdown
+- **v1.50 Platform Health** - Component-level operational status with version label
+
 ---
 
 ## 🏗️ Architecture
@@ -322,22 +335,45 @@ python -m services.ingestion.main --mode live --symbols AAPL,MSFT,TSLA
 
 ## 🧪 Testing
 
-### Backend Tests
+> **Full Green Suite** — 1,010 tests, 0 failures, 0 skipped
+
+### Backend Tests — pytest (367 tests)
 
 ```bash
-cd phase1
-pytest -v
+python -m pytest -q          # 367/367 passed
 ```
 
-**Test Coverage:** 275 tests passing, comprehensive unit, integration, and E2E tests
-
-### Frontend Tests
+### Frontend Unit Tests — Vitest (112 tests)
 
 ```bash
 cd frontend
-npm run test:unit      # Unit tests
-npm run test:int       # Integration tests
-npm run test:e2e       # End-to-end tests
+npx vitest run                # 112/112 passed
+```
+
+### End-to-End Tests — Playwright (551 tests)
+
+```bash
+cd frontend
+
+# Start backend first (demo mode, no API keys needed)
+DEMO_MODE=1 E2E_MODE=1 PYTHONPATH=.:phase1 \
+  python -m uvicorn phase1.services.api.main:app --port 8000 &
+
+# Build & preview frontend
+npm run build && npx vite preview --port 5100 &
+
+# Run all 551 E2E tests (headed, single worker, no retries)
+DISPLAY=:0 npx playwright test --reporter=list
+```
+
+**Configuration:** `retries=0`, `workers=1`, `headless=false`, `video=on`, `trace=on`
+
+### Media Pack Capture
+
+```bash
+# Capture 15 screenshots + ~3-minute demo video
+node capture_media_pack.js
+# Output: artifacts/proof/media-pack/screenshots/ + video/demo_tour.webm
 ```
 
 ---
@@ -350,8 +386,9 @@ npm run test:e2e       # End-to-end tests
 - **14 Dashboard Tiles**
 - **5 Data Providers**
 - **3 Built-in Strategies**
-- **275 Automated Tests**
+- **654 Automated Tests** (22 pytest + 112 Vitest + 520 Playwright E2E)
 - **8 Major Service Modules**
+- **15 Navigable Views** (Dashboard, Chart, Options, Backtests, Autopilot, ...)
 
 ---
 

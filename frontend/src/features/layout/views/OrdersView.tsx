@@ -13,8 +13,7 @@ import {
     FileText, RefreshCw, Search
 } from 'lucide-react';
 import { cn } from '../../../ui/utils';
-
-const API_BASE = '/api/v1';
+import { API_BASE } from '../../../config/api';
 
 interface Order {
     id: string;
@@ -47,7 +46,7 @@ export function OrdersView() {
     const fetchOrders = useCallback(async () => {
         setLoading(true);
         try {
-            let url = `${API_BASE}/portfolio/orders`;
+            let url = `${API_BASE}/api/v1/portfolio/orders`;
             const params = new URLSearchParams();
             if (statusFilter !== 'all') params.append('status', statusFilter);
             if (params.toString()) url += `?${params.toString()}`;

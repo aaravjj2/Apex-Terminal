@@ -17,7 +17,7 @@ import {
 import { cn } from '../../../ui/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://127.0.0.1:8090/api/v1';
 
 // Types
 interface RegimeInfo {

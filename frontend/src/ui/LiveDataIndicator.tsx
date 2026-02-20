@@ -7,7 +7,7 @@ export const LiveDataIndicator = () => {
         let mounted = true;
         (async () => {
             try {
-                const res = await fetch('http://127.0.0.1:8000/api/v1/debug/config');
+                const res = await fetch('http://127.0.0.1:8090/api/v1/debug/config');
                 if (!res.ok) return;
                 const cfg = await res.json();
                 if (!mounted) return;

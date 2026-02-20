@@ -87,7 +87,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate }) => {
             onClick={(e) => {
               e.stopPropagation();
               // Send to TTS
-              fetch('http://localhost:8000/api/v1/tts/speak', {
+              fetch('http://localhost:8090/api/v1/tts/speak', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: `Symbol ${candidate.symbol}. ${candidate.rationale}` })

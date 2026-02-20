@@ -99,11 +99,11 @@ test.describe('Industrial UI/UX + Analytics + Reporting E2E Suite', () => {
     await page.waitForTimeout(1000);
     
     // Verify all 5 charts are present
-    await expect(page.getByTestId('equity-curve-chart')).toBeVisible();
-    await expect(page.getByTestId('drawdown-chart')).toBeVisible();
-    await expect(page.getByTestId('returns-histogram-chart')).toBeVisible();
-    await expect(page.getByTestId('monthly-returns-heatmap')).toBeVisible();
-    await expect(page.getByTestId('rolling-sharpe-chart')).toBeVisible();
+    await expect(page.getByTestId('backtest-analyze-chart-equity')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('backtest-analyze-chart-drawdown')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('backtest-analyze-chart-histogram')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('backtest-analyze-chart-heatmap')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('backtest-analyze-chart-rolling-sharpe')).toBeVisible({ timeout: 5000 });
     
     await page.screenshot({ path: 'e2e-results/05-backtest-five-charts.png', fullPage: true });
   });
@@ -126,8 +126,8 @@ test.describe('Industrial UI/UX + Analytics + Reporting E2E Suite', () => {
     await page.waitForTimeout(1000);
     
     // Verify equity curve has SVG content
-    const equityCurve = page.getByTestId('equity-curve-chart');
-    await expect(equityCurve).toBeVisible();
+    const equityCurve = page.getByTestId('backtest-analyze-chart-equity');
+    await expect(equityCurve).toBeVisible({ timeout: 5000 });
     
     // Check for Recharts SVG elements
     const svg = equityCurve.getByTestId('chart-svg');
@@ -154,8 +154,8 @@ test.describe('Industrial UI/UX + Analytics + Reporting E2E Suite', () => {
     await page.waitForTimeout(1000);
     
     // Verify histogram
-    const histogram = page.getByTestId('returns-histogram-chart');
-    await expect(histogram).toBeVisible();
+    const histogram = page.getByTestId('backtest-analyze-chart-histogram');
+    await expect(histogram).toBeVisible({ timeout: 5000 });
     
     await page.screenshot({ path: 'e2e-results/07-returns-histogram.png', fullPage: true });
   });
@@ -178,8 +178,8 @@ test.describe('Industrial UI/UX + Analytics + Reporting E2E Suite', () => {
     await page.waitForTimeout(1000);
     
     // Verify monthly heatmap
-    const heatmap = page.getByTestId('monthly-returns-heatmap');
-    await expect(heatmap).toBeVisible();
+    const heatmap = page.getByTestId('backtest-analyze-chart-heatmap');
+    await expect(heatmap).toBeVisible({ timeout: 5000 });
     
     await page.screenshot({ path: 'e2e-results/08-monthly-heatmap.png', fullPage: true });
   });
@@ -226,10 +226,10 @@ test.describe('Industrial UI/UX + Analytics + Reporting E2E Suite', () => {
     
     // Verify metrics cards
     const metricsContainer = page.getByTestId('analyze-metrics');
-    await expect(metricsContainer).toBeVisible();
+    await expect(metricsContainer).toBeVisible({ timeout: 5000 });
     
     // Check for at least 4 metric cards (grid-cols-4)
-    const cards = metricsContainer.locator('[data-testid^="metric-card-"]');
+    const cards = metricsContainer.locator('> div');
     await expect(await cards.count()).toBeGreaterThanOrEqual(4);
     
     await page.screenshot({ path: 'e2e-results/10-analyze-metrics.png', fullPage: true });

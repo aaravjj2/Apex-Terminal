@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Shell } from './features/layout/shell/Shell';
 import { ClockClient } from './data/ClockClient';
-
 import { WebSocketClient } from './data/WebSocketClient';
+import { UI2Routes } from './ui2/routes';
+import './ui2/ui2-tokens.css';
 
 function App() {
   useEffect(() => {
@@ -24,8 +26,21 @@ function App() {
   }, []);
 
   return (
-    <Shell />
+    <BrowserRouter>
+      <Routes>
+        {/* v1.53: UI2 is now the PRIMARY route */}
+        <Route path="/ui2/*" element={<UI2Routes />} />
+
+        {/* v1.53: Legacy UI1 accessible at /legacy */}
+        <Route path="/legacy/*" element={<Shell />} />
+
+        {/* v1.53: Root and all unknown paths redirect to UI2 */}
+        <Route path="/" element={<Navigate to="/ui2/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/ui2/dashboard" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
 export default App;
+

@@ -46,7 +46,7 @@ class DemoProvider(MarketDataProvider):
             "symbol": request.symbol,
             "start": request.start.isoformat(),
             "end": request.end.isoformat(),
-            "interval": request.interval,
+            "interval": str(request.interval.value) if hasattr(request.interval, 'value') else str(request.interval),
         }
         
         replay_data = get_replay("bars", replay_params)

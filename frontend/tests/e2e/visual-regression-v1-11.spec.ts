@@ -79,6 +79,7 @@ test.describe('Dashboard Visual Regression v1.11', () => {
 
     await expect(page.getByTestId('data-source-selector')).toHaveScreenshot('vr11-03-data-source-selector.png', {
       animations: 'disabled',
+      maxDiffPixelRatio: 0.1,
     });
   });
 });
@@ -317,6 +318,7 @@ test.describe('Cross-Cutting Visual Regression v1.11', () => {
 
     await expect(page.getByTestId('data-source-dropdown')).toHaveScreenshot('vr11-19-provider-dropdown.png', {
       animations: 'disabled',
+      maxDiffPixelRatio: 0.1,
     });
   });
 

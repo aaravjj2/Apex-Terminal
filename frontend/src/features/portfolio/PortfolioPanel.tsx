@@ -8,7 +8,7 @@ interface PortfolioData {
     positions: { symbol: string, qty: number, avg_price: number, current_price: number }[]
 }
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://127.0.0.1:8090/api/v1';
 
 export function PortfolioPanel({ embedded }: { embedded?: boolean }) {
     const [data, setData] = useState<PortfolioData | null>(null);

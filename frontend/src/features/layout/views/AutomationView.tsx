@@ -3,6 +3,7 @@ import { Bot, Play, Square, Shield, AlertTriangle, DollarSign, TrendingUp, Activ
 import { Button } from '../../../ui/Button';
 import { Badge } from '../../../ui/Badge';
 import { Panel } from '../../../ui/Panel';
+import { PageHeader } from '../../../ui/PageHeader';
 import { cn } from '../../../ui/utils';
 import { ApiClient } from '../../../data/ApiClient';
 import type { AutopilotStatus, ForecastConfig, ForecastStatus } from '../../../data/ApiClient';
@@ -78,7 +79,7 @@ function ActivityLogSection({ armed }: { armed: boolean }) {
     const fetchLogs = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch('http://127.0.0.1:8000/api/v1/autopilot/status');
+            const res = await fetch('http://127.0.0.1:8090/api/v1/autopilot/status');
             if (!res.ok) throw new Error('Failed to fetch');
             const data = await res.json();
 
@@ -350,26 +351,25 @@ export function AutomationView() {
     };
 
     return (
-        <div className="h-full overflow-auto bg-background p-6">
+        <div className="h-full overflow-auto bg-background p-6" data-testid="automation-view">
             <div className="max-w-5xl mx-auto space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Bot className="text-brand" size={28} />
-                        <div>
-                            <h1 className="text-2xl font-bold text-text">Automation</h1>
-                            <p className="text-sm text-text-secondary">One-click Autopilot with budget controls</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
+                <PageHeader
+                    title="Automation"
+                    subtitle="One-click Autopilot with budget controls"
+                    icon={<Bot size={20} />}
+                    badge={
+                        <Badge variant={status.armed ? (status.mode === 'live' ? 'error' : 'success') : 'default'} dot>
+                            {status.armed ? `${status.mode.toUpperCase()} ARMED` : 'DISARMED'}
+                        </Badge>
+                    }
+                    actions={
                         <Button variant="ghost" size="sm" onClick={fetchStatus} disabled={loading}>
                             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                         </Button>
-                        <Badge variant={status.armed ? (status.mode === 'live' ? 'error' : 'success') : 'default'}>
-                            {status.armed ? `${status.mode.toUpperCase()} ARMED` : 'DISARMED'}
-                        </Badge>
-                    </div>
-                </div>
+                    }
+                    data-testid="automation-header"
+                />
 
                 {/* Error Display */}
                 {error && (

@@ -9,7 +9,7 @@ interface AuditEvent {
     details: Record<string, unknown>;
 }
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://127.0.0.1:8090/api/v1';
 
 export function AuditTrail({ onClose }: { onClose: () => void }) {
     const [events, setEvents] = useState<AuditEvent[]>([]);

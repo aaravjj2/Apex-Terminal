@@ -162,19 +162,6 @@
 - **Performance Analytics** - Win rate, profit factor, drawdown analysis
 - **Risk Metrics** - Portfolio Greeks, exposure tracking
 
-### 🔧 Platform Operations (v1.41–v1.50)
-
-- **v1.41 Watchlist Manager** - Multi-watchlist with per-item notes and timestamps
-- **v1.42 Correlation Matrix** - Cross-asset 6×6 correlation with heatmap colors
-- **v1.43 Trade Journal** - Entry/exit logging with emotion tracking, tags, and win-rate stats
-- **v1.44 Notifications Center** - Severity-based alerts with read/unread filtering
-- **v1.45 System Audit Log** - Full actor + action audit trail with count badges
-- **v1.46 Performance Attribution** - PnL breakdown by strategy, sector, and time bucket
-- **v1.47 Risk Scenarios** - Stress-test scenarios with VaR impact and shock overlays
-- **v1.48 Data Quality Monitor** - Feed health dashboard with latency and uptime metrics
-- **v1.49 Strategy Comparison** - Side-by-side multi-strategy ranking by Sharpe, return, drawdown
-- **v1.50 Platform Health** - Component-level operational status with version label
-
 ---
 
 ## 🏗️ Architecture
@@ -335,12 +322,12 @@ python -m services.ingestion.main --mode live --symbols AAPL,MSFT,TSLA
 
 ## 🧪 Testing
 
-> **Full Green Suite** — 1,010 tests, 0 failures, 0 skipped
+> **Full Green Suite** — 654 tests, 0 failures, 0 skipped
 
-### Backend Tests — pytest (367 tests)
+### Backend Tests (22 tests)
 
 ```bash
-python -m pytest -q          # 367/367 passed
+python -m pytest -q          # 22/22 passed
 ```
 
 ### Frontend Unit Tests — Vitest (112 tests)
@@ -350,7 +337,7 @@ cd frontend
 npx vitest run                # 112/112 passed
 ```
 
-### End-to-End Tests — Playwright (551 tests)
+### End-to-End Tests — Playwright (520 tests)
 
 ```bash
 cd frontend
@@ -362,7 +349,7 @@ DEMO_MODE=1 E2E_MODE=1 PYTHONPATH=.:phase1 \
 # Build & preview frontend
 npm run build && npx vite preview --port 5100 &
 
-# Run all 551 E2E tests (headed, single worker, no retries)
+# Run all 520 E2E tests (headed, single worker, no retries)
 DISPLAY=:0 npx playwright test --reporter=list
 ```
 

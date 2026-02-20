@@ -1,19 +1,22 @@
 """
 v1.25 — Multi-Portfolio Valuation tests
 Covers: POST /api/v1/portfolios/multi-valuation
+Uses FastAPI TestClient.
 """
 import pytest
-import httpx
-
-BASE = "http://127.0.0.1:8000"
 
 
 @pytest.fixture(scope="module")
 def client():
-    return httpx.Client(base_url=BASE, timeout=10)
+    from fastapi.testclient import TestClient
+    import os
+    os.environ.setdefault("E2E_MODE", "1")
+    from services.api.main import app
+    with TestClient(app) as c:
+        yield c
 
 
-def _ensure_demo(client: httpx.Client):
+def _ensure_demo(client):
     """Make sure demo portfolios exist."""
     r = client.get("/api/v1/portfolios?sort_by=portfolio_id")
     if r.status_code != 200 or len(r.json().get("portfolios", [])) == 0:
@@ -52,10 +55,8 @@ def test_multi_valuation_multiple(client):
     assert r.status_code == 200
     data = r.json()
     assert len(data["valuations"]) == 2
-    # Deterministic order: sorted by portfolio_id
     assert data["valuations"][0]["portfolio_id"] == "DEMO-PORT-001"
     assert data["valuations"][1]["portfolio_id"] == "DEMO-PORT-002"
-    # Totals should be sum of individual values
     total_val = sum(v["net_value"] for v in data["valuations"])
     total_pnl = sum(v["unrealised_pnl"] for v in data["valuations"])
     assert abs(data["total_net_value"] - total_val) < 0.01
@@ -65,14 +66,12 @@ def test_multi_valuation_multiple(client):
 def test_multi_valuation_deterministic(client):
     """Same input → same output (determinism gate)."""
     _ensure_demo(client)
-    ids = ["DEMO-PORT-002", "DEMO-PORT-001"]  # Intentionally reversed
+    ids = ["DEMO-PORT-002", "DEMO-PORT-001"]
     r1 = client.post("/api/v1/portfolios/multi-valuation", json={"portfolio_ids": ids})
     r2 = client.post("/api/v1/portfolios/multi-valuation", json={"portfolio_ids": ids})
     assert r1.status_code == 200
     assert r2.status_code == 200
-    # Both calls produce identical JSON (deterministic ordering)
     assert r1.json() == r2.json()
-    # Order should be normalized regardless of input order
     assert r1.json()["valuations"][0]["portfolio_id"] == "DEMO-PORT-001"
 
 

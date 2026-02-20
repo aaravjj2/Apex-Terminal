@@ -12,6 +12,7 @@ import { QuickActions } from '../../options/QuickActions';
 import { IndicatorManager } from '../../indicators/IndicatorManager';
 import { useAppStore } from '../../../state/appStore';
 import { useOptionsStore } from '../../options/store';
+import { cn } from '../../../ui/utils';
 
 type OptionsTab = 'chain' | 'iv-skew' | 'iv-term' | 'strategy' | 'fundamentals';
 type MainTab = 'analytics' | 'risk-desk' | 'strategy-lab' | 'runs';
@@ -86,14 +87,14 @@ export function OptionsView() {
   ];
 
   return (
-    <div className="h-full w-full flex flex-col bg-background">
+    <div className="h-full w-full flex flex-col bg-background" data-testid="options-view">
       {/* Header with main tabs */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-2 bg-panel-bg">
+      <div className="view-header-bar">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-text" data-testid="options-heading">Options - {appSymbol}</h1>
+          <h1 className="text-lg font-semibold text-text tracking-tight" data-testid="options-heading">Options — {appSymbol}</h1>
 
-          {/* Main tab switcher */}
-          <div className="flex gap-2" role="tablist" aria-label="Options main tabs">
+          {/* Main tab switcher - pill style */}
+          <div className="flex gap-1.5" role="tablist" aria-label="Options main tabs">
             {mainTabs.map(tab => (
               <button
                 key={tab.id}
@@ -102,10 +103,10 @@ export function OptionsView() {
                 role="tab"
                 aria-selected={mainTab === tab.id}
                 tabIndex={mainTab === tab.id ? 0 : -1}
-                className={`px-4 py-1.5 text-sm font-medium rounded transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 ${mainTab === tab.id
-                  ? 'bg-brand text-white'
-                  : 'bg-element-bg text-text-secondary hover:text-text hover:bg-element-bg/80'
-                  }`}
+                className={cn(
+                  "pill-tab",
+                  mainTab === tab.id && "active"
+                )}
               >
                 {tab.label}
               </button>
@@ -148,7 +149,7 @@ export function OptionsView() {
 
       {/* Secondary tabs (only show in Analytics mode) */}
       {mainTab === 'analytics' && (
-        <div className="flex items-center gap-2 border-b border-border px-4 bg-panel-bg" role="tablist" aria-label="Analytics tabs">
+        <div className="pro-tab-bar" role="tablist" aria-label="Analytics tabs">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -157,10 +158,10 @@ export function OptionsView() {
               role="tab"
               aria-selected={activeTab === tab.id}
               tabIndex={activeTab === tab.id ? 0 : -1}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 ${activeTab === tab.id
-                ? 'border-brand text-brand'
-                : 'border-transparent text-text-secondary hover:text-text hover:border-border'
-                }`}
+              className={cn(
+                "pro-tab",
+                activeTab === tab.id && "active"
+              )}
             >
               {tab.label}
             </button>

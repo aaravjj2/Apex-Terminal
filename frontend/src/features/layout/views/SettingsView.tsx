@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
     Key, RefreshCw, Eye, EyeOff,
-    Palette, Keyboard
+    Palette, Keyboard, Settings2
 } from 'lucide-react';
 import { Button } from '../../../ui/Button';
 import { StatusIndicator, type ConnectionStatus } from '../../../ui/StatusIndicator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
+import { PageHeader } from '../../../ui/PageHeader';
 
 function ApiKeysSection() {
     const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
@@ -172,10 +173,15 @@ function ShortcutsSection() {
 export function SettingsView() {
     return (
         <div className="h-full bg-background overflow-auto" data-testid="settings-view">
-            <div className="max-w-3xl mx-auto p-6">
-                <h1 className="text-xl font-semibold text-text mb-6">Settings</h1>
+            <div className="max-w-3xl mx-auto p-6 pb-12">
+                <PageHeader
+                    title="Settings"
+                    subtitle="Configure API keys, UI preferences, and shortcuts"
+                    icon={<Settings2 size={20} />}
+                    data-testid="settings-header"
+                />
 
-                <Tabs defaultValue="keys" className="space-y-6">
+                <Tabs defaultValue="keys" className="space-y-6 mt-5">
                     <TabsList>
                         <TabsTrigger value="keys" icon={<Key size={14} />}>API Keys</TabsTrigger>
                         <TabsTrigger value="ui" icon={<Palette size={14} />}>UI Preferences</TabsTrigger>

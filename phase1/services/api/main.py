@@ -20,6 +20,18 @@ import structlog
 from ..config import get_settings
 from ..persistence import init_database, get_database
 from .routes import bars, ingest, parity, debug, clock, drawings, strategies, portfolio, alerts, versions, runs, packages, metrics, incidents, notes, reports, options, profiles, patterns, fundamentals, automation, forecast, intelligence, risk_desk, strategy_lab, strategy_artifacts, backtest, unified_runs, ticker, market_data_v1_13, cache, provider_registry, citations, search, agents, watchlist, correlation, journal, notifications, audit_log, attribution, risk_scenarios, data_quality, strategy_compare, platform_health
+# Wave 6-10 routes
+from .routes import monte_carlo, walk_forward, scoring, sentiment, regime
+from .routes import elasticsearch_gateway, nova
+from .routes import market_hours, kill_switch_recovery, system_health
+from .routes import observability, compliance, performance_analytics
+# New Wave 6-10 feature routes
+from .routes import strategy_optimizer, anomalies, portfolio_optimizer
+from .routes import sandbox_runner, scenario_sim, alt_data, signal_market
+from .routes import microstructure, liquidity
+from .routes import policy_signal, risk_network, hedge_fund
+# Core Depth Upgrade routes
+from .routes import autopilot_depth, backtest_depth, workflow_depth, search_depth
 from .websocket import router as ws_router
 from .health_router import router as health_router
 from .verification_routes import router as verification_router
@@ -255,6 +267,47 @@ def create_app() -> FastAPI:
     app.include_router(strategy_compare.router, tags=["strategy-compare"])
     # v1.50: Platform Health Dashboard
     app.include_router(platform_health.router, tags=["platform-health"])
+    
+    # ── Wave 6: Market Intelligence ──
+    app.include_router(monte_carlo.router, tags=["monte-carlo"])
+    app.include_router(walk_forward.router, tags=["walk-forward"])
+    app.include_router(scoring.router, tags=["scoring"])
+    app.include_router(sentiment.router, tags=["sentiment"])
+    app.include_router(regime.router, tags=["regime"])
+    # ── Wave 7: Elasticsearch (gated OFF by default) ──
+    app.include_router(elasticsearch_gateway.router, tags=["elasticsearch"])
+    # ── Wave 8: Amazon Nova LLM (gated OFF by default) ──
+    app.include_router(nova.router, tags=["nova"])
+    # ── Wave 9: System Operations ──
+    app.include_router(market_hours.router, tags=["market-hours"])
+    app.include_router(kill_switch_recovery.router, tags=["kill-switch-recovery"])
+    app.include_router(system_health.router, tags=["system-health"])
+    # ── Wave 10: Observability & Reporting ──
+    app.include_router(observability.router, tags=["observability"])
+    app.include_router(compliance.router, tags=["compliance"])
+    app.include_router(performance_analytics.router, tags=["performance-analytics"])
+    # ── New Wave 6: Strategy Optimization ──
+    app.include_router(strategy_optimizer.router, tags=["strategy-optimizer"])
+    # ── New Wave 7: Anomalies + Portfolio + Sandbox ──
+    app.include_router(anomalies.router, tags=["anomalies"])
+    app.include_router(portfolio_optimizer.router, tags=["portfolio-optimizer"])
+    app.include_router(sandbox_runner.router, tags=["sandbox-runner"])
+    # ── New Wave 8: Scenario + Alt Data + Signal Market ──
+    app.include_router(scenario_sim.router, tags=["scenario-sim"])
+    app.include_router(alt_data.router, tags=["alt-data"])
+    app.include_router(signal_market.router, tags=["signal-market"])
+    # ── New Wave 9: Microstructure + Liquidity ──
+    app.include_router(microstructure.router, tags=["microstructure"])
+    app.include_router(liquidity.router, tags=["liquidity"])
+    # ── New Wave 10: Policy Signal + Risk Network + Hedge Fund ──
+    app.include_router(policy_signal.router, tags=["policy-signal"])
+    app.include_router(risk_network.router, tags=["risk-network"])
+    app.include_router(hedge_fund.router, tags=["hedge-fund"])
+    # ── Core Depth Upgrade ──
+    app.include_router(autopilot_depth.router, tags=["autopilot-depth"])
+    app.include_router(backtest_depth.router, tags=["backtest-depth"])
+    app.include_router(workflow_depth.router, tags=["workflow-depth"])
+    app.include_router(search_depth.router, tags=["search-depth"])
     
     # ElevenLabs TTS
     from .tts_routes import router as tts_router

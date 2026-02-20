@@ -1,23 +1,21 @@
 """
 v1.27 — Portfolio Persistence Hardening + Session-State Audit
-Backend tests verifying:
-1. Store state survives across multiple operations
-2. CRUD operations are idempotent where expected
-3. Seed/reset cycles preserve fixture integrity
-4. Content hashes are stable after mutations
+Uses FastAPI TestClient.
 """
 import pytest
-import httpx
-
-BASE = "http://127.0.0.1:8000"
 
 
 @pytest.fixture(scope="module")
 def client():
-    return httpx.Client(base_url=BASE, timeout=10)
+    from fastapi.testclient import TestClient
+    import os
+    os.environ.setdefault("E2E_MODE", "1")
+    from services.api.main import app
+    with TestClient(app) as c:
+        yield c
 
 
-def _reset(client: httpx.Client):
+def _reset(client):
     """Reset store to fixtures."""
     r = client.post("/api/v1/portfolios/reset")
     assert r.status_code == 200
@@ -58,12 +56,10 @@ def test_create_persists_across_reads(client):
     assert create_r.status_code in (200, 201)
     new_id = create_r.json()["portfolio_id"]
 
-    # Verify it appears in list
     list_r = client.get("/api/v1/portfolios?sort_by=portfolio_id")
     ids = [p["portfolio_id"] for p in list_r.json()["portfolios"]]
     assert new_id in ids
 
-    # Verify direct GET also works
     get_r = client.get(f"/api/v1/portfolios/{new_id}")
     assert get_r.status_code == 200
     assert get_r.json()["name"] == "Persistence Test"
@@ -112,7 +108,6 @@ def test_content_hash_stable_after_valuation(client):
     r1 = client.get("/api/v1/portfolios/DEMO-PORT-001")
     hash_before = r1.json().get("content_hash")
 
-    # Trigger a valuation
     client.get("/api/v1/portfolios/DEMO-PORT-001/valuation")
 
     r2 = client.get("/api/v1/portfolios/DEMO-PORT-001")
@@ -125,7 +120,6 @@ def test_export_does_not_mutate_store(client):
     _reset(client)
     r_before = client.get("/api/v1/portfolios?sort_by=portfolio_id")
 
-    # Export each
     client.get("/api/v1/portfolios/DEMO-PORT-001/export")
     client.get("/api/v1/portfolios/DEMO-PORT-002/export")
 

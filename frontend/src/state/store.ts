@@ -146,7 +146,7 @@ export const useStore = create<AppState>((set, get) => ({
 
     connect: () => {
         const { symbol, timeframe } = get();
-        const url = `ws://127.0.0.1:8000/ws/bars/${symbol}/${timeframe}`;
+        const url = `ws://127.0.0.1:8090/ws/bars/${symbol}/${timeframe}`;
 
         const onStateChange = (newState: WSConnectionState, _prev: WSConnectionState, details?: { reconnectAttempts: number }) => {
             set({

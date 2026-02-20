@@ -6,7 +6,7 @@ export interface ClockState {
     running: boolean;
 }
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1/clock';
+const API_BASE = 'http://127.0.0.1:8090/api/v1/clock';
 
 export const ClockClient = {
     async getState(): Promise<ClockState> {

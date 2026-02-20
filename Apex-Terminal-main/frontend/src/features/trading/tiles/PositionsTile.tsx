@@ -24,10 +24,10 @@ interface Position {
 }
 
 const MOCK_POSITIONS: Position[] = [
-    { symbol: 'AAPL', quantity: 100, avgCost: 165.50, currentPrice: 178.52, marketValue: 17852, unrealizedPL: 1302, unrealizedPLPercent: 7.87 },
-    { symbol: 'MSFT', quantity: 50, avgCost: 385.00, currentPrice: 378.91, marketValue: 18945.5, unrealizedPL: -304.5, unrealizedPLPercent: -1.58 },
-    { symbol: 'NVDA', quantity: 25, avgCost: 750.00, currentPrice: 875.28, marketValue: 21882, unrealizedPL: 3132, unrealizedPLPercent: 16.70 },
-    { symbol: 'SPY', quantity: 200, avgCost: 498.00, currentPrice: 502.34, marketValue: 100468, unrealizedPL: 868, unrealizedPLPercent: 0.87 },
+    { symbol: 'SPY', quantity: 150, avgCost: 535.20, currentPrice: 547.23, marketValue: 82084.50, unrealizedPL: 1804.50, unrealizedPLPercent: 2.24 },
+    { symbol: 'AAPL', quantity: 200, avgCost: 185.30, currentPrice: 182.41, marketValue: 36482.00, unrealizedPL: -578.00, unrealizedPLPercent: -1.56 },
+    { symbol: 'TSLA', quantity: 75, avgCost: 210.15, currentPrice: 218.77, marketValue: 16407.75, unrealizedPL: 646.50, unrealizedPLPercent: 4.10 },
+    { symbol: 'NVDA', quantity: 50, avgCost: 805.40, currentPrice: 789.55, marketValue: 39477.50, unrealizedPL: -792.50, unrealizedPLPercent: -1.97 },
 ];
 
 export function PositionsTile({ tileId: _tileId, isMaximized: _isMaximized }: TileProps) {

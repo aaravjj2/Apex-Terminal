@@ -272,48 +272,61 @@ export function DashboardView() {
 
     return (
         <div className="h-full flex flex-col bg-background" data-testid="dashboard-view">
-            {/* Dashboard Header */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-panel-bg">
-                <div className="flex items-center gap-3">
-                    <LayoutGrid size={18} className="text-brand" />
-                    <h1 className="text-sm font-semibold text-text" data-testid="dashboard-heading">Dashboard</h1>
-                    <span className="text-xs text-text-muted">{tiles.length} tiles</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setShowAddDialog(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-brand text-white text-sm hover:bg-brand-hover transition-colors"
-                    >
-                        <Plus size={14} />
-                        Add Tile
-                    </button>
-                    <button
-                        onClick={handleSaveLayout}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-element-bg text-text-secondary hover:text-text text-sm transition-colors"
-                        title="Save Layout"
-                    >
-                        <Save size={14} />
-                    </button>
-                    <button
-                        onClick={handleResetLayout}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-element-bg text-text-secondary hover:text-text text-sm transition-colors"
-                        title="Reset Layout"
-                    >
-                        <RotateCcw size={14} />
-                    </button>
+            <div data-testid="dashboard-ready" />
+            {/* Dashboard Header - v1.53 redesign */}
+            <div className="shrink-0 px-6 py-4 border-b border-border bg-panel-bg">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <LayoutGrid size={24} className="text-brand" />
+                            <h1 className="text-xl font-semibold text-text" data-testid="dashboard-heading">Dashboard</h1>
+                        </div>
+                        <p className="text-sm text-text-secondary mt-1">
+                            {tiles.length} tiles • Customize your workspace
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleResetLayout}
+                            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-secondary hover:text-text hover:bg-element-bg border border-border rounded-lg transition-colors"
+                            title="Reset to default layout"
+                        >
+                            <RotateCcw size={16} />
+                            Reset
+                        </button>
+                        <button
+                            onClick={handleSaveLayout}
+                            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-secondary hover:text-text hover:bg-element-bg border border-border rounded-lg transition-colors"
+                            title="Save layout"
+                        >
+                            <Save size={16} />
+                            Save
+                        </button>
+                        <button
+                            onClick={() => setShowAddDialog(true)}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-hover rounded-lg transition-colors shadow-sm"
+                        >
+                            <Plus size={16} />
+                            Add Tile
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Tile Grid */}
-            <div className="flex-1 p-4 overflow-auto">
+            {/* Tile Grid - v1.53 improved spacing */}
+            <div className="flex-1 p-6 overflow-auto">
                 {tiles.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-text-secondary">
-                        <LayoutGrid size={48} className="mb-4 opacity-50" />
-                        <p className="text-lg mb-2">No tiles configured</p>
-                        <p className="text-sm text-text-muted mb-4">Add tiles to build your custom dashboard</p>
+                    <div className="h-full flex flex-col items-center justify-center text-center">
+                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand/20 to-brand/5 border-2 border-brand/20 flex items-center justify-center mx-auto mb-4">
+                            <LayoutGrid size={32} className="text-brand" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-text mb-2">No tiles yet</h3>
+                        <p className="text-sm text-text-secondary mb-6 leading-relaxed max-w-md">
+                            Add tiles to customize your dashboard. Choose from watchlists, positions, charts, and more.
+                        </p>
                         <button
                             onClick={() => setShowAddDialog(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded bg-brand text-white hover:bg-brand-hover transition-colors"
+                            className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-brand hover:bg-brand-hover rounded-lg transition-colors shadow-sm"
                         >
                             <Plus size={16} />
                             Add Your First Tile
@@ -321,8 +334,8 @@ export function DashboardView() {
                     </div>
                 ) : (
                     <div
-                        className="grid gap-4 auto-rows-[200px]"
-                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
+                        className="grid gap-4 auto-rows-[220px]"
+                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}
                     >
                         {tiles.map(tile => (
                             <TileWrapper

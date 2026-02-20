@@ -24,14 +24,14 @@ interface WatchlistItem {
 
 // Mock data - in production this would come from WebSocket
 const MOCK_WATCHLIST: WatchlistItem[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', price: 178.52, change: 2.34, changePercent: 1.33, volume: 52340000 },
-    { symbol: 'MSFT', name: 'Microsoft Corp', price: 378.91, change: -1.23, changePercent: -0.32, volume: 18230000 },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 141.80, change: 0.89, changePercent: 0.63, volume: 24560000 },
-    { symbol: 'AMZN', name: 'Amazon.com', price: 178.25, change: 3.45, changePercent: 1.97, volume: 45670000 },
-    { symbol: 'NVDA', name: 'NVIDIA Corp', price: 875.28, change: 12.45, changePercent: 1.44, volume: 38900000 },
-    { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.50, change: -5.67, changePercent: -2.23, volume: 98760000 },
-    { symbol: 'META', name: 'Meta Platforms', price: 505.75, change: 8.90, changePercent: 1.79, volume: 12340000 },
-    { symbol: 'SPY', name: 'SPDR S&P 500', price: 502.34, change: 1.23, changePercent: 0.25, volume: 67890000 },
+    { symbol: 'AAPL', name: 'Apple Inc.', price: 182.41, change: -1.23, changePercent: -0.67, volume: 38200000 },
+    { symbol: 'MSFT', name: 'Microsoft Corp', price: 412.33, change: 2.15, changePercent: 0.52, volume: 19800000 },
+    { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 152.23, change: 1.05, changePercent: 0.69, volume: 15400000 },
+    { symbol: 'AMZN', name: 'Amazon.com', price: 178.92, change: -0.78, changePercent: -0.43, volume: 33100000 },
+    { symbol: 'NVDA', name: 'NVIDIA Corp', price: 789.55, change: -8.45, changePercent: -1.06, volume: 28900000 },
+    { symbol: 'TSLA', name: 'Tesla Inc.', price: 218.77, change: 5.12, changePercent: 2.40, volume: 51300000 },
+    { symbol: 'META', name: 'Meta Platforms', price: 487.63, change: 4.22, changePercent: 0.87, volume: 12700000 },
+    { symbol: 'SPY', name: 'SPDR S&P 500', price: 547.23, change: 3.45, changePercent: 0.63, volume: 42150000 },
 ];
 
 export function WatchlistTile({ tileId: _tileId, isMaximized: _isMaximized }: TileProps) {

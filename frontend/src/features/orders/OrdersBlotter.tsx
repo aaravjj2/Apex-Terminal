@@ -18,7 +18,7 @@ interface Order {
     strategy_id?: string;
 }
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://127.0.0.1:8090/api/v1';
 
 export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
     const [orders, setOrders] = useState<Order[]>([]);

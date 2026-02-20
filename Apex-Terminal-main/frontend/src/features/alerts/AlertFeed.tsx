@@ -41,8 +41,8 @@ export function AlertFeed() {
             console.error('Failed to fetch triggers:', e);
             // Mock data
             setTriggers([
-                { id: '1', alert_id: 'A1', alert_name: 'AAPL Above 180', symbol: 'AAPL', condition: 'price_above', target_value: 180, triggered_value: 181.25, timestamp: new Date().toISOString(), acknowledged: false },
-                { id: '2', alert_id: 'A2', alert_name: 'TSLA Below 250', symbol: 'TSLA', condition: 'price_below', target_value: 250, triggered_value: 248.50, timestamp: new Date(Date.now() - 3600000).toISOString(), acknowledged: true },
+                { id: '1', alert_id: 'A1', alert_name: 'AAPL Above 180', symbol: 'AAPL', condition: 'price_above', target_value: 180, triggered_value: 182.41, timestamp: new Date().toISOString(), acknowledged: false },
+                { id: '2', alert_id: 'A2', alert_name: 'TSLA Below 250', symbol: 'TSLA', condition: 'price_below', target_value: 250, triggered_value: 218.77, timestamp: new Date(Date.now() - 3600000).toISOString(), acknowledged: true },
                 { id: '3', alert_id: 'A3', alert_name: 'RSI Oversold', symbol: 'MSFT', condition: 'rsi_below', target_value: 30, triggered_value: 28.5, timestamp: new Date(Date.now() - 7200000).toISOString(), acknowledged: true },
             ]);
         }

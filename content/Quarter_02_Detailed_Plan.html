@@ -1,0 +1,3070 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quarter two</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 1000px; margin: 0 auto; padding: 20px; color: #333; }
+        h1 { border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; }
+        h3 { color: #2c3e50; margin-top: 25px; }
+        code { background-color: #f4f4f4; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
+        pre { background-color: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; border: 1px solid #ddd; }
+        blockquote { border-left: 4px solid #3498db; padding-left: 15px; color: #7f8c8d; margin-left: 0; }
+        hr { border: 0; height: 1px; background: #ddd; margin: 40px 0; }
+        .toc { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <h1 id="quarter-2-execution-resilience-days-91-180">Quarter 2: Execution &amp; Resilience (Days 91-180)</h1>
+<blockquote>
+<p><strong>Theme</strong>: Execution Algorithms, Multi-Broker Routing, System Hardening</p>
+</blockquote>
+<div class="toc">
+<ul>
+<li><a href="#quarter-2-execution-resilience-days-91-180">Quarter 2: Execution &amp; Resilience (Days 91-180)</a><ul>
+<li><a href="#week-13">Week 13</a><ul>
+<li><a href="#day-91-weekend-oms-vs-ems-architecture">Day 91: [WEEKEND] OMS vs EMS Architecture</a><ul>
+<li><a href="#1-tech-commands">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files">2. Files</a></li>
+<li><a href="#3-architecture">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-14">Week 14</a><ul>
+<li><a href="#day-92-fix-protocol-adapter-mock">Day 92: FIX Protocol Adapter (Mock)</a><ul>
+<li><a href="#1-tech-commands_1">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_1">2. Files</a></li>
+<li><a href="#3-architecture_1">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_1">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_1">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-93-smart-order-router-sor-level-1">Day 93: Smart Order Router (SOR) - Level 1</a><ul>
+<li><a href="#1-tech-commands_2">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_2">2. Files</a></li>
+<li><a href="#3-architecture_2">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_2">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_2">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-94-execution-algo-twap-logic">Day 94: Execution Algo: TWAP Logic</a><ul>
+<li><a href="#1-tech-commands_3">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_3">2. Files</a></li>
+<li><a href="#3-architecture_3">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_3">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_3">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-95-execution-algo-twap-scheduler">Day 95: Execution Algo: TWAP Scheduler</a><ul>
+<li><a href="#1-tech-commands_4">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_4">2. Files</a></li>
+<li><a href="#3-architecture_4">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_4">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_4">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-96-execution-algo-vwap-volatility-profile">Day 96: Execution Algo: VWAP Volatility Profile</a><ul>
+<li><a href="#1-tech-commands_5">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_5">2. Files</a></li>
+<li><a href="#3-architecture_5">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_5">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_5">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-97-weekend-execution-algo-vwap-engine">Day 97: [WEEKEND] Execution Algo: VWAP Engine</a><ul>
+<li><a href="#1-tech-commands_6">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_6">2. Files</a></li>
+<li><a href="#3-architecture_6">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_6">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_6">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-98-weekend-iceberg-orders">Day 98: [WEEKEND] Iceberg Orders</a><ul>
+<li><a href="#1-tech-commands_7">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_7">2. Files</a></li>
+<li><a href="#3-architecture_7">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_7">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_7">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-15">Week 15</a><ul>
+<li><a href="#day-99-stop-limit-trailing-stop-server-side">Day 99: Stop-Limit &amp; Trailing Stop Server-Side</a><ul>
+<li><a href="#1-tech-commands_8">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_8">2. Files</a></li>
+<li><a href="#3-architecture_8">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_8">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_8">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-100-bracket-orders-osooto">Day 100: Bracket Orders (OSO/OTO)</a><ul>
+<li><a href="#1-tech-commands_9">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_9">2. Files</a></li>
+<li><a href="#3-architecture_9">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_9">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_9">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-101-fat-finger-protection">Day 101: Fat Finger Protection</a><ul>
+<li><a href="#1-tech-commands_10">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_10">2. Files</a></li>
+<li><a href="#3-architecture_10">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_10">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_10">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-102-rate-limiting-order-submission">Day 102: Rate Limiting (Order Submission)</a><ul>
+<li><a href="#1-tech-commands_11">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_11">2. Files</a></li>
+<li><a href="#3-architecture_11">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_11">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_11">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-103-duplicate-order-detection">Day 103: Duplicate Order Detection</a><ul>
+<li><a href="#1-tech-commands_12">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_12">2. Files</a></li>
+<li><a href="#3-architecture_12">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_12">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_12">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-104-weekend-execution-reports-fill-reconciliation">Day 104: [WEEKEND] Execution Reports &amp; Fill Reconciliation</a><ul>
+<li><a href="#1-tech-commands_13">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_13">2. Files</a></li>
+<li><a href="#3-architecture_13">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_13">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_13">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-105-weekend-real-time-position-tracker">Day 105: [WEEKEND] Real-Time Position Tracker</a><ul>
+<li><a href="#1-tech-commands_14">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_14">2. Files</a></li>
+<li><a href="#3-architecture_14">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_14">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_14">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-16">Week 16</a><ul>
+<li><a href="#day-106-mark-to-market-engine">Day 106: Mark-to-Market Engine</a><ul>
+<li><a href="#1-tech-commands_15">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_15">2. Files</a></li>
+<li><a href="#3-architecture_15">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_15">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_15">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-107-cash-management-buying_power">Day 107: Cash Management &amp; buying_power</a><ul>
+<li><a href="#1-tech-commands_16">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_16">2. Files</a></li>
+<li><a href="#3-architecture_16">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_16">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_16">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-108-portfolio-greeks-aggregation">Day 108: Portfolio Greeks Aggregation</a><ul>
+<li><a href="#1-tech-commands_17">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_17">2. Files</a></li>
+<li><a href="#3-architecture_17">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_17">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_17">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-109-sector-exposure-monitor">Day 109: Sector Exposure Monitor</a><ul>
+<li><a href="#1-tech-commands_18">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_18">2. Files</a></li>
+<li><a href="#3-architecture_18">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_18">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_18">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-110-wash-sale-prevention">Day 110: Wash Sale Prevention</a><ul>
+<li><a href="#1-tech-commands_19">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_19">2. Files</a></li>
+<li><a href="#3-architecture_19">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_19">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_19">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-111-weekend-backtest-engine-core">Day 111: [WEEKEND] Backtest Engine Core</a><ul>
+<li><a href="#1-tech-commands_20">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_20">2. Files</a></li>
+<li><a href="#3-architecture_20">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_20">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_20">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-112-weekend-data-feed-interface-for-backtest">Day 112: [WEEKEND] Data Feed Interface for Backtest</a><ul>
+<li><a href="#1-tech-commands_21">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_21">2. Files</a></li>
+<li><a href="#3-architecture_21">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_21">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_21">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-17">Week 17</a><ul>
+<li><a href="#day-113-execution-simulator-fill-models">Day 113: Execution Simulator (Fill Models)</a><ul>
+<li><a href="#1-tech-commands_22">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_22">2. Files</a></li>
+<li><a href="#3-architecture_22">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_22">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_22">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-114-performance-metrics-library">Day 114: Performance Metrics Library</a><ul>
+<li><a href="#1-tech-commands_23">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_23">2. Files</a></li>
+<li><a href="#3-architecture_23">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_23">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_23">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-115-parameter-optimization-grid">Day 115: Parameter Optimization Grid</a><ul>
+<li><a href="#1-tech-commands_24">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_24">2. Files</a></li>
+<li><a href="#3-architecture_24">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_24">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_24">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-116-walk-forward-analysis">Day 116: Walk-Forward Analysis</a><ul>
+<li><a href="#1-tech-commands_25">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_25">2. Files</a></li>
+<li><a href="#3-architecture_25">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_25">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_25">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-117-backtest-reporting-visualization">Day 117: Backtest Reporting &amp; Visualization</a><ul>
+<li><a href="#1-tech-commands_26">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_26">2. Files</a></li>
+<li><a href="#3-architecture_26">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_26">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_26">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-118-weekend-strategy-laboratory-ui">Day 118: [WEEKEND] Strategy Laboratory UI</a><ul>
+<li><a href="#1-tech-commands_27">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_27">2. Files</a></li>
+<li><a href="#3-architecture_27">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_27">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_27">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-119-weekend-historical-data-manager">Day 119: [WEEKEND] Historical Data Manager</a><ul>
+<li><a href="#1-tech-commands_28">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_28">2. Files</a></li>
+<li><a href="#3-architecture_28">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_28">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_28">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-18">Week 18</a><ul>
+<li><a href="#day-120-q2-month-1-review-refactor">Day 120: Q2 Month 1 Review &amp; Refactor</a><ul>
+<li><a href="#1-tech-commands_29">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_29">2. Files</a></li>
+<li><a href="#3-architecture_29">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_29">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_29">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-121-unified-broker-factory">Day 121: Unified Broker Factory</a><ul>
+<li><a href="#1-tech-commands_30">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_30">2. Files</a></li>
+<li><a href="#3-architecture_30">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_30">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_30">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-122-interactive-brokers-ibkr-adapter">Day 122: Interactive Brokers (IBKR) Adapter</a><ul>
+<li><a href="#1-tech-commands_31">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_31">2. Files</a></li>
+<li><a href="#3-architecture_31">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_31">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_31">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-123-alpaca-adapter-v2">Day 123: Alpaca Adapter V2</a><ul>
+<li><a href="#1-tech-commands_32">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_32">2. Files</a></li>
+<li><a href="#3-architecture_32">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_32">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_32">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-124-tradier-adapter-v2-options-specialist">Day 124: Tradier Adapter V2 (Options Specialist)</a><ul>
+<li><a href="#1-tech-commands_33">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_33">2. Files</a></li>
+<li><a href="#3-architecture_33">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_33">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_33">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-125-weekend-crypto-exchange-adapter-coinbasebinance">Day 125: [WEEKEND] Crypto Exchange Adapter (Coinbase/Binance)</a><ul>
+<li><a href="#1-tech-commands_34">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_34">2. Files</a></li>
+<li><a href="#3-architecture_34">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_34">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_34">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-126-weekend-mock-broker-for-simulation">Day 126: [WEEKEND] Mock Broker for Simulation</a><ul>
+<li><a href="#1-tech-commands_35">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_35">2. Files</a></li>
+<li><a href="#3-architecture_35">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_35">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_35">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-19">Week 19</a><ul>
+<li><a href="#day-127-broker-config-credentials-vault">Day 127: Broker Config &amp; Credentials Vault</a><ul>
+<li><a href="#1-tech-commands_36">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_36">2. Files</a></li>
+<li><a href="#3-architecture_36">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_36">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_36">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-128-symbol-normalization-service">Day 128: Symbol Normalization Service</a><ul>
+<li><a href="#1-tech-commands_37">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_37">2. Files</a></li>
+<li><a href="#3-architecture_37">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_37">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_37">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-129-order-status-normalization">Day 129: Order Status Normalization</a><ul>
+<li><a href="#1-tech-commands_38">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_38">2. Files</a></li>
+<li><a href="#3-architecture_38">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_38">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_38">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-130-account-balance-aggregation">Day 130: Account Balance Aggregation</a><ul>
+<li><a href="#1-tech-commands_39">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_39">2. Files</a></li>
+<li><a href="#3-architecture_39">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_39">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_39">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-131-unified-market-data-stream">Day 131: Unified Market Data Stream</a><ul>
+<li><a href="#1-tech-commands_40">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_40">2. Files</a></li>
+<li><a href="#3-architecture_40">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_40">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_40">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-132-weekend-broker-health-monitor">Day 132: [WEEKEND] Broker Health Monitor</a><ul>
+<li><a href="#1-tech-commands_41">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_41">2. Files</a></li>
+<li><a href="#3-architecture_41">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_41">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_41">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-133-weekend-emergency-liquidation-switch">Day 133: [WEEKEND] Emergency Liquidation switch</a><ul>
+<li><a href="#1-tech-commands_42">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_42">2. Files</a></li>
+<li><a href="#3-architecture_42">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_42">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_42">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-20">Week 20</a><ul>
+<li><a href="#day-134-broker-reconciliation-engine">Day 134: Broker Reconciliation Engine</a><ul>
+<li><a href="#1-tech-commands_43">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_43">2. Files</a></li>
+<li><a href="#3-architecture_43">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_43">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_43">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-135-fee-structure-modeling">Day 135: Fee Structure Modeling</a><ul>
+<li><a href="#1-tech-commands_44">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_44">2. Files</a></li>
+<li><a href="#3-architecture_44">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_44">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_44">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-136-cost-based-routing-logic">Day 136: Cost-Based Routing Logic</a><ul>
+<li><a href="#1-tech-commands_45">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_45">2. Files</a></li>
+<li><a href="#3-architecture_45">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_45">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_45">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-137-latency-based-routing-logic">Day 137: Latency-Based Routing Logic</a><ul>
+<li><a href="#1-tech-commands_46">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_46">2. Files</a></li>
+<li><a href="#3-architecture_46">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_46">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_46">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-138-liquidity-aware-routing">Day 138: Liquidity-Aware Routing</a><ul>
+<li><a href="#1-tech-commands_47">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_47">2. Files</a></li>
+<li><a href="#3-architecture_47">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_47">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_47">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-139-weekend-dark-pool-hidden-liquidity">Day 139: [WEEKEND] Dark Pool &amp; hidden Liquidity</a><ul>
+<li><a href="#1-tech-commands_48">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_48">2. Files</a></li>
+<li><a href="#3-architecture_48">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_48">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_48">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-140-weekend-routing-rule-engine-configuration">Day 140: [WEEKEND] Routing Rule Engine Configuration</a><ul>
+<li><a href="#1-tech-commands_49">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_49">2. Files</a></li>
+<li><a href="#3-architecture_49">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_49">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_49">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-21">Week 21</a><ul>
+<li><a href="#day-141-meta-router-implementation">Day 141: Meta-Router Implementation</a><ul>
+<li><a href="#1-tech-commands_50">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_50">2. Files</a></li>
+<li><a href="#3-architecture_50">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_50">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_50">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-142-multi-broker-integration-test-suite">Day 142: Multi-Broker Integration Test Suite</a><ul>
+<li><a href="#1-tech-commands_51">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_51">2. Files</a></li>
+<li><a href="#3-architecture_51">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_51">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_51">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-143-chaos-monkey-for-brokers">Day 143: Chaos Monkey for Brokers</a><ul>
+<li><a href="#1-tech-commands_52">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_52">2. Files</a></li>
+<li><a href="#3-architecture_52">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_52">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_52">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-144-paper-trading-championship">Day 144: Paper Trading Championship</a><ul>
+<li><a href="#1-tech-commands_53">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_53">2. Files</a></li>
+<li><a href="#3-architecture_53">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_53">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_53">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-145-latency-optimization-sprint">Day 145: Latency Optimization Sprint</a><ul>
+<li><a href="#1-tech-commands_54">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_54">2. Files</a></li>
+<li><a href="#3-architecture_54">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_54">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_54">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-146-weekend-failover-handling">Day 146: [WEEKEND] Failover Handling</a><ul>
+<li><a href="#1-tech-commands_55">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_55">2. Files</a></li>
+<li><a href="#3-architecture_55">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_55">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_55">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-147-weekend-manual-override-dashboard">Day 147: [WEEKEND] Manual Override Dashboard</a><ul>
+<li><a href="#1-tech-commands_56">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_56">2. Files</a></li>
+<li><a href="#3-architecture_56">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_56">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_56">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-22">Week 22</a><ul>
+<li><a href="#day-148-compliance-logging-catoats">Day 148: Compliance Logging (CAT/OATS)</a><ul>
+<li><a href="#1-tech-commands_57">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_57">2. Files</a></li>
+<li><a href="#3-architecture_57">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_57">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_57">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-149-deployment-to-staging">Day 149: Deployment to Staging</a><ul>
+<li><a href="#1-tech-commands_58">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_58">2. Files</a></li>
+<li><a href="#3-architecture_58">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_58">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_58">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-150-q2-month-2-review">Day 150: Q2 Month 2 Review</a><ul>
+<li><a href="#1-tech-commands_59">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_59">2. Files</a></li>
+<li><a href="#3-architecture_59">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_59">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_59">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-151-global-circuit-breaker-pl-based">Day 151: Global Circuit Breaker (P&amp;L Based)</a><ul>
+<li><a href="#1-tech-commands_60">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_60">2. Files</a></li>
+<li><a href="#3-architecture_60">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_60">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_60">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-152-symbol-level-circuit-breakers-luld">Day 152: Symbol-Level Circuit Breakers (LULD)</a><ul>
+<li><a href="#1-tech-commands_61">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_61">2. Files</a></li>
+<li><a href="#3-architecture_61">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_61">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_61">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-153-weekend-order-velocity-limiter">Day 153: [WEEKEND] Order Velocity Limiter</a><ul>
+<li><a href="#1-tech-commands_62">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_62">2. Files</a></li>
+<li><a href="#3-architecture_62">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_62">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_62">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-154-weekend-max-notional-limits-service">Day 154: [WEEKEND] Max Notional Limits Service</a><ul>
+<li><a href="#1-tech-commands_63">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_63">2. Files</a></li>
+<li><a href="#3-architecture_63">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_63">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_63">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-23">Week 23</a><ul>
+<li><a href="#day-155-kill-switch-ui-button">Day 155: Kill Switch UI Button</a><ul>
+<li><a href="#1-tech-commands_64">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_64">2. Files</a></li>
+<li><a href="#3-architecture_64">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_64">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_64">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-156-risk-dashboard-alerts">Day 156: Risk Dashboard &amp; Alerts</a><ul>
+<li><a href="#1-tech-commands_65">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_65">2. Files</a></li>
+<li><a href="#3-architecture_65">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_65">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_65">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-157-incident-response-playbook">Day 157: Incident Response Playbook</a><ul>
+<li><a href="#1-tech-commands_66">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_66">2. Files</a></li>
+<li><a href="#3-architecture_66">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_66">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_66">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-158-haproxy-load-balancer">Day 158: HAProxy Load Balancer</a><ul>
+<li><a href="#1-tech-commands_67">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_67">2. Files</a></li>
+<li><a href="#3-architecture_67">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_67">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_67">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-159-postgresql-high-availability-patroni">Day 159: PostgreSQL High Availability (Patroni)</a><ul>
+<li><a href="#1-tech-commands_68">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_68">2. Files</a></li>
+<li><a href="#3-architecture_68">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_68">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_68">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-160-weekend-redis-sentinel-cluster">Day 160: [WEEKEND] Redis Sentinel Cluster</a><ul>
+<li><a href="#1-tech-commands_69">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_69">2. Files</a></li>
+<li><a href="#3-architecture_69">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_69">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_69">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-161-weekend-kubernetes-deployment-manifests">Day 161: [WEEKEND] Kubernetes Deployment Manifests</a><ul>
+<li><a href="#1-tech-commands_70">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_70">2. Files</a></li>
+<li><a href="#3-architecture_70">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_70">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_70">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-24">Week 24</a><ul>
+<li><a href="#day-162-database-backup-wal-g">Day 162: Database Backup &amp; Wal-G</a><ul>
+<li><a href="#1-tech-commands_71">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_71">2. Files</a></li>
+<li><a href="#3-architecture_71">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_71">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_71">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-163-secret-rotation-policy">Day 163: Secret Rotation Policy</a><ul>
+<li><a href="#1-tech-commands_72">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_72">2. Files</a></li>
+<li><a href="#3-architecture_72">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_72">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_72">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-164-chaos-engineering-network-partition">Day 164: Chaos Engineering: Network Partition</a><ul>
+<li><a href="#1-tech-commands_73">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_73">2. Files</a></li>
+<li><a href="#3-architecture_73">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_73">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_73">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-165-cython-compilation-of-hot-paths">Day 165: Cython Compilation of Hot Paths</a><ul>
+<li><a href="#1-tech-commands_74">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_74">2. Files</a></li>
+<li><a href="#3-architecture_74">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_74">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_74">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-166-asyncio-event-loop-optimization">Day 166: AsyncIO Event Loop Optimization</a><ul>
+<li><a href="#1-tech-commands_75">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_75">2. Files</a></li>
+<li><a href="#3-architecture_75">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_75">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_75">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-167-weekend-database-query-optimization-explain-analyze">Day 167: [WEEKEND] Database Query Optimization (EXPLAIN ANALYZE)</a><ul>
+<li><a href="#1-tech-commands_76">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_76">2. Files</a></li>
+<li><a href="#3-architecture_76">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_76">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_76">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-168-weekend-frontend-bundle-optimization">Day 168: [WEEKEND] Frontend Bundle Optimization</a><ul>
+<li><a href="#1-tech-commands_77">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_77">2. Files</a></li>
+<li><a href="#3-architecture_77">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_77">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_77">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-25">Week 25</a><ul>
+<li><a href="#day-169-memory-leak-hunt">Day 169: Memory Leak Hunt</a><ul>
+<li><a href="#1-tech-commands_78">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_78">2. Files</a></li>
+<li><a href="#3-architecture_78">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_78">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_78">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-170-latency-histogram-analysis">Day 170: Latency Histogram Analysis</a><ul>
+<li><a href="#1-tech-commands_79">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_79">2. Files</a></li>
+<li><a href="#3-architecture_79">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_79">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_79">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-171-api-documentation-openapiswagger">Day 171: API Documentation (OpenAPI/Swagger)</a><ul>
+<li><a href="#1-tech-commands_80">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_80">2. Files</a></li>
+<li><a href="#3-architecture_80">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_80">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_80">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-172-system-architecture-diagram-update">Day 172: System Architecture Diagram Update</a><ul>
+<li><a href="#1-tech-commands_81">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_81">2. Files</a></li>
+<li><a href="#3-architecture_81">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_81">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_81">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-173-developer-onboarding-guide">Day 173: Developer Onboarding Guide</a><ul>
+<li><a href="#1-tech-commands_82">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_82">2. Files</a></li>
+<li><a href="#3-architecture_82">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_82">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_82">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-174-weekend-operational-runbooks">Day 174: [WEEKEND] Operational Runbooks</a><ul>
+<li><a href="#1-tech-commands_83">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_83">2. Files</a></li>
+<li><a href="#3-architecture_83">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_83">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_83">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-175-weekend-post-mortem-templates">Day 175: [WEEKEND] Post-Mortem Templates</a><ul>
+<li><a href="#1-tech-commands_84">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_84">2. Files</a></li>
+<li><a href="#3-architecture_84">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_84">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_84">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#week-26">Week 26</a><ul>
+<li><a href="#day-176-code-coverage-report">Day 176: Code Coverage Report</a><ul>
+<li><a href="#1-tech-commands_85">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_85">2. Files</a></li>
+<li><a href="#3-architecture_85">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_85">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_85">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-177-dependency-audit">Day 177: Dependency Audit</a><ul>
+<li><a href="#1-tech-commands_86">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_86">2. Files</a></li>
+<li><a href="#3-architecture_86">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_86">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_86">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-178-q2-performance-review">Day 178: Q2 Performance Review</a><ul>
+<li><a href="#1-tech-commands_87">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_87">2. Files</a></li>
+<li><a href="#3-architecture_87">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_87">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_87">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-179-tech-debt-grooming">Day 179: Tech Debt Grooming</a><ul>
+<li><a href="#1-tech-commands_88">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_88">2. Files</a></li>
+<li><a href="#3-architecture_88">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_88">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_88">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+<li><a href="#day-180-quarter-3-planning-session">Day 180: Quarter 3 Planning Session</a><ul>
+<li><a href="#1-tech-commands_89">1. Tech &amp; Commands</a></li>
+<li><a href="#2-files_89">2. Files</a></li>
+<li><a href="#3-architecture_89">3. Architecture</a></li>
+<li><a href="#4-autopilot-prompts_89">4. Autopilot Prompts</a></li>
+<li><a href="#5-risk-metrics_89">5. Risk &amp; Metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<h2 id="week-13">Week 13</h2>
+<h3 id="day-91-weekend-oms-vs-ems-architecture">Day 91: [WEEKEND] OMS vs EMS Architecture</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Decouple Strategy (Signal) from Execution (Order). Create specialized EMS for different venues.</em></p>
+<h4 id="1-tech-commands">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">mkdir -p apps/api/execution/ems apps/api/execution/oms
+touch apps/api/execution/ems/base.py apps/api/execution/ems/alpaca.py
+touch apps/api/execution/oms/order_manager.py
+</code></pre>
+<h4 id="2-files">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/ems/base.py (new: AbstractBaseEMS with submit/cancel/replace)</code></li>
+<li><code>apps/api/execution/oms/order_manager.py (new: lifecycle management, state transitions)</code></li>
+<li><code>apps/api/models/order.py (update: add parent_id, child_ids, algo_params field)</code></li>
+<li><code>apps/api/execution/factory.py (new: get_ems_for_symbol(symbol) -&gt; EMS instance)</code></li>
+</ul>
+<h4 id="3-architecture">3. Architecture</h4>
+<ul>
+<li>Inversion of Control: Strategy doesn't know about broker API</li>
+<li>Factory Pattern: Route orders to correct EMS based on asset class/broker</li>
+<li>State Machine: NEW -&gt; SUBMITTED -&gt; PARTIAL -&gt; FILLED (or REJECTED/CANCELED)</li>
+</ul>
+<h4 id="4-autopilot-prompts">4. Autopilot Prompts</h4>
+<ul>
+<li>Prompt: 'Create AbstractBaseEMS class with async methods submit_order, cancel_order, replace_order.'</li>
+<li>Prompt: 'Implement OrderManager state machine using Transitions library.'</li>
+<li>Prompt: 'Write factory function to return AlpacaEMS for equities and TradierEMS for options.'</li>
+</ul>
+<h4 id="5-risk-metrics">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Race conditions in state updates.</li>
+<li><strong>Metric</strong>: Order state strictly monotonic</li>
+</ul>
+<hr />
+<h2 id="week-14">Week 14</h2>
+<h3 id="day-92-fix-protocol-adapter-mock">Day 92: FIX Protocol Adapter (Mock)</h3>
+<p><strong>Monday</strong> | <em>Outcome: Implement initial FIX protocol handler (QuickFIX) for institutional connectivity simulation.</em></p>
+<h4 id="1-tech-commands_1">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install quickfix
+</code></pre>
+<h4 id="2-files_1">2. Files</h4>
+<ul>
+<li><code>libs/fix/initiator.py</code></li>
+<li><code>libs/fix/config.cfg</code></li>
+</ul>
+<h4 id="3-architecture_1">3. Architecture</h4>
+<ul>
+<li>Adapter Pattern</li>
+<li>Event-Driven Architecture</li>
+</ul>
+<h4 id="4-autopilot-prompts_1">4. Autopilot Prompts</h4>
+<ul>
+<li>Configure QuickFIX initiator</li>
+<li>Map FIX tags (35=D, 55=Sym) to internal Order model</li>
+</ul>
+<h4 id="5-risk-metrics_1">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Message parsing overhead.</li>
+<li><strong>Metric</strong>: Round-trip time &lt; 5ms</li>
+</ul>
+<hr />
+<h3 id="day-93-smart-order-router-sor-level-1">Day 93: Smart Order Router (SOR) - Level 1</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Basic routing logic: separate crypto vs equity vs options.</em></p>
+<h4 id="1-tech-commands_2">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python scripts/test_router.py
+</code></pre>
+<h4 id="2-files_2">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/sor.py</code></li>
+</ul>
+<h4 id="3-architecture_2">3. Architecture</h4>
+<ul>
+<li>Strategy Pattern</li>
+<li>Rule Engine</li>
+</ul>
+<h4 id="4-autopilot-prompts_2">4. Autopilot Prompts</h4>
+<ul>
+<li>Route BTC* to CryptoEMS</li>
+<li>Route SPY to AlpacaEMS</li>
+<li>Route SPY options to TradierEMS</li>
+</ul>
+<h4 id="5-risk-metrics_2">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Routing loops.</li>
+<li><strong>Metric</strong>: 100% Correct Routing</li>
+</ul>
+<hr />
+<h3 id="day-94-execution-algo-twap-logic">Day 94: Execution Algo: TWAP Logic</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Implement Time-Weighted Average Price algorithm core logic.</em></p>
+<h4 id="1-tech-commands_3">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">mkdir apps/api/execution/algos
+</code></pre>
+<h4 id="2-files_3">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/algos/twap.py</code></li>
+</ul>
+<h4 id="3-architecture_3">3. Architecture</h4>
+<ul>
+<li>Time Slicing</li>
+<li>Schedule Generation</li>
+</ul>
+<h4 id="4-autopilot-prompts_3">4. Autopilot Prompts</h4>
+<ul>
+<li>Divide total qty by duration</li>
+<li>Generate schedule of child orders</li>
+</ul>
+<h4 id="5-risk-metrics_3">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Signaling intent (too regular).</li>
+<li><strong>Metric</strong>: Schedule deviations within limits</li>
+</ul>
+<hr />
+<h3 id="day-95-execution-algo-twap-scheduler">Day 95: Execution Algo: TWAP Scheduler</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Integrate TWAP with APScheduler to submit child orders.</em></p>
+<h4 id="1-tech-commands_4">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install apscheduler
+</code></pre>
+<h4 id="2-files_4">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/algos/scheduler.py</code></li>
+</ul>
+<h4 id="3-architecture_4">3. Architecture</h4>
+<ul>
+<li>Task Scheduling</li>
+<li>Async Execution</li>
+</ul>
+<h4 id="4-autopilot-prompts_4">4. Autopilot Prompts</h4>
+<ul>
+<li>Schedule child order submissions</li>
+<li>Handle partial fills of children</li>
+</ul>
+<h4 id="5-risk-metrics_4">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Drift.</li>
+<li><strong>Metric</strong>: Complete filling by end time</li>
+</ul>
+<hr />
+<h3 id="day-96-execution-algo-vwap-volatility-profile">Day 96: Execution Algo: VWAP Volatility Profile</h3>
+<p><strong>Friday</strong> | <em>Outcome: Calculate historical volume profiles for VWAP targets.</em></p>
+<h4 id="1-tech-commands_5">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python scripts/calc_vol_profile.py
+</code></pre>
+<h4 id="2-files_5">2. Files</h4>
+<ul>
+<li><code>libs/math/volume_profile.py</code></li>
+</ul>
+<h4 id="3-architecture_5">3. Architecture</h4>
+<ul>
+<li>Data Analysis</li>
+<li>Curve Fitting</li>
+</ul>
+<h4 id="4-autopilot-prompts_5">4. Autopilot Prompts</h4>
+<ul>
+<li>Bin intraday volume by 1-min buckets</li>
+<li>Normalize to % of daily volume</li>
+</ul>
+<h4 id="5-risk-metrics_5">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Data gaps.</li>
+<li><strong>Metric</strong>: Profile correlation &gt; 0.9</li>
+</ul>
+<hr />
+<h3 id="day-97-weekend-execution-algo-vwap-engine">Day 97: [WEEKEND] Execution Algo: VWAP Engine</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Implement Volume-Weighted Average Price execution logic.</em></p>
+<h4 id="1-tech-commands_6">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/algos/vwap.py
+</code></pre>
+<h4 id="2-files_6">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/algos/vwap.py</code></li>
+</ul>
+<h4 id="3-architecture_6">3. Architecture</h4>
+<ul>
+<li>Participation Rate</li>
+<li>Feedback Loop</li>
+</ul>
+<h4 id="4-autopilot-prompts_6">4. Autopilot Prompts</h4>
+<ul>
+<li>Compare current vol to profile</li>
+<li>Adjust participation rate aggression</li>
+</ul>
+<h4 id="5-risk-metrics_6">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Chasing price.</li>
+<li><strong>Metric</strong>: Execution vs VWAP &lt; 5bps</li>
+</ul>
+<hr />
+<h3 id="day-98-weekend-iceberg-orders">Day 98: [WEEKEND] Iceberg Orders</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Implement hidden order logic to minimize market impact.</em></p>
+<h4 id="1-tech-commands_7">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/algos/iceberg.py
+</code></pre>
+<h4 id="2-files_7">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/algos/iceberg.py</code></li>
+</ul>
+<h4 id="3-architecture_7">3. Architecture</h4>
+<ul>
+<li>Order Management</li>
+<li>Visibility Hiding</li>
+</ul>
+<h4 id="4-autopilot-prompts_7">4. Autopilot Prompts</h4>
+<ul>
+<li>Display size vs Total size</li>
+<li>Reload logic when tip is filled</li>
+</ul>
+<h4 id="5-risk-metrics_7">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Reload latency.</li>
+<li><strong>Metric</strong>: Tip size randomized</li>
+</ul>
+<hr />
+<h2 id="week-15">Week 15</h2>
+<h3 id="day-99-stop-limit-trailing-stop-server-side">Day 99: Stop-Limit &amp; Trailing Stop Server-Side</h3>
+<p><strong>Monday</strong> | <em>Outcome: Implement synthetic stops management in OMS (not broker-side).</em></p>
+<h4 id="1-tech-commands_8">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/algos/stops.py
+</code></pre>
+<h4 id="2-files_8">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/algos/stops.py</code></li>
+</ul>
+<h4 id="3-architecture_8">3. Architecture</h4>
+<ul>
+<li>Event Monitoring</li>
+<li>Trigger Logic</li>
+</ul>
+<h4 id="4-autopilot-prompts_8">4. Autopilot Prompts</h4>
+<ul>
+<li>Monitor tick stream</li>
+<li>Trigger limit order submission on price event</li>
+</ul>
+<h4 id="5-risk-metrics_8">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Slippage on gap.</li>
+<li><strong>Metric</strong>: Trigger reliability 100%</li>
+</ul>
+<hr />
+<h3 id="day-100-bracket-orders-osooto">Day 100: Bracket Orders (OSO/OTO)</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: One-Triggers-Other / One-Cancels-Other complex order types.</em></p>
+<h4 id="1-tech-commands_9">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python tests/test_bracket.py
+</code></pre>
+<h4 id="2-files_9">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/oms/bracket_manager.py</code></li>
+</ul>
+<h4 id="3-architecture_9">3. Architecture</h4>
+<ul>
+<li>DAG Execution</li>
+<li>Parent-Child Links</li>
+</ul>
+<h4 id="4-autopilot-prompts_9">4. Autopilot Prompts</h4>
+<ul>
+<li>Entry fill triggers Stop &amp; Target</li>
+<li>Stop fill cancels Target</li>
+</ul>
+<h4 id="5-risk-metrics_9">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Orphaned legs.</li>
+<li><strong>Metric</strong>: Atomic state updates</li>
+</ul>
+<hr />
+<h3 id="day-101-fat-finger-protection">Day 101: Fat Finger Protection</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Middleware to reject orders exceeding size/value limits.</em></p>
+<h4 id="1-tech-commands_10">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/middleware/validation.py
+</code></pre>
+<h4 id="2-files_10">2. Files</h4>
+<ul>
+<li><code>apps/api/middleware/validation.py</code></li>
+</ul>
+<h4 id="3-architecture_10">3. Architecture</h4>
+<ul>
+<li>Validation Decoration</li>
+<li>Policy Enforcement</li>
+</ul>
+<h4 id="4-autopilot-prompts_10">4. Autopilot Prompts</h4>
+<ul>
+<li>Max notional check ($50k)</li>
+<li>Max qty check (1000 shares)</li>
+</ul>
+<h4 id="5-risk-metrics_10">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Latency in checks.</li>
+<li><strong>Metric</strong>: Rejected orders &lt; 10ms</li>
+</ul>
+<hr />
+<h3 id="day-102-rate-limiting-order-submission">Day 102: Rate Limiting (Order Submission)</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Strict leaky bucket rate limiter per broker.</em></p>
+<h4 id="1-tech-commands_11">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python scripts/test_rate_limit.py
+</code></pre>
+<h4 id="2-files_11">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/limiter.py</code></li>
+</ul>
+<h4 id="3-architecture_11">3. Architecture</h4>
+<ul>
+<li>Token Bucket</li>
+<li>Redis Counter</li>
+</ul>
+<h4 id="4-autopilot-prompts_11">4. Autopilot Prompts</h4>
+<ul>
+<li>Alpaca: 200/min</li>
+<li>Tradier: 120/min</li>
+</ul>
+<h4 id="5-risk-metrics_11">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: 429 Errors.</li>
+<li><strong>Metric</strong>: Zero 429s from brokers</li>
+</ul>
+<hr />
+<h3 id="day-103-duplicate-order-detection">Day 103: Duplicate Order Detection</h3>
+<p><strong>Friday</strong> | <em>Outcome: Prevent accidental double execution of identical signals.</em></p>
+<h4 id="1-tech-commands_12">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/dedup.py
+</code></pre>
+<h4 id="2-files_12">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/dedup.py</code></li>
+</ul>
+<h4 id="3-architecture_12">3. Architecture</h4>
+<ul>
+<li>Hashing</li>
+<li>Idempotency</li>
+</ul>
+<h4 id="4-autopilot-prompts_12">4. Autopilot Prompts</h4>
+<ul>
+<li>Hash(symbol, side, qty, strategy, timestamp bucket)</li>
+<li>Check Redis for recent execution</li>
+</ul>
+<h4 id="5-risk-metrics_12">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: False positives.</li>
+<li><strong>Metric</strong>: No duplicate fills</li>
+</ul>
+<hr />
+<h3 id="day-104-weekend-execution-reports-fill-reconciliation">Day 104: [WEEKEND] Execution Reports &amp; Fill Reconciliation</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Reconcile broker execution reports with internal order state.</em></p>
+<h4 id="1-tech-commands_13">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/recon.py
+</code></pre>
+<h4 id="2-files_13">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/recon.py</code></li>
+</ul>
+<h4 id="3-architecture_13">3. Architecture</h4>
+<ul>
+<li>Data Reconciliation</li>
+<li>Event Sourcing</li>
+</ul>
+<h4 id="4-autopilot-prompts_13">4. Autopilot Prompts</h4>
+<ul>
+<li>Match fills to orders</li>
+<li>Detect execution breaks</li>
+</ul>
+<h4 id="5-risk-metrics_13">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Missing fills.</li>
+<li><strong>Metric</strong>: 100% State Match</li>
+</ul>
+<hr />
+<h3 id="day-105-weekend-real-time-position-tracker">Day 105: [WEEKEND] Real-Time Position Tracker</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Aggregate fills into absolute positions in real-time.</em></p>
+<h4 id="1-tech-commands_14">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/portfolio/positions.py
+</code></pre>
+<h4 id="2-files_14">2. Files</h4>
+<ul>
+<li><code>apps/api/portfolio/positions.py</code></li>
+</ul>
+<h4 id="3-architecture_14">3. Architecture</h4>
+<ul>
+<li>Aggregation</li>
+<li>Stream Processing</li>
+</ul>
+<h4 id="4-autopilot-prompts_14">4. Autopilot Prompts</h4>
+<ul>
+<li>Update avg_entry_price</li>
+<li>Update realized/unrealized P&amp;L</li>
+</ul>
+<h4 id="5-risk-metrics_14">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Calculation drift.</li>
+<li><strong>Metric</strong>: Matches broker daily statement</li>
+</ul>
+<hr />
+<h2 id="week-16">Week 16</h2>
+<h3 id="day-106-mark-to-market-engine">Day 106: Mark-to-Market Engine</h3>
+<p><strong>Monday</strong> | <em>Outcome: Calculate portfolio NAV continuously based on live quotes.</em></p>
+<h4 id="1-tech-commands_15">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/portfolio/mtm.py
+</code></pre>
+<h4 id="2-files_15">2. Files</h4>
+<ul>
+<li><code>apps/api/portfolio/mtm.py</code></li>
+</ul>
+<h4 id="3-architecture_15">3. Architecture</h4>
+<ul>
+<li>Valuation</li>
+<li>Pricing Engine</li>
+</ul>
+<h4 id="4-autopilot-prompts_15">4. Autopilot Prompts</h4>
+<ul>
+<li>Stream prices</li>
+<li>Recompute Equity = Cash + Positions</li>
+</ul>
+<h4 id="5-risk-metrics_15">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Stale prices.</li>
+<li><strong>Metric</strong>: NAV latency &lt; 100ms</li>
+</ul>
+<hr />
+<h3 id="day-107-cash-management-buying_power">Day 107: Cash Management &amp; buying_power</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Track cash balances, settlements, and available buying power.</em></p>
+<h4 id="1-tech-commands_16">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/portfolio/cash.py
+</code></pre>
+<h4 id="2-files_16">2. Files</h4>
+<ul>
+<li><code>apps/api/portfolio/cash.py</code></li>
+</ul>
+<h4 id="3-architecture_16">3. Architecture</h4>
+<ul>
+<li>Accounting</li>
+<li>Ledger</li>
+</ul>
+<h4 id="4-autopilot-prompts_16">4. Autopilot Prompts</h4>
+<ul>
+<li>T+1 Settlement logic</li>
+<li>Margin requirement calc</li>
+</ul>
+<h4 id="5-risk-metrics_16">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Over-leveraging.</li>
+<li><strong>Metric</strong>: Zero margin calls</li>
+</ul>
+<hr />
+<h3 id="day-108-portfolio-greeks-aggregation">Day 108: Portfolio Greeks Aggregation</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Sum individual option greeks to portfolio level.</em></p>
+<h4 id="1-tech-commands_17">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python scripts/calc_portfolio_greeks.py
+</code></pre>
+<h4 id="2-files_17">2. Files</h4>
+<ul>
+<li><code>apps/api/portfolio/greeks.py</code></li>
+</ul>
+<h4 id="3-architecture_17">3. Architecture</h4>
+<ul>
+<li>Matrix Math</li>
+<li>Risk Aggregation</li>
+</ul>
+<h4 id="4-autopilot-prompts_17">4. Autopilot Prompts</h4>
+<ul>
+<li>Weighted sum of Delta/Gamma/Vega</li>
+<li>Beta-weighted Delta</li>
+</ul>
+<h4 id="5-risk-metrics_17">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Computation load.</li>
+<li><strong>Metric</strong>: Update frequency &lt; 1s</li>
+</ul>
+<hr />
+<h3 id="day-109-sector-exposure-monitor">Day 109: Sector Exposure Monitor</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Track exposure concentration by GICS sector.</em></p>
+<h4 id="1-tech-commands_18">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/portfolio/risk_exposure.py
+</code></pre>
+<h4 id="2-files_18">2. Files</h4>
+<ul>
+<li><code>apps/api/portfolio/risk_exposure.py</code></li>
+</ul>
+<h4 id="3-architecture_18">3. Architecture</h4>
+<ul>
+<li>Categorization</li>
+<li>Aggregation</li>
+</ul>
+<h4 id="4-autopilot-prompts_18">4. Autopilot Prompts</h4>
+<ul>
+<li>Map symbol -&gt; sector</li>
+<li>Sum exposure per sector</li>
+</ul>
+<h4 id="5-risk-metrics_18">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Mapping gaps.</li>
+<li><strong>Metric</strong>: Unclassified &lt; 1%</li>
+</ul>
+<hr />
+<h3 id="day-110-wash-sale-prevention">Day 110: Wash Sale Prevention</h3>
+<p><strong>Friday</strong> | <em>Outcome: Track recent trades to avoid washing losses (30-day rule).</em></p>
+<h4 id="1-tech-commands_19">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/compliance/wash_sale.py
+</code></pre>
+<h4 id="2-files_19">2. Files</h4>
+<ul>
+<li><code>apps/api/compliance/wash_sale.py</code></li>
+</ul>
+<h4 id="3-architecture_19">3. Architecture</h4>
+<ul>
+<li>Compliance</li>
+<li>Lookback</li>
+</ul>
+<h4 id="4-autopilot-prompts_19">4. Autopilot Prompts</h4>
+<ul>
+<li>Check 30-day window before closing loss</li>
+<li>Alert trader</li>
+</ul>
+<h4 id="5-risk-metrics_19">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Tax complexity.</li>
+<li><strong>Metric</strong>: Zero wash sales</li>
+</ul>
+<hr />
+<h3 id="day-111-weekend-backtest-engine-core">Day 111: [WEEKEND] Backtest Engine Core</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Event-driven backtester handling historical data replay.</em></p>
+<h4 id="1-tech-commands_20">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">mkdir apps/backtest
+</code></pre>
+<h4 id="2-files_20">2. Files</h4>
+<ul>
+<li><code>apps/backtest/engine.py</code></li>
+</ul>
+<h4 id="3-architecture_20">3. Architecture</h4>
+<ul>
+<li>Event Loop</li>
+<li>Simulation</li>
+</ul>
+<h4 id="4-autopilot-prompts_20">4. Autopilot Prompts</h4>
+<ul>
+<li>Process market events</li>
+<li>Simulate order execution</li>
+</ul>
+<h4 id="5-risk-metrics_20">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Lookahead bias.</li>
+<li><strong>Metric</strong>: Matches live execution</li>
+</ul>
+<hr />
+<h3 id="day-112-weekend-data-feed-interface-for-backtest">Day 112: [WEEKEND] Data Feed Interface for Backtest</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Abstract data source to switch between live and historical.</em></p>
+<h4 id="1-tech-commands_21">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/backtest/feeds.py
+</code></pre>
+<h4 id="2-files_21">2. Files</h4>
+<ul>
+<li><code>apps/backtest/feeds.py</code></li>
+</ul>
+<h4 id="3-architecture_21">3. Architecture</h4>
+<ul>
+<li>Interface Segregation</li>
+<li>Generator Pattern</li>
+</ul>
+<h4 id="4-autopilot-prompts_21">4. Autopilot Prompts</h4>
+<ul>
+<li>Yield ticks/bars from Parquet</li>
+<li>Simulate live stream delays</li>
+</ul>
+<h4 id="5-risk-metrics_21">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: IO Bottleneck.</li>
+<li><strong>Metric</strong>: 1M bars/sec throughput</li>
+</ul>
+<hr />
+<h2 id="week-17">Week 17</h2>
+<h3 id="day-113-execution-simulator-fill-models">Day 113: Execution Simulator (Fill Models)</h3>
+<p><strong>Monday</strong> | <em>Outcome: Simulate fills based on historical OHLCV data.</em></p>
+<h4 id="1-tech-commands_22">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/backtest/fills.py
+</code></pre>
+<h4 id="2-files_22">2. Files</h4>
+<ul>
+<li><code>apps/backtest/fills.py</code></li>
+</ul>
+<h4 id="3-architecture_22">3. Architecture</h4>
+<ul>
+<li>Modeling</li>
+<li>Probabilistic Simulation</li>
+</ul>
+<h4 id="4-autopilot-prompts_22">4. Autopilot Prompts</h4>
+<ul>
+<li>Fill at Open/Close/Next Tick</li>
+<li>Slippage Model based on Volatility</li>
+</ul>
+<h4 id="5-risk-metrics_22">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Unrealistic fills.</li>
+<li><strong>Metric</strong>: Conservative estimation</li>
+</ul>
+<hr />
+<h3 id="day-114-performance-metrics-library">Day 114: Performance Metrics Library</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Calculate Sharpe, Sortino, Max Drawdown, CAGR.</em></p>
+<h4 id="1-tech-commands_23">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch libs/math/stats.py
+</code></pre>
+<h4 id="2-files_23">2. Files</h4>
+<ul>
+<li><code>libs/math/stats.py</code></li>
+</ul>
+<h4 id="3-architecture_23">3. Architecture</h4>
+<ul>
+<li>Statistical Analysis</li>
+<li>Numpy/Pandas</li>
+</ul>
+<h4 id="4-autopilot-prompts_23">4. Autopilot Prompts</h4>
+<ul>
+<li>Rolling metrics</li>
+<li>Annualized returns</li>
+</ul>
+<h4 id="5-risk-metrics_23">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Calculation errors.</li>
+<li><strong>Metric</strong>: Verified against PyFolio</li>
+</ul>
+<hr />
+<h3 id="day-115-parameter-optimization-grid">Day 115: Parameter Optimization Grid</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Grid search framework for strategy parameters.</em></p>
+<h4 id="1-tech-commands_24">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/backtest/optimizer.py
+</code></pre>
+<h4 id="2-files_24">2. Files</h4>
+<ul>
+<li><code>apps/backtest/optimizer.py</code></li>
+</ul>
+<h4 id="3-architecture_24">3. Architecture</h4>
+<ul>
+<li>Parallel Processing</li>
+<li>Combinatorics</li>
+</ul>
+<h4 id="4-autopilot-prompts_24">4. Autopilot Prompts</h4>
+<ul>
+<li>Generate param interactions</li>
+<li>Run backtests in parallel</li>
+</ul>
+<h4 id="5-risk-metrics_24">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Combinatorial explosion.</li>
+<li><strong>Metric</strong>: Smart pruning</li>
+</ul>
+<hr />
+<h3 id="day-116-walk-forward-analysis">Day 116: Walk-Forward Analysis</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Implement rolling window training/testing.</em></p>
+<h4 id="1-tech-commands_25">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/backtest/walk_forward.py
+</code></pre>
+<h4 id="2-files_25">2. Files</h4>
+<ul>
+<li><code>apps/backtest/walk_forward.py</code></li>
+</ul>
+<h4 id="3-architecture_25">3. Architecture</h4>
+<ul>
+<li>Cross-Validation</li>
+<li>robustness testing</li>
+</ul>
+<h4 id="4-autopilot-prompts_25">4. Autopilot Prompts</h4>
+<ul>
+<li>Train window -&gt; Test window -&gt; Slide</li>
+<li>Aggregate OOS results</li>
+</ul>
+<h4 id="5-risk-metrics_25">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Overfitting.</li>
+<li><strong>Metric</strong>: OOS consistency</li>
+</ul>
+<hr />
+<h3 id="day-117-backtest-reporting-visualization">Day 117: Backtest Reporting &amp; Visualization</h3>
+<p><strong>Friday</strong> | <em>Outcome: Generate tear sheets from backtest results.</em></p>
+<h4 id="1-tech-commands_26">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/backtest/report.py
+</code></pre>
+<h4 id="2-files_26">2. Files</h4>
+<ul>
+<li><code>apps/backtest/report.py</code></li>
+</ul>
+<h4 id="3-architecture_26">3. Architecture</h4>
+<ul>
+<li>Reporting</li>
+<li>Visualization</li>
+</ul>
+<h4 id="4-autopilot-prompts_26">4. Autopilot Prompts</h4>
+<ul>
+<li>Equity curve plot</li>
+<li>Drawdown underwater plot</li>
+</ul>
+<h4 id="5-risk-metrics_26">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Ugly charts.</li>
+<li><strong>Metric</strong>: Professional PDF report</li>
+</ul>
+<hr />
+<h3 id="day-118-weekend-strategy-laboratory-ui">Day 118: [WEEKEND] Strategy Laboratory UI</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Frontend interface to run and visualize backtests.</em></p>
+<h4 id="1-tech-commands_27">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">npm install chartjs
+</code></pre>
+<h4 id="2-files_27">2. Files</h4>
+<ul>
+<li><code>apps/web/src/pages/StrategyLab.tsx</code></li>
+</ul>
+<h4 id="3-architecture_27">3. Architecture</h4>
+<ul>
+<li>Dashboard</li>
+<li>Interactive Charts</li>
+</ul>
+<h4 id="4-autopilot-prompts_27">4. Autopilot Prompts</h4>
+<ul>
+<li>Param input form</li>
+<li>Result visualization</li>
+</ul>
+<h4 id="5-risk-metrics_27">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Slow UI.</li>
+<li><strong>Metric</strong>: Instant render</li>
+</ul>
+<hr />
+<h3 id="day-119-weekend-historical-data-manager">Day 119: [WEEKEND] Historical Data Manager</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Tool to manage, clean, and adjust massive historical datasets.</em></p>
+<h4 id="1-tech-commands_28">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/data/manager.py
+</code></pre>
+<h4 id="2-files_28">2. Files</h4>
+<ul>
+<li><code>apps/data/manager.py</code></li>
+</ul>
+<h4 id="3-architecture_28">3. Architecture</h4>
+<ul>
+<li>Data Engineering</li>
+<li>ETL</li>
+</ul>
+<h4 id="4-autopilot-prompts_28">4. Autopilot Prompts</h4>
+<ul>
+<li>Split/Dividend adjustment</li>
+<li>Outlier detection</li>
+</ul>
+<h4 id="5-risk-metrics_28">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Bad data.</li>
+<li><strong>Metric</strong>: Clean reliable history</li>
+</ul>
+<hr />
+<h2 id="week-18">Week 18</h2>
+<h3 id="day-120-q2-month-1-review-refactor">Day 120: Q2 Month 1 Review &amp; Refactor</h3>
+<p><strong>Monday</strong> | <em>Outcome: Review execution performance and backtest infrastructure.</em></p>
+<h4 id="1-tech-commands_29">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pytest tests/execution
+pytest tests/backtest
+</code></pre>
+<h4 id="2-files_29">2. Files</h4>
+<ul>
+<li><code>REFACTOR_Q2_M1.md</code></li>
+</ul>
+<h4 id="3-architecture_29">3. Architecture</h4>
+<ul>
+<li>Code Quality</li>
+<li>Tech Debt Payment</li>
+</ul>
+<h4 id="4-autopilot-prompts_29">4. Autopilot Prompts</h4>
+<ul>
+<li>Optimize fill models</li>
+<li>Hardening EMS error handling</li>
+</ul>
+<h4 id="5-risk-metrics_29">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Regression.</li>
+<li><strong>Metric</strong>: All tests pass</li>
+</ul>
+<hr />
+<h3 id="day-121-unified-broker-factory">Day 121: Unified Broker Factory</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Implement AbstractBaseBroker and BrokerFactory to switch providers dynamically.</em></p>
+<h4 id="1-tech-commands_30">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">mkdir apps/api/brokers
+</code></pre>
+<h4 id="2-files_30">2. Files</h4>
+<ul>
+<li><code>apps/api/brokers/base.py</code></li>
+<li><code>apps/api/brokers/factory.py</code></li>
+</ul>
+<h4 id="3-architecture_30">3. Architecture</h4>
+<ul>
+<li>Factory Pattern</li>
+<li>Abstract Base Class</li>
+</ul>
+<h4 id="4-autopilot-prompts_30">4. Autopilot Prompts</h4>
+<ul>
+<li>Define interface: get_bars, submit_order, get_account</li>
+<li>Register Alpaca, Tradier, IB adapters</li>
+</ul>
+<h4 id="5-risk-metrics_30">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Inconsistent APIs.</li>
+<li><strong>Metric</strong>: Polymorphic calls work</li>
+</ul>
+<hr />
+<h3 id="day-122-interactive-brokers-ibkr-adapter">Day 122: Interactive Brokers (IBKR) Adapter</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Integrate IBKR TWS API via ib_insync for global asset access.</em></p>
+<h4 id="1-tech-commands_31">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install ib_insync
+</code></pre>
+<h4 id="2-files_31">2. Files</h4>
+<ul>
+<li><code>apps/api/brokers/ib.py</code></li>
+</ul>
+<h4 id="3-architecture_31">3. Architecture</h4>
+<ul>
+<li>Sychronization</li>
+<li>Event Loop Bridge</li>
+</ul>
+<h4 id="4-autopilot-prompts_31">4. Autopilot Prompts</h4>
+<ul>
+<li>Map IB Contract objects</li>
+<li>Handle TWS asynchronous callbacks</li>
+</ul>
+<h4 id="5-risk-metrics_31">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Gateway disconnects.</li>
+<li><strong>Metric</strong>: Auto-reconnect logic</li>
+</ul>
+<hr />
+<h3 id="day-123-alpaca-adapter-v2">Day 123: Alpaca Adapter V2</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Upgrade Alpaca integration to support margin, shorting, and crypto.</em></p>
+<h4 id="1-tech-commands_32">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install alpaca-trade-api
+</code></pre>
+<h4 id="2-files_32">2. Files</h4>
+<ul>
+<li><code>apps/api/brokers/alpaca.py</code></li>
+</ul>
+<h4 id="3-architecture_32">3. Architecture</h4>
+<ul>
+<li>Defensive Coding</li>
+<li>API Versioning</li>
+</ul>
+<h4 id="4-autopilot-prompts_32">4. Autopilot Prompts</h4>
+<ul>
+<li>Handle fractional shares</li>
+<li>Support crypto wallets</li>
+</ul>
+<h4 id="5-risk-metrics_32">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Rate limits.</li>
+<li><strong>Metric</strong>: Retry with exponential backoff</li>
+</ul>
+<hr />
+<h3 id="day-124-tradier-adapter-v2-options-specialist">Day 124: Tradier Adapter V2 (Options Specialist)</h3>
+<p><strong>Friday</strong> | <em>Outcome: Hardening Tradier adapter for complex multi-leg option orders.</em></p>
+<h4 id="1-tech-commands_33">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install requests
+</code></pre>
+<h4 id="2-files_33">2. Files</h4>
+<ul>
+<li><code>apps/api/brokers/tradier.py</code></li>
+</ul>
+<h4 id="3-architecture_33">3. Architecture</h4>
+<ul>
+<li>Complex Ordering</li>
+<li>Chain Management</li>
+</ul>
+<h4 id="4-autopilot-prompts_33">4. Autopilot Prompts</h4>
+<ul>
+<li>Submit equity/option combos</li>
+<li>Stream real-time option chain</li>
+</ul>
+<h4 id="5-risk-metrics_33">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Stale quotes.</li>
+<li><strong>Metric</strong>: Stream latency &lt; 200ms</li>
+</ul>
+<hr />
+<h3 id="day-125-weekend-crypto-exchange-adapter-coinbasebinance">Day 125: [WEEKEND] Crypto Exchange Adapter (Coinbase/Binance)</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Add crypto-native exchange support via CCXT.</em></p>
+<h4 id="1-tech-commands_34">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install ccxt
+</code></pre>
+<h4 id="2-files_34">2. Files</h4>
+<ul>
+<li><code>apps/api/brokers/crypto.py</code></li>
+</ul>
+<h4 id="3-architecture_34">3. Architecture</h4>
+<ul>
+<li>Unified Interface</li>
+<li>Library Wrapper</li>
+</ul>
+<h4 id="4-autopilot-prompts_34">4. Autopilot Prompts</h4>
+<ul>
+<li>Wrap CCXT methods</li>
+<li>Normalize symbol formats (BTC/USD)</li>
+</ul>
+<h4 id="5-risk-metrics_34">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Exchange downtime.</li>
+<li><strong>Metric</strong>: Failover to backup exchange</li>
+</ul>
+<hr />
+<h3 id="day-126-weekend-mock-broker-for-simulation">Day 126: [WEEKEND] Mock Broker for Simulation</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: High-fidelity paper trading engine for forward testing.</em></p>
+<h4 id="1-tech-commands_35">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/brokers/mock_broker.py
+</code></pre>
+<h4 id="2-files_35">2. Files</h4>
+<ul>
+<li><code>apps/api/brokers/mock_broker.py</code></li>
+</ul>
+<h4 id="3-architecture_35">3. Architecture</h4>
+<ul>
+<li>Simulation</li>
+<li>State Management</li>
+</ul>
+<h4 id="4-autopilot-prompts_35">4. Autopilot Prompts</h4>
+<ul>
+<li>Simulate latency, partial fills, rejections</li>
+<li>Track synthetic cash balance</li>
+</ul>
+<h4 id="5-risk-metrics_35">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Unrealistic fills.</li>
+<li><strong>Metric</strong>: Fill probability model</li>
+</ul>
+<hr />
+<h2 id="week-19">Week 19</h2>
+<h3 id="day-127-broker-config-credentials-vault">Day 127: Broker Config &amp; Credentials Vault</h3>
+<p><strong>Monday</strong> | <em>Outcome: Securely manage API keys for multiple brokers using HashiCorp Vault.</em></p>
+<h4 id="1-tech-commands_36">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install hvac
+</code></pre>
+<h4 id="2-files_36">2. Files</h4>
+<ul>
+<li><code>apps/security/vault.py</code></li>
+</ul>
+<h4 id="3-architecture_36">3. Architecture</h4>
+<ul>
+<li>Secrets Management</li>
+<li>Security</li>
+</ul>
+<h4 id="4-autopilot-prompts_36">4. Autopilot Prompts</h4>
+<ul>
+<li>Read secrets from Vault</li>
+<li>Inject into broker instances</li>
+</ul>
+<h4 id="5-risk-metrics_36">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Key leakage.</li>
+<li><strong>Metric</strong>: Zero plain text keys</li>
+</ul>
+<hr />
+<h3 id="day-128-symbol-normalization-service">Day 128: Symbol Normalization Service</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Map disparate symbol formats (BTCUSD, BTC/USD, BTC-USD) to internal ISIN/Ticker.</em></p>
+<h4 id="1-tech-commands_37">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/data/symbology.py
+</code></pre>
+<h4 id="2-files_37">2. Files</h4>
+<ul>
+<li><code>apps/data/symbology.py</code></li>
+</ul>
+<h4 id="3-architecture_37">3. Architecture</h4>
+<ul>
+<li>Data Normalization</li>
+<li>Mapping Registry</li>
+</ul>
+<h4 id="4-autopilot-prompts_37">4. Autopilot Prompts</h4>
+<ul>
+<li>Registry: internal_id -&gt; {broker: symbol}</li>
+<li>Resolve collisions</li>
+</ul>
+<h4 id="5-risk-metrics_37">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Mapping errors.</li>
+<li><strong>Metric</strong>: 100% Symbol Match</li>
+</ul>
+<hr />
+<h3 id="day-129-order-status-normalization">Day 129: Order Status Normalization</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Map broker-specific statuses (pending_new, open, working) to internal Enum.</em></p>
+<h4 id="1-tech-commands_38">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/models/enums.py
+</code></pre>
+<h4 id="2-files_38">2. Files</h4>
+<ul>
+<li><code>apps/api/models/enums.py</code></li>
+</ul>
+<h4 id="3-architecture_38">3. Architecture</h4>
+<ul>
+<li>Enum Mapping</li>
+<li>Standardization</li>
+</ul>
+<h4 id="4-autopilot-prompts_38">4. Autopilot Prompts</h4>
+<ul>
+<li>Map IB 'PreSubmitted' -&gt; SUBMITTED</li>
+<li>Map Alpaca 'accepted' -&gt; SUBMITTED</li>
+</ul>
+<h4 id="5-risk-metrics_38">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Unhandled states.</li>
+<li><strong>Metric</strong>: All states covered</li>
+</ul>
+<hr />
+<h3 id="day-130-account-balance-aggregation">Day 130: Account Balance Aggregation</h3>
+<p><strong>Thursday</strong> | <em>Outcome: View total equity across all connected brokerage accounts.</em></p>
+<h4 id="1-tech-commands_39">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/portfolio/aggregator.py
+</code></pre>
+<h4 id="2-files_39">2. Files</h4>
+<ul>
+<li><code>apps/api/portfolio/aggregator.py</code></li>
+</ul>
+<h4 id="3-architecture_39">3. Architecture</h4>
+<ul>
+<li>Data Aggregation</li>
+<li>Dashboard</li>
+</ul>
+<h4 id="4-autopilot-prompts_39">4. Autopilot Prompts</h4>
+<ul>
+<li>Sum cash across brokers</li>
+<li>Sum buying power</li>
+</ul>
+<h4 id="5-risk-metrics_39">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Currency conversion.</li>
+<li><strong>Metric</strong>: Unified USD view</li>
+</ul>
+<hr />
+<h3 id="day-131-unified-market-data-stream">Day 131: Unified Market Data Stream</h3>
+<p><strong>Friday</strong> | <em>Outcome: Merge quote streams from all brokers into single 'Best Bid/Offer'.</em></p>
+<h4 id="1-tech-commands_40">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/data/nbbo.py
+</code></pre>
+<h4 id="2-files_40">2. Files</h4>
+<ul>
+<li><code>apps/data/nbbo.py</code></li>
+</ul>
+<h4 id="3-architecture_40">3. Architecture</h4>
+<ul>
+<li>Data Fusion</li>
+<li>Stream Processing</li>
+</ul>
+<h4 id="4-autopilot-prompts_40">4. Autopilot Prompts</h4>
+<ul>
+<li>Compare prices from Alpaca/IB/Tradier</li>
+<li>Publish internal NBBO</li>
+</ul>
+<h4 id="5-risk-metrics_40">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Latency arbitration.</li>
+<li><strong>Metric</strong>: Best price always visible</li>
+</ul>
+<hr />
+<h3 id="day-132-weekend-broker-health-monitor">Day 132: [WEEKEND] Broker Health Monitor</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Real-time heartbeat checks for all broker connections.</em></p>
+<h4 id="1-tech-commands_41">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/monitoring/broker_health.py
+</code></pre>
+<h4 id="2-files_41">2. Files</h4>
+<ul>
+<li><code>apps/monitoring/broker_health.py</code></li>
+</ul>
+<h4 id="3-architecture_41">3. Architecture</h4>
+<ul>
+<li>Health Check</li>
+<li>Watchdog</li>
+</ul>
+<h4 id="4-autopilot-prompts_41">4. Autopilot Prompts</h4>
+<ul>
+<li>Ping APIs every 10s</li>
+<li>Alert on latency spike or error</li>
+</ul>
+<h4 id="5-risk-metrics_41">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Silent failure.</li>
+<li><strong>Metric</strong>: Immediate alert</li>
+</ul>
+<hr />
+<h3 id="day-133-weekend-emergency-liquidation-switch">Day 133: [WEEKEND] Emergency Liquidation switch</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: panic button to close all positions across all brokers.</em></p>
+<h4 id="1-tech-commands_42">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/panic.py
+</code></pre>
+<h4 id="2-files_42">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/panic.py</code></li>
+</ul>
+<h4 id="3-architecture_42">3. Architecture</h4>
+<ul>
+<li>Risk Management</li>
+<li>Broadcast</li>
+</ul>
+<h4 id="4-autopilot-prompts_42">4. Autopilot Prompts</h4>
+<ul>
+<li>Async gather cancel_all</li>
+<li>Async gather close_all</li>
+</ul>
+<h4 id="5-risk-metrics_42">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: API timeouts.</li>
+<li><strong>Metric</strong>: Force close retry loop</li>
+</ul>
+<hr />
+<h2 id="week-20">Week 20</h2>
+<h3 id="day-134-broker-reconciliation-engine">Day 134: Broker Reconciliation Engine</h3>
+<p><strong>Monday</strong> | <em>Outcome: Compare internal trade log with broker EOD reports.</em></p>
+<h4 id="1-tech-commands_43">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/compliance/broker_recon.py
+</code></pre>
+<h4 id="2-files_43">2. Files</h4>
+<ul>
+<li><code>apps/compliance/broker_recon.py</code></li>
+</ul>
+<h4 id="3-architecture_43">3. Architecture</h4>
+<ul>
+<li>Reconciliation</li>
+<li>Audit</li>
+</ul>
+<h4 id="4-autopilot-prompts_43">4. Autopilot Prompts</h4>
+<ul>
+<li>Download trade blotters</li>
+<li>Diff against local DB</li>
+</ul>
+<h4 id="5-risk-metrics_43">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Missing trades.</li>
+<li><strong>Metric</strong>: Zero discrepancies</li>
+</ul>
+<hr />
+<h3 id="day-135-fee-structure-modeling">Day 135: Fee Structure Modeling</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Model commission and rebate schedules for each venue.</em></p>
+<h4 id="1-tech-commands_44">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/fees.py
+</code></pre>
+<h4 id="2-files_44">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/fees.py</code></li>
+</ul>
+<h4 id="3-architecture_44">3. Architecture</h4>
+<ul>
+<li>Data Modeling</li>
+<li>Calculation</li>
+</ul>
+<h4 id="4-autopilot-prompts_44">4. Autopilot Prompts</h4>
+<ul>
+<li>Maker/Taker fees</li>
+<li>Tiered volume discounts</li>
+</ul>
+<h4 id="5-risk-metrics_44">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Inaccurate estimates.</li>
+<li><strong>Metric</strong>: Fee prediction &lt; 1% error</li>
+</ul>
+<hr />
+<h3 id="day-136-cost-based-routing-logic">Day 136: Cost-Based Routing Logic</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Route orders to venue with lowest total cost (Price + Fee).</em></p>
+<h4 id="1-tech-commands_45">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/sor_cost.py
+</code></pre>
+<h4 id="2-files_45">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/sor_cost.py</code></li>
+</ul>
+<h4 id="3-architecture_45">3. Architecture</h4>
+<ul>
+<li>Optimization</li>
+<li>Greedy Algorithm</li>
+</ul>
+<h4 id="4-autopilot-prompts_45">4. Autopilot Prompts</h4>
+<ul>
+<li>Est. slippage + Commission + Exchange Fee</li>
+<li>Select min()</li>
+</ul>
+<h4 id="5-risk-metrics_45">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Ignoring rebates.</li>
+<li><strong>Metric</strong>: Maximize rebates</li>
+</ul>
+<hr />
+<h3 id="day-137-latency-based-routing-logic">Day 137: Latency-Based Routing Logic</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Route to fastest venue for time-sensitive signals.</em></p>
+<h4 id="1-tech-commands_46">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/sor_speed.py
+</code></pre>
+<h4 id="2-files_46">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/sor_speed.py</code></li>
+</ul>
+<h4 id="3-architecture_46">3. Architecture</h4>
+<ul>
+<li>Latency Monitoring</li>
+<li>Dynamic Routing</li>
+</ul>
+<h4 id="4-autopilot-prompts_46">4. Autopilot Prompts</h4>
+<ul>
+<li>Track RTT per broker</li>
+<li>Route to min(RTT)</li>
+</ul>
+<h4 id="5-risk-metrics_46">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Jitter.</li>
+<li><strong>Metric</strong>: Fastest path selected</li>
+</ul>
+<hr />
+<h3 id="day-138-liquidity-aware-routing">Day 138: Liquidity-Aware Routing</h3>
+<p><strong>Friday</strong> | <em>Outcome: Route size to venue with deepest book.</em></p>
+<h4 id="1-tech-commands_47">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/sor_liquidity.py
+</code></pre>
+<h4 id="2-files_47">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/sor_liquidity.py</code></li>
+</ul>
+<h4 id="3-architecture_47">3. Architecture</h4>
+<ul>
+<li>Order Book Analysis</li>
+<li>Smart Routing</li>
+</ul>
+<h4 id="4-autopilot-prompts_47">4. Autopilot Prompts</h4>
+<ul>
+<li>Check Level 2 depth</li>
+<li>Split order proportional to liquidity</li>
+</ul>
+<h4 id="5-risk-metrics_47">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Information leakage.</li>
+<li><strong>Metric</strong>: Min market impact</li>
+</ul>
+<hr />
+<h3 id="day-139-weekend-dark-pool-hidden-liquidity">Day 139: [WEEKEND] Dark Pool &amp; hidden Liquidity</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Attempt implementation of dark pool routing (if supported).</em></p>
+<h4 id="1-tech-commands_48">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/dark.py
+</code></pre>
+<h4 id="2-files_48">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/dark.py</code></li>
+</ul>
+<h4 id="3-architecture_48">3. Architecture</h4>
+<ul>
+<li>Venue Analysis</li>
+<li>Conditional Routing</li>
+</ul>
+<h4 id="4-autopilot-prompts_48">4. Autopilot Prompts</h4>
+<ul>
+<li>Ping dark venues with IOC</li>
+<li>Fallback to lit exchanges</li>
+</ul>
+<h4 id="5-risk-metrics_48">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Opportunity cost.</li>
+<li><strong>Metric</strong>: Price improvement</li>
+</ul>
+<hr />
+<h3 id="day-140-weekend-routing-rule-engine-configuration">Day 140: [WEEKEND] Routing Rule Engine Configuration</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: JSON/YAML config to control routing logic dynamically.</em></p>
+<h4 id="1-tech-commands_49">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/config/routing_rules.yaml
+</code></pre>
+<h4 id="2-files_49">2. Files</h4>
+<ul>
+<li><code>apps/api/config/routing_loader.py</code></li>
+</ul>
+<h4 id="3-architecture_49">3. Architecture</h4>
+<ul>
+<li>Configuration Management</li>
+<li>Hot Reload</li>
+</ul>
+<h4 id="4-autopilot-prompts_49">4. Autopilot Prompts</h4>
+<ul>
+<li>Define Rules: IF symbol=SPY THEN Algo=Dark</li>
+<li>Reload without restart</li>
+</ul>
+<h4 id="5-risk-metrics_49">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Bad config.</li>
+<li><strong>Metric</strong>: Schema validation</li>
+</ul>
+<hr />
+<h2 id="week-21">Week 21</h2>
+<h3 id="day-141-meta-router-implementation">Day 141: Meta-Router Implementation</h3>
+<p><strong>Monday</strong> | <em>Outcome: Top-level orchestrator deciding which SOR strategy to use.</em></p>
+<h4 id="1-tech-commands_50">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/meta_router.py
+</code></pre>
+<h4 id="2-files_50">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/meta_router.py</code></li>
+</ul>
+<h4 id="3-architecture_50">3. Architecture</h4>
+<ul>
+<li>Orchestration</li>
+<li>Decision Tree</li>
+</ul>
+<h4 id="4-autopilot-prompts_50">4. Autopilot Prompts</h4>
+<ul>
+<li>Classify order intent (Alpha vs Hedge)</li>
+<li>Select Cost vs Speed vs Liquidity</li>
+</ul>
+<h4 id="5-risk-metrics_50">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Wrong strategy.</li>
+<li><strong>Metric</strong>: Optimal execution</li>
+</ul>
+<hr />
+<h3 id="day-142-multi-broker-integration-test-suite">Day 142: Multi-Broker Integration Test Suite</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: End-to-end tests validating routing across mocked brokers.</em></p>
+<h4 id="1-tech-commands_51">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pytest tests/integration/test_multibroker.py
+</code></pre>
+<h4 id="2-files_51">2. Files</h4>
+<ul>
+<li><code>tests/integration/test_multibroker.py</code></li>
+</ul>
+<h4 id="3-architecture_51">3. Architecture</h4>
+<ul>
+<li>Integration Testing</li>
+<li>Mocking</li>
+</ul>
+<h4 id="4-autopilot-prompts_51">4. Autopilot Prompts</h4>
+<ul>
+<li>Simulate all brokers</li>
+<li>Verify correct routing decisions</li>
+</ul>
+<h4 id="5-risk-metrics_51">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Flaky tests.</li>
+<li><strong>Metric</strong>: Deterministic pass</li>
+</ul>
+<hr />
+<h3 id="day-143-chaos-monkey-for-brokers">Day 143: Chaos Monkey for Brokers</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Randomly disconnect/fail broker adapters to test resilience.</em></p>
+<h4 id="1-tech-commands_52">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install chaospy
+</code></pre>
+<h4 id="2-files_52">2. Files</h4>
+<ul>
+<li><code>tests/chaos/broker_chaos.py</code></li>
+</ul>
+<h4 id="3-architecture_52">3. Architecture</h4>
+<ul>
+<li>Chaos Engineering</li>
+<li>Resilience Testing</li>
+</ul>
+<h4 id="4-autopilot-prompts_52">4. Autopilot Prompts</h4>
+<ul>
+<li>Inject high latency</li>
+<li>Inject HTTP 500s</li>
+</ul>
+<h4 id="5-risk-metrics_52">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: System crash.</li>
+<li><strong>Metric</strong>: Graceful degradation</li>
+</ul>
+<hr />
+<h3 id="day-144-paper-trading-championship">Day 144: Paper Trading Championship</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Run stratgies across all paper accounts to compare execution.</em></p>
+<h4 id="1-tech-commands_53">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python scripts/run_paper_comp.py
+</code></pre>
+<h4 id="2-files_53">2. Files</h4>
+<ul>
+<li><code>reports/paper_trading_results.md</code></li>
+</ul>
+<h4 id="3-architecture_53">3. Architecture</h4>
+<ul>
+<li>Benchmarking</li>
+<li>Analysis</li>
+</ul>
+<h4 id="4-autopilot-prompts_53">4. Autopilot Prompts</h4>
+<ul>
+<li>Compare fill prices</li>
+<li>Compare slippage</li>
+</ul>
+<h4 id="5-risk-metrics_53">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Bias.</li>
+<li><strong>Metric</strong>: Winner identified</li>
+</ul>
+<hr />
+<h3 id="day-145-latency-optimization-sprint">Day 145: Latency Optimization Sprint</h3>
+<p><strong>Friday</strong> | <em>Outcome: Profile and optimize the critical routing path.</em></p>
+<h4 id="1-tech-commands_54">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python -m cProfile scripts/profile_router.py
+</code></pre>
+<h4 id="2-files_54">2. Files</h4>
+<ul>
+<li><code>reports/optimization.prof</code></li>
+</ul>
+<h4 id="3-architecture_54">3. Architecture</h4>
+<ul>
+<li>Profiling</li>
+<li>Optimization</li>
+</ul>
+<h4 id="4-autopilot-prompts_54">4. Autopilot Prompts</h4>
+<ul>
+<li>Remove unnecessary allocations</li>
+<li>Asyncio loop optimization</li>
+</ul>
+<h4 id="5-risk-metrics_54">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Premature optimization.</li>
+<li><strong>Metric</strong>: Path latency &lt; 2ms</li>
+</ul>
+<hr />
+<h3 id="day-146-weekend-failover-handling">Day 146: [WEEKEND] Failover Handling</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Automatic failover if primary broker is down.</em></p>
+<h4 id="1-tech-commands_55">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/api/execution/failover.py
+</code></pre>
+<h4 id="2-files_55">2. Files</h4>
+<ul>
+<li><code>apps/api/execution/failover.py</code></li>
+</ul>
+<h4 id="3-architecture_55">3. Architecture</h4>
+<ul>
+<li>Reliability</li>
+<li>Fallback Strategy</li>
+</ul>
+<h4 id="4-autopilot-prompts_55">4. Autopilot Prompts</h4>
+<ul>
+<li>If IBKR timeouts &gt; 3</li>
+<li>Switch routing to Alpaca</li>
+</ul>
+<h4 id="5-risk-metrics_55">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Flapping.</li>
+<li><strong>Metric</strong>: Stable switch</li>
+</ul>
+<hr />
+<h3 id="day-147-weekend-manual-override-dashboard">Day 147: [WEEKEND] Manual Override Dashboard</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Admin panel to manually force routing destinations.</em></p>
+<h4 id="1-tech-commands_56">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/web/src/pages/RouterControl.tsx
+</code></pre>
+<h4 id="2-files_56">2. Files</h4>
+<ul>
+<li><code>apps/api/routes/router_control.py</code></li>
+</ul>
+<h4 id="3-architecture_56">3. Architecture</h4>
+<ul>
+<li>Admin UI</li>
+<li>Control Plane</li>
+</ul>
+<h4 id="4-autopilot-prompts_56">4. Autopilot Prompts</h4>
+<ul>
+<li>Toggle broker status</li>
+<li>Force specific route</li>
+</ul>
+<h4 id="5-risk-metrics_56">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Ops error.</li>
+<li><strong>Metric</strong>: Operator confirms action</li>
+</ul>
+<hr />
+<h2 id="week-22">Week 22</h2>
+<h3 id="day-148-compliance-logging-catoats">Day 148: Compliance Logging (CAT/OATS)</h3>
+<p><strong>Monday</strong> | <em>Outcome: Log every routing decision for audit trail.</em></p>
+<h4 id="1-tech-commands_57">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/compliance/audit_log.py
+</code></pre>
+<h4 id="2-files_57">2. Files</h4>
+<ul>
+<li><code>apps/compliance/audit_log.py</code></li>
+</ul>
+<h4 id="3-architecture_57">3. Architecture</h4>
+<ul>
+<li>Compliance</li>
+<li>Structured Logging</li>
+</ul>
+<h4 id="4-autopilot-prompts_57">4. Autopilot Prompts</h4>
+<ul>
+<li>Log Inputs, Decision, Output</li>
+<li>Timestamp precision ns</li>
+</ul>
+<h4 id="5-risk-metrics_57">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Disk fill.</li>
+<li><strong>Metric</strong>: Log rotation</li>
+</ul>
+<hr />
+<h3 id="day-149-deployment-to-staging">Day 149: Deployment to Staging</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Deploy multi-broker system to staging environment.</em></p>
+<h4 id="1-tech-commands_58">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">kubectl apply -f k8s/staging/
+</code></pre>
+<h4 id="2-files_58">2. Files</h4>
+<ul>
+<li><code>k8s/staging/deployment.yaml</code></li>
+</ul>
+<h4 id="3-architecture_58">3. Architecture</h4>
+<ul>
+<li>DevOps</li>
+<li>CI/CD</li>
+</ul>
+<h4 id="4-autopilot-prompts_58">4. Autopilot Prompts</h4>
+<ul>
+<li>Connect to paper APIs</li>
+<li>Verify connectivity</li>
+</ul>
+<h4 id="5-risk-metrics_58">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Config drift.</li>
+<li><strong>Metric</strong>: Staging matches Prod</li>
+</ul>
+<hr />
+<h3 id="day-150-q2-month-2-review">Day 150: Q2 Month 2 Review</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Synthesize learnings from multi-broker implementation.</em></p>
+<h4 id="1-tech-commands_59">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch reports/q2_m2_review.md
+</code></pre>
+<h4 id="2-files_59">2. Files</h4>
+<ul>
+<li><code>reports/q2_m2_review.md</code></li>
+</ul>
+<h4 id="3-architecture_59">3. Architecture</h4>
+<ul>
+<li>Review</li>
+<li>Documentation</li>
+</ul>
+<h4 id="4-autopilot-prompts_59">4. Autopilot Prompts</h4>
+<ul>
+<li>Assess execution quality</li>
+<li>Plan for production</li>
+</ul>
+<h4 id="5-risk-metrics_59">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Missed reqs.</li>
+<li><strong>Metric</strong>: Ready for Hardening</li>
+</ul>
+<hr />
+<h3 id="day-151-global-circuit-breaker-pl-based">Day 151: Global Circuit Breaker (P&amp;L Based)</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Implement system-wide kill switch triggered by excessive drawdown.</em></p>
+<h4 id="1-tech-commands_60">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/risk/circuit_breaker.py
+</code></pre>
+<h4 id="2-files_60">2. Files</h4>
+<ul>
+<li><code>apps/risk/circuit_breaker.py</code></li>
+</ul>
+<h4 id="3-architecture_60">3. Architecture</h4>
+<ul>
+<li>State Pattern</li>
+<li>Observer</li>
+</ul>
+<h4 id="4-autopilot-prompts_60">4. Autopilot Prompts</h4>
+<ul>
+<li>Monitor total P&amp;L stream</li>
+<li>Trigger HALT if DD &gt; 5%</li>
+</ul>
+<h4 id="5-risk-metrics_60">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: False trip.</li>
+<li><strong>Metric</strong>: Auto-halt under crash conditions</li>
+</ul>
+<hr />
+<h3 id="day-152-symbol-level-circuit-breakers-luld">Day 152: Symbol-Level Circuit Breakers (LULD)</h3>
+<p><strong>Friday</strong> | <em>Outcome: Halt trading on individual symbols if price moves too fast (Limit Up/Limit Down).</em></p>
+<h4 id="1-tech-commands_61">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/risk/luld.py
+</code></pre>
+<h4 id="2-files_61">2. Files</h4>
+<ul>
+<li><code>apps/risk/luld.py</code></li>
+</ul>
+<h4 id="3-architecture_61">3. Architecture</h4>
+<ul>
+<li>Stream Processing</li>
+<li>Volatility Monitoring</li>
+</ul>
+<h4 id="4-autopilot-prompts_61">4. Autopilot Prompts</h4>
+<ul>
+<li>Calc rolling volatility</li>
+<li>Trigger symbol halt if &gt; 2σ move in 5m</li>
+</ul>
+<h4 id="5-risk-metrics_61">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Laggy data.</li>
+<li><strong>Metric</strong>: Instant protection</li>
+</ul>
+<hr />
+<h3 id="day-153-weekend-order-velocity-limiter">Day 153: [WEEKEND] Order Velocity Limiter</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Prevent high-frequency runaways (algo gone wild).</em></p>
+<h4 id="1-tech-commands_62">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/risk/velocity.py
+</code></pre>
+<h4 id="2-files_62">2. Files</h4>
+<ul>
+<li><code>apps/risk/velocity.py</code></li>
+</ul>
+<h4 id="3-architecture_62">3. Architecture</h4>
+<ul>
+<li>Rate Limiting</li>
+<li>Counting</li>
+</ul>
+<h4 id="4-autopilot-prompts_62">4. Autopilot Prompts</h4>
+<ul>
+<li>Limit 100 orders/minute per algo</li>
+<li>Hard stop on violation</li>
+</ul>
+<h4 id="5-risk-metrics_62">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Legitimate volume blocked.</li>
+<li><strong>Metric</strong>: Zero runaway algos</li>
+</ul>
+<hr />
+<h3 id="day-154-weekend-max-notional-limits-service">Day 154: [WEEKEND] Max Notional Limits Service</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Centralized service to enforce position size limits.</em></p>
+<h4 id="1-tech-commands_63">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/risk/limits_service.py
+</code></pre>
+<h4 id="2-files_63">2. Files</h4>
+<ul>
+<li><code>apps/risk/limits_service.py</code></li>
+</ul>
+<h4 id="3-architecture_63">3. Architecture</h4>
+<ul>
+<li>Microservice</li>
+<li>Validation</li>
+</ul>
+<h4 id="4-autopilot-prompts_63">4. Autopilot Prompts</h4>
+<ul>
+<li>Reject orders &gt; $50k</li>
+<li>Reject total exposure &gt; $500k</li>
+</ul>
+<h4 id="5-risk-metrics_63">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Latency.</li>
+<li><strong>Metric</strong>: Pre-trade check &lt; 2ms</li>
+</ul>
+<hr />
+<h2 id="week-23">Week 23</h2>
+<h3 id="day-155-kill-switch-ui-button">Day 155: Kill Switch UI Button</h3>
+<p><strong>Monday</strong> | <em>Outcome: Physical/Digital 'Big Red Button' to flatten everything immediately.</em></p>
+<h4 id="1-tech-commands_64">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">npm install @heroicons/react
+</code></pre>
+<h4 id="2-files_64">2. Files</h4>
+<ul>
+<li><code>apps/web/src/features/Risk/KillSwitch.tsx</code></li>
+</ul>
+<h4 id="3-architecture_64">3. Architecture</h4>
+<ul>
+<li>Emergency UI</li>
+<li>Websocket Command</li>
+</ul>
+<h4 id="4-autopilot-prompts_64">4. Autopilot Prompts</h4>
+<ul>
+<li>Send 'FLATTEN_ALL' command</li>
+<li>Require 2-factor confirmation</li>
+</ul>
+<h4 id="5-risk-metrics_64">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Accidental press.</li>
+<li><strong>Metric</strong>: Immediate risk reduction</li>
+</ul>
+<hr />
+<h3 id="day-156-risk-dashboard-alerts">Day 156: Risk Dashboard &amp; Alerts</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Real-time visualization of risk metrics (VaR, Greeks, Exposure).</em></p>
+<h4 id="1-tech-commands_65">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch apps/risk/dashboard_feed.py
+</code></pre>
+<h4 id="2-files_65">2. Files</h4>
+<ul>
+<li><code>apps/risk/dashboard_feed.py</code></li>
+</ul>
+<h4 id="3-architecture_65">3. Architecture</h4>
+<ul>
+<li>Aggregator</li>
+<li>Push Notification</li>
+</ul>
+<h4 id="4-autopilot-prompts_65">4. Autopilot Prompts</h4>
+<ul>
+<li>Stream exposures to frontend</li>
+<li>Alert on limits approaching</li>
+</ul>
+<h4 id="5-risk-metrics_65">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Information overload.</li>
+<li><strong>Metric</strong>: Clear RYG indicators</li>
+</ul>
+<hr />
+<h3 id="day-157-incident-response-playbook">Day 157: Incident Response Playbook</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Documentation and automated scripts for recovery scenarios.</em></p>
+<h4 id="1-tech-commands_66">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">mkdir docs/playbooks
+</code></pre>
+<h4 id="2-files_66">2. Files</h4>
+<ul>
+<li><code>docs/playbooks/incident_response.md</code></li>
+<li><code>scripts/emergency/flatten.py</code></li>
+</ul>
+<h4 id="3-architecture_66">3. Architecture</h4>
+<ul>
+<li>Disaster Recovery</li>
+<li>Runbooks</li>
+</ul>
+<h4 id="4-autopilot-prompts_66">4. Autopilot Prompts</h4>
+<ul>
+<li>Define escalation path</li>
+<li>Automate recovery scripts</li>
+</ul>
+<h4 id="5-risk-metrics_66">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Panic during outage.</li>
+<li><strong>Metric</strong>: Calm execution</li>
+</ul>
+<hr />
+<h3 id="day-158-haproxy-load-balancer">Day 158: HAProxy Load Balancer</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Deploy HAProxy to distribute traffic across API instances.</em></p>
+<h4 id="1-tech-commands_67">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">sudo apt-get install haproxy
+</code></pre>
+<h4 id="2-files_67">2. Files</h4>
+<ul>
+<li><code>docker/haproxy/haproxy.cfg</code></li>
+</ul>
+<h4 id="3-architecture_67">3. Architecture</h4>
+<ul>
+<li>Load Balancing</li>
+<li>High Availability</li>
+</ul>
+<h4 id="4-autopilot-prompts_67">4. Autopilot Prompts</h4>
+<ul>
+<li>Round-robin strategies</li>
+<li>Health-check endpoints</li>
+</ul>
+<h4 id="5-risk-metrics_67">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Single point of failure.</li>
+<li><strong>Metric</strong>: Zero downtime upgrades</li>
+</ul>
+<hr />
+<h3 id="day-159-postgresql-high-availability-patroni">Day 159: PostgreSQL High Availability (Patroni)</h3>
+<p><strong>Friday</strong> | <em>Outcome: Setup PostgreSQL replication with auto-failover using Patroni.</em></p>
+<h4 id="1-tech-commands_68">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install patroni[etcd]
+</code></pre>
+<h4 id="2-files_68">2. Files</h4>
+<ul>
+<li><code>docker/postgres/patroni.yml</code></li>
+</ul>
+<h4 id="3-architecture_68">3. Architecture</h4>
+<ul>
+<li>Database Replication</li>
+<li>Consensus</li>
+</ul>
+<h4 id="4-autopilot-prompts_68">4. Autopilot Prompts</h4>
+<ul>
+<li>Configure Primary/Replica</li>
+<li>Test failover</li>
+</ul>
+<h4 id="5-risk-metrics_68">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Split brain.</li>
+<li><strong>Metric</strong>: Automatic leader election</li>
+</ul>
+<hr />
+<h3 id="day-160-weekend-redis-sentinel-cluster">Day 160: [WEEKEND] Redis Sentinel Cluster</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Deploy Redis Sentinel for high-availability caching.</em></p>
+<h4 id="1-tech-commands_69">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch docker/redis/sentinel.conf
+</code></pre>
+<h4 id="2-files_69">2. Files</h4>
+<ul>
+<li><code>docker-compose.ha.yml</code></li>
+</ul>
+<h4 id="3-architecture_69">3. Architecture</h4>
+<ul>
+<li>Distributed Caching</li>
+<li>Failover</li>
+</ul>
+<h4 id="4-autopilot-prompts_69">4. Autopilot Prompts</h4>
+<ul>
+<li>Configure Quorum</li>
+<li>Client-side sentinel support</li>
+</ul>
+<h4 id="5-risk-metrics_69">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Cache loss.</li>
+<li><strong>Metric</strong>: Seamless failover</li>
+</ul>
+<hr />
+<h3 id="day-161-weekend-kubernetes-deployment-manifests">Day 161: [WEEKEND] Kubernetes Deployment Manifests</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Prepare Helm charts for production Kubernetes deployment.</em></p>
+<h4 id="1-tech-commands_70">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">mkdir k8s/charts
+</code></pre>
+<h4 id="2-files_70">2. Files</h4>
+<ul>
+<li><code>k8s/charts/values.yaml</code></li>
+</ul>
+<h4 id="3-architecture_70">3. Architecture</h4>
+<ul>
+<li>Infrastructure as Code</li>
+<li>Orchestration</li>
+</ul>
+<h4 id="4-autopilot-prompts_70">4. Autopilot Prompts</h4>
+<ul>
+<li>Define Resources (CPU/RAM)</li>
+<li>Configure Probes</li>
+</ul>
+<h4 id="5-risk-metrics_70">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Resource starvation.</li>
+<li><strong>Metric</strong>: Auto-scaling</li>
+</ul>
+<hr />
+<h2 id="week-24">Week 24</h2>
+<h3 id="day-162-database-backup-wal-g">Day 162: Database Backup &amp; Wal-G</h3>
+<p><strong>Monday</strong> | <em>Outcome: Continuous archiving of WAL logs for Point-in-Time Recovery.</em></p>
+<h4 id="1-tech-commands_71">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install wal-g
+</code></pre>
+<h4 id="2-files_71">2. Files</h4>
+<ul>
+<li><code>scripts/db/backup_wal.sh</code></li>
+</ul>
+<h4 id="3-architecture_71">3. Architecture</h4>
+<ul>
+<li>Data Durability</li>
+<li>Backup</li>
+</ul>
+<h4 id="4-autopilot-prompts_71">4. Autopilot Prompts</h4>
+<ul>
+<li>Push WAL to S3</li>
+<li>Test restore procedure</li>
+</ul>
+<h4 id="5-risk-metrics_71">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Data corruption.</li>
+<li><strong>Metric</strong>: Recover to any second</li>
+</ul>
+<hr />
+<h3 id="day-163-secret-rotation-policy">Day 163: Secret Rotation Policy</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Automate rotation of database passwords and API keys.</em></p>
+<h4 id="1-tech-commands_72">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch scripts/security/rotate_secrets.py
+</code></pre>
+<h4 id="2-files_72">2. Files</h4>
+<ul>
+<li><code>scripts/security/rotate_secrets.py</code></li>
+</ul>
+<h4 id="3-architecture_72">3. Architecture</h4>
+<ul>
+<li>Security Operations</li>
+<li>Automation</li>
+</ul>
+<h4 id="4-autopilot-prompts_72">4. Autopilot Prompts</h4>
+<ul>
+<li>Rotate Vault secrets</li>
+<li>Restart services safely</li>
+</ul>
+<h4 id="5-risk-metrics_72">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Downtime during rotation.</li>
+<li><strong>Metric</strong>: Zero-downtime rotation</li>
+</ul>
+<hr />
+<h3 id="day-164-chaos-engineering-network-partition">Day 164: Chaos Engineering: Network Partition</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Simulate network failures between microservices.</em></p>
+<h4 id="1-tech-commands_73">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install toxiproxy
+</code></pre>
+<h4 id="2-files_73">2. Files</h4>
+<ul>
+<li><code>tests/chaos/network_partition.py</code></li>
+</ul>
+<h4 id="3-architecture_73">3. Architecture</h4>
+<ul>
+<li>Resilience Testing</li>
+<li>Fault Injection</li>
+</ul>
+<h4 id="4-autopilot-prompts_73">4. Autopilot Prompts</h4>
+<ul>
+<li>Cut link between API and DB</li>
+<li>Verify graceful handling</li>
+</ul>
+<h4 id="5-risk-metrics_73">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Cascading failures.</li>
+<li><strong>Metric</strong>: System survival</li>
+</ul>
+<hr />
+<h3 id="day-165-cython-compilation-of-hot-paths">Day 165: Cython Compilation of Hot Paths</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Compile critical math loops to C extensions for speed.</em></p>
+<h4 id="1-tech-commands_74">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install cython
+</code></pre>
+<h4 id="2-files_74">2. Files</h4>
+<ul>
+<li><code>libs/math/setup.py</code></li>
+</ul>
+<h4 id="3-architecture_74">3. Architecture</h4>
+<ul>
+<li>Compilation</li>
+<li>Performance</li>
+</ul>
+<h4 id="4-autopilot-prompts_74">4. Autopilot Prompts</h4>
+<ul>
+<li>Annotate types in inner loops</li>
+<li>Build .so modules</li>
+</ul>
+<h4 id="5-risk-metrics_74">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Build complexity.</li>
+<li><strong>Metric</strong>: 10x speedup</li>
+</ul>
+<hr />
+<h3 id="day-166-asyncio-event-loop-optimization">Day 166: AsyncIO Event Loop Optimization</h3>
+<p><strong>Friday</strong> | <em>Outcome: Refine asyncio policy (uvloop) for max throughput.</em></p>
+<h4 id="1-tech-commands_75">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install uvloop
+</code></pre>
+<h4 id="2-files_75">2. Files</h4>
+<ul>
+<li><code>apps/api/main.py</code></li>
+</ul>
+<h4 id="3-architecture_75">3. Architecture</h4>
+<ul>
+<li>Concurrency</li>
+<li>Low Latency</li>
+</ul>
+<h4 id="4-autopilot-prompts_75">4. Autopilot Prompts</h4>
+<ul>
+<li>Replace default loop with uvloop</li>
+<li>Tune thread pool executors</li>
+</ul>
+<h4 id="5-risk-metrics_75">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Blocking calls.</li>
+<li><strong>Metric</strong>: Throughput check</li>
+</ul>
+<hr />
+<h3 id="day-167-weekend-database-query-optimization-explain-analyze">Day 167: [WEEKEND] Database Query Optimization (EXPLAIN ANALYZE)</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Identify and fix slow queries.</em></p>
+<h4 id="1-tech-commands_76">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python scripts/db/analyze_queries.py
+</code></pre>
+<h4 id="2-files_76">2. Files</h4>
+<ul>
+<li><code>reports/slow_query_log.md</code></li>
+</ul>
+<h4 id="3-architecture_76">3. Architecture</h4>
+<ul>
+<li>Database Tuning</li>
+<li>Indexing</li>
+</ul>
+<h4 id="4-autopilot-prompts_76">4. Autopilot Prompts</h4>
+<ul>
+<li>Add missing indexes</li>
+<li>Rewrite complex joins</li>
+</ul>
+<h4 id="5-risk-metrics_76">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Table scans.</li>
+<li><strong>Metric</strong>: Index only scans</li>
+</ul>
+<hr />
+<h3 id="day-168-weekend-frontend-bundle-optimization">Day 168: [WEEKEND] Frontend Bundle Optimization</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Reduce JS bundle size for faster load times.</em></p>
+<h4 id="1-tech-commands_77">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">npm run build -- --report
+</code></pre>
+<h4 id="2-files_77">2. Files</h4>
+<ul>
+<li><code>apps/web/vite.config.ts</code></li>
+</ul>
+<h4 id="3-architecture_77">3. Architecture</h4>
+<ul>
+<li>Tree Shaking</li>
+<li>Code Splitting</li>
+</ul>
+<h4 id="4-autopilot-prompts_77">4. Autopilot Prompts</h4>
+<ul>
+<li>Lazy load heavy charts</li>
+<li>Compress assets (Brotli)</li>
+</ul>
+<h4 id="5-risk-metrics_77">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Megabyte bundles.</li>
+<li><strong>Metric</strong>: Load &lt; 1s</li>
+</ul>
+<hr />
+<h2 id="week-25">Week 25</h2>
+<h3 id="day-169-memory-leak-hunt">Day 169: Memory Leak Hunt</h3>
+<p><strong>Monday</strong> | <em>Outcome: Profile memory usage to find leaks in long-running services.</em></p>
+<h4 id="1-tech-commands_78">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install memray
+</code></pre>
+<h4 id="2-files_78">2. Files</h4>
+<ul>
+<li><code>scripts/profile_memory.py</code></li>
+</ul>
+<h4 id="3-architecture_78">3. Architecture</h4>
+<ul>
+<li>Profiling</li>
+<li>Resource Management</li>
+</ul>
+<h4 id="4-autopilot-prompts_78">4. Autopilot Prompts</h4>
+<ul>
+<li>Run under load</li>
+<li>Analyze heap dump</li>
+</ul>
+<h4 id="5-risk-metrics_78">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: OOM Kills.</li>
+<li><strong>Metric</strong>: Stable heap</li>
+</ul>
+<hr />
+<h3 id="day-170-latency-histogram-analysis">Day 170: Latency Histogram Analysis</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Detailed analysis of p99 latency across the stack.</em></p>
+<h4 id="1-tech-commands_79">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python scripts/analyze_latency.py
+</code></pre>
+<h4 id="2-files_79">2. Files</h4>
+<ul>
+<li><code>reports/latency_p99.png</code></li>
+</ul>
+<h4 id="3-architecture_79">3. Architecture</h4>
+<ul>
+<li>Observability</li>
+<li>Performance Tuning</li>
+</ul>
+<h4 id="4-autopilot-prompts_79">4. Autopilot Prompts</h4>
+<ul>
+<li>Identify outliers</li>
+<li>Smooth out GC pauses</li>
+</ul>
+<h4 id="5-risk-metrics_79">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Jitter.</li>
+<li><strong>Metric</strong>: p99 &lt; 50ms</li>
+</ul>
+<hr />
+<h3 id="day-171-api-documentation-openapiswagger">Day 171: API Documentation (OpenAPI/Swagger)</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Finalize API specs for internal and external consumers.</em></p>
+<h4 id="1-tech-commands_80">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install fastapi-code-generator
+</code></pre>
+<h4 id="2-files_80">2. Files</h4>
+<ul>
+<li><code>docs/api/openapi.json</code></li>
+</ul>
+<h4 id="3-architecture_80">3. Architecture</h4>
+<ul>
+<li>Documentation</li>
+<li>Contract Testing</li>
+</ul>
+<h4 id="4-autopilot-prompts_80">4. Autopilot Prompts</h4>
+<ul>
+<li>Generate client SDKs</li>
+<li>Validate schema adherence</li>
+</ul>
+<h4 id="5-risk-metrics_80">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Outdated docs.</li>
+<li><strong>Metric</strong>: Live documentation</li>
+</ul>
+<hr />
+<h3 id="day-172-system-architecture-diagram-update">Day 172: System Architecture Diagram Update</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Update C4 context/container diagrams to reflect current state.</em></p>
+<h4 id="1-tech-commands_81">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install diagrams
+</code></pre>
+<h4 id="2-files_81">2. Files</h4>
+<ul>
+<li><code>docs/arch/c4_diagrams.py</code></li>
+</ul>
+<h4 id="3-architecture_81">3. Architecture</h4>
+<ul>
+<li>Visualization</li>
+<li>Architecture</li>
+</ul>
+<h4 id="4-autopilot-prompts_81">4. Autopilot Prompts</h4>
+<ul>
+<li>Render system components</li>
+<li>Document data flows</li>
+</ul>
+<h4 id="5-risk-metrics_81">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Stale diagrams.</li>
+<li><strong>Metric</strong>: Accurate map</li>
+</ul>
+<hr />
+<h3 id="day-173-developer-onboarding-guide">Day 173: Developer Onboarding Guide</h3>
+<p><strong>Friday</strong> | <em>Outcome: Write 'How to Contribute' guide for new team members.</em></p>
+<h4 id="1-tech-commands_82">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch docs/CONTRIBUTING.md
+</code></pre>
+<h4 id="2-files_82">2. Files</h4>
+<ul>
+<li><code>docs/CONTRIBUTING.md</code></li>
+</ul>
+<h4 id="3-architecture_82">3. Architecture</h4>
+<ul>
+<li>DevEx</li>
+<li>Documentation</li>
+</ul>
+<h4 id="4-autopilot-prompts_82">4. Autopilot Prompts</h4>
+<ul>
+<li>Setup instructions</li>
+<li>Coding standards</li>
+</ul>
+<h4 id="5-risk-metrics_82">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Confusing setup.</li>
+<li><strong>Metric</strong>: Setup in 15 mins</li>
+</ul>
+<hr />
+<h3 id="day-174-weekend-operational-runbooks">Day 174: [WEEKEND] Operational Runbooks</h3>
+<p><strong>Saturday</strong> | <em>Outcome: Research &amp; Cleanup: Standard Operating Procedures for day-to-day ops.</em></p>
+<h4 id="1-tech-commands_83">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch docs/ops/runbooks.md
+</code></pre>
+<h4 id="2-files_83">2. Files</h4>
+<ul>
+<li><code>docs/ops/runbooks.md</code></li>
+</ul>
+<h4 id="3-architecture_83">3. Architecture</h4>
+<ul>
+<li>Operations</li>
+<li>Knowledge Base</li>
+</ul>
+<h4 id="4-autopilot-prompts_83">4. Autopilot Prompts</h4>
+<ul>
+<li>Deployment steps</li>
+<li>Debugging guide</li>
+</ul>
+<h4 id="5-risk-metrics_83">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Tribal knowledge.</li>
+<li><strong>Metric</strong>: Written procedures</li>
+</ul>
+<hr />
+<h3 id="day-175-weekend-post-mortem-templates">Day 175: [WEEKEND] Post-Mortem Templates</h3>
+<p><strong>Sunday</strong> | <em>Outcome: Research &amp; Cleanup: Template for analyzing incidents properly.</em></p>
+<h4 id="1-tech-commands_84">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch docs/ops/post_mortem_template.md
+</code></pre>
+<h4 id="2-files_84">2. Files</h4>
+<ul>
+<li><code>docs/ops/post_mortem_template.md</code></li>
+</ul>
+<h4 id="3-architecture_84">3. Architecture</h4>
+<ul>
+<li>Incident Management</li>
+<li>Learning</li>
+</ul>
+<h4 id="4-autopilot-prompts_84">4. Autopilot Prompts</h4>
+<ul>
+<li>Timeline, Root Cause, Remediation</li>
+<li>5 Whys</li>
+</ul>
+<h4 id="5-risk-metrics_84">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Blame game.</li>
+<li><strong>Metric</strong>: Systemic improvement</li>
+</ul>
+<hr />
+<h2 id="week-26">Week 26</h2>
+<h3 id="day-176-code-coverage-report">Day 176: Code Coverage Report</h3>
+<p><strong>Monday</strong> | <em>Outcome: Ensure test coverage meets 90% standard.</em></p>
+<h4 id="1-tech-commands_85">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pytest --cov=apps --cov-report=html
+</code></pre>
+<h4 id="2-files_85">2. Files</h4>
+<ul>
+<li><code>htmlcov/index.html</code></li>
+</ul>
+<h4 id="3-architecture_85">3. Architecture</h4>
+<ul>
+<li>Quality Assurance</li>
+<li>Metrics</li>
+</ul>
+<h4 id="4-autopilot-prompts_85">4. Autopilot Prompts</h4>
+<ul>
+<li>Identify untested paths</li>
+<li>Add tests for edge cases</li>
+</ul>
+<h4 id="5-risk-metrics_85">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: False confidence.</li>
+<li><strong>Metric</strong>: &gt;90% Coverage</li>
+</ul>
+<hr />
+<h3 id="day-177-dependency-audit">Day 177: Dependency Audit</h3>
+<p><strong>Tuesday</strong> | <em>Outcome: Check for security vulnerabilities in dependencies.</em></p>
+<h4 id="1-tech-commands_86">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">pip install safety bandit
+</code></pre>
+<h4 id="2-files_86">2. Files</h4>
+<ul>
+<li><code>scripts/security/audit_deps.sh</code></li>
+</ul>
+<h4 id="3-architecture_86">3. Architecture</h4>
+<ul>
+<li>Security</li>
+<li>Supply Chain</li>
+</ul>
+<h4 id="4-autopilot-prompts_86">4. Autopilot Prompts</h4>
+<ul>
+<li>Upgrade vulnerable packages</li>
+<li>Pin dependencies</li>
+</ul>
+<h4 id="5-risk-metrics_86">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: CVE exposure.</li>
+<li><strong>Metric</strong>: Zero Critical CVEs</li>
+</ul>
+<hr />
+<h3 id="day-178-q2-performance-review">Day 178: Q2 Performance Review</h3>
+<p><strong>Wednesday</strong> | <em>Outcome: Review trading performance (Sharpe, Drawdown) for the Quarter.</em></p>
+<h4 id="1-tech-commands_87">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">python scripts/reporting/q2_performance.py
+</code></pre>
+<h4 id="2-files_87">2. Files</h4>
+<ul>
+<li><code>reports/q2_performance.md</code></li>
+</ul>
+<h4 id="3-architecture_87">3. Architecture</h4>
+<ul>
+<li>Analytics</li>
+<li>Review</li>
+</ul>
+<h4 id="4-autopilot-prompts_87">4. Autopilot Prompts</h4>
+<ul>
+<li>Analyze P&amp;L attribution</li>
+<li>Review error logs</li>
+</ul>
+<h4 id="5-risk-metrics_87">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Negative Alpha.</li>
+<li><strong>Metric</strong>: Positive Expectancy</li>
+</ul>
+<hr />
+<h3 id="day-179-tech-debt-grooming">Day 179: Tech Debt Grooming</h3>
+<p><strong>Thursday</strong> | <em>Outcome: Identify and prioritize tech debt for Q3.</em></p>
+<h4 id="1-tech-commands_88">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch docs/planning/tech_debt_backlog.md
+</code></pre>
+<h4 id="2-files_88">2. Files</h4>
+<ul>
+<li><code>docs/planning/tech_debt_backlog.md</code></li>
+</ul>
+<h4 id="3-architecture_88">3. Architecture</h4>
+<ul>
+<li>Planning</li>
+<li>Maintenance</li>
+</ul>
+<h4 id="4-autopilot-prompts_88">4. Autopilot Prompts</h4>
+<ul>
+<li>List shortcuts taken</li>
+<li>Estimate repayment effort</li>
+</ul>
+<h4 id="5-risk-metrics_88">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Unmanageable debt.</li>
+<li><strong>Metric</strong>: Clear plan</li>
+</ul>
+<hr />
+<h3 id="day-180-quarter-3-planning-session">Day 180: Quarter 3 Planning Session</h3>
+<p><strong>Friday</strong> | <em>Outcome: Detailed roadmap planning for ML and Portfolio Optimization.</em></p>
+<h4 id="1-tech-commands_89">1. Tech &amp; Commands</h4>
+<pre><code class="language-bash">touch docs/planning/q3_roadmap.md
+</code></pre>
+<h4 id="2-files_89">2. Files</h4>
+<ul>
+<li><code>docs/planning/q3_roadmap.md</code></li>
+</ul>
+<h4 id="3-architecture_89">3. Architecture</h4>
+<ul>
+<li>Strategy</li>
+<li>Roadmap</li>
+</ul>
+<h4 id="4-autopilot-prompts_89">4. Autopilot Prompts</h4>
+<ul>
+<li>Define Q3 constraints</li>
+<li>Set milestones</li>
+</ul>
+<h4 id="5-risk-metrics_89">5. Risk &amp; Metrics</h4>
+<ul>
+<li><strong>Risk</strong>: Aimless dev.</li>
+<li><strong>Metric</strong>: Aligned objectives</li>
+</ul>
+<hr />
+</body>
+</html>

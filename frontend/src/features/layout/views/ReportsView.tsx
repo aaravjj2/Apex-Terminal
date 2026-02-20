@@ -8,6 +8,7 @@ import { Button } from '../../../ui/Button';
 import { Badge } from '../../../ui/Badge';
 import { IconButton } from '../../../ui/IconButton';
 import { EmptyState } from '../../../ui/EmptyState';
+import { cn } from '../../../ui/utils';
 
 // Mock data
 const mockReports = [
@@ -41,17 +42,17 @@ function ReportsList({
     };
 
     return (
-        <div className="h-full flex flex-col bg-panel-bg border-r border-border">
+        <div className="h-full flex flex-col bg-panel-bg border-r border-border" data-testid="reports-list">
             {/* Header */}
-            <div className="p-3 border-b border-border shrink-0">
+            <div className="p-4 border-b border-border shrink-0">
                 <h2 className="text-sm font-semibold text-text mb-3">Generate Report</h2>
                 <div className="grid grid-cols-2 gap-2">
                     {reportTemplates.map(t => (
                         <button
                             key={t.id}
-                            className="flex items-center gap-2 p-2 bg-element-bg rounded border border-border hover:border-brand transition-colors text-xs"
+                            className="flex items-center gap-2 p-2.5 bg-element-bg rounded-md border border-border hover:border-brand/40 hover:bg-brand/5 transition-all text-xs group"
                         >
-                            <t.icon size={14} className="text-text-secondary" />
+                            <t.icon size={14} className="text-text-secondary group-hover:text-brand transition-colors" />
                             <span className="text-text">{t.name}</span>
                         </button>
                     ))}
@@ -70,8 +71,11 @@ function ReportsList({
                     <button
                         key={report.id}
                         onClick={() => onSelect(report.id)}
-                        className={`w-full text-left p-3 border-b border-border/50 transition-colors ${selectedId === report.id ? 'bg-brand/10' : 'hover:bg-element-bg'
-                            }`}
+                        data-testid={`report-item-${report.id}`}
+                        className={cn(
+                            'w-full text-left p-3 border-b border-border/50 transition-all',
+                            selectedId === report.id ? 'bg-brand/10 border-l-2 border-l-brand' : 'hover:bg-element-bg/50'
+                        )}
                     >
                         <div className="flex items-center gap-2 mb-1">
                             {typeIcons[report.type]}
@@ -107,9 +111,9 @@ function ReportPreview({ report }: { report: typeof mockReports[0] | null }) {
     }
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col" data-testid="report-preview">
             {/* Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0 bg-panel-bg">
                 <div>
                     <h2 className="text-lg font-semibold text-text">{report.name}</h2>
                     <div className="flex items-center gap-2 mt-1 text-xs text-text-secondary">
@@ -132,17 +136,17 @@ function ReportPreview({ report }: { report: typeof mockReports[0] | null }) {
                 <div className="max-w-4xl mx-auto">
                     {/* Summary cards */}
                     <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="p-4 bg-element-bg rounded">
-                            <div className="text-xxs text-text-secondary uppercase mb-1">Net P&L</div>
-                            <div className="text-xl font-semibold text-up">+$1,247.50</div>
+                        <div className="p-4 bg-element-bg rounded-lg border border-border border-l-2 border-l-up">
+                            <div className="text-[10px] text-text-secondary uppercase tracking-wider mb-1.5 font-medium">Net P&amp;L</div>
+                            <div className="text-xl font-semibold text-up tabular-nums">+$1,247.50</div>
                         </div>
-                        <div className="p-4 bg-element-bg rounded">
-                            <div className="text-xxs text-text-secondary uppercase mb-1">Total Trades</div>
-                            <div className="text-xl font-semibold text-text">42</div>
+                        <div className="p-4 bg-element-bg rounded-lg border border-border border-l-2 border-l-brand">
+                            <div className="text-[10px] text-text-secondary uppercase tracking-wider mb-1.5 font-medium">Total Trades</div>
+                            <div className="text-xl font-semibold text-text tabular-nums">42</div>
                         </div>
-                        <div className="p-4 bg-element-bg rounded">
-                            <div className="text-xxs text-text-secondary uppercase mb-1">Win Rate</div>
-                            <div className="text-xl font-semibold text-text">67%</div>
+                        <div className="p-4 bg-element-bg rounded-lg border border-border border-l-2 border-l-warn">
+                            <div className="text-[10px] text-text-secondary uppercase tracking-wider mb-1.5 font-medium">Win Rate</div>
+                            <div className="text-xl font-semibold text-text tabular-nums">67%</div>
                         </div>
                     </div>
 
@@ -180,7 +184,7 @@ export function ReportsView() {
     const selectedReport = mockReports.find(r => r.id === selectedId) || null;
 
     return (
-        <div className="h-full bg-background">
+        <div className="h-full bg-background" data-testid="reports-view">
             <PanelGroup orientation="horizontal">
                 <Panel defaultSize={30} minSize={20} maxSize={40}>
                     <ReportsList

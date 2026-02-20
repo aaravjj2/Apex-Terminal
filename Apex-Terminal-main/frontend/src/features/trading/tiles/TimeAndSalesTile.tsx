@@ -42,7 +42,7 @@ export function TimeAndSalesTile({ tileId: _tileId, isMaximized: _isMaximized }:
     const [trades, setTrades] = useState<Trade[]>([]);
     const [paused, setPaused] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const lastPriceRef = useRef(178.52);
+    const lastPriceRef = useRef(182.41);
     const idRef = useRef(0);
 
     // Simulate streaming trades

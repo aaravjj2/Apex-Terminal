@@ -26,10 +26,10 @@ interface Alert {
 }
 
 const MOCK_ALERTS: Alert[] = [
-    { id: '1', symbol: 'AAPL', condition: 'above', price: 180.00, currentPrice: 178.52, enabled: true, triggered: false },
-    { id: '2', symbol: 'MSFT', condition: 'below', price: 375.00, currentPrice: 378.91, enabled: true, triggered: false },
-    { id: '3', symbol: 'NVDA', condition: 'crosses', price: 900.00, currentPrice: 875.28, enabled: false, triggered: true },
-    { id: '4', symbol: 'TSLA', condition: 'below', price: 250.00, currentPrice: 248.50, enabled: true, triggered: true },
+    { id: '1', symbol: 'AAPL', condition: 'above', price: 180.00, currentPrice: 182.41, enabled: true, triggered: false },
+    { id: '2', symbol: 'MSFT', condition: 'below', price: 375.00, currentPrice: 412.33, enabled: true, triggered: false },
+    { id: '3', symbol: 'NVDA', condition: 'crosses', price: 900.00, currentPrice: 789.55, enabled: false, triggered: true },
+    { id: '4', symbol: 'TSLA', condition: 'below', price: 250.00, currentPrice: 218.77, enabled: true, triggered: true },
 ];
 
 export function AlertsTile({ tileId: _tileId, isMaximized: _isMaximized }: TileProps) {

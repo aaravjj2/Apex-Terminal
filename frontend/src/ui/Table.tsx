@@ -66,9 +66,9 @@ export function Table<T>({
                                 onClick={() => col.sortable && onSort?.(col.key)}
                                 style={{ width: col.width }}
                                 className={cn(
-                                    'text-left font-medium text-text-secondary',
-                                    compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2',
-                                    col.sortable && 'cursor-pointer hover:text-text',
+                                    'text-left font-medium text-text-secondary uppercase tracking-wider',
+                                    compact ? 'px-2 py-1.5 text-xxs' : 'px-3 py-2 text-xs',
+                                    col.sortable && 'cursor-pointer hover:text-text select-none',
                                     col.align === 'center' && 'text-center',
                                     col.align === 'right' && 'text-right'
                                 )}
@@ -126,7 +126,7 @@ export function Table<T>({
                                                 'text-text',
                                                 compact ? 'px-2 py-1.5' : 'px-3 py-2',
                                                 col.align === 'center' && 'text-center',
-                                                col.align === 'right' && 'text-right'
+                                                col.align === 'right' && 'text-right font-tabular'
                                             )}
                                         >
                                             {col.render

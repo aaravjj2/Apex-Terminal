@@ -22,7 +22,7 @@ interface ValidationResult {
     warnings: string[];
 }
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://127.0.0.1:8090/api/v1';
 
 const STRATEGY_TEMPLATES = [
     { id: 'sma_crossover', name: 'SMA Crossover', params: { fast_period: 10, slow_period: 50 } },

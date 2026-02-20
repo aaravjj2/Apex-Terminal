@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '../../../ui/utils';
+import { streamSimulator } from '../../../ui2/stores/streamSimulator';
 
 interface TileProps {
     tileId: string;
@@ -23,23 +24,46 @@ interface Position {
     unrealizedPLPercent: number;
 }
 
+import { DEMO_QUOTES } from '../../../ui2/demo/canonicalDemo';
+
 const MOCK_POSITIONS: Position[] = [
-    { symbol: 'AAPL', quantity: 100, avgCost: 165.50, currentPrice: 178.52, marketValue: 17852, unrealizedPL: 1302, unrealizedPLPercent: 7.87 },
-    { symbol: 'MSFT', quantity: 50, avgCost: 385.00, currentPrice: 378.91, marketValue: 18945.5, unrealizedPL: -304.5, unrealizedPLPercent: -1.58 },
-    { symbol: 'NVDA', quantity: 25, avgCost: 750.00, currentPrice: 875.28, marketValue: 21882, unrealizedPL: 3132, unrealizedPLPercent: 16.70 },
-    { symbol: 'SPY', quantity: 200, avgCost: 498.00, currentPrice: 502.34, marketValue: 100468, unrealizedPL: 868, unrealizedPLPercent: 0.87 },
+    { symbol: 'SPY', quantity: 150, avgCost: 535.20, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'SPY')!.last, marketValue: 82084.50, unrealizedPL: 1804.50, unrealizedPLPercent: 2.24 },
+    { symbol: 'AAPL', quantity: 200, avgCost: 185.30, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'AAPL')!.last, marketValue: 36482.00, unrealizedPL: -578.00, unrealizedPLPercent: -1.56 },
+    { symbol: 'TSLA', quantity: 75, avgCost: 210.15, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'TSLA')!.last, marketValue: 16407.75, unrealizedPL: 646.50, unrealizedPLPercent: 4.10 },
+    { symbol: 'NVDA', quantity: 50, avgCost: 805.40, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'NVDA')!.last, marketValue: 39477.50, unrealizedPL: -792.50, unrealizedPLPercent: -1.97 },
 ];
 
 export function PositionsTile({ tileId: _tileId, isMaximized: _isMaximized }: TileProps) {
-    const [positions, _setPositions] = useState<Position[]>(MOCK_POSITIONS);
+    const [positions, setPositions] = useState<Position[]>(MOCK_POSITIONS);
 
     const totalValue = positions.reduce((sum, p) => sum + p.marketValue, 0);
     const totalPL = positions.reduce((sum, p) => sum + p.unrealizedPL, 0);
 
-    // Simulate updates
-    // Simulation removed as per P0.1
+    // Subscribe to deterministic stream simulator and update displayed prices
     useEffect(() => {
-        // No-op: Simulation disabled
+        // Apply any immediately-available latest prices
+        setPositions(prev => prev.map(p => {
+            const latest = streamSimulator.getLatestPrice(p.symbol) || p.currentPrice;
+            const marketValue = Number((latest * p.quantity).toFixed(2));
+            const costBasis = Number((p.avgCost * p.quantity).toFixed(2));
+            const unrealizedPL = Number((marketValue - costBasis).toFixed(2));
+            const unrealizedPLPercent = costBasis ? Number(((unrealizedPL / costBasis) * 100).toFixed(2)) : p.unrealizedPLPercent;
+            return { ...p, currentPrice: latest, marketValue, unrealizedPL, unrealizedPLPercent };
+        }));
+
+        const unsub = streamSimulator.subscribe((tick) => {
+            setPositions(prev => prev.map(p => {
+                if (p.symbol !== tick.symbol) return p;
+                const latest = tick.price ?? p.currentPrice;
+                const marketValue = Number((latest * p.quantity).toFixed(2));
+                const costBasis = Number((p.avgCost * p.quantity).toFixed(2));
+                const unrealizedPL = Number((marketValue - costBasis).toFixed(2));
+                const unrealizedPLPercent = costBasis ? Number(((unrealizedPL / costBasis) * 100).toFixed(2)) : p.unrealizedPLPercent;
+                return { ...p, currentPrice: latest, marketValue, unrealizedPL, unrealizedPLPercent };
+            }));
+        });
+
+        return () => unsub();
     }, []);
 
     return (
@@ -82,7 +106,9 @@ export function PositionsTile({ tileId: _tileId, isMaximized: _isMaximized }: Ti
                     >
                         <div className="font-medium text-text">{pos.symbol}</div>
                         <div className="text-right text-text-secondary">{pos.quantity}</div>
-                        <div className="text-right font-mono text-text">${pos.currentPrice.toFixed(2)}</div>
+                        <div className="text-right font-mono text-text" data-testid={`positions-tile-price-${pos.symbol}`}>
+                            ${pos.currentPrice.toFixed(2)}
+                        </div>
                         <div className="text-right font-mono text-text">${pos.marketValue.toLocaleString(undefined, { minimumFractionDigits: 0 })}</div>
                         <div className={cn(
                             "text-right font-mono tabular-nums",

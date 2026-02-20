@@ -5,7 +5,7 @@
  */
 
 // API Base URL - configurable via environment variable
-export const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+export const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8090';
 
 // WebSocket Base URL - derived from API base
 export const WS_BASE = API_BASE.replace(/^http/, 'ws');

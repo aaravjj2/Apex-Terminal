@@ -61,40 +61,43 @@ class TestKillSwitch:
         
         # Verify not blocked by kill switch
         assert not any("Kill switch" in r for r in artifact.no_action_reasons)
-        # Note: artifact.success may still be False due to other reasons (no candidates, validation, etc.)
-        # but it should not be blocked by kill switch
+
+
+@pytest.fixture(scope="module")
+def client():
+    """Create TestClient for API tests."""
+    from fastapi.testclient import TestClient
+    import os
+    os.environ.setdefault("E2E_MODE", "1")
+    from services.api.main import app
+    with TestClient(app) as c:
+        yield c
 
 
 class TestKillSwitchAPI:
-    """Test kill switch API endpoints via httpx."""
+    """Test kill switch API endpoints via TestClient."""
     
-    def test_kill_switch_toggle_activate(self):
+    def test_kill_switch_toggle_activate(self, client):
         """Test POST /autopilot/kill-switch to activate."""
-        import httpx
-        BASE = "http://127.0.0.1:8000"
-        response = httpx.post(f"{BASE}/api/v1/autopilot/kill-switch", json={"active": True, "close_all": False}, timeout=10)
+        response = client.post("/api/v1/autopilot/kill-switch", json={"active": True, "close_all": False})
         assert response.status_code == 200
         data = response.json()
         assert "kill_switch_active" in data
         assert data["kill_switch_active"] is True
     
-    def test_kill_switch_toggle_deactivate(self):
+    def test_kill_switch_toggle_deactivate(self, client):
         """Test POST /autopilot/kill-switch to deactivate."""
-        import httpx
-        BASE = "http://127.0.0.1:8000"
-        response = httpx.post(f"{BASE}/api/v1/autopilot/kill-switch", json={"active": False, "close_all": False}, timeout=10)
+        response = client.post("/api/v1/autopilot/kill-switch", json={"active": False, "close_all": False})
         assert response.status_code == 200
         data = response.json()
         assert "kill_switch_active" in data
         assert data["kill_switch_active"] is False
     
-    def test_kill_switch_status_endpoint(self):
+    def test_kill_switch_status_endpoint(self, client):
         """Test GET /autopilot/kill-switch to read status."""
-        import httpx
-        BASE = "http://127.0.0.1:8000"
         # Ensure deactivated first
-        httpx.post(f"{BASE}/api/v1/autopilot/kill-switch", json={"active": False, "close_all": False}, timeout=10)
-        response = httpx.get(f"{BASE}/api/v1/autopilot/kill-switch", timeout=10)
+        client.post("/api/v1/autopilot/kill-switch", json={"active": False, "close_all": False})
+        response = client.get("/api/v1/autopilot/kill-switch")
         assert response.status_code == 200
         data = response.json()
         assert "active" in data

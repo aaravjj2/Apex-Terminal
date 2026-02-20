@@ -78,7 +78,7 @@ function ReplayRightDock() {
 
 export function ReplayView() {
     return (
-        <div className="h-full flex flex-col bg-background">
+        <div className="h-full flex flex-col bg-background" data-testid="replay-view">
             <ReplayControlBar />
 
             <PanelGroup orientation="horizontal" className="flex-1">

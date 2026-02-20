@@ -1,8 +1,10 @@
 /**
  * Autopilot View - Main container with tab navigation
+ * v1.53 - Professional redesign with design tokens
  */
 
 import { useState } from 'react';
+import { Bot } from 'lucide-react';
 import {
   AutopilotDashboard,
   AutopilotPositions,
@@ -11,6 +13,8 @@ import {
 } from '../../autopilot/components';
 import { AIPanel } from './AIPanel';
 import { useAppStore } from '../../../state/appStore';
+import { PageHeader } from '../../../ui/PageHeader';
+import { cn } from '../../../ui/utils';
 
 type TabId = 'dashboard' | 'positions' | 'activity' | 'settings';
 
@@ -26,19 +30,27 @@ export function AutopilotView() {
   const { symbol } = useAppStore();
 
   return (
-    <div className="h-full w-full flex flex-col" data-testid="autopilot-view">
-      {/* Tab Bar */}
-      <div className="flex border-b border-gray-700 bg-gray-800 shrink-0">
+    <div className="h-full w-full flex flex-col bg-background" data-testid="autopilot-view">
+      {/* Professional Header */}
+      <PageHeader
+        title="Autopilot"
+        subtitle="AI-powered autonomous trading engine"
+        icon={<Bot size={20} />}
+        data-testid="autopilot-header"
+      />
+
+      {/* Tab Bar - design token colors */}
+      <div className="pro-tab-bar shrink-0">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             data-testid={`autopilot-tab-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
-              activeTab === tab.id
-                ? 'border-blue-500 text-blue-400 bg-gray-900'
-                : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'
-            }`}
+            aria-selected={activeTab === tab.id}
+            className={cn(
+              "pro-tab",
+              activeTab === tab.id && "active"
+            )}
           >
             {tab.label}
           </button>
@@ -46,26 +58,26 @@ export function AutopilotView() {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-auto flex">
+      <div className="flex-1 overflow-auto flex min-h-0">
         <div className="flex-1 overflow-auto">
-        {activeTab === 'dashboard' && <AutopilotDashboard />}
-        {activeTab === 'positions' && (
-          <div className="h-full p-4 bg-gray-900">
-            <AutopilotPositions />
-          </div>
-        )}
-        {activeTab === 'activity' && (
-          <div className="h-full p-4 bg-gray-900">
-            <AutopilotActivity />
-          </div>
-        )}
-        {activeTab === 'settings' && (
-          <div className="h-full p-4 bg-gray-900">
-            <AutopilotSettings />
-          </div>
-        )}
+          {activeTab === 'dashboard' && <AutopilotDashboard />}
+          {activeTab === 'positions' && (
+            <div className="h-full p-4 bg-background">
+              <AutopilotPositions />
+            </div>
+          )}
+          {activeTab === 'activity' && (
+            <div className="h-full p-4 bg-background">
+              <AutopilotActivity />
+            </div>
+          )}
+          {activeTab === 'settings' && (
+            <div className="h-full p-4 bg-background">
+              <AutopilotSettings />
+            </div>
+          )}
         </div>
-        <div className="w-80 shrink-0 border-l border-gray-700 overflow-auto">
+        <div className="w-80 shrink-0 border-l border-border/60 overflow-auto bg-panel-bg/30">
           <AIPanel symbol={symbol || 'SPY'} />
         </div>
       </div>

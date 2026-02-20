@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
@@ -17,6 +18,7 @@ import * as RiskDeskAPI from './api';
 import { ProvenanceDisplay } from '../../../components/ProvenanceDisplay';
 import { ProviderPill } from '../../shared/ProviderPill';
 import { ProviderRegistryPanel } from '../../shared/ProviderRegistryPanel';
+import { cn } from '../../../ui/utils';
 import { API_BASE } from '../../../config/api';
 import { PortfolioAttachSelector, PortfolioValuationCards, MultiPortfolioSelector, MultiValuationCards } from '../../portfolio';
 import type {
@@ -36,6 +38,7 @@ export function RiskDeskPanel() {
   const [result, setResult] = useState<RiskRunResult | null>(null);
   const [ticket, setTicket] = useState<TicketDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
   
   // v1.21: Attached portfolio (session-only)
   const [attachedPortfolioId, setAttachedPortfolioId] = useState<string>('DEMO-PORT-001');
@@ -76,7 +79,8 @@ export function RiskDeskPanel() {
           });
         }
       })
-      .catch(err => console.error('Failed to fetch provider info:', err));
+      .catch(err => console.error('Failed to fetch provider info:', err))
+      .finally(() => setIsReady(true));
   }, []);
 
   // ── File handling ──────────────────────────────────────────────────
@@ -215,10 +219,15 @@ export function RiskDeskPanel() {
   ];
 
   return (
-    <div className="h-full overflow-auto p-4" data-testid="risk-desk-panel">
-      <div className="flex items-start justify-between mb-4 gap-4">
+    <div className="h-full flex flex-col bg-background" data-testid="risk-desk-panel">
+      {isReady && <div data-testid="risk-desk-ready" className="hidden" />}
+      {/* Professional header bar */}
+      <div className="view-header-bar gap-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-text" data-testid="risk-desk-title">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-brand/10">
+            <ShieldCheck size={16} className="text-brand" />
+          </div>
+          <h2 className="text-lg font-semibold text-text tracking-tight" data-testid="risk-desk-title">
             Risk Desk
           </h2>
           <ProviderPill {...providerInfo} testIdPrefix="riskdesk-provider" />
@@ -235,8 +244,8 @@ export function RiskDeskPanel() {
           )}
         </div>
         
-        {/* Subtabs */}
-        <div className="flex gap-2" role="tablist" aria-label="Risk Desk tabs" data-testid="riskdesk-tablist">
+        {/* Subtabs - pill style */}
+        <div className="flex gap-1.5 ml-auto" role="tablist" aria-label="Risk Desk tabs" data-testid="riskdesk-tablist">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -246,16 +255,19 @@ export function RiskDeskPanel() {
               aria-selected={activeTab === tab.id}
               aria-controls={`riskdesk-tabpanel-${tab.id}`}
               tabIndex={activeTab === tab.id ? 0 : -1}
-              className={`px-4 py-1.5 text-sm font-medium rounded transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 ${activeTab === tab.id
-                ? 'bg-brand text-white'
-                : 'bg-element-bg text-text-secondary hover:text-text hover:bg-element-bg/80'
-                }`}
+              className={cn(
+                "pill-tab",
+                activeTab === tab.id && "active"
+              )}
             >
               {tab.label}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-auto p-4">
 
       {/* Run Status Header (v1.8) */}
       <RunStatusHeader result={result} runState={runState} />
@@ -274,7 +286,7 @@ export function RiskDeskPanel() {
           />
 
           {/* Scenario selector */}
-          <div className="bg-surface border border-border rounded p-3">
+          <div className="bg-element-bg/40 border border-border rounded p-3">
             <label className="text-xs text-text-secondary font-medium block mb-1">
               Stress Scenario
             </label>
@@ -312,7 +324,7 @@ export function RiskDeskPanel() {
           )}
 
           {/* v1.25: Multi-Portfolio Analysis */}
-          <div className="bg-surface border border-border rounded p-3" data-testid="multi-portfolio-section">
+          <div className="bg-element-bg/40 border border-border rounded p-3" data-testid="multi-portfolio-section">
             <label className="text-xs text-text-secondary font-medium block mb-2">
               Multi-Portfolio Analysis (v1.25)
             </label>
@@ -387,7 +399,7 @@ export function RiskDeskPanel() {
 
               {/* Greeks summary */}
               {result.greeks && (
-                <div className="bg-surface border border-border rounded p-3" data-testid="greeks-card">
+                <div className="bg-element-bg/40 border border-border rounded p-3" data-testid="greeks-card">
                   <h3 className="text-sm font-semibold text-text mb-2">Portfolio Greeks</h3>
                   <div className="grid grid-cols-4 gap-2 text-xs">
                     <div>
@@ -420,7 +432,7 @@ export function RiskDeskPanel() {
 
               {/* Stress P&L */}
               {result.stress && (
-                <div className="bg-surface border border-border rounded p-3" data-testid="stress-card">
+                <div className="bg-element-bg/40 border border-border rounded p-3" data-testid="stress-card">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-text">
                       Stress Test: {(showBeforeAfter === 'before' && beforeFixResult?.stress 
@@ -631,7 +643,7 @@ export function RiskDeskPanel() {
 
               {/* Ticket draft */}
               {ticket && (
-                <div className="bg-surface border border-border rounded p-3" data-testid="ticket-card">
+                <div className="bg-element-bg/40 border border-border rounded p-3" data-testid="ticket-card">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-text">
                       Trade Ticket: {ticket.hedge_name}
@@ -734,7 +746,7 @@ export function RiskDeskPanel() {
               {runHistory.map((run, idx) => (
                 <div
                   key={run.run_id}
-                  className="bg-surface border border-border rounded p-3 hover:border-brand cursor-pointer transition-colors"
+                  className="bg-element-bg/40 border border-border rounded p-3 hover:border-brand cursor-pointer transition-colors"
                   onClick={() => handleViewRun(run)}
                   data-testid={`run-history-item-${idx}`}
                 >
@@ -779,7 +791,7 @@ export function RiskDeskPanel() {
           
           <div className="space-y-4 max-w-md">
             {/* Export risk run JSON */}
-            <div className="bg-surface border border-border rounded p-3">
+            <div className="bg-element-bg/40 border border-border rounded p-3">
               <h4 className="text-sm font-medium text-text mb-2">Risk Run Result</h4>
               <p className="text-xs text-text-secondary mb-2">
                 Complete pipeline output including greeks, stress test, compliance, and verification.
@@ -806,7 +818,7 @@ export function RiskDeskPanel() {
             </div>
 
             {/* Export tool trace JSON */}
-            <div className="bg-surface border border-border rounded p-3">
+            <div className="bg-element-bg/40 border border-border rounded p-3">
               <h4 className="text-sm font-medium text-text mb-2">Tool Trace Timeline</h4>
               <p className="text-xs text-text-secondary mb-2">
                 Execution timeline for all 5 tools (T1-T5) with timing and outputs.
@@ -833,7 +845,7 @@ export function RiskDeskPanel() {
             </div>
 
             {/* Export ticket JSON */}
-            <div className="bg-surface border border-border rounded p-3">
+            <div className="bg-element-bg/40 border border-border rounded p-3">
               <h4 className="text-sm font-medium text-text mb-2">Trade Ticket</h4>
               <p className="text-xs text-text-secondary mb-2">
                 {ticket ? `Generated trade ticket for hedge: ${ticket.hedge_name}` : 'Generate a ticket first from the Run tab'}
@@ -860,7 +872,7 @@ export function RiskDeskPanel() {
             </div>
 
             {/* v1.22: Export ZIP Bundle */}
-            <div className="bg-surface border border-border rounded p-3">
+            <div className="bg-element-bg/40 border border-border rounded p-3">
               <h4 className="text-sm font-medium text-text mb-2">Complete Export Bundle (v1.22)</h4>
               <p className="text-xs text-text-secondary mb-2">
                 Institutional-grade ZIP archive with all artifacts, portfolio data, and SHA256 manifest.
@@ -890,7 +902,7 @@ export function RiskDeskPanel() {
             </div>
 
             {/* Playwright report info */}
-            <div className="bg-surface border border-border rounded p-3">
+            <div className="bg-element-bg/40 border border-border rounded p-3">
               <h4 className="text-sm font-medium text-text mb-2">Playwright Test Report</h4>
               <p className="text-xs text-text-secondary mb-2">
                 Local HTML report with videos, traces, and screenshots.
@@ -903,6 +915,7 @@ export function RiskDeskPanel() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

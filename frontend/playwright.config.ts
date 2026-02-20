@@ -36,8 +36,8 @@ export default defineConfig({
     webServer: isCI ? [
         {
             // Backend server (FastAPI)
-            command: 'cd ../phase1 && source ../keys.env && uvicorn services.api.main:app --host 0.0.0.0 --port 8000',
-            url: 'http://localhost:8000/health',
+            command: 'cd ../phase1 && source ../keys.env && uvicorn services.api.main:app --host 0.0.0.0 --port 8090',
+            url: 'http://localhost:8090/health',
             reuseExistingServer: false,
             timeout: 120000,
             stdout: 'pipe',

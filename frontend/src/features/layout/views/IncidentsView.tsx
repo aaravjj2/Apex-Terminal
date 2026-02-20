@@ -4,6 +4,7 @@ import { API_BASE } from '../../../config/api';
 import { Button } from '../../../ui/Button';
 import { Badge } from '../../../ui/Badge';
 import { Panel } from '../../../ui/Panel';
+import { PageHeader } from '../../../ui/PageHeader';
 import { cn } from '../../../ui/utils';
 
 // ==========================================
@@ -127,49 +128,55 @@ export function IncidentsView() {
     };
 
     return (
-        <div className="h-full overflow-auto bg-background flex flex-col">
+        <div className="h-full overflow-auto bg-background flex flex-col" data-testid="incidents-view">
             {/* Header */}
             <div className="p-6 pb-0">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold text-text">Incidents & Forensics</h1>
-                        <p className="text-sm text-text-secondary">
-                            Monitor system health alerts and manage replay bundles
-                        </p>
-                    </div>
-                    {activeTab === 'bundles' && (
-                        <Button
-                            variant={isRecording ? 'danger' : 'primary'}
-                            onClick={isRecording ? handleStopRecording : handleStartRecording}
-                            className="gap-2"
-                        >
-                            {isRecording ? (
-                                <>
-                                    <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                                    Stop Recording
-                                </>
-                            ) : (
-                                <>
-                                    <Database size={16} />
-                                    Start Recording
-                                </>
-                            )}
-                        </Button>
-                    )}
-                </div>
+                <PageHeader
+                    title="Incidents & Forensics"
+                    subtitle="Monitor system health alerts and manage replay bundles"
+                    icon={<ShieldAlert size={20} />}
+                    badge={
+                        alerts.filter(a => !a.resolved).length > 0 ? (
+                            <Badge variant="error" dot>{alerts.filter(a => !a.resolved).length} unresolved</Badge>
+                        ) : (
+                            <Badge variant="success" dot>All Clear</Badge>
+                        )
+                    }
+                    actions={
+                        activeTab === 'bundles' ? (
+                            <Button
+                                variant={isRecording ? 'danger' : 'primary'}
+                                onClick={isRecording ? handleStopRecording : handleStartRecording}
+                                className="gap-2"
+                            >
+                                {isRecording ? (
+                                    <>
+                                        <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                                        Stop Recording
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database size={16} />
+                                        Start Recording
+                                    </>
+                                )}
+                            </Button>
+                        ) : undefined
+                    }
+                    data-testid="incidents-header"
+                />
 
                 {/* Tab Switcher */}
-                <div className="flex items-center gap-6 border-b border-border">
+                <div className="pro-tab-bar">
                     <button
                         onClick={() => setActiveTab('alerts')}
+                        aria-selected={activeTab === 'alerts'}
                         className={cn(
-                            "pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-2",
-                            activeTab === 'alerts'
-                                ? "border-brand text-brand"
-                                : "border-transparent text-text-secondary hover:text-text"
+                            "pro-tab flex items-center gap-2",
+                            activeTab === 'alerts' && "active"
                         )}
                     >
-                        <ShieldAlert size={16} />
+                        <ShieldAlert size={14} />
                         System Alerts
                         {alerts.filter(a => !a.resolved).length > 0 && (
                             <Badge variant="error" className="ml-1 h-5 px-1.5">
@@ -179,14 +186,13 @@ export function IncidentsView() {
                     </button>
                     <button
                         onClick={() => setActiveTab('bundles')}
+                        aria-selected={activeTab === 'bundles'}
                         className={cn(
-                            "pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-2",
-                            activeTab === 'bundles'
-                                ? "border-brand text-brand"
-                                : "border-transparent text-text-secondary hover:text-text"
+                            "pro-tab flex items-center gap-2",
+                            activeTab === 'bundles' && "active"
                         )}
                     >
-                        <Database size={16} />
+                        <Database size={14} />
                         Replay Bundles
                     </button>
                 </div>

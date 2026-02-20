@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, TrendingUp, TrendingDown, Search } from 'lucide-react';
 import { cn } from '../../../ui/utils';
+import { streamSimulator } from '../../../ui2/stores/streamSimulator';
 
 interface TileProps {
     tileId: string;
@@ -22,32 +23,33 @@ interface WatchlistItem {
     volume: number;
 }
 
-// Mock data - in production this would come from WebSocket
-const MOCK_WATCHLIST: WatchlistItem[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', price: 178.52, change: 2.34, changePercent: 1.33, volume: 52340000 },
-    { symbol: 'MSFT', name: 'Microsoft Corp', price: 378.91, change: -1.23, changePercent: -0.32, volume: 18230000 },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 141.80, change: 0.89, changePercent: 0.63, volume: 24560000 },
-    { symbol: 'AMZN', name: 'Amazon.com', price: 178.25, change: 3.45, changePercent: 1.97, volume: 45670000 },
-    { symbol: 'NVDA', name: 'NVIDIA Corp', price: 875.28, change: 12.45, changePercent: 1.44, volume: 38900000 },
-    { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.50, change: -5.67, changePercent: -2.23, volume: 98760000 },
-    { symbol: 'META', name: 'Meta Platforms', price: 505.75, change: 8.90, changePercent: 1.79, volume: 12340000 },
-    { symbol: 'SPY', name: 'SPDR S&P 500', price: 502.34, change: 1.23, changePercent: 0.25, volume: 67890000 },
-];
+import { DEMO_QUOTES } from '../../../ui2/demo/canonicalDemo';
+
+// Derive mock watchlist from canonical demo quotes (single source of truth)
+const MOCK_WATCHLIST: WatchlistItem[] = DEMO_QUOTES.map(q => ({
+  symbol: q.symbol,
+  name: q.symbol,
+  price: q.last,
+  change: q.change,
+  changePercent: q.changePct,
+  volume: q.volume,
+}));
 
 export function WatchlistTile({ tileId: _tileId, isMaximized: _isMaximized }: TileProps) {
     const [watchlist, _setWatchlist] = useState<WatchlistItem[]>(MOCK_WATCHLIST);
     const [searchQuery, setSearchQuery] = useState('');
+    // Local state to trigger re-render on stream ticks
+    const [_tickSeq, setTickSeq] = useState(0);
+
+    useEffect(() => {
+        const unsub = streamSimulator.subscribe(() => setTickSeq(s => s + 1));
+        return unsub;
+    }, []);
 
     const filteredList = watchlist.filter(item =>
         item.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-    // Simulate real-time updates
-    // Simulation removed as per P0.1
-    useEffect(() => {
-        // No-op: Simulation disabled
-    }, []);
 
     return (
         <div className="h-full flex flex-col">
@@ -86,8 +88,8 @@ export function WatchlistTile({ tileId: _tileId, isMaximized: _isMaximized }: Ti
                             <div className="font-medium text-text">{item.symbol}</div>
                             <div className="text-xs text-text-muted truncate">{item.name}</div>
                         </div>
-                        <div className="text-right font-mono text-text">
-                            ${item.price.toFixed(2)}
+                        <div className="text-right font-mono text-text" data-testid={`watchlist-tile-price-${item.symbol}`}>
+                            ${ (streamSimulator.getLatestPrice(item.symbol) ?? item.price).toFixed(2) }
                         </div>
                         <div className={cn(
                             "text-right font-mono flex items-center justify-end gap-1",

@@ -6,7 +6,7 @@
 
 import { useState, useCallback } from 'react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8090';
 const SESSION_KEY_PREFIX = 'disambiguation_';
 
 export interface TokenClassification {

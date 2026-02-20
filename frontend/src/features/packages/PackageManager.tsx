@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Package, Download, Trash2, Shield, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://127.0.0.1:8090/api/v1';
 
 interface InstalledPackage {
     name: string;

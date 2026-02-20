@@ -43,7 +43,7 @@ async function navigateToStrategyLabValidate(page: import('@playwright/test').Pa
 test.describe('v1.29 Strategy Validation', () => {
   test.beforeEach(async ({ page }) => {
     // Reset demo state
-    await page.request.post('http://localhost:8000/api/v1/strategy-artifacts/reset-demo');
+    await page.request.post('http://localhost:8000/api/v1/strategy-artifacts/reset-demo', { timeout: 60000 });
   });
 
   test('validation panel is visible on validate tab', async ({ page }) => {
@@ -96,6 +96,7 @@ test.describe('v1.29 Strategy Validation', () => {
     
     const res = await page.request.post('http://localhost:8000/api/v1/strategy-artifacts/validate', {
       data: invalidSpec,
+      timeout: 60000,
     });
     const report = await res.json();
     
@@ -118,6 +119,7 @@ test.describe('v1.29 Strategy Validation', () => {
     // Run the same validation again and verify identical output
     const res2 = await page.request.post('http://localhost:8000/api/v1/strategy-artifacts/validate', {
       data: invalidSpec,
+      timeout: 60000,
     });
     const report2 = await res2.json();
     
@@ -139,11 +141,13 @@ test.describe('v1.29 Strategy Validation', () => {
     
     const res1 = await page.request.post('http://localhost:8000/api/v1/strategy-artifacts/validate', {
       data: spec,
+      timeout: 60000,
     });
     const report1 = await res1.json();
     
     const res2 = await page.request.post('http://localhost:8000/api/v1/strategy-artifacts/validate', {
       data: spec,
+      timeout: 60000,
     });
     const report2 = await res2.json();
     

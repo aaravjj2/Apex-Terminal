@@ -1,9 +1,12 @@
 /**
- * v1.50 — Platform Health Dashboard Panel
- * DEMO-first component health, uptime, and metrics viewer.
+ * v1.53 — Platform Health Dashboard Panel
+ * Professional component health, uptime, and metrics viewer.
  */
 import { useState, useEffect } from 'react';
+import { HeartPulse } from 'lucide-react';
 import { API_BASE } from '../../config/api';
+import { PageHeader } from '../../ui/PageHeader';
+import { Badge } from '../../ui/Badge';
 
 interface HealthComponent {
   id: string;
@@ -51,17 +54,24 @@ export function PlatformHealthPanel() {
   }, []);
 
   return (
-    <div data-testid="platform-health-panel" className="h-full flex flex-col bg-background p-4">
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-lg font-semibold text-text">Platform Health</h2>
-        <span className="text-xs text-text-muted bg-element-bg px-2 py-0.5 rounded">v1.50 — DEMO</span>
-        {summary && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColors[summary.overall_status] || ''}`}>
+    <div data-testid="platform-health-panel" className="h-full flex flex-col bg-background overflow-hidden">
+      {/* Professional PageHeader */}
+      <PageHeader
+        title="Platform Health"
+        subtitle="Component status, uptime, and performance metrics"
+        icon={<HeartPulse size={20} />}
+        badge={summary ? (
+          <Badge
+            variant={summary.overall_status === 'operational' ? 'success' : summary.overall_status === 'degraded' ? 'warning' : 'error'}
+            dot
+          >
             {summary.overall_status}
-          </span>
-        )}
-      </div>
+          </Badge>
+        ) : undefined}
+        data-testid="platform-health-header"
+      />
 
+      <div className="flex-1 overflow-y-auto p-5">
       {loading && (
         <div data-testid="platform-health-loading" className="animate-pulse space-y-3">
           <div className="h-20 bg-element-bg/50 rounded-lg" />
@@ -70,73 +80,79 @@ export function PlatformHealthPanel() {
       )}
 
       {!loading && components.length === 0 && (
-        <div data-testid="platform-health-empty" className="text-center py-12 text-text-muted">
+        <div data-testid="platform-health-empty" className="text-center py-16 text-text-muted">
+          <HeartPulse size={40} className="mx-auto mb-3 opacity-30" />
           <p className="text-sm">No health data available</p>
+          <p className="text-xs mt-1">Health telemetry will appear here when services report in</p>
         </div>
       )}
 
       {!loading && components.length > 0 && (
-        <div className="flex-1 overflow-y-auto space-y-4">
+        <div className="space-y-5">
           {/* Summary cards */}
           {summary && (
-            <div data-testid="health-summary" className="grid grid-cols-4 gap-3">
-              <div className="p-3 bg-element-bg/30 rounded-lg text-center">
-                <div className="text-xs text-text-muted">Components</div>
-                <div className="text-lg font-semibold text-text">{summary.total_components}</div>
+            <div data-testid="health-summary" className="summary-grid cols-4">
+              <div className="stat-card">
+                <div className="stat-card-label">Components</div>
+                <div className="stat-card-value">{summary.total_components}</div>
               </div>
-              <div className="p-3 bg-element-bg/30 rounded-lg text-center">
-                <div className="text-xs text-text-muted">Operational</div>
-                <div className="text-lg font-semibold text-green-400">{summary.operational}</div>
+              <div className="stat-card accent-success">
+                <div className="stat-card-label">Operational</div>
+                <div className="stat-card-value text-green-400">{summary.operational}</div>
               </div>
-              <div className="p-3 bg-element-bg/30 rounded-lg text-center">
-                <div className="text-xs text-text-muted">Degraded</div>
-                <div className="text-lg font-semibold text-yellow-400">{summary.degraded}</div>
+              <div className="stat-card accent-warning">
+                <div className="stat-card-label">Degraded</div>
+                <div className="stat-card-value text-yellow-400">{summary.degraded}</div>
               </div>
-              <div className="p-3 bg-element-bg/30 rounded-lg text-center">
-                <div className="text-xs text-text-muted">Avg Uptime</div>
-                <div className="text-lg font-semibold text-text">{summary.avg_uptime_pct}%</div>
+              <div className="stat-card accent-info">
+                <div className="stat-card-label">Avg Uptime</div>
+                <div className="stat-card-value">{summary.avg_uptime_pct}%</div>
               </div>
             </div>
           )}
 
           {/* Version banner */}
           {summary && (
-            <div data-testid="health-version" className="text-xs text-text-muted">
+            <div data-testid="health-version" className="flex items-center gap-2 text-xs text-text-muted px-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand/50" />
               v{summary.version} • {summary.environment}
             </div>
           )}
 
           {/* Component cards */}
+          <div className="space-y-3">
           {components.map((c, idx) => (
-            <div key={c.id} data-testid={`health-component-${idx}`} className="p-4 rounded-lg border border-border/50 bg-element-bg/20">
-              <div className="flex items-center gap-2 mb-2">
+            <div key={c.id} data-testid={`health-component-${idx}`} className="health-card">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm font-semibold text-text">{c.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColors[c.status] || 'bg-gray-500/20 text-gray-400'}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${statusColors[c.status] || 'bg-gray-500/20 text-gray-400'}`}>
                   {c.status}
                 </span>
               </div>
-              <div className="grid grid-cols-4 gap-3 text-xs">
+              <div className="grid grid-cols-4 gap-4 text-xs">
                 <div>
-                  <span className="text-text-muted">Uptime</span>
-                  <div className="font-mono text-text">{c.uptime_pct}%</div>
+                  <span className="text-text-muted block mb-0.5">Uptime</span>
+                  <div className="font-mono font-medium text-text tabular-nums">{c.uptime_pct}%</div>
                 </div>
                 <div>
-                  <span className="text-text-muted">p50</span>
-                  <div className="font-mono text-text">{c.latency_p50_ms}ms</div>
+                  <span className="text-text-muted block mb-0.5">p50</span>
+                  <div className="font-mono font-medium text-text tabular-nums">{c.latency_p50_ms}ms</div>
                 </div>
                 <div>
-                  <span className="text-text-muted">p99</span>
-                  <div className="font-mono text-text">{c.latency_p99_ms}ms</div>
+                  <span className="text-text-muted block mb-0.5">p99</span>
+                  <div className="font-mono font-medium text-text tabular-nums">{c.latency_p99_ms}ms</div>
                 </div>
                 <div>
-                  <span className="text-text-muted">Last Incident</span>
+                  <span className="text-text-muted block mb-0.5">Last Incident</span>
                   <div className="font-mono text-text-secondary">{c.last_incident || 'None'}</div>
                 </div>
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
+      </div>
 
       <div data-testid="platform-health-panel-ready" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden' }}>ready</div>
     </div>

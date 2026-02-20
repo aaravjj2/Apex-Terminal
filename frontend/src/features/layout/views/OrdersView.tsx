@@ -13,6 +13,9 @@ import {
     FileText, RefreshCw, Search
 } from 'lucide-react';
 import { cn } from '../../../ui/utils';
+import { Badge } from '../../../ui/Badge';
+import { Button } from '../../../ui/Button';
+import { PageHeader } from '../../../ui/PageHeader';
 import { API_BASE } from '../../../config/api';
 
 interface Order {
@@ -171,71 +174,73 @@ export function OrdersView() {
     return (
         <div className="h-full flex flex-col bg-background" data-testid="orders-view">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-border bg-panel-bg flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <FileText size={20} className="text-brand" />
-                    <h1 className="text-lg font-semibold text-text">Orders</h1>
-                    <span className="text-sm text-text-muted">({filteredOrders.length})</span>
-                </div>
+            <PageHeader
+                title="Orders"
+                subtitle={`${filteredOrders.length} orders found`}
+                icon={<FileText size={20} />}
+                badge={<Badge variant="outline">{filteredOrders.length}</Badge>}
+                actions={
+                    <div className="flex items-center gap-3">
+                        {/* Search */}
+                        <div className="relative">
+                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted" />
+                            <input
+                                type="text"
+                                placeholder="Search orders..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-48 pl-8 pr-3 py-1.5 text-xs bg-element-bg border border-border rounded-md focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20"
+                            />
+                        </div>
 
-                <div className="flex items-center gap-3">
-                    {/* Search */}
-                    <div className="relative">
-                        <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted" />
+                        {/* Run ID Filter */}
                         <input
                             type="text"
-                            placeholder="Search orders..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-48 pl-8 pr-3 py-1.5 text-xs bg-element-bg border border-border rounded focus:outline-none focus:border-brand"
+                            placeholder="Filter by run_id..."
+                            value={runIdFilter}
+                            onChange={(e) => setRunIdFilter(e.target.value)}
+                            className="w-36 px-3 py-1.5 text-xs bg-element-bg border border-border rounded-md focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20"
                         />
+
+                        {/* Status Filter */}
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="px-3 py-1.5 text-xs bg-element-bg border border-border rounded-md focus:outline-none focus:border-brand"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="partial">Partial</option>
+                            <option value="filled">Filled</option>
+                            <option value="canceled">Canceled</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+
+                        {/* Source Filter */}
+                        <select
+                            value={sourceFilter}
+                            onChange={(e) => setSourceFilter(e.target.value)}
+                            className="px-3 py-1.5 text-xs bg-element-bg border border-border rounded-md focus:outline-none focus:border-brand"
+                        >
+                            <option value="all">All Sources</option>
+                            <option value="autopilot">Autopilot</option>
+                            <option value="manual">Manual</option>
+                            <option value="strategy">Strategy</option>
+                        </select>
+
+                        {/* Refresh */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={fetchOrders}
+                            disabled={loading}
+                        >
+                            <RefreshCw size={16} className={cn(loading && "animate-spin")} />
+                        </Button>
                     </div>
-
-                    {/* Run ID Filter */}
-                    <input
-                        type="text"
-                        placeholder="Filter by run_id..."
-                        value={runIdFilter}
-                        onChange={(e) => setRunIdFilter(e.target.value)}
-                        className="w-36 px-3 py-1.5 text-xs bg-element-bg border border-border rounded focus:outline-none focus:border-brand"
-                    />
-
-                    {/* Status Filter */}
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-3 py-1.5 text-xs bg-element-bg border border-border rounded focus:outline-none focus:border-brand"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="partial">Partial</option>
-                        <option value="filled">Filled</option>
-                        <option value="canceled">Canceled</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-
-                    {/* Source Filter */}
-                    <select
-                        value={sourceFilter}
-                        onChange={(e) => setSourceFilter(e.target.value)}
-                        className="px-3 py-1.5 text-xs bg-element-bg border border-border rounded focus:outline-none focus:border-brand"
-                    >
-                        <option value="all">All Sources</option>
-                        <option value="autopilot">Autopilot</option>
-                        <option value="manual">Manual</option>
-                        <option value="strategy">Strategy</option>
-                    </select>
-
-                    {/* Refresh */}
-                    <button
-                        onClick={fetchOrders}
-                        disabled={loading}
-                        className="p-2 rounded hover:bg-element-bg transition-colors"
-                    >
-                        <RefreshCw size={16} className={cn("text-text-secondary", loading && "animate-spin")} />
-                    </button>
-                </div>
-            </div>
+                }
+                data-testid="orders-header"
+            />
 
             {/* Orders Table */}
             <div className="flex-1 overflow-auto">

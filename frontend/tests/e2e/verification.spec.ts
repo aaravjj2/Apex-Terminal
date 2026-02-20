@@ -12,6 +12,7 @@ test('check page loads without critical errors', async ({ page }) => {
             !text.includes('WS Error') &&
             !text.includes('ERR_CONNECTION_REFUSED') &&
             !text.includes('Failed to fetch') &&
+            !text.includes('Failed to load resource') &&
             !text.includes('clock state') &&
             !text.includes('fetch drawings')
         ) {

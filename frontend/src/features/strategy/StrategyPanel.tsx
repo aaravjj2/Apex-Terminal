@@ -9,7 +9,7 @@ interface Strategy {
     status: string;
 }
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://127.0.0.1:8090/api/v1';
 
 export function StrategyPanel({ embedded }: { embedded?: boolean }) {
     const [strategies, setStrategies] = useState<Strategy[]>([]);

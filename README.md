@@ -1,4 +1,4 @@
-# TradingView Recreation
+# Apex Terminal
 
 <div align="center">
 

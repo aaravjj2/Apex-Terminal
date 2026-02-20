@@ -49,50 +49,49 @@
 ---
 
 > [!IMPORTANT]
-> **⚡ Run in 3 Commands** (No API keys needed for demo)
+> **⚡ Run in 3 Commands** (Recorded Data - No API Keys Required)
 > ```bash
 > # 1. Clone the repo
-> git clone https://github.com/aaravjj2/tradingview-recreation.git
-> cd tradingview-recreation
+> git clone https://github.com/aaravjj2/Apex-Terminal.git
+> cd Apex-Terminal
 > 
-> # 2. Start the demo (uses mock data)
-> ./scripts/run_demo.sh
+> # 2. Start backend (uses recorded authentic data)
+> cd phase1 && pip install -r requirements.txt && python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8090 &
 > 
-> # 3. Open in browser
-> # Frontend: http://localhost:5100
-> # API Docs: http://localhost:8000/docs
+> # 3. Start UI2 frontend
+> cd frontend && npm install && npm run build && npm run preview -- --port 5100
 > ```
-> **Or run manually:**
-> ```bash
-> # Terminal 1: Backend
-> cd phase1 && pip install -r requirements.txt && uvicorn services.api.main:app --port 8000
-> 
-> # Terminal 2: Frontend  
-> cd frontend && npm install && npm run dev
-> ```
+> **Access UI2:**
+> - Frontend: http://localhost:5100/ui2
+> - API Docs: http://localhost:8090/docs
 
 > [!CAUTION]
-> **Disclaimer**: This is a **paper trading prototype** for educational and demonstration purposes only. It is **NOT investment advice**. Do not use for real trading without thorough testing. TradingView® is a trademark of TradingView Inc. This project is not affiliated with or endorsed by TradingView Inc.
+> **Disclaimer**: This is a **paper trading system** for research and development. It uses **recorded authentic market data** for deterministic testing. **Paper broker only** - no live broker integration. Not investment advice.
 
 ---
 
-## 🎯 What is This Project?
+## 🎯 What is Apex Terminal?
 
-**TradingView Recreation** is a comprehensive, production-ready market analysis platform that recreates and extends the functionality of professional trading platforms like TradingView and Bloomberg Terminal. Built for serious traders, quantitative researchers, and financial analysts, it provides:
+**Apex Terminal** is a production-grade options trading platform with AI-powered autopilot, strategy backtesting, workflow automation, and intelligent search. Built for quantitative researchers and algorithmic traders, it provides:
 
-- **Professional-grade charting** with real-time data streaming
-- **Advanced technical analysis** with 35+ indicators and 30+ drawing tools
-- **Strategy development & backtesting** with deterministic replay
-- **Portfolio management** with paper trading capabilities
-- **Bloomberg-style dashboards** with 14 configurable analytics tiles
-- **Multiple data providers** (Finnhub, Alpaca, Yahoo Finance, Mock data)
+### Core Features (UI2)
+
+1. **Autopilot + Profitability** - AI-driven options autopilot with paper broker integration, risk controls, and real-time P&L tracking
+2. **Strategy Builder + Backtester** - Create, test, and optimize trading strategies with parameter sweeps and walk-forward analysis
+3. **Workflow Builder** - Automate trading workflows with scheduling, templates, and audit trails
+4. **Global Search** - Intelligent search across strategies, workflows, runs, and system entities with deep linking
+
+### Data & Execution Modes
+
+- **DATA_MODE=recorded** (default) - Uses authentic recorded market data stored in `phase1/cache/replay/` for deterministic, offline operation
+- **BROKER_MODE=paper** (only mode) - Paper trading simulation with realistic order execution and position tracking
+- **No live broker** - Live broker integration not yet implemented
 
 ### Perfect For:
-- 📈 **Active Traders** - Real-time charting and analysis
-- 🔬 **Quant Researchers** - Strategy development and backtesting
-- 📊 **Financial Analysts** - Market data visualization and screening
-- 🎓 **Learning & Education** - Understanding market mechanics
-- 🧪 **Testing & Development** - Deterministic replay for testing strategies
+- 📊 **Quant Researchers** - Deterministic backtesting and strategy development
+- 🔬 **Algorithmic Traders** - Automated options trading with risk controls
+- 🧪 **Testing & Development** - Reproducible test environments with recorded data
+- 🎓 **Learning** - Understanding options trading mechanics in a safe environment
 
 ---
 
@@ -234,9 +233,7 @@
 
 - **Python 3.11+** (3.12 recommended)
 - **Node.js 18+** and npm
-- **API Keys** (optional, for live data):
-  - Finnhub API key
-  - Alpaca API credentials
+- **No API keys required** for default recorded data mode
 
 ### Installation
 
@@ -251,10 +248,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Set up environment variables (optional for live data)
-cp keys.env.example keys.env
-# Edit keys.env and add your API keys
 ```
 
 **2. Frontend Setup:**
@@ -264,36 +257,44 @@ cd frontend
 
 # Install dependencies
 npm install
+
+# Build for production
+npm run build
 ```
 
-**3. Start the System:**
+**3. Start the System (Recorded + Paper Mode):**
 
-**Terminal 1 - Backend:**
+**Terminal 1 - Backend (port 8090):**
 ```bash
 cd phase1
 source venv/bin/activate
-python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8090
 ```
 
-**Terminal 2 - Frontend:**
+**Terminal 2 - Frontend Preview (port 5100):**
 ```bash
 cd frontend
-npm run dev
-```
-
-**Terminal 3 - Data Ingestion (optional, for live data):**
-```bash
-cd phase1
-source venv/bin/activate
-python -m services.ingestion.main --mode live --symbols AAPL,MSFT,TSLA
+npm run preview -- --port 5100 --host 0.0.0.0
 ```
 
 ### Access the Application
 
-- **Frontend**: http://localhost:5100
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **WebSocket**: ws://localhost:8000/ws
+- **UI2 Frontend**: http://localhost:5100/ui2
+- **Backend API**: http://localhost:8090
+- **API Documentation**: http://localhost:8090/docs
+
+### Optional: Elasticsearch Integration
+
+Apex Terminal's search uses local/in-memory search by default. To enable Elasticsearch:
+
+```bash
+# In keys.env or environment
+export SEARCH_PROVIDER=elastic
+export ELASTICSEARCH_URL=http://localhost:9200
+# ... add other Elasticsearch credentials if needed
+```
+
+**Note:** Elasticsearch is NOT required for core functionality or testing.
 
 ---
 
@@ -322,45 +323,57 @@ python -m services.ingestion.main --mode live --symbols AAPL,MSFT,TSLA
 
 ## 🧪 Testing
 
-> **Full Green Suite** — 654 tests, 0 failures, 0 skipped
+> **Strict Testing Policy** — All tests must pass with 0 failures, 0 skipped
 
-### Backend Tests (22 tests)
+### Backend Unit Tests (pytest)
 
 ```bash
-python -m pytest -q          # 22/22 passed
+cd phase1
+source venv/bin/activate
+python -m pytest tests/unit/ --tb=short -q
 ```
 
-### Frontend Unit Tests — Vitest (112 tests)
+### Frontend Unit Tests (vitest)
 
 ```bash
 cd frontend
-npx vitest run                # 112/112 passed
+npx vitest run
 ```
 
-### End-to-End Tests — Playwright (520 tests)
+### End-to-End Tests (Playwright)
+
+**Prerequisites:**
+- Backend running on port 8090
+- Frontend build + preview running on port 5100
 
 ```bash
 cd frontend
 
-# Start backend first (demo mode, no API keys needed)
-DEMO_MODE=1 E2E_MODE=1 PYTHONPATH=.:phase1 \
-  python -m uvicorn phase1.services.api.main:app --port 8000 &
+# Build frontend
+npm run build
 
-# Build & preview frontend
-npm run build && npx vite preview --port 5100 &
+# Start preview (separate terminal)
+npm run preview -- --port 5100 --host 0.0.0.0 &
 
-# Run all 520 E2E tests (headed, single worker, no retries)
-DISPLAY=:0 npx playwright test --reporter=list
+# Run E2E tests (headed, workers=1, retries=0)
+npx playwright test tests/e2e/core/ --reporter=list
 ```
 
-**Configuration:** `retries=0`, `workers=1`, `headless=false`, `video=on`, `trace=on`
+**Configuration:** 
+- `retries=0` - No test retries (fix real issues)
+- `workers=1` - Single worker for deterministic execution
+- `headless=false` - Headed mode for observation
+- `video=on` - All test runs recorded
+- `trace=on` - Full trace capture
+- `screenshot=on` - Screenshots at key steps
 
-### Media Pack Capture
+### Media Pack Capture (Evidence)
 
 ```bash
-# Capture 15 screenshots + ~3-minute demo video
-node capture_media_pack.js
-# Output: artifacts/proof/media-pack/screenshots/ + video/demo_tour.webm
+cd frontend
+npx playwright test tests/e2e/evidence-capture.spec.ts --reporter=list
+# Output: artifacts/proof/20260220-evidence-media-pack/SCREENSHOTS/ (21 PNG files)
+# + test-results/ contains videos
 ```
 
 ---

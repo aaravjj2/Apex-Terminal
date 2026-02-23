@@ -14,7 +14,7 @@ from typing import Optional
 
 from .schemas import PortfolioRow, Snapshot
 from .schemas_w2 import GreeksSummary, VerifierResult
-from .greeks_calculator import _find_snapshot_entry, _DEMO_UNDERLYING, _RISK_FREE_RATE, _DEFAULT_T
+from .greeks_calculator import _find_snapshot_entry, _get_underlying_price, _RISK_FREE_RATE, _DEFAULT_T
 from .validator import normalize_ticker
 
 
@@ -98,7 +98,10 @@ def verify_greeks(
 
     for idx, row in enumerate(rows):
         norm_sym, _ = normalize_ticker(row.symbol)
-        S = _DEMO_UNDERLYING.get(norm_sym, 200.0)
+        S = _get_underlying_price(norm_sym)
+        if S is None:
+            # Cannot verify without real price
+            continue
         K = row.strike or 0.0
         otype = row.option_type.lower()
         qty = row.quantity or 0

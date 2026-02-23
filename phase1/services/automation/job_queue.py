@@ -294,29 +294,24 @@ class JobQueue:
         2. Poll for completion
         3. Retrieve results
         """
-        logger.info(f"Colab execution requested for: {job.spec.entrypoint}")
+        logger.error(f"Colab execution not implemented for: {job.spec.entrypoint}")
         
-        # In production, this would make API calls to Colab
-        # For now, return a placeholder result
         return JobResult(
             job_id=job.id,
-            status=JobStatus.COMPLETED,
-            output_path=f"gs://ml-outputs/{job.id}/",
-            metrics={"colab": True, "gpu_type": "T4"},
+            status=JobStatus.FAILED,
+            error_message="Colab execution not implemented. Configure Colab API integration first.",
             started_at=job.started_at,
             completed_at=datetime.utcnow()
         )
     
     def _execute_cloud_run(self, job: Job) -> JobResult:
         """Execute job on Cloud Run."""
-        logger.info(f"Cloud Run execution requested: {job.spec.entrypoint}")
+        logger.error(f"Cloud Run execution not implemented: {job.spec.entrypoint}")
         
-        # Placeholder for Cloud Run execution
         return JobResult(
             job_id=job.id,
-            status=JobStatus.COMPLETED,
-            output_path=f"gs://ml-outputs/{job.id}/",
-            metrics={"cloud_run": True},
+            status=JobStatus.FAILED,
+            error_message="Cloud Run execution not implemented. Configure GCP Cloud Run integration first.",
             started_at=job.started_at,
             completed_at=datetime.utcnow()
         )

@@ -33,16 +33,16 @@ class Settings(BaseSettings):
     
     # API Server
     api_host: str = Field(default="0.0.0.0")
-    api_port: int = Field(default=7500)
+    api_port: int = Field(default=8090, description="Backend port — env-driven single source of truth")
     
     # Finnhub
     finnhub_api_key: Optional[str] = Field(default=None)
     finnhub2_api_key: Optional[str] = Field(default=None)
     
-    # Alpaca
-    apca_api_key_id: Optional[str] = Field(default=None, validation_alias="ALPACA3_KEY") 
-    apca_api_secret_key: Optional[str] = Field(default=None, validation_alias="ALPACA3_SECRET")
-    apca_endpoint: str = Field(default="https://paper-api.alpaca.markets", validation_alias="ALPACA3_ENDPOINT")
+    # Alpaca — read from APCA_API_KEY_ID / APCA_API_SECRET_KEY (standard env names)
+    apca_api_key_id: Optional[str] = Field(default=None)
+    apca_api_secret_key: Optional[str] = Field(default=None)
+    apca_endpoint: str = Field(default="https://paper-api.alpaca.markets")
     # Enable using Alpaca for options chain data (experimental)
     enable_alpaca_options: bool = Field(default=False)
     
@@ -72,6 +72,11 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO")
     log_format: Literal["json", "text"] = Field(default="json")
     debug_mode: bool = Field(default=False)
+    
+    # Elasticsearch
+    elasticsearch_url: str = Field(default="http://localhost:9200")
+    elasticsearch_api_key: Optional[str] = Field(default=None)
+    elastic_required: bool = Field(default=True, description="Fail-fast if ES not reachable")
 
     # ElevenLabs TTS
     elevenlabs_api_key: Optional[str] = Field(default=None)
@@ -130,7 +135,21 @@ def _load_keys_env_if_dev() -> None:
 def get_settings() -> Settings:
     """Get cached settings instance."""
     _load_keys_env_if_dev()
-    return Settings()
+    settings = Settings()
+    
+    # Startup validation — warn about missing providers
+    warnings = []
+    if not settings.apca_api_key_id:
+        warnings.append("APCA_API_KEY_ID not set — broker/live data unavailable")
+    if not settings.finnhub_api_key and not settings.tiingo_api_key:
+        warnings.append("No market data API key (FINNHUB/TIINGO) — yfinance-only mode")
+    if not settings.elasticsearch_url:
+        warnings.append("ELASTICSEARCH_URL not set — ES features disabled")
+    
+    for w in warnings:
+        print(f"[CONFIG WARNING] {w}")
+    
+    return settings
 
 
 # Timeframe definitions in milliseconds

@@ -93,21 +93,32 @@ def _find_snapshot_entry(
 
 # ── Main calculator ────────────────────────────────────────────────────────
 
-# Default underlying prices (synthetic demo data)
-_DEMO_UNDERLYING: dict[str, float] = {
-    "AAPL": 225.0,
-    "MSFT": 435.0,
-    "TSLA": 255.0,
-    "BRK-B": 425.0,
-    "AMZN": 195.0,
-    "GOOGL": 160.0,
-}
-
 # Risk-free rate for BS model
 _RISK_FREE_RATE = 0.05
 
-# Default time-to-expiry in years (synthetic)
+# Default time-to-expiry in years
 _DEFAULT_T = 0.15
+
+
+def _get_underlying_price(symbol: str) -> Optional[float]:
+    """Fetch real-time underlying price from market data provider.
+
+    Returns None if no price is available - caller MUST handle this.
+    No hardcoded fallback prices allowed.
+    """
+    try:
+        from ..market_data.providers import get_provider
+        provider = get_provider()
+        if provider is None:
+            return None
+        quote = provider.get_quote(symbol)
+        if quote and hasattr(quote, 'price') and quote.price:
+            return float(quote.price)
+        if quote and hasattr(quote, 'last') and quote.last:
+            return float(quote.last)
+        return None
+    except Exception:
+        return None
 
 
 def calculate_greeks(
@@ -126,7 +137,21 @@ def calculate_greeks(
 
     for row in rows:
         norm_sym, _ = normalize_ticker(row.symbol)
-        S = _DEMO_UNDERLYING.get(norm_sym, 200.0)
+        S = _get_underlying_price(norm_sym)
+        if S is None:
+            # Skip leg if no real price available - do NOT use hardcoded fallback
+            per_leg.append({
+                "row": row.row_number,
+                "symbol": norm_sym,
+                "option_type": row.option_type.lower(),
+                "strike": row.strike or 0.0,
+                "expiry": row.expiry,
+                "quantity": row.quantity or 0,
+                "iv_used": 0.0,
+                "delta": 0.0, "gamma": 0.0, "vega": 0.0, "theta": 0.0,
+                "error": f"no real-time price for {norm_sym}",
+            })
+            continue
         K = row.strike or 0.0
         otype = row.option_type.lower()
         qty = row.quantity or 0

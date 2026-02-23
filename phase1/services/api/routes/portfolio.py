@@ -80,17 +80,30 @@ class OrderResponse(BaseModel):
 
 @router.get("", response_model=PortfolioResponse)
 async def get_portfolio():
-    """Get current portfolio state."""
+    """Get current portfolio state from Alpaca broker."""
     manager = get_broker_position_manager()
     
     try:
         # Get enriched positions
         positions = await manager.get_positions()
         
-        # Calculate totals
+        # Get real account data from broker
+        from ...autopilot.alpaca_client import get_alpaca_client
+        broker = get_alpaca_client()
+        account = await broker.get_account() if broker and broker.is_connected else None
+        
+        # Calculate totals from positions
         total_market_value = sum(p.market_value for p in positions)
         total_unrealized_pnl = sum(p.unrealized_pnl for p in positions)
-        total_equity = 100000.0 + total_unrealized_pnl # Placeholder cash until real broker sync
+        
+        # Use real broker data, fail-fast if unavailable
+        if account:
+            cash = account.cash
+            equity = account.equity
+        else:
+            logger.warning("Broker not connected — cash/equity unavailable")
+            cash = 0.0
+            equity = 0.0
         
         pos_responses = []
         for p in positions:
@@ -111,13 +124,13 @@ async def get_portfolio():
             ))
 
         return PortfolioResponse(
-            cash=100000.0, # Placeholder
-            equity=total_equity,
+            cash=cash,
+            equity=equity,
             total_market_value=total_market_value,
             realized_pnl=0.0,
             unrealized_pnl=total_unrealized_pnl,
             total_pnl=total_unrealized_pnl,
-            return_pct=0.0,
+            return_pct=(total_unrealized_pnl / equity * 100) if equity > 0 else 0.0,
             positions=pos_responses,
         )
     except Exception as e:
@@ -200,9 +213,27 @@ async def get_unified_portfolio():
         positions = await manager.get_positions()
         db_orders = repo.list_orders(limit=50) # Last 50 orders
         
+        # Get real account data from broker
+        from ...autopilot.alpaca_client import get_alpaca_client
+        broker = get_alpaca_client()
+        account = await broker.get_account() if broker and broker.is_connected else None
+        
         # Calculate stats
         total_market_value = sum(p.market_value for p in positions)
         unrealized_pnl = sum(p.unrealized_pnl for p in positions)
+        
+        # Use real broker data
+        if account:
+            total_equity = account.equity
+            total_cash = account.cash
+            buying_power = account.buying_power
+            day_pnl = account.equity - account.last_equity
+        else:
+            logger.warning("Broker not connected — account data unavailable")
+            total_equity = 0.0
+            total_cash = 0.0
+            buying_power = 0.0
+            day_pnl = 0.0
         
         # Format positions
         pos_list = [
@@ -246,14 +277,15 @@ async def get_unified_portfolio():
             "positions": pos_list,
             "orders": ord_list,
             "stats": {
-                "total_equity": 100000.0 + unrealized_pnl, # Mock cash
-                "total_cash": 100000.0,
-                "buying_power": 200000.0,
+                "total_equity": total_equity,
+                "total_cash": total_cash,
+                "buying_power": buying_power,
                 "open_pnl": unrealized_pnl,
-                "day_pnl": 0.0,
+                "day_pnl": day_pnl,
                 "position_count": len(positions),
-                "order_count": len(ord_list), # Just recent ones
-                "options_exposure": total_market_value
+                "order_count": len(ord_list),
+                "options_exposure": total_market_value,
+                "broker_connected": account is not None,
             }
         }
     except Exception as e:
@@ -263,14 +295,34 @@ async def get_unified_portfolio():
 
 @router.get("/metrics")
 async def get_portfolio_metrics():
-    """Get portfolio performance metrics."""
+    """Get portfolio performance metrics from broker."""
+    from ...autopilot.alpaca_client import get_alpaca_client
+    broker = get_alpaca_client()
+    account = await broker.get_account() if broker and broker.is_connected else None
+    
+    if account:
+        return {
+            "equity": account.equity,
+            "cash": account.cash,
+            "buying_power": account.buying_power,
+            "sharpe_ratio": 0.0,  # TODO: compute from trade history
+            "sortino_ratio": 0.0,
+            "max_drawdown": 0.0,
+            "total_return_pct": round((account.equity - account.last_equity) / account.last_equity * 100, 4) if account.last_equity > 0 else 0.0,
+            "position_count": 0,
+            "trade_count": 0,
+            "broker_connected": True,
+        }
+    
     return {
-        "equity": 100000.0,
-        "cash": 100000.0,
+        "equity": 0.0,
+        "cash": 0.0,
+        "buying_power": 0.0,
         "sharpe_ratio": 0.0,
         "sortino_ratio": 0.0,
         "max_drawdown": 0.0,
         "total_return_pct": 0.0,
         "position_count": 0,
         "trade_count": 0,
+        "broker_connected": False,
     }

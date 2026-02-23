@@ -162,26 +162,23 @@ class DemoProvider(MarketDataProvider):
         bars_resp = await self.get_bars(bars_req)
         
         if not bars_resp.bars:
-            # Return dummy quote
-            quote = QuoteData(
-                symbol=request.symbol,
-                timestamp=datetime.utcnow(),
-                price=100.0,
-                bid=99.95,
-                ask=100.05,
-                volume=1000000
+            # NO FABRICATED PRICES — fail fast with error
+            raise ValueError(
+                f"No bars available for {request.symbol}. "
+                f"DemoProvider has no fixture data for this symbol. "
+                f"Checked: {self.data_dir / f'{request.symbol.lower()}_1d.csv'}"
             )
-        else:
-            # Use last bar's close as current price
-            last_bar = bars_resp.bars[-1]
-            quote = QuoteData(
-                symbol=request.symbol,
-                timestamp=last_bar.timestamp,
-                price=last_bar.close,
-                bid=last_bar.close * 0.9995,  # Approximate bid
-                ask=last_bar.close * 1.0005,  # Approximate ask
-                volume=last_bar.volume
-            )
+        
+        # Use last bar's close as current price (real fixture data)
+        last_bar = bars_resp.bars[-1]
+        quote = QuoteData(
+            symbol=request.symbol,
+            timestamp=last_bar.timestamp,
+            price=last_bar.close,
+            bid=last_bar.close * 0.9995,  # Approximate bid
+            ask=last_bar.close * 1.0005,  # Approximate ask
+            volume=last_bar.volume
+        )
         
         return QuoteResponse(
             quote=quote,
@@ -190,5 +187,5 @@ class DemoProvider(MarketDataProvider):
         )
     
     async def health_check(self) -> bool:
-        """Demo provider is always available."""
-        return True
+        """Demo provider is available if fixture directory exists."""
+        return self.data_dir.exists()

@@ -92,7 +92,7 @@ class TestConfigSecrets:
                 "keys.env.example should contain placeholder values like 'your_api_key_here'"
     
     def test_settings_loads_alpaca_from_env(self):
-        """Test that Alpaca credentials load from environment variables."""
+        """Test that Alpaca credentials load from standard APCA_* env vars."""
         from services import config
         config.get_settings.cache_clear()
         
@@ -101,9 +101,9 @@ class TestConfigSecrets:
         test_endpoint = "https://test.alpaca.markets"
         
         with patch.dict(os.environ, {
-            "ALPACA3_KEY": test_key,
-            "ALPACA3_SECRET": test_secret,
-            "ALPACA3_ENDPOINT": test_endpoint,
+            "APCA_API_KEY_ID": test_key,
+            "APCA_API_SECRET_KEY": test_secret,
+            "APCA_ENDPOINT": test_endpoint,
             "PROFILE": "prod",
         }, clear=False):
             import importlib
@@ -139,10 +139,10 @@ class TestConfigDefaults:
         assert settings.default_timezone == "America/New_York"
     
     def test_default_api_port(self):
-        """Test default API port."""
+        """Test default API port is 8090 (single source of truth)."""
         from services.config import Settings
         settings = Settings()
-        assert settings.api_port == 7500
+        assert settings.api_port == 8090
     
     def test_default_alpaca_endpoint(self):
         """Test default Alpaca endpoint is paper trading."""

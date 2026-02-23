@@ -469,10 +469,11 @@ async def get_positions():
             "total_market_value": total_market_value,
             "total_risk": total_risk,
             "open_positions": len(all_positions),
-            # Greeks (placeholder - would need real option Greeks calculation)
+            # Greeks — approximations until real option Greeks calculator is wired (Phase 7)
+            # These are NOT from a real market data feed
             "net_delta": len([p for p in all_positions if p.get("side") == "short"]) * -0.15,
             "net_gamma": len(all_positions) * 0.01,
-            "net_theta": len(all_positions) * 2.5,  # Positive theta for credit spreads
+            "net_theta": len(all_positions) * 2.5,
             "net_vega": len(all_positions) * -0.5,
         }
         

@@ -182,47 +182,6 @@ class EventDrivenEngine:
         self._run_counter = 0
         self._default_strategy = _default_sma_strategy
 
-    def _generate_synthetic_bars(
-        self,
-        symbol: str,
-        start_date: str,
-        end_date: str,
-        seed: int = 42,
-    ) -> List[CanonicalBar]:
-        """Generate deterministic synthetic OHLCV bars for a symbol (seed-locked)."""
-        import random
-        from datetime import date, timedelta
-        rng = random.Random(seed ^ hash(symbol) & 0xFFFFFFFF)
-        start = date.fromisoformat(start_date)
-        end = date.fromisoformat(end_date)
-        bars: List[CanonicalBar] = []
-        price = 100.0 + rng.uniform(0, 400)
-        current = start
-        while current <= end:
-            # Skip weekends
-            if current.weekday() >= 5:
-                current += timedelta(days=1)
-                continue
-            chg = rng.gauss(0.0005, 0.015)  # ~0.05% drift, 1.5% daily vol
-            open_p = price
-            close_p = round(price * (1 + chg), 4)
-            high_p = round(max(open_p, close_p) * (1 + abs(rng.gauss(0, 0.005))), 4)
-            low_p = round(min(open_p, close_p) * (1 - abs(rng.gauss(0, 0.005))), 4)
-            volume = int(rng.uniform(500_000, 5_000_000))
-            bars.append(CanonicalBar(
-                symbol=symbol,
-                timestamp=current.isoformat(),
-                open=open_p,
-                high=high_p,
-                low=low_p,
-                close=close_p,
-                volume=volume,
-                resolution=BarResolution.DAILY,
-            ))
-            price = close_p
-            current += timedelta(days=1)
-        return bars
-
     def run(self, config: BacktestConfig,
             bars_by_symbol: Optional[Dict[str, List[CanonicalBar]]] = None,
             strategy_fn: Optional[StrategyFn] = None) -> BacktestResult:
@@ -230,14 +189,12 @@ class EventDrivenEngine:
         import time
         start_time = time.monotonic()
 
-        # If no bars provided, generate deterministic synthetic bars
+        # Real market data is required - no synthetic fallback
         if bars_by_symbol is None:
-            bars_by_symbol = {
-                sym: self._generate_synthetic_bars(
-                    sym, config.start_date, config.end_date, seed=config.seed
-                )
-                for sym in config.symbols
-            }
+            raise ValueError(
+                "bars_by_symbol is required. Provide real OHLCV data for each symbol. "
+                "Synthetic bar generation has been removed - use a market data provider."
+            )
 
         self._run_counter += 1
         run_id = f"bt-{self._run_counter:06d}-{config.config_hash()[:8]}"

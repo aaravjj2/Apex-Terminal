@@ -170,11 +170,6 @@ async def test_submit_job(client):
 
 @pytest.mark.asyncio
 async def test_get_strategy_readiness(client):
-    """Test GET /api/v1/automation/readiness/{strategy_id} returns score."""
+    """Test GET /api/v1/automation/readiness/{strategy_id} returns 501 (not yet implemented)."""
     response = await client.get("/api/v1/automation/readiness/test_strategy_1")
-    assert response.status_code == 200
-    
-    data = response.json()
-    assert "strategy_id" in data
-    assert "readiness_score" in data
-    assert 0 <= data["readiness_score"] <= 1
+    assert response.status_code == 501

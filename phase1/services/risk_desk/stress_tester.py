@@ -22,7 +22,7 @@ from .schemas_w2 import (
     StressResult,
     StressScenario,
 )
-from .greeks_calculator import _bs_greeks, _find_snapshot_entry, _DEMO_UNDERLYING, _RISK_FREE_RATE, _DEFAULT_T
+from .greeks_calculator import _bs_greeks, _find_snapshot_entry, _get_underlying_price, _RISK_FREE_RATE, _DEFAULT_T
 from .validator import normalize_ticker
 
 
@@ -98,7 +98,18 @@ def run_stress_test(
 
     for row in rows:
         norm_sym, _ = normalize_ticker(row.symbol)
-        S = _DEMO_UNDERLYING.get(norm_sym, 200.0)
+        S = _get_underlying_price(norm_sym)
+        if S is None:
+            # Skip leg if no real price available
+            leg_results.append(StressLegResult(
+                symbol=norm_sym,
+                option_type=row.option_type.lower(),
+                strike=row.strike or 0.0,
+                base_value=0.0,
+                stressed_value=0.0,
+                pnl=0.0,
+            ))
+            continue
         K = row.strike or 0.0
         otype = row.option_type.lower()
         qty = row.quantity or 0
@@ -135,7 +146,9 @@ def run_stress_test(
             primary_expiry = row.expiry
 
     # Generate exactly 2 hedge candidates
-    primary_S = _DEMO_UNDERLYING.get(primary_symbol, 200.0)
+    primary_S = _get_underlying_price(primary_symbol)
+    if primary_S is None:
+        primary_S = 0.0  # hedges will be zero-value if no price
     hedges = _generate_hedge_candidates(
         primary_symbol, primary_S, primary_expiry, total_pnl, snapshot, scenario
     )

@@ -106,6 +106,13 @@ class IngestionService:
         
         # Initialize connector based on mode and provider preference
         if self.mode == "mock":
+            # Mock mode is ONLY acceptable in test environments
+            import warnings
+            warnings.warn(
+                "IngestionService running in mock mode — this should only happen in tests. "
+                "Set APCA_API_KEY_ID or FINNHUB_API_KEY in keys.env for real data.",
+                RuntimeWarning, stacklevel=2,
+            )
             self.connector = MockConnector()
 
         elif self.mode == "live":
@@ -119,18 +126,30 @@ class IngestionService:
                     self.logger.info("using_alpaca_ws_connector")
                 except Exception as e:
                     self.logger.error("alpaca_ws_init_failed", error=str(e))
-                    # Fallback to Finnhub
-                    self.connector = FinnhubConnector()
-                    self.logger.info("using_finnhub_fallback")
+                    # Fallback to Finnhub if available
+                    if settings.finnhub_api_key:
+                        self.connector = FinnhubConnector()
+                        self.logger.info("using_finnhub_fallback")
+                    else:
+                        raise RuntimeError(
+                            f"Alpaca WS connector failed ({e}) and no FINNHUB_API_KEY configured. "
+                            "Cannot start ingestion without a real data provider."
+                        )
 
             elif self.provider == "finnhub" or (self.provider is None and settings.finnhub_api_key):
                 self.connector = FinnhubConnector()
                 self.logger.info("using_finnhub_connector")
 
+            elif self.provider == "yfinance" or self.provider is None:
+                # yfinance as last-resort real provider (free, no API key needed)
+                self.connector = YFinanceConnector()
+                self.logger.info("using_yfinance_connector", reason="no paid provider keys configured")
+
             else:
-                # No live provider configured, fallback to mock
-                self.logger.warning("no_live_provider_configured", msg="Falling back to mock connector")
-                self.connector = MockConnector()
+                raise RuntimeError(
+                    f"No live data provider available (provider={self.provider}). "
+                    "Configure APCA_API_KEY_ID, FINNHUB_API_KEY, or use provider='yfinance'."
+                )
         else:
             raise ValueError(f"Unknown mode: {self.mode}")
         

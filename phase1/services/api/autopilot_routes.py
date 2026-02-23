@@ -100,7 +100,9 @@ async def run_autopilot(
         llm_config = load_llm_config_from_env()
         run_summary.llm_provider = llm_config.mode.value
         
-        # Generate mock candidates for demo (in production, would scan real data)
+        # FIXME(Phase 4): Replace _generate_demo_candidates with real strategy signals.
+        # Currently uses hardcoded symbols — should use StrategySpec engine + market data.
+        # This is the primary remaining demo path in autopilot.
         candidates = _generate_demo_candidates(run_id)
         run_summary.candidates_count = len(candidates)
         

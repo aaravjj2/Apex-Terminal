@@ -2,16 +2,47 @@
 Repair Wave — Validation Tests
 Tests that prove the fixes work correctly:
 - BacktestConfig determinism and seed support
-- EventDrivenEngine.run() with synthetic bars
+- EventDrivenEngine.run() requires real bars (no synthetic fallback)
 - Ops health endpoint structure
 - ElasticsearchService API shape
 - w11_elasticsearch route call shape fixes
 """
 import pytest
 import sys
+import random
 from pathlib import Path
+from datetime import date, timedelta
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+
+def _make_test_bars(symbol: str, start_date: str, end_date: str, seed: int = 42):
+    """Generate deterministic test bars for unit tests ONLY (not runtime)."""
+    from services.waves21_50.backtest.engine import CanonicalBar, BarResolution
+    rng = random.Random(seed ^ hash(symbol) & 0xFFFFFFFF)
+    start = date.fromisoformat(start_date)
+    end = date.fromisoformat(end_date)
+    bars = []
+    price = 100.0 + rng.uniform(0, 400)
+    current = start
+    while current <= end:
+        if current.weekday() >= 5:
+            current += timedelta(days=1)
+            continue
+        chg = rng.gauss(0.0005, 0.015)
+        open_p = price
+        close_p = round(price * (1 + chg), 4)
+        high_p = round(max(open_p, close_p) * (1 + abs(rng.gauss(0, 0.005))), 4)
+        low_p = round(min(open_p, close_p) * (1 - abs(rng.gauss(0, 0.005))), 4)
+        volume = int(rng.uniform(500_000, 5_000_000))
+        bars.append(CanonicalBar(
+            symbol=symbol, timestamp=current.isoformat(),
+            open=open_p, high=high_p, low=low_p, close=close_p,
+            volume=volume, resolution=BarResolution.DAILY,
+        ))
+        price = close_p
+        current += timedelta(days=1)
+    return bars
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -75,7 +106,7 @@ class TestEventDrivenEngineRun:
         return EventDrivenEngine()
 
     def test_run_without_bars(self):
-        """engine.run(config) with no bars_by_symbol should not raise."""
+        """engine.run(config) with no bars_by_symbol should raise ValueError."""
         from services.waves21_50.backtest.engine import BacktestConfig
         engine = self._fresh_engine()
         cfg = BacktestConfig(
@@ -84,9 +115,8 @@ class TestEventDrivenEngineRun:
             end_date="2024-03-31",
             seed=42,
         )
-        result = engine.run(cfg)
-        assert result is not None
-        assert result.status == "completed"
+        with pytest.raises(ValueError, match="bars_by_symbol is required"):
+            engine.run(cfg)
 
     def test_run_produces_metrics(self):
         """Result should have valid metrics dict."""
@@ -98,7 +128,8 @@ class TestEventDrivenEngineRun:
             end_date="2024-03-31",
             seed=42,
         )
-        result = engine.run(cfg)
+        bars = {"AAPL": _make_test_bars("AAPL", "2024-01-01", "2024-03-31", seed=42)}
+        result = engine.run(cfg, bars_by_symbol=bars)
         d = result.to_dict()
         assert "metrics" in d
         assert "total_return" in d["metrics"]
@@ -108,7 +139,7 @@ class TestEventDrivenEngineRun:
         assert d["config"]["seed"] == 42
 
     def test_run_determinism(self):
-        """Same seed → identical result_hash twice."""
+        """Same seed + same bars → identical result_hash twice."""
         from services.waves21_50.backtest.engine import BacktestConfig, EventDrivenEngine
         cfg = BacktestConfig(
             symbols=["AAPL"],
@@ -116,11 +147,12 @@ class TestEventDrivenEngineRun:
             end_date="2024-03-31",
             seed=42,
         )
+        bars = {"AAPL": _make_test_bars("AAPL", "2024-01-01", "2024-03-31", seed=42)}
         e1 = EventDrivenEngine()
-        r1 = e1.run(cfg)
+        r1 = e1.run(cfg, bars_by_symbol=bars)
 
         e2 = EventDrivenEngine()
-        r2 = e2.run(cfg)
+        r2 = e2.run(cfg, bars_by_symbol=bars)
 
         assert r1.result_hash == r2.result_hash, "Backtest not deterministic!"
 
@@ -129,9 +161,11 @@ class TestEventDrivenEngineRun:
         from services.waves21_50.backtest.engine import BacktestConfig, EventDrivenEngine
         cfg1 = BacktestConfig(symbols=["AAPL"], start_date="2024-01-01", end_date="2024-03-31", seed=1)
         cfg2 = BacktestConfig(symbols=["AAPL"], start_date="2024-01-01", end_date="2024-03-31", seed=2)
-        r1 = EventDrivenEngine().run(cfg1)
-        r2 = EventDrivenEngine().run(cfg2)
-        # Different seeds → different synthetic bars → different equity curves
+        bars1 = {"AAPL": _make_test_bars("AAPL", "2024-01-01", "2024-03-31", seed=1)}
+        bars2 = {"AAPL": _make_test_bars("AAPL", "2024-01-01", "2024-03-31", seed=2)}
+        r1 = EventDrivenEngine().run(cfg1, bars_by_symbol=bars1)
+        r2 = EventDrivenEngine().run(cfg2, bars_by_symbol=bars2)
+        # Different seeds → different test bars → different equity curves
         assert r1.result_hash != r2.result_hash
 
     def test_run_multi_symbol(self):
@@ -144,24 +178,24 @@ class TestEventDrivenEngineRun:
             end_date="2024-02-28",
             seed=42,
         )
-        result = engine.run(cfg)
+        bars = {
+            sym: _make_test_bars(sym, "2024-01-01", "2024-02-28", seed=42)
+            for sym in cfg.symbols
+        }
+        result = engine.run(cfg, bars_by_symbol=bars)
         assert result.status == "completed"
 
-    def test_synthetic_bar_count(self):
-        """Synthetic bars should span the date range (approx 252 trading days/year)."""
-        from services.waves21_50.backtest.engine import EventDrivenEngine, BacktestConfig
-        engine = EventDrivenEngine()
-        bars = engine._generate_synthetic_bars("AAPL", "2024-01-01", "2024-12-31", seed=42)
+    def test_test_bar_count(self):
+        """Test bars should span the date range (approx 252 trading days/year)."""
+        bars = _make_test_bars("AAPL", "2024-01-01", "2024-12-31", seed=42)
         # Should have ~250 trading days for a full year
         assert len(bars) >= 240
         assert len(bars) <= 265
 
-    def test_synthetic_bars_deterministic(self):
+    def test_test_bars_deterministic(self):
         """Same seed → same exact bars every time."""
-        from services.waves21_50.backtest.engine import EventDrivenEngine
-        engine = EventDrivenEngine()
-        bars1 = engine._generate_synthetic_bars("AAPL", "2024-01-01", "2024-06-30", seed=42)
-        bars2 = engine._generate_synthetic_bars("AAPL", "2024-01-01", "2024-06-30", seed=42)
+        bars1 = _make_test_bars("AAPL", "2024-01-01", "2024-06-30", seed=42)
+        bars2 = _make_test_bars("AAPL", "2024-01-01", "2024-06-30", seed=42)
         assert len(bars1) == len(bars2)
         for b1, b2 in zip(bars1, bars2):
             assert b1.close == b2.close

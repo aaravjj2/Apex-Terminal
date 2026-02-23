@@ -175,9 +175,29 @@ phase1/data/cache/
 # Zone identifiers (Windows ADS)
 *Zone.Identifier
 
-# Proof packs and artifacts (dev only)
+# Proof packs and artifacts (local only)
 proofpacks/
+proof/
+artifacts/proof/
 repo_cleanup_evidence/
+submission_bundle.zip
+
+# Stale run logs (root-level)
+w*.txt
+pw_*.txt
+pytest_*.txt
+e2e_*.txt
+*.log
+
+# Playwright duplicate output directories
+playwright-report-*/
+test-results-*/
+frontend/playwright-report-*/
+frontend/test-results-*/
+e2e-results/
+frontend/e2e-results/
+phase1/e2e-results/
+phase1/test-results/
 
 # Demo media (regenerate as needed)
 devpost_media/*.mp4

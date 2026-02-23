@@ -110,7 +110,7 @@ class JobResponse(BaseModel):
 
 
 # ============================================================================
-# In-Memory State (for demo; production would use DB)
+# In-Memory State (production should use DB - tracked as Phase 7)
 # ============================================================================
 
 _autopilot_state = AutopilotStatusResponse()
@@ -150,10 +150,6 @@ async def arm_automation(request: ArmRequest):
     
     _autopilot_state.armed = True
     _autopilot_state.mode = request.mode
-    
-    # Simulate activating a strategy for demonstration
-    if not _autopilot_state.active_strategies:
-        _autopilot_state.active_strategies = ["Simple-MA-v1"]
     
     logger.info("automation_armed", mode=request.mode.value)
     return _autopilot_state
@@ -397,17 +393,8 @@ async def get_strategy_readiness(strategy_id: str):
     Readiness score indicates how ready a strategy is for live trading,
     based on backtest results, robustness suite, and regime alignment.
     """
-    # Placeholder: In production, this would query backtest results,
-    # robustness metrics, and current regime classification.
-    
-    return {
-        "strategy_id": strategy_id,
-        "readiness_score": 0.75,
-        "factors": {
-            "backtest_sharpe": 1.2,
-            "robustness_passed": True,
-            "regime_aligned": True,
-            "drawdown_acceptable": True,
-        },
-        "recommendation": "Paper trading recommended before live deployment."
-    }
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=f"Readiness scoring for '{strategy_id}' requires backtest results, "
+               f"robustness metrics, and regime classification (Phase 5+7). Not yet implemented."
+    )

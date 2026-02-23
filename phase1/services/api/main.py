@@ -409,48 +409,109 @@ def create_app() -> FastAPI:
             content={"error": "Internal server error", "detail": str(exc)},
         )
     
-    # Health check with data source status
+    # Health check with data source status — uses REAL probes, never lies
     @app.get("/health")
     async def health_check():
+        """
+        Quick health check that does real connectivity probes.
+        Uses the same backend.core.startup_checks as /api/v3/ops/health.
+        """
+        from backend.core.startup_checks import run_all_checks  # type: ignore
+        result = await run_all_checks(timeout=5.0)
+        
+        deps = result.get("dependencies", {})
+        es = deps.get("elasticsearch", {})
+        broker = deps.get("broker", {})
+        
         settings = get_settings()
         
-        # Check Alpaca connectivity
-        alpaca_connected = False
-        if settings.apca_api_key_id and settings.apca_api_secret_key:
-            try:
-                alpaca_connected = True
-            except Exception:
-                pass
-        
-        # Check Tradier connectivity
-        tradier_connected = False
-        if settings.tradier_brokerage_key:
-            try:
-                tradier_connected = True
-            except Exception:
-                pass
-        
-        # Determine options provider
-        options_provider = settings.options_data_provider if hasattr(settings, 'options_data_provider') else 'yfinance'
+        # Determine actual bars source
+        if broker.get("connected"):
+            bars_source = "alpaca"
+        elif settings.finnhub_api_key:
+            bars_source = "finnhub"
+        elif settings.tiingo_api_key:
+            bars_source = "yfinance"
+        else:
+            bars_source = "none"
         
         return {
-            "status": "healthy",
+            "status": "healthy" if result.get("ready") else "degraded",
+            "ready": result.get("ready", False),
+            "correlation_id": result.get("correlation_id"),
             "alpaca_configured": bool(settings.apca_api_key_id),
-            "alpaca_connected": alpaca_connected,
+            "alpaca_connected": broker.get("connected", False),
+            "elasticsearch_connected": es.get("connected", False),
             "tradier_configured": bool(settings.tradier_brokerage_key),
-            "tradier_connected": tradier_connected,
-            "options_provider": options_provider,
-            "bars_source": "alpaca" if alpaca_connected else "mock_csv",
-            "mode": "paper" if settings.apca_api_key_id else "mock",
+            "bars_source": bars_source,
+            "mode": "paper" if broker.get("connected") else "no-broker",
         }
     
     # Root endpoint
     @app.get("/")
     async def root():
         return {
-            "name": "Phase 1 Bar Engine API",
-            "version": "1.0.0",
+            "name": "Apex Terminal API",
+            "version": "2.0.0",
             "docs": "/docs",
+        }
+    
+    # Config echo — redacted, no secrets
+    @app.get("/api/ops/config")
+    async def ops_config():
+        """
+        Returns active runtime configuration with all secrets redacted.
+        Use this to verify port/base_url/mode/provider statuses.
+        """
+        import platform
+        settings = get_settings()
+        
+        def _redact(val):
+            if not val:
+                return None
+            s = str(val)
+            if len(s) <= 6:
+                return "***"
+            return s[:4] + "***" + s[-2:]
+        
+        return {
+            "runtime": {
+                "python_version": platform.python_version(),
+                "profile": settings.profile,
+                "api_port": settings.api_port,
+                "log_level": settings.log_level,
+            },
+            "providers": {
+                "alpaca": {
+                    "configured": bool(settings.apca_api_key_id),
+                    "key_preview": _redact(settings.apca_api_key_id),
+                    "endpoint": settings.apca_endpoint,
+                },
+                "finnhub": {
+                    "configured": bool(settings.finnhub_api_key),
+                    "key_preview": _redact(settings.finnhub_api_key),
+                },
+                "tiingo": {
+                    "configured": bool(settings.tiingo_api_key),
+                    "key_preview": _redact(settings.tiingo_api_key),
+                },
+                "tradier": {
+                    "configured": bool(settings.tradier_brokerage_key),
+                    "key_preview": _redact(settings.tradier_brokerage_key),
+                    "options_provider": settings.options_data_provider,
+                },
+            },
+            "elasticsearch": {
+                "url": os.environ.get("ELASTICSEARCH_URL", "http://localhost:9200"),
+                "api_key_configured": bool(os.environ.get("ELASTICSEARCH_API_KEY")),
+            },
+            "database": {
+                "url_scheme": settings.database_url.split("://")[0] if "://" in settings.database_url else "unknown",
+            },
+            "ingestion": {
+                "mode": settings.ingestion_mode,
+                "symbols": settings.symbols_list,
+            },
         }
     
     return app

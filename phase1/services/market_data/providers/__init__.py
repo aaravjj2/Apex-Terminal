@@ -24,29 +24,32 @@ _providers: Dict[ProviderName, MarketDataProvider] = {}
 
 
 def _init_providers():
-    """Initialize all providers based on environment."""
+    """
+    Initialize all providers based on environment.
+    
+    Priority: Alpaca > Finnhub > Yahoo > Demo (fixture-only, no fabrication).
+    Never silently fall back to demo in production.
+    """
     global _providers
     
-    # Determine mode
+    # Determine mode — DEMO_MODE env var controls fixture-only operation
     demo_mode = os.getenv("DEMO_MODE", "0") == "1"
     enable_replay_save = not demo_mode  # LOCAL mode can save replays
     
-    # Demo provider always available (checks replay, optionally saves in LOCAL)
+    # Yahoo provider (free, always available when yfinance installed)
+    try:
+        _providers[ProviderName.YAHOO] = YahooProvider()
+        logger.info("Yahoo provider enabled")
+    except Exception as e:
+        logger.warning(f"Yahoo provider initialization failed: {e}")
+    
+    # Demo provider — fixture-based, replay-first, no fabricated prices
     _providers[ProviderName.DEMO] = DemoProvider(enable_replay_save=enable_replay_save)
     logger.info(
-        "Demo provider initialized",mode=("DEMO" if demo_mode else "LOCAL"),
+        "Demo provider initialized (fixture-only, no fake prices)",
+        mode=("DEMO" if demo_mode else "LOCAL"),
         enable_replay_save=enable_replay_save
     )
-    
-    # Yahoo provider only in LOCAL mode
-    if not demo_mode:
-        try:
-            _providers[ProviderName.YAHOO] = YahooProvider()
-            logger.info("Yahoo provider enabled (LOCAL mode)")
-        except Exception as e:
-            logger.warning(f"Yahoo provider initialization failed: {e}")
-    else:
-        logger.info("Yahoo provider disabled (DEMO mode)")
 
 
 def get_provider(provider_name: ProviderName) -> MarketDataProvider:

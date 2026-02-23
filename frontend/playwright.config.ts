@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5100';
+// Single source of truth for port configuration
+const backendPort = process.env.APEX_BACKEND_PORT || '8090';
+const frontendPort = process.env.APEX_FRONTEND_PORT || '5100';
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${frontendPort}`;
 const isCI = !!process.env.CI;
 
 export default defineConfig({
@@ -36,8 +39,8 @@ export default defineConfig({
     webServer: isCI ? [
         {
             // Backend server (FastAPI)
-            command: 'cd ../phase1 && source ../keys.env && uvicorn services.api.main:app --host 0.0.0.0 --port 8090',
-            url: 'http://localhost:8090/health',
+            command: `cd ../phase1 && source ../keys.env && uvicorn services.api.main:app --host 0.0.0.0 --port ${backendPort}`,
+            url: `http://localhost:${backendPort}/health`,
             reuseExistingServer: false,
             timeout: 120000,
             stdout: 'pipe',
@@ -45,8 +48,8 @@ export default defineConfig({
         },
         {
             // Frontend server (Vite preview for stability)
-            command: 'npm run build && npm run preview -- --port 5100',
-            url: 'http://localhost:5100',
+            command: `npm run build && npm run preview -- --port ${frontendPort}`,
+            url: `http://localhost:${frontendPort}`,
             reuseExistingServer: false,
             timeout: 120000,
             stdout: 'pipe',

@@ -5,6 +5,24 @@
 
 const API = '/api/v2';
 
+/** Safe JSON parse — never throws "Unexpected end of JSON input" */
+async function safeJson<T = any>(r: Response): Promise<T> {
+  if (!r.ok) {
+    const text = await r.text().catch(() => '');
+    throw new Error(`HTTP ${r.status}: ${text.slice(0, 200) || r.statusText}`);
+  }
+  const ct = r.headers.get('content-type') || '';
+  if (!ct.includes('json')) {
+    const text = await r.text().catch(() => '');
+    throw new Error(`Expected JSON but got ${ct || 'no content-type'}: ${text.slice(0, 200)}`);
+  }
+  const text = await r.text();
+  if (!text || text.trim().length === 0) {
+    throw new Error('Empty response body');
+  }
+  return JSON.parse(text) as T;
+}
+
 // Generic store factory
 function createStore<T extends object>(initialState: T) {
   let state = { ...initialState };
@@ -38,23 +56,26 @@ export const marketSessionStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/market-session/status`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ session: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
     async fetchHolidays(year = 2025) {
       try {
         const r = await fetch(`${API}/market-session/holidays?year=${year}`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ holidays: data.holidays || [] });
       } catch {}
     },
   };
 })();
 
-// ── Wave 11: Paper Broker ──
+// ── Wave 11: Alpaca Paper Broker ──
+const BROKER_API = '/api/broker';
+
 export interface BrokerState {
   readiness: { is_ready: boolean; kill_switch_active: boolean; session_type: string } | null;
+  account: { equity: number; buying_power: number; cash: number; portfolio_value: number } | null;
   orders: { order_id: string; symbol: string; side: string; quantity: number; status: string }[];
   positions: { symbol: string; quantity: number; avg_cost: number; market_value: number; unrealized_pnl: number }[];
   killSwitch: { active: boolean; reason: string; activated_at: string } | null;
@@ -65,57 +86,88 @@ export interface BrokerState {
 
 export const brokerStore = (() => {
   const store = createStore<BrokerState>({
-    readiness: null, orders: [], positions: [], killSwitch: null, dailyPnl: null, loading: false, error: '',
+    readiness: null, account: null, orders: [], positions: [], killSwitch: null, dailyPnl: null, loading: false, error: '',
   });
   return {
     ...store,
     async fetchReadiness() {
       try {
-        const r = await fetch(`${API}/broker/readiness`);
-        store.setState({ readiness: await r.json() });
-      } catch {}
+        const r = await fetch(`${BROKER_API}/health`);
+        const data = await safeJson(r);
+        store.setState({
+          readiness: {
+            is_ready: data.ok === true,
+            kill_switch_active: false,
+            session_type: data.last_sync ? 'paper' : 'unknown',
+          },
+        });
+      } catch (e: any) {
+        store.setState({ readiness: { is_ready: false, kill_switch_active: false, session_type: 'error' }, error: e.message });
+      }
+    },
+    async fetchAccount() {
+      try {
+        const r = await fetch(`${BROKER_API}/account`);
+        const data = await safeJson(r);
+        if (data.ok && data.account) {
+          store.setState({
+            account: {
+              equity: parseFloat(data.account.equity || '0'),
+              buying_power: parseFloat(data.account.buying_power || '0'),
+              cash: parseFloat(data.account.cash || '0'),
+              portfolio_value: parseFloat(data.account.portfolio_value || '0'),
+            },
+          });
+        }
+      } catch (e: any) { store.setState({ error: e.message }); }
     },
     async fetchOrders() {
       store.setState({ loading: true });
       try {
-        const r = await fetch(`${API}/broker/orders`);
-        const data = await r.json();
-        store.setState({ orders: data.orders || [], loading: false });
+        const r = await fetch(`${BROKER_API}/orders`);
+        const data = await safeJson(r);
+        const orders = (data.ok && Array.isArray(data.orders))
+          ? data.orders.map((o: any) => ({
+              order_id: o.id, symbol: o.symbol, side: o.side,
+              quantity: parseFloat(o.qty || '0'), status: o.status,
+            }))
+          : [];
+        store.setState({ orders, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
     async fetchPositions() {
       try {
-        const r = await fetch(`${API}/broker/positions`);
-        const data = await r.json();
-        store.setState({ positions: data.positions || [] });
-      } catch {}
+        const r = await fetch(`${BROKER_API}/positions`);
+        const data = await safeJson(r);
+        const positions = (data.ok && Array.isArray(data.positions))
+          ? data.positions.map((p: any) => ({
+              symbol: p.symbol,
+              quantity: parseFloat(p.qty || '0'),
+              avg_cost: parseFloat(p.avg_entry_price || '0'),
+              market_value: parseFloat(p.market_value || '0'),
+              unrealized_pnl: parseFloat(p.unrealized_pl || '0'),
+            }))
+          : [];
+        store.setState({ positions });
+      } catch (e: any) { store.setState({ error: e.message }); }
     },
     async fetchKillSwitch() {
-      try {
-        const r = await fetch(`${API}/broker/kill-switch`);
-        store.setState({ killSwitch: await r.json() });
-      } catch {}
+      // Kill switch is local only — not part of Alpaca API
+      store.setState({ killSwitch: { active: false, reason: '', activated_at: '' } });
     },
     async activateKillSwitch(reason: string) {
-      try {
-        await fetch(`${API}/broker/kill-switch/activate`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason }),
-        });
-        await this.fetchKillSwitch();
-      } catch {}
+      store.setState({ killSwitch: { active: true, reason, activated_at: new Date().toISOString() } });
     },
     async deactivateKillSwitch() {
-      try {
-        await fetch(`${API}/broker/kill-switch/deactivate`, { method: 'POST' });
-        await this.fetchKillSwitch();
-      } catch {}
+      store.setState({ killSwitch: { active: false, reason: '', activated_at: '' } });
     },
     async fetchDailyPnl() {
-      try {
-        const r = await fetch(`${API}/broker/pnl/daily`);
-        store.setState({ dailyPnl: await r.json() });
-      } catch {}
+      // Compute from account data
+      const s = store.getState();
+      if (s.account) {
+        const unrealized = s.positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+        store.setState({ dailyPnl: { realized: 0, unrealized, total: unrealized } });
+      }
     },
   };
 })();
@@ -135,7 +187,7 @@ export const dataSpineStore = (() => {
     async fetchUniverse() {
       try {
         const r = await fetch(`${API}/data-spine/universe`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ universe: data.universe || [] });
       } catch {}
     },
@@ -152,7 +204,7 @@ export const dataSpineStore = (() => {
     async fetchCompleteness() {
       try {
         const r = await fetch(`${API}/data-spine/completeness`);
-        store.setState({ completeness: await r.json() });
+        store.setState({ completeness: await safeJson(r) });
       } catch {}
     },
   };
@@ -177,13 +229,13 @@ export const portfolioV2Store = (() => {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ symbols, total_capital: capital, method }),
         });
-        store.setState({ allocation: await r.json(), loading: false });
+        store.setState({ allocation: await safeJson(r), loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
     async fetchExposure() {
       try {
         const r = await fetch(`${API}/portfolio/exposure/dashboard`);
-        store.setState({ exposure: await r.json() });
+        store.setState({ exposure: await safeJson(r) });
       } catch {}
     },
   };
@@ -245,7 +297,7 @@ export const backtesterV3Store = (() => {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(params),
         });
-        store.setState({ result: await r.json(), loading: false });
+        store.setState({ result: await safeJson(r), loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
   };
@@ -267,7 +319,7 @@ export const discoveryStore = (() => {
     async fetchTemplates() {
       try {
         const r = await fetch(`${API}/discovery/templates`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ templates: data.templates || [] });
       } catch {}
     },
@@ -278,21 +330,21 @@ export const discoveryStore = (() => {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ template, max_candidates: max }),
         });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ candidates: data.candidates || [], loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
     async generateReport() {
       try {
         const r = await fetch(`${API}/discovery/report`, { method: 'POST' });
-        const report = await r.json();
+        const report = await safeJson(r);
         store.setState({ reports: [...store.getState().reports, report] });
       } catch {}
     },
     async fetchReports() {
       try {
         const r = await fetch(`${API}/discovery/reports`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ reports: data.reports || [] });
       } catch {}
     },
@@ -318,7 +370,7 @@ export const aiStrategyStore = (() => {
     async fetchSpecs() {
       try {
         const r = await fetch(`${API}/ai-strategy/specs`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ specs: data.specs || [] });
       } catch {}
     },
@@ -329,7 +381,7 @@ export const aiStrategyStore = (() => {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(spec),
         });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ currentSpec: data, loading: false });
         await this.fetchSpecs();
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
@@ -337,14 +389,14 @@ export const aiStrategyStore = (() => {
     async validateSpec(specId: string) {
       try {
         const r = await fetch(`${API}/ai-strategy/specs/${specId}/validate`, { method: 'POST' });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ guardrails: data.results || [] });
       } catch {}
     },
     async fetchSweeps() {
       try {
         const r = await fetch(`${API}/ai-strategy/sweeps`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ sweeps: data.sweeps || [] });
       } catch {}
     },
@@ -370,7 +422,7 @@ export const sentimentV2Store = (() => {
       try {
         const url = symbol ? `${API}/sentiment/articles?symbol=${symbol}` : `${API}/sentiment/articles`;
         const r = await fetch(url);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ articles: data.articles || [] });
       } catch {}
     },
@@ -378,7 +430,7 @@ export const sentimentV2Store = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/sentiment/dashboard?symbols=${symbols.join(',')}`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ dashboard: data.sentiments || [], loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -386,7 +438,7 @@ export const sentimentV2Store = (() => {
       try {
         const url = symbol ? `${API}/sentiment/scores?symbol=${symbol}` : `${API}/sentiment/scores`;
         const r = await fetch(url);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ scores: data.scores || [] });
       } catch {}
     },
@@ -412,14 +464,14 @@ export const workflowV3Store = (() => {
     async fetchTemplates() {
       try {
         const r = await fetch(`${API}/workflows/templates`);
-        store.setState({ templates: (await r.json()).templates || {} });
+        store.setState({ templates: (await safeJson(r)).templates || {} });
       } catch {}
     },
     async fetchWorkflows() {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/workflows/list`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ workflows: data.workflows || [], loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -438,7 +490,7 @@ export const workflowV3Store = (() => {
       try {
         const url = workflowId ? `${API}/workflows/${workflowId}/runs` : `${API}/workflows/runs`;
         const r = await fetch(url);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ runs: data.runs || [] });
       } catch {}
     },

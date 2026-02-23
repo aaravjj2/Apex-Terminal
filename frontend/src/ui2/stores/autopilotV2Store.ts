@@ -1,11 +1,11 @@
-/**
- * Autopilot V2 Store (Wave 8 — v1.73-v1.75)
+﻿/**
+ * Autopilot V2 Store (Wave 8 â€” v1.73-v1.75)
  * State machine with candidate generation, scoring, risk checks,
  * vol-target sizing, execution simulation, kill-switch, explainability.
- * Deterministic — no network required.
+ * Deterministic â€” no network required.
  */
 
-// ── Types ───────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type PipelineState = 'idle' | 'scanning' | 'scoring' | 'risk_check' | 'sizing' | 'submitting' | 'completed' | 'rejected';
 
@@ -111,12 +111,6 @@ export interface KillSwitchStateV2 {
   audit_trail: { action: string; timestamp: string; reason: string }[];
 }
 
-// ── Demo Timestamp ─────────────────────────────────────────────
-
-import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
-
-// ── Store ───────────────────────────────────────────────────────
-
 type Listener = () => void;
 const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
@@ -170,8 +164,8 @@ export const autopilotV2Store = {
         run_id: run.run_id,
         state: run.state.toLowerCase() as PipelineState,
         seed: run.seed,
-        started_at: run.inputs?.timestamp || DEMO_TS,
-        completed_at: DEMO_TS,
+        started_at: run.inputs?.timestamp || new Date().toISOString(),
+        completed_at: new Date().toISOString(),
         candidates: run.candidates || [],
         scores: run.scores ? Object.fromEntries(run.scores.map((s: any) => [s.symbol, s])) : {},
         risk_results: run.risk_results ? Object.fromEntries(run.risk_results.map((r: any) => [r.symbol || '', r])) : {},
@@ -200,8 +194,8 @@ export const autopilotV2Store = {
 
   armKillSwitch(reason: string = 'Manual arm') {
     killSwitch = {
-      ...killSwitch, armed: true, armed_at: DEMO_TS, armed_by: 'user',
-      audit_trail: [...killSwitch.audit_trail, { action: 'ARM', timestamp: DEMO_TS, reason }],
+      ...killSwitch, armed: true, armed_at: new Date().toISOString(), armed_by: 'user',
+      audit_trail: [...killSwitch.audit_trail, { action: 'ARM', timestamp: new Date().toISOString(), reason }],
     };
     notify();
   },
@@ -209,7 +203,7 @@ export const autopilotV2Store = {
   disarmKillSwitch(reason: string = 'Manual disarm') {
     killSwitch = {
       ...killSwitch, armed: false, armed_at: null,
-      audit_trail: [...killSwitch.audit_trail, { action: 'DISARM', timestamp: DEMO_TS, reason }],
+      audit_trail: [...killSwitch.audit_trail, { action: 'DISARM', timestamp: new Date().toISOString(), reason }],
     };
     notify();
   },

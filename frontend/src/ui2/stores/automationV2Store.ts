@@ -1,10 +1,10 @@
-/**
- * Automation V2 Store (Wave 8 — v1.76)
+﻿/**
+ * Automation V2 Store (Wave 8 â€” v1.76)
  * DAG-based workflow automation with triggers, actions, node execution logs.
- * Deterministic — no network required.
+ * Deterministic â€” no network required.
  */
 
-// ── Types ───────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface WorkflowNodeV2 {
   node_id: string;
@@ -57,7 +57,7 @@ export interface AutomationRunLogV2 {
   linked_autopilot_run: string;
 }
 
-// ── Hash ────────────────────────────────────────────────────────
+// â”€â”€ Hash â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function stableHash(data: unknown): string {
   const raw = JSON.stringify(data);
@@ -66,11 +66,7 @@ function stableHash(data: unknown): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-// ── Demo Data ──────────────────────────────────────────────────
-
-import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
-
-const DEMO_WORKFLOWS: WorkflowDefV2[] = [
+const BUILTIN_WORKFLOWS: WorkflowDefV2[] = [
   {
     workflow_id: 'wf-autopilot-daily',
     name: 'Daily Autopilot Scan',
@@ -82,8 +78,8 @@ const DEMO_WORKFLOWS: WorkflowDefV2[] = [
       { node_id: 'n3', action: 'log_message', label: 'Log Completion', config: { message: 'Daily scan complete' }, depends_on: ['n2'] },
     ],
     conditions: [],
-    created_at: DEMO_TS,
-    updated_at: DEMO_TS,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     workflow_id: 'wf-alert-pipeline',
@@ -95,8 +91,8 @@ const DEMO_WORKFLOWS: WorkflowDefV2[] = [
       { node_id: 'a2', action: 'create_watchlist_entry', label: 'Add to Watchlist', config: { symbol: 'SPY' }, depends_on: ['a1'] },
     ],
     conditions: [],
-    created_at: DEMO_TS,
-    updated_at: DEMO_TS,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     workflow_id: 'wf-simple-log',
@@ -107,12 +103,12 @@ const DEMO_WORKFLOWS: WorkflowDefV2[] = [
       { node_id: 'l1', action: 'log_message', label: 'Log Start', config: { message: 'Workflow started' }, depends_on: [] },
     ],
     conditions: [],
-    created_at: DEMO_TS,
-    updated_at: DEMO_TS,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];
 
-// ── Deterministic Executor ─────────────────────────────────────
+// â”€â”€ Deterministic Executor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function executeAction(action: string, config: Record<string, unknown>, seed: number): unknown {
   if (action === 'run_autopilot') {
@@ -140,7 +136,7 @@ function runWorkflowV2(wf: WorkflowDefV2, seed: number, counter: number): Automa
     const output = executeAction(n.action, n.config as Record<string, unknown>, seed);
     return {
       node_id: n.node_id, action: n.action, status: 'completed',
-      started_at: DEMO_TS, completed_at: DEMO_TS,
+      started_at: new Date().toISOString(), completed_at: new Date().toISOString(),
       output, error: '', duration_ms: 42,
     };
   });
@@ -152,20 +148,20 @@ function runWorkflowV2(wf: WorkflowDefV2, seed: number, counter: number): Automa
 
   return {
     run_id: runId, workflow_id: wf.workflow_id, workflow_name: wf.name,
-    status: 'completed', started_at: DEMO_TS, completed_at: DEMO_TS,
+    status: 'completed', started_at: new Date().toISOString(), completed_at: new Date().toISOString(),
     seed, trigger: wf.trigger, node_executions: nodeExecs, outputs,
     deterministic_hash: stableHash({ wf: wf.workflow_id, seed, nodeExecs: nodeExecs.map(e => ({ id: e.node_id, status: e.status })) }),
     linked_autopilot_run: linked,
   };
 }
 
-// ── Store ───────────────────────────────────────────────────────
+// â”€â”€ Store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
 
-let workflows: WorkflowDefV2[] = [...DEMO_WORKFLOWS];
+let workflows: WorkflowDefV2[] = [...BUILTIN_WORKFLOWS];
 let runs: AutomationRunLogV2[] = [];
 let selectedWorkflow: string | null = null;
 let selectedRun: string | null = null;
@@ -194,14 +190,14 @@ export const automationV2Store = {
   },
 
   createWorkflow(data: { name: string; description?: string; trigger?: string; nodes?: WorkflowNodeV2[] }) {
-    const wfId = `wf-${stableHash({ name: data.name, ts: DEMO_TS })}`;
+    const wfId = `wf-${stableHash({ name: data.name, ts: new Date().toISOString() })}`;
     const wf: WorkflowDefV2 = {
       workflow_id: wfId, name: data.name,
       description: data.description ?? '',
       trigger: data.trigger ?? 'manual',
       nodes: data.nodes ?? [],
       conditions: [],
-      created_at: DEMO_TS, updated_at: DEMO_TS,
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
     workflows = [...workflows, wf];
     selectedWorkflow = wfId;
@@ -216,7 +212,7 @@ export const automationV2Store = {
   },
 
   reset() {
-    workflows = [...DEMO_WORKFLOWS]; runs = [];
+    workflows = [...BUILTIN_WORKFLOWS]; runs = [];
     selectedWorkflow = null; selectedRun = null; runCounter = 0;
     notify();
   },

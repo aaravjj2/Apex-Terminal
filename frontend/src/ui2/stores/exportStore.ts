@@ -1,10 +1,10 @@
-/**
- * Export Store (Wave 8 — v1.79)
+﻿/**
+ * Export Store (Wave 8 â€” v1.79)
  * Export bundle management for autopilot + automation artifacts.
- * Deterministic — no network required.
+ * Deterministic â€” no network required.
  */
 
-// ── Types ───────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ExportSection {
   key: string;
@@ -27,7 +27,7 @@ export interface ExportBundle {
   deterministic_hash: string;
 }
 
-// ── Hash ────────────────────────────────────────────────────────
+// â”€â”€ Hash â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function stableHash(data: unknown): string {
   const raw = JSON.stringify(data);
@@ -36,13 +36,9 @@ function stableHash(data: unknown): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-// ── Demo Data ──────────────────────────────────────────────────
-
-import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
-
-const DEMO_MANIFEST: ExportManifest = {
+const DEFAULT_MANIFEST: ExportManifest = {
   manifest_version: '1.0.0',
-  generated_at: DEMO_TS,
+  generated_at: new Date().toISOString(),
   sections: [
     { key: 'autopilot', label: 'Autopilot V2 Runs', endpoint: '/api/v1/platform/export/bundle' },
     { key: 'automation', label: 'Automation Runs', endpoint: '/api/v1/platform/export/bundle' },
@@ -50,13 +46,13 @@ const DEMO_MANIFEST: ExportManifest = {
   ],
 };
 
-// ── Store ───────────────────────────────────────────────────────
+// â”€â”€ Store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
 
-let manifest: ExportManifest = { ...DEMO_MANIFEST };
+let manifest: ExportManifest = { ...DEFAULT_MANIFEST };
 let bundle: ExportBundle | null = null;
 let isExporting: boolean = false;
 
@@ -72,12 +68,12 @@ export const exportStore = {
     notify();
 
     bundle = {
-      bundle_id: `bundle-${stableHash({ ts: DEMO_TS })}`,
-      generated_at: DEMO_TS,
-      mode: 'demo',
+      bundle_id: `bundle-${stableHash({ ts: new Date().toISOString() })}`,
+      generated_at: new Date().toISOString(),
+      mode: 'live',
       autopilot: { runs: [], total: 0 },
       automation: { runs: [], total: 0 },
-      deterministic_hash: stableHash({ ts: DEMO_TS, mode: 'demo' }),
+      deterministic_hash: stableHash({ ts: new Date().toISOString(), mode: 'live' }),
     };
 
     isExporting = false;
@@ -86,7 +82,7 @@ export const exportStore = {
   },
 
   reset() {
-    manifest = { ...DEMO_MANIFEST }; bundle = null; isExporting = false;
+    manifest = { ...DEFAULT_MANIFEST }; bundle = null; isExporting = false;
     notify();
   },
 };

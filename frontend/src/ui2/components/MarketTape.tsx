@@ -1,6 +1,6 @@
 /**
  * v1.56 — MarketTape Component
- * Scrolling ticker tape with deterministic stream simulation
+ * Scrolling ticker tape with live stream display
  */
 
 import { useState, useEffect } from 'react';
@@ -74,16 +74,16 @@ export function MarketTape({ testId = 'ui2-market-tape' }: MarketTapeProps) {
           gap: '4px',
           padding: '2px 8px',
           borderRadius: 'var(--ui2-radius-sm)',
-          background: status === 'demo' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-          color: status === 'demo' ? 'var(--ui2-success)' : 'var(--ui2-text-muted)',
+          background: status === 'live' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
+          color: status === 'live' ? 'var(--ui2-success)' : 'var(--ui2-text-muted)',
           fontWeight: 600,
           fontSize: '10px',
           textTransform: 'uppercase',
           flexShrink: 0,
         }}
       >
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: status === 'demo' ? 'var(--ui2-success)' : 'var(--ui2-text-muted)' }} />
-        {status === 'demo' ? 'DEMO STREAM' : status === 'replay' ? 'REPLAY' : 'OFFLINE'}
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: status === 'live' ? 'var(--ui2-success)' : 'var(--ui2-text-muted)' }} />
+        {status === 'live' ? 'LIVE' : status === 'replay' ? 'REPLAY' : 'OFFLINE'}
       </div>
 
       {/* Ticker symbols */}

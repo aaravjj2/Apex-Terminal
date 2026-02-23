@@ -4,9 +4,6 @@
  * Deterministic — StubProvider mode only.
  */
 
-// Online-only: use live timestamps
-const DEMO_TIMESTAMP = Date.now();
-
 // ── Types ──────────────────────────────────────────────────────
 
 export interface AgentTool {
@@ -74,7 +71,7 @@ function stubInvoke(prompt: string): { content: string; toolCalls: ToolCall[]; c
         { tool_name: 'generate_report', args: { type: 'risk', period: 'daily' }, result: { var_95: 12450, max_drawdown: 0.032, positions_in_limit: true }, duration_ms: 85 },
       ],
       citations: [
-        { source: 'Risk Engine', entity_type: 'risk_run', entity_id: 'rr-demo-1', snippet: 'VaR 95% = $12,450' },
+        { source: 'Risk Engine', entity_type: 'risk_run', entity_id: 'rr-local-1', snippet: 'VaR 95% = $12,450' },
       ],
     };
   }
@@ -84,10 +81,10 @@ function stubInvoke(prompt: string): { content: string; toolCalls: ToolCall[]; c
       content: 'Backtest complete for VWAP Mean Reversion strategy. Sharpe ratio: 1.82, win rate: 64.3%, max drawdown: -8.5%. The strategy shows consistent performance across market regimes.',
       toolCalls: [
         { tool_name: 'run_backtest', args: { strategy: 'vwap_mean_reversion', period: '6m' }, result: { sharpe: 1.82, win_rate: 0.643, max_dd: -0.085 }, duration_ms: 230 },
-        { tool_name: 'summarize_run', args: { run_id: 'bt-demo-1' }, result: { summary: 'Consistent alpha generation' }, duration_ms: 45 },
+        { tool_name: 'summarize_run', args: { run_id: 'bt-local-1' }, result: { summary: 'Consistent alpha generation' }, duration_ms: 45 },
       ],
       citations: [
-        { source: 'Backtest Engine', entity_type: 'backtest', entity_id: 'bt-demo-1', snippet: 'Sharpe: 1.82, Win Rate: 64.3%' },
+        { source: 'Backtest Engine', entity_type: 'backtest', entity_id: 'bt-local-1', snippet: 'Sharpe: 1.82, Win Rate: 64.3%' },
       ],
     };
   }
@@ -96,7 +93,7 @@ function stubInvoke(prompt: string): { content: string; toolCalls: ToolCall[]; c
     return {
       content: 'Order ticket created for SPY. Limit buy 50 shares at $547.23. The order has been queued pending autopilot approval.',
       toolCalls: [
-        { tool_name: 'create_order_ticket', args: { symbol: 'SPY', side: 'buy', qty: 50, price: 547.23 }, result: { ticket_id: 'OT-demo-1', status: 'queued' }, duration_ms: 32 },
+        { tool_name: 'create_order_ticket', args: { symbol: 'SPY', side: 'buy', qty: 50, price: 547.23 }, result: { ticket_id: 'OT-local-1', status: 'queued' }, duration_ms: 32 },
       ],
       citations: [],
     };
@@ -142,7 +139,7 @@ export const agentStore = {
       id: `msg-${fnvHash(prompt + String(messages.length))}`,
       role: 'user', content: prompt,
       tool_calls: [], citations: [],
-      timestamp: new Date(DEMO_TIMESTAMP).toISOString(), provider: 'stub',
+      timestamp: new Date(Date.now()).toISOString(), provider: 'local',
     };
 
     const { content, toolCalls, citations } = stubInvoke(prompt);
@@ -150,7 +147,7 @@ export const agentStore = {
       id: `msg-${fnvHash(content + String(messages.length))}`,
       role: 'assistant', content,
       tool_calls: toolCalls, citations,
-      timestamp: new Date(DEMO_TIMESTAMP).toISOString(), provider: 'stub',
+      timestamp: new Date(Date.now()).toISOString(), provider: 'local',
     };
 
     messages = [...messages, userMsg, assistantMsg];

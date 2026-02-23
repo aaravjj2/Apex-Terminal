@@ -70,14 +70,15 @@ export function AuditorUI2() {
       // Try real endpoint; fall back to mock data
       const r = await fetch(`${API_BASE}/api/v3/pages/audit-events`, { signal: AbortSignal.timeout(3000) });
       if (r.ok) {
-        const data = await r.json();
+        const text = await r.text();
+        const data = text ? JSON.parse(text) : {};
         setEvents(data.events || []);
       } else {
         throw new Error('fallback');
       }
     } catch {
-      // Use mock data for standalone demo
-      setEvents(generateMockAuditEvents());
+      // No data available — show empty state
+      setEvents([]);
     } finally {
       setPageStatus('ready');
     }

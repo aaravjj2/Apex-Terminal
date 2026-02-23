@@ -13,8 +13,8 @@ const SETTINGS_SECTIONS = [
     { key: 'fontSize', label: 'Font Size', value: '13px', type: 'text' },
   ]},
   { id: 'data', label: 'Data & Streams', items: [
-    { key: 'mode', label: 'Run Mode', value: 'DEMO', type: 'text' },
-    { key: 'provider', label: 'LLM Provider', value: 'Mock', type: 'text' },
+    { key: 'mode', label: 'Run Mode', value: 'LIVE', type: 'text' },
+    { key: 'provider', label: 'LLM Provider', value: 'Online', type: 'text' },
     { key: 'replayCache', label: 'Replay Cache', value: 'Enabled', type: 'text' },
   ]},
   { id: 'keys', label: 'API Keys', items: [

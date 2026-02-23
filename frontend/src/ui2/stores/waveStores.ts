@@ -3,6 +3,24 @@
 
 const API = '/api/v1';
 
+/** Safe JSON parse — never throws "Unexpected end of JSON input" */
+async function safeJson<T = any>(r: Response): Promise<T> {
+  if (!r.ok) {
+    const text = await r.text().catch(() => '');
+    throw new Error(`HTTP ${r.status}: ${text.slice(0, 200) || r.statusText}`);
+  }
+  const ct = r.headers.get('content-type') || '';
+  if (!ct.includes('json')) {
+    const text = await r.text().catch(() => '');
+    throw new Error(`Expected JSON but got ${ct || 'no content-type'}: ${text.slice(0, 200)}`);
+  }
+  const text = await r.text();
+  if (!text || text.trim().length === 0) {
+    throw new Error('Empty response body');
+  }
+  return JSON.parse(text) as T;
+}
+
 // ── Generic Store Factory ─────────────────────────────────────────
 type Listener = () => void;
 
@@ -54,7 +72,7 @@ export const monteCarloStore = (() => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(config),
         });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ result: data, loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -97,7 +115,7 @@ export const walkForwardStore = (() => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(config),
         });
-        store.setState({ result: await r.json(), loading: false });
+        store.setState({ result: await safeJson(r), loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
       }
@@ -127,7 +145,7 @@ export const scoringStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/scoring/demo`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ scores: data.scores, loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -164,8 +182,8 @@ export const sentimentStore = (() => {
           fetch(`${API}/sentiment/symbols`),
           fetch(`${API}/sentiment/market-mood`),
         ]);
-        const sentData = await sentR.json();
-        const moodData = await moodR.json();
+        const sentData = await safeJson(sentR);
+        const moodData = await safeJson(moodR);
         store.setState({ sentiments: sentData.sentiments, mood: moodData.mood, loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -199,8 +217,8 @@ export const regimeStore = (() => {
           fetch(`${API}/regime`),
           fetch(`${API}/regime/summary`),
         ]);
-        const regData = await regR.json();
-        const sumData = await sumR.json();
+        const regData = await safeJson(regR);
+        const sumData = await safeJson(sumR);
         store.setState({ regimes: regData.regimes, summary: sumData, loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -235,7 +253,7 @@ export const elasticsearchStore = (() => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query, index }),
         });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ hits: data.hits, total: data.total, loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -244,7 +262,7 @@ export const elasticsearchStore = (() => {
     async fetchStatus() {
       try {
         const r = await fetch(`${API}/elasticsearch/status`);
-        store.setState({ status: await r.json() });
+        store.setState({ status: await safeJson(r) });
       } catch {}
     },
   };
@@ -268,7 +286,7 @@ export const novaStore = (() => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt }),
         });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ response: data.text, loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -277,7 +295,7 @@ export const novaStore = (() => {
     async fetchStatus() {
       try {
         const r = await fetch(`${API}/nova/status`);
-        store.setState({ status: await r.json() });
+        store.setState({ status: await safeJson(r) });
       } catch {}
     },
   };
@@ -303,9 +321,9 @@ export const marketHoursStore = (() => {
           fetch(`${API}/market-hours/can-trade`),
         ]);
         store.setState({
-          session: await sesR.json(),
-          holidays: (await holR.json()).holidays,
-          canTrade: (await canR.json()).can_trade,
+          session: await safeJson(sesR),
+          holidays: (await safeJson(holR)).holidays,
+          canTrade: (await safeJson(canR)).can_trade,
           loading: false,
         });
       } catch (e: any) {
@@ -336,7 +354,7 @@ export const systemHealthStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/system-health`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ report: data, components: data.components || [], loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -362,8 +380,8 @@ export const observabilityStore = (() => {
           fetch(`${API}/observability/metrics`),
           fetch(`${API}/observability/performance`),
         ]);
-        const metData = await metR.json();
-        const perfData = await perfR.json();
+        const metData = await safeJson(metR);
+        const perfData = await safeJson(perfR);
         store.setState({ metrics: metData.metrics, performance: perfData, loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -386,7 +404,7 @@ export const complianceStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/compliance/report`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ report: data, checks: data.checks || [], loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -410,7 +428,7 @@ export const performanceStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/performance`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({
           dashboard: data,
           periods: data.periods || [],
@@ -441,8 +459,8 @@ export const killSwitchRecoveryStore = (() => {
           fetch(`${API}/kill-switch-recovery/status`),
           fetch(`${API}/kill-switch-recovery/events`),
         ]);
-        const statusData = await statusR.json();
-        const eventsData = await eventsR.json();
+        const statusData = await safeJson(statusR);
+        const eventsData = await safeJson(eventsR);
         store.setState({ status: statusData, events: eventsData.events || [], loading: false });
       } catch (e: any) {
         store.setState({ error: e.message, loading: false });
@@ -467,7 +485,7 @@ export const strategyOptimizerStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/strategy-optimizer`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ strategies: d.strategies || [], hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -485,7 +503,7 @@ export const anomaliesStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/anomalies`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ anomalies: d.anomalies || [], hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -503,7 +521,7 @@ export const portfolioOptimizerStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/portfolio-optimizer`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ allocations: d.allocations || [], result: d, hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -521,7 +539,7 @@ export const sandboxRunnerStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/sandbox-runner/events`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ events: d.events || [], hash: d.hash || '', status: 'complete', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -529,7 +547,7 @@ export const sandboxRunnerStore = (() => {
       store.setState({ loading: true });
       try {
         const r = await fetch(`${API}/sandbox-runner/run`, { method: 'POST' });
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ events: d.events || [], hash: d.hash || '', status: d.status || 'complete', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -547,7 +565,7 @@ export const scenarioSimStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/scenario-sim/scenarios`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ scenarios: d.scenarios || [], hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -565,7 +583,7 @@ export const altDataStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/alt-data/catalog`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ datasets: d.datasets || [], hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -583,7 +601,7 @@ export const signalMarketStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/signal-market/listings`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ signals: d.signals || [], hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -601,7 +619,7 @@ export const microstructureStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/microstructure/metrics`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ metrics: d.metrics || [], hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -619,7 +637,7 @@ export const liquidityStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/liquidity/heatmap`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ symbols: d.symbols || [], timeBuckets: d.time_buckets || [], grid: d.grid || {}, hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -637,7 +655,7 @@ export const policySignalStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/policy-signal/events`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ events: d.events || [], hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -655,7 +673,7 @@ export const riskNetworkStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/risk-network/graph`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ nodes: d.nodes || [], edges: d.edges || [], hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -673,7 +691,7 @@ export const hedgeFundStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/hedge-fund/summary`);
-        const d = await r.json();
+        const d = await safeJson(r);
         store.setState({ allocations: d.allocations || [], summary: d, hash: d.hash || '', loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },

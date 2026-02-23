@@ -289,7 +289,7 @@ describe('exportStore', () => {
   it('generate bundle creates one', () => {
     const bundle = exportStore.generateBundle();
     expect(bundle).not.toBeNull();
-    expect(bundle!.mode).toBe('demo');
+    expect(bundle!.mode).toBe('live');
     expect(bundle!.deterministic_hash).toBeTruthy();
   });
 
@@ -313,7 +313,7 @@ describe('platformHealthStore', () => {
   it('starts healthy', () => {
     const h = platformHealthStore.getHealth();
     expect(h.status).toBe('healthy');
-    expect(h.mode).toBe('demo');
+    expect(h.mode).toBe('live');
   });
 
   it('has 4 services', () => {

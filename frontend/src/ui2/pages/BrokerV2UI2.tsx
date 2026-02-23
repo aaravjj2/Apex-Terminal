@@ -11,6 +11,7 @@ export function BrokerV2UI2() {
 
   useEffect(() => {
     brokerStore.fetchReadiness();
+    brokerStore.fetchAccount();
     brokerStore.fetchOrders();
     brokerStore.fetchPositions();
     brokerStore.fetchKillSwitch();
@@ -19,7 +20,7 @@ export function BrokerV2UI2() {
 
   return (
     <div data-testid="broker-v2-ui2-page" style={{ height: '100%', overflow: 'auto', padding: 24 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Paper Broker (v2)</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Alpaca Paper Broker</h1>
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: '#ef4444' }}>{error}</p>}
 

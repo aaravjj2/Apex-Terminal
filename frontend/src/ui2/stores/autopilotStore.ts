@@ -1,10 +1,10 @@
 /**
  * v1.58 — Autopilot Store
- * Kill switch, rule toggles, activity feed for DEMO mode
+ * Kill switch, rule toggles, activity feed
  */
 
-// Online-only: use live timestamps
-const DEMO_TIMESTAMP = Date.now();
+// Live timestamp utility
+function now() { return Date.now(); }
 
 export interface AutopilotRule {
   id: string;
@@ -34,13 +34,7 @@ let rules: AutopilotRule[] = [
   { id: 'rule-4', name: 'Trade Frequency', enabled: false, type: 'frequency-limit', value: 10, unit: 'trades/hour' },
 ];
 
-let activityFeed: AutopilotActivity[] = [
-  { id: 'act-1', timestamp: DEMO_TIMESTAMP - 60000, type: 'accepted', symbol: 'SPY', side: 'buy', quantity: 150, reason: 'RSI oversold bounce signal. All risk checks passed.', confidence: 0.78 },
-  { id: 'act-2', timestamp: DEMO_TIMESTAMP - 120000, type: 'rejected', symbol: 'NVDA', side: 'buy', quantity: 800, reason: 'Exceeds max position size limit (500 shares).', confidence: 0.82 },
-  { id: 'act-3', timestamp: DEMO_TIMESTAMP - 180000, type: 'accepted', symbol: 'AMZN', side: 'sell', quantity: 50, reason: 'Mean reversion sell signal. Position within limits.', confidence: 0.71 },
-  { id: 'act-4', timestamp: DEMO_TIMESTAMP - 240000, type: 'rejected', symbol: 'TSLA', side: 'buy', quantity: 200, reason: 'Sector concentration would exceed 40% tech limit.', confidence: 0.65 },
-  { id: 'act-5', timestamp: DEMO_TIMESTAMP - 300000, type: 'info', reason: 'Autopilot started. Monitoring 8 symbols across 3 strategies.' },
-];
+let activityFeed: AutopilotActivity[] = [];
 
 const listeners = new Set<() => void>();
 function notify() { listeners.forEach(fn => fn()); }
@@ -52,7 +46,7 @@ export const autopilotStore = {
     killSwitchActive = true;
     activityFeed.unshift({
       id: `act-ks-${Date.now()}`,
-      timestamp: DEMO_TIMESTAMP,
+      timestamp: now(),
       type: 'kill-switch',
       reason: 'KILL SWITCH ACTIVATED. All autopilot trading halted.',
     });
@@ -63,7 +57,7 @@ export const autopilotStore = {
     killSwitchActive = false;
     activityFeed.unshift({
       id: `act-ks-off-${Date.now()}`,
-      timestamp: DEMO_TIMESTAMP,
+      timestamp: now(),
       type: 'info',
       reason: 'Kill switch deactivated. Autopilot resumed.',
     });
@@ -87,7 +81,7 @@ export const autopilotStore = {
     if (killSwitchActive) {
       activityFeed.unshift({
         id: `act-${Date.now()}`,
-        timestamp: DEMO_TIMESTAMP,
+        timestamp: now(),
         type: 'rejected',
         symbol, side, quantity, confidence,
         reason: 'Kill switch is active. Trade blocked.',
@@ -101,7 +95,7 @@ export const autopilotStore = {
     if (posLimit?.enabled && quantity > posLimit.value) {
       activityFeed.unshift({
         id: `act-${Date.now()}`,
-        timestamp: DEMO_TIMESTAMP,
+        timestamp: now(),
         type: 'rejected',
         symbol, side, quantity, confidence,
         reason: `Exceeds max position size limit (${posLimit.value} ${posLimit.unit}).`,
@@ -113,7 +107,7 @@ export const autopilotStore = {
     // Accept the trade
     activityFeed.unshift({
       id: `act-${Date.now()}`,
-      timestamp: DEMO_TIMESTAMP,
+      timestamp: now(),
       type: 'accepted',
       symbol, side, quantity, confidence,
       reason: `Signal accepted. All ${rules.filter(r => r.enabled).length} risk checks passed.`,
@@ -135,7 +129,7 @@ export const autopilotStore = {
       { id: 'rule-3', name: 'Sector Concentration', enabled: true, type: 'sector-limit', value: 40, unit: '%' },
       { id: 'rule-4', name: 'Trade Frequency', enabled: false, type: 'frequency-limit', value: 10, unit: 'trades/hour' },
     ];
-    activityFeed = activityFeed.slice(0, 5); // Keep initial demo data
+    activityFeed = []; // Reset to empty — no seeded data
     notify();
   },
 };

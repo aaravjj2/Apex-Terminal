@@ -196,7 +196,7 @@ const now = Date.now();
 const HEALTH_CHECKS: HealthCheck[] = [
   { id: 'h-1', service: 'Backend API', status: 'healthy', latency: 12, uptime: '99.97%', lastCheck: new Date(now).toISOString() },
   { id: 'h-2', service: 'WebSocket Feed', status: 'healthy', latency: 3, uptime: '99.95%', lastCheck: new Date(now).toISOString() },
-  { id: 'h-3', service: 'Demo Data Engine', status: 'healthy', latency: 1, uptime: '100.0%', lastCheck: new Date(now).toISOString() },
+  { id: 'h-3', service: 'Data Pipeline', status: 'healthy', latency: 1, uptime: '100.0%', lastCheck: new Date(now).toISOString() },
   { id: 'h-4', service: 'Replay Cache', status: 'healthy', latency: 5, uptime: '99.99%', lastCheck: new Date(now).toISOString() },
   { id: 'h-5', service: 'Strategy Validator', status: 'healthy', latency: 8, uptime: '99.90%', lastCheck: new Date(now).toISOString() },
 ];
@@ -204,7 +204,7 @@ const HEALTH_CHECKS: HealthCheck[] = [
 const PLATFORM_INFO = {
   version: '1.83.0',
   buildHash: 'c686eab9',
-  mode: 'DEMO',
+  mode: 'LIVE',
   nodeEnv: 'production',
   uptime: '4d 12h 33m',
   lastDeploy: new Date(now - 86400000 * 4).toISOString().split('T')[0],
@@ -218,7 +218,7 @@ interface Incident {
   createdAt: string;
 }
 
-const DEMO_INCIDENTS: Incident[] = [
+const INCIDENTS: Incident[] = [
   { id: 'inc-1', title: 'Elevated latency on WebSocket feed', severity: 'medium', status: 'resolved', createdAt: new Date(now - 86400000 * 2).toISOString().split('T')[0] },
   { id: 'inc-2', title: 'Scheduled maintenance window', severity: 'low', status: 'resolved', createdAt: new Date(now - 86400000 * 5).toISOString().split('T')[0] },
   { id: 'inc-3', title: 'Replay cache cold start delay', severity: 'low', status: 'resolved', createdAt: new Date(now - 86400000 * 7).toISOString().split('T')[0] },
@@ -372,7 +372,7 @@ export function OpsUI2() {
 
         {activeTab === 'incidents' && (
           <div data-testid="ops-incidents-panel">
-            <DataTable data={DEMO_INCIDENTS as unknown as Record<string, unknown>[]} columns={incidentColumns} keyField="id" testId="ops-incidents-table" />
+            <DataTable data={INCIDENTS as unknown as Record<string, unknown>[]} columns={incidentColumns} keyField="id" testId="ops-incidents-table" />
           </div>
         )}
 

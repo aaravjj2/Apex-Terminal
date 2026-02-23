@@ -95,11 +95,6 @@ export interface RobustnessResult {
   timestamp: string;
 }
 
-// ─── Demo Constants ─────────────────────────────────────────────────────────
-import { RECORDING_TS } from '../dataMode/config';
-// RECORDING_TS anchors to data/recordings/core-default date_range.start
-const DEMO_TS = RECORDING_TS;
-
 function generateSweepCells(config: SweepConfig): SweepCell[] {
   const cells: SweepCell[] = [];
   const p0 = config.params[0];
@@ -112,7 +107,7 @@ function generateSweepCells(config: SweepConfig): SweepCell[] {
 
   for (const v0 of p0Values) {
     for (const v1 of p1Values) {
-      const seed = fnv32(`${config.sweep_id}:${v0}:${v1}:${DEMO_TS}`);
+      const seed = fnv32(`${config.sweep_id}:${v0}:${v1}:${new Date().toISOString()}`);
       const paramValues: Record<string, number> = { [p0.name]: v0 };
       if (p1) paramValues[p1.name] = v1;
 
@@ -131,7 +126,7 @@ function generateSweepCells(config: SweepConfig): SweepCell[] {
 }
 
 function generateWalkForward(symbol: string, strategyId: string): WalkForwardResult {
-  const wfId = `wf-${fnv32(`${symbol}:${strategyId}:wf:${DEMO_TS}`).toString(16).slice(0, 8)}`;
+  const wfId = `wf-${fnv32(`${symbol}:${strategyId}:wf:${new Date().toISOString()}`).toString(16).slice(0, 8)}`;
   const windows: WalkForwardWindow[] = [];
   const baseYear = 2024;
 
@@ -165,11 +160,11 @@ function generateWalkForward(symbol: string, strategyId: string): WalkForwardRes
 
   const hash = fnv32(JSON.stringify(windows)).toString(16).padStart(8, '0');
 
-  return { wf_id: wfId, symbol, strategy_id: strategyId, windows, aggregate_sharpe: aggSharpe, aggregate_return: aggReturn, oos_degradation: degradation, hash, timestamp: DEMO_TS };
+  return { wf_id: wfId, symbol, strategy_id: strategyId, windows, aggregate_sharpe: aggSharpe, aggregate_return: aggReturn, oos_degradation: degradation, hash, timestamp: new Date().toISOString() };
 }
 
 function generateRobustness(symbol: string, strategyId: string): RobustnessResult {
-  const robId = `rob-${fnv32(`${symbol}:${strategyId}:rob:${DEMO_TS}`).toString(16).slice(0, 8)}`;
+  const robId = `rob-${fnv32(`${symbol}:${strategyId}:rob:${new Date().toISOString()}`).toString(16).slice(0, 8)}`;
   const baseSeed = fnv32(`${robId}:base`);
   const baseSharpe = Math.round(((baseSeed % 200) / 100 + 0.5) * 100) / 100;
   const baseReturn = Math.round(((baseSeed % 3000) / 100 + 5) * 100) / 100;
@@ -207,7 +202,7 @@ function generateRobustness(symbol: string, strategyId: string): RobustnessResul
   const robustnessScore = Math.round((positiveCount / scenarios.length) * 100);
   const hash = fnv32(JSON.stringify(scenarios)).toString(16).padStart(8, '0');
 
-  return { rob_id: robId, symbol, strategy_id: strategyId, base_sharpe: baseSharpe, base_return: baseReturn, scenarios, robustness_score: robustnessScore, hash, timestamp: DEMO_TS };
+  return { rob_id: robId, symbol, strategy_id: strategyId, base_sharpe: baseSharpe, base_return: baseReturn, scenarios, robustness_score: robustnessScore, hash, timestamp: new Date().toISOString() };
 }
 
 // ─── Store ──────────────────────────────────────────────────────────────────
@@ -236,7 +231,7 @@ export const backtestDepthStore = {
     let bestIdx = 0;
     cells.forEach((c, i) => { if (c.sharpe > cells[bestIdx].sharpe) bestIdx = i; });
     const hash = fnv32(JSON.stringify(cells)).toString(16).padStart(8, '0');
-    const result: SweepResult = { sweep_id: config.sweep_id, config, cells, best_cell_id: cells[bestIdx].cell_id, hash, timestamp: DEMO_TS };
+    const result: SweepResult = { sweep_id: config.sweep_id, config, cells, best_cell_id: cells[bestIdx].cell_id, hash, timestamp: new Date().toISOString() };
     state = { ...state, sweeps: { ...state.sweeps, [config.sweep_id]: result } };
     emit();
     return result;

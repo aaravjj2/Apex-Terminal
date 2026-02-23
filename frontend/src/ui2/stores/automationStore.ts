@@ -1,12 +1,12 @@
-/**
+﻿/**
  * Automation Store (v1.63-v1.65)
  * Client-side state for workflow automation studio.
- * Deterministic demo data — no network required.
+ * Deterministic demo data â€” no network required.
  */
 
-// Deterministic — no external deps
+// Deterministic â€” no external deps
 
-// ── Types ──────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface WorkflowStep {
   id: string;
@@ -61,7 +61,7 @@ export interface WorkflowRun {
   deterministic_hash: string;
 }
 
-// ── Deterministic hash ────────────────────────────────────────
+// â”€â”€ Deterministic hash â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function stableHash(data: unknown): string {
   const raw = JSON.stringify(data, Object.keys(data as Record<string, unknown>).sort());
@@ -73,11 +73,7 @@ function stableHash(data: unknown): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-// ── Demo Data ──────────────────────────────────────────────────
-
-import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
-
-const DEMO_WORKFLOWS: WorkflowDef[] = [
+const BUILTIN_WORKFLOWS: WorkflowDef[] = [
   {
     id: 'wf-demo-1',
     name: 'Daily Risk Report',
@@ -88,8 +84,8 @@ const DEMO_WORKFLOWS: WorkflowDef[] = [
       { id: 'step-2', name: 'Update Watchlist', type: 'tool', tool_name: 'update_watchlist', tool_params: { symbols: ['SPY', 'AAPL', 'TSLA'] }, timeout_ms: 30000, continue_on_fail: false },
       { id: 'step-3', name: 'Classify Status', type: 'tool', tool_name: 'classify_incident', tool_params: { title: 'Daily check' }, timeout_ms: 30000, continue_on_fail: true },
     ],
-    created_at: DEMO_TS,
-    updated_at: DEMO_TS,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     version: 1,
   },
   {
@@ -101,8 +97,8 @@ const DEMO_WORKFLOWS: WorkflowDef[] = [
       { id: 'step-1', name: 'Run Backtest', type: 'tool', tool_name: 'run_backtest', tool_params: { strategy: 'RSI Oversold Bounce', symbol: 'MSFT' }, timeout_ms: 30000, continue_on_fail: false },
       { id: 'step-2', name: 'Create Order', type: 'tool', tool_name: 'create_order_ticket', tool_params: { symbol: 'MSFT', side: 'buy', quantity: 50 }, timeout_ms: 30000, continue_on_fail: false },
     ],
-    created_at: DEMO_TS,
-    updated_at: DEMO_TS,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     version: 1,
   },
   {
@@ -115,8 +111,8 @@ const DEMO_WORKFLOWS: WorkflowDef[] = [
       { id: 'step-2', name: 'Generate Report', type: 'tool', tool_name: 'generate_report', tool_params: { type: 'autopilot' }, timeout_ms: 30000, continue_on_fail: false },
       { id: 'step-3', name: 'Summarize Run', type: 'tool', tool_name: 'summarize_run', tool_params: {}, timeout_ms: 30000, continue_on_fail: true },
     ],
-    created_at: DEMO_TS,
-    updated_at: DEMO_TS,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     version: 1,
   },
 ];
@@ -128,10 +124,10 @@ const AVAILABLE_TOOLS = [
   'search', 'summarize_run', 'update_watchlist',
 ];
 
-// ── Deterministic Demo Runner ──────────────────────────────────
+// â”€â”€ Deterministic Demo Runner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function runWorkflowDemo(wf: WorkflowDef): WorkflowRun {
-  const runId = `run-${stableHash({ wf: wf.id, t: DEMO_TS })}`;
+  const runId = `run-${stableHash({ wf: wf.id, t: new Date().toISOString() })}`;
 
   const stepResults: StepResult[] = wf.steps.map(s => ({
     step_id: s.id,
@@ -151,7 +147,7 @@ function runWorkflowDemo(wf: WorkflowDef): WorkflowRun {
       content_type: 'application/json',
       data: { workflow: wf.name, steps_total: wf.steps.length, steps_passed: wf.steps.length, status: 'completed' },
       summary: `Run ${runId}: ${wf.steps.length}/${wf.steps.length} steps passed`,
-      created_at: DEMO_TS,
+      created_at: new Date().toISOString(),
     },
     {
       id: `${runId}-outputs`,
@@ -160,7 +156,7 @@ function runWorkflowDemo(wf: WorkflowDef): WorkflowRun {
       content_type: 'application/json',
       data: Object.fromEntries(stepResults.map(sr => [sr.step_id, sr.output])),
       summary: `Outputs from ${wf.steps.length} steps`,
-      created_at: DEMO_TS,
+      created_at: new Date().toISOString(),
     },
   ];
 
@@ -169,8 +165,8 @@ function runWorkflowDemo(wf: WorkflowDef): WorkflowRun {
     workflow_id: wf.id,
     workflow_name: wf.name,
     status: 'completed',
-    started_at: DEMO_TS,
-    completed_at: DEMO_TS,
+    started_at: new Date().toISOString(),
+    completed_at: new Date().toISOString(),
     step_results: stepResults,
     artifacts,
     params: {},
@@ -179,13 +175,13 @@ function runWorkflowDemo(wf: WorkflowDef): WorkflowRun {
   };
 }
 
-// ── Store ──────────────────────────────────────────────────────
+// â”€â”€ Store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
 
-let workflows: WorkflowDef[] = [...DEMO_WORKFLOWS];
+let workflows: WorkflowDef[] = [...BUILTIN_WORKFLOWS];
 let runs: WorkflowRun[] = [];
 let selectedWorkflow: string | null = null;
 let selectedRun: string | null = null;
@@ -217,8 +213,8 @@ export const automationStore = {
       description,
       trigger: { type: 'manual', config: {} },
       steps,
-      created_at: DEMO_TS,
-      updated_at: DEMO_TS,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       version: 1,
     };
     workflows = [...workflows, wf];
@@ -245,7 +241,7 @@ export const automationStore = {
   },
 
   reset() {
-    workflows = [...DEMO_WORKFLOWS];
+    workflows = [...BUILTIN_WORKFLOWS];
     runs = [];
     selectedWorkflow = null;
     selectedRun = null;

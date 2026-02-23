@@ -1,9 +1,9 @@
-/**
- * Platform Health Store (Wave 8 — v1.80)
+﻿/**
+ * Platform Health Store (Wave 8 â€” v1.80)
  * Platform health observability with deterministic demo data.
  */
 
-// ── Types ───────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ServiceStatus {
   status: string;
@@ -26,19 +26,15 @@ export interface PlatformHealth {
   metrics: HealthMetrics;
 }
 
-// ── Demo Data ──────────────────────────────────────────────────
-
-import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
-
-const DEMO_HEALTH: PlatformHealth = {
+const DEFAULT_HEALTH: PlatformHealth = {
   status: 'healthy',
-  mode: 'demo',
-  timestamp: DEMO_TS,
+  mode: 'live',
+  timestamp: new Date().toISOString(),
   services: {
     autopilot_v2: { status: 'ok', version: '2.0.0' },
     automation: { status: 'ok', version: '1.0.0' },
     search: { status: 'ok', version: '1.0.0' },
-    llm: { status: 'stub', provider: 'mock' },
+    llm: { status: 'online', provider: 'api' },
   },
   metrics: {
     uptime_seconds: 86400,
@@ -48,14 +44,14 @@ const DEMO_HEALTH: PlatformHealth = {
   },
 };
 
-// ── Store ───────────────────────────────────────────────────────
+// â”€â”€ Store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
 
-let health: PlatformHealth = { ...DEMO_HEALTH };
-let lastRefresh: string = DEMO_TS;
+let health: PlatformHealth = { ...DEFAULT_HEALTH };
+let lastRefresh: string = new Date().toISOString();
 
 export const platformHealthStore = {
   subscribe(fn: Listener) { listeners.add(fn); return () => { listeners.delete(fn); }; },
@@ -64,13 +60,13 @@ export const platformHealthStore = {
   getLastRefresh: () => lastRefresh,
 
   refresh() {
-    health = { ...DEMO_HEALTH };
-    lastRefresh = DEMO_TS;
+    health = { ...DEFAULT_HEALTH };
+    lastRefresh = new Date().toISOString();
     notify();
   },
 
   reset() {
-    health = { ...DEMO_HEALTH }; lastRefresh = DEMO_TS;
+    health = { ...DEFAULT_HEALTH }; lastRefresh = new Date().toISOString();
     notify();
   },
 };

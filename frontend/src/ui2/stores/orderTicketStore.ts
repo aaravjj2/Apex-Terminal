@@ -3,9 +3,6 @@
  * Deterministic in-memory order management for DEMO mode
  */
 
-// Online-only: use live timestamps
-const DEMO_TIMESTAMP = Date.now();
-
 export type OrderSide = 'buy' | 'sell';
 export type OrderType = 'market' | 'limit' | 'stop';
 export type OrderTIF = 'day' | 'gtc' | 'ioc' | 'fok';
@@ -74,13 +71,13 @@ export function previewOrder(ticket: Partial<OrderTicket>): OrderTicket {
     tif: ticket.tif || 'day',
     status: 'preview',
     filledQty: 0,
-    createdAt: DEMO_TIMESTAMP,
-    updatedAt: DEMO_TIMESTAMP,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   };
 }
 
 export function placeOrder(preview: OrderTicket): OrderTicket {
-  const order = { ...preview, status: 'pending' as OrderStatus, updatedAt: DEMO_TIMESTAMP };
+  const order = { ...preview, status: 'pending' as OrderStatus, updatedAt: Date.now() };
   orderStore.push(order);
   notify();
 
@@ -90,11 +87,11 @@ export function placeOrder(preview: OrderTicket): OrderTicket {
     order.status = 'filled';
     order.filledQty = order.quantity;
     order.avgFillPrice = order.type === 'market' ? getBasePrice(order.symbol) : order.limitPrice;
-    order.updatedAt = DEMO_TIMESTAMP + 500;
+    order.updatedAt = Date.now() + 500;
     notify();
   } else if (order.type === 'limit') {
     order.status = 'working';
-    order.updatedAt = DEMO_TIMESTAMP + 200;
+    order.updatedAt = Date.now() + 200;
     notify();
   }
   return order;
@@ -104,7 +101,7 @@ export function cancelDemoOrder(id: string) {
   const order = orderStore.find(o => o.id === id);
   if (order && (order.status === 'pending' || order.status === 'working')) {
     order.status = 'canceled';
-    order.updatedAt = DEMO_TIMESTAMP + 1000;
+    order.updatedAt = Date.now() + 1000;
     notify();
   }
 }

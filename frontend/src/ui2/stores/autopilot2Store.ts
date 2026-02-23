@@ -82,12 +82,12 @@ function stableHash(data: unknown): string {
 
 // ── Demo Prices ───────────────────────────────────────────────
 
-const DEMO_PRICES: Record<string, number> = {
+const REF_PRICES: Record<string, number> = {
   SPY: 547.23, AAPL: 182.41, TSLA: 218.77, NVDA: 789.55,
   MSFT: 412.33, AMZN: 178.92,
 };
 
-const DEMO_SIGNALS: { symbol: string; signal: string; confidence: number; source: string; reason: string }[] = [
+const REF_SIGNALS: { symbol: string; signal: string; confidence: number; source: string; reason: string }[] = [
   { symbol: 'AAPL', signal: 'hold', confidence: 0.55, source: 'fundamental', reason: 'Earnings neutral, awaiting guidance' },
   { symbol: 'AMZN', signal: 'hold', confidence: 0.48, source: 'sentiment', reason: 'Mixed sentiment, insufficient conviction' },
   { symbol: 'MSFT', signal: 'buy', confidence: 0.72, source: 'fundamental', reason: 'Azure revenue beat, positive outlook' },
@@ -100,13 +100,13 @@ const CONFIDENCE_THRESHOLD = 0.70;
 const MAX_POSITION_SIZE = 100;
 const MAX_BUDGET_PER_TRADE = 50000;
 const MAX_PORTFOLIO_EXPOSURE = 0.45;
-import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
+const RUN_TS = new Date().toISOString();
 
 function runPipeline(symbols: string[], budget: number): AP2Run {
-  const runId = `ap2-run-${stableHash({ symbols, budget, t: DEMO_TS })}`;
+  const runId = `ap2-run-${stableHash({ symbols, budget, t: RUN_TS })}`;
 
   // Stage 1: Candidates
-  const candidates: AP2Candidate[] = DEMO_SIGNALS
+  const candidates: AP2Candidate[] = REF_SIGNALS
     .filter(s => symbols.includes(s.symbol))
     .map(s => ({ ...s }));
 
@@ -127,7 +127,7 @@ function runPipeline(symbols: string[], budget: number): AP2Run {
   let remaining = budget;
   const sized: AP2Decision[] = [];
   for (const c of validated) {
-    const price = DEMO_PRICES[c.symbol] ?? 100;
+    const price = REF_PRICES[c.symbol] ?? 100;
     const maxQty = Math.min(MAX_POSITION_SIZE, Math.floor(MAX_BUDGET_PER_TRADE / price));
     let qty = Math.max(1, Math.floor(maxQty * c.confidence));
     const cost = qty * price;
@@ -169,7 +169,7 @@ function runPipeline(symbols: string[], budget: number): AP2Run {
     '# Autopilot 2.0 Post-Trade Summary',
     '',
     `**Run ID**: ${runId}`,
-    `**Timestamp**: ${DEMO_TS}`,
+    `**Timestamp**: ${RUN_TS}`,
     '',
     '## Results',
     `- Candidates screened: ${candidates.length}`,
@@ -197,8 +197,8 @@ function runPipeline(symbols: string[], budget: number): AP2Run {
   const hash = stableHash({ candidates, decisions: simulated, rejections, orders });
 
   return {
-    run_id: runId, status: 'completed', started_at: DEMO_TS, completed_at: DEMO_TS,
-    inputs: { symbols, budget, timestamp: DEMO_TS },
+    run_id: runId, status: 'completed', started_at: RUN_TS, completed_at: RUN_TS,
+    inputs: { symbols, budget, timestamp: RUN_TS },
     stages, candidates, decisions: simulated, rejections, orders, postmortem,
     deterministic_hash: hash,
   };

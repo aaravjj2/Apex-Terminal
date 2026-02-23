@@ -61,6 +61,10 @@ from .routes import controls_domain        # Wave 106: /api/v3/controls/* endpoi
 from .routes import safe_actions           # Wave 107: /api/v3/tickets/* endpoints
 from .routes import export_bundle          # Wave 108: /api/v3/export/* endpoints
 from .routes import ops_reset              # Wave 112: /api/v3/ops/reset* endpoints
+# ── Reality Repair routes (Phases A-G) ─────────────────────────────────────
+from .routes import ops_version            # Phase A: /api/ops/version
+from .routes import ops_market_session     # Phase D: /api/ops/market_session
+from .routes import ops_broker             # Phase E: /api/broker/*
 # ── Wave 85: Domain routers (audit, broker) ────────────────────────────────
 try:
     from backend.domains.audit import routes as audit_domain_routes  # noqa: E402
@@ -215,6 +219,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     
+    # JSON Error Middleware — guarantees all errors return valid JSON
+    from .middleware.json_errors import JsonErrorMiddleware
+    app.add_middleware(JsonErrorMiddleware)
+
     # CORS middleware
     app.add_middleware(
         CORSMiddleware,
@@ -330,6 +338,10 @@ def create_app() -> FastAPI:
     app.include_router(controls_domain.router, prefix="/api/v3/controls", tags=["controls-domain"])
     app.include_router(safe_actions.router, prefix="/api/v3/tickets", tags=["safe-actions-v3"])
     app.include_router(export_bundle.router, prefix="/api/v3/export", tags=["export-bundle-v3"])
+    # ── Reality Repair routes (Phases A-G) ──
+    app.include_router(ops_version.router, tags=["ops-version"])
+    app.include_router(ops_market_session.router, tags=["ops-market-session"])
+    app.include_router(ops_broker.router, tags=["ops-broker-alpaca"])
     # ── Wave 85: Domain routers (audit events + broker health) ──
     if audit_domain_routes is not None:
         app.include_router(audit_domain_routes.router, tags=["audit-domain-v3"])
@@ -400,13 +412,22 @@ def create_app() -> FastAPI:
     from .tts_routes import router as tts_router
     app.include_router(tts_router, prefix="/api/v1/tts", tags=["tts"])
     
-    # Global exception handler
+    # Global exception handler — stable JSON error schema
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        logger.error("unhandled_exception", error=str(exc), path=request.url.path)
+        import uuid as _uuid
+        cid = request.headers.get("x-correlation-id") or str(_uuid.uuid4())
+        logger.error("unhandled_exception", error=str(exc), path=request.url.path, correlation_id=cid)
         return JSONResponse(
             status_code=500,
-            content={"error": "Internal server error", "detail": str(exc)},
+            content={
+                "ok": False,
+                "code": "INTERNAL_ERROR",
+                "message": str(exc),
+                "correlation_id": cid,
+                "details": None,
+            },
+            headers={"X-Correlation-Id": cid},
         )
     
     # Health check with data source status — uses REAL probes, never lies

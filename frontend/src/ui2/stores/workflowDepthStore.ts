@@ -76,12 +76,7 @@ export interface RBACPermission {
   allowed_roles: Role[];
 }
 
-// ─── Demo Constants ─────────────────────────────────────────────────────────
-import { RECORDING_TS } from '../dataMode/config';
-// RECORDING_TS anchors to data/recordings/core-default date_range.start
-const DEMO_TS = RECORDING_TS;
-
-const DEMO_USERS: DemoUser[] = [
+const BUILTIN_USERS: DemoUser[] = [
   { user_id: 'user-admin-001', name: 'Alice Admin', role: 'admin' },
   { user_id: 'user-trader-001', name: 'Bob Trader', role: 'trader' },
   { user_id: 'user-viewer-001', name: 'Carol Viewer', role: 'viewer' },
@@ -190,7 +185,7 @@ function generateRunHistory(): WorkflowRun[] {
 
   for (let i = 0; i < 8; i++) {
     const wf = workflows[i % 2];
-    const seed = fnv32(`${wf.id}:run:${i}:${DEMO_TS}`);
+    const seed = fnv32(`${wf.id}:run:${i}:${new Date().toISOString()}`);
     const startH = 9 + (i % 8);
     runs.push({
       run_id: `run-${seed.toString(16).slice(0, 8)}`,
@@ -221,7 +216,7 @@ interface State {
 }
 
 let state: State = {
-  currentUser: DEMO_USERS[0], // admin by default
+  currentUser: BUILTIN_USERS[0], // admin by default
   templates: generateTemplates(),
   scheduledJobs: generateScheduledJobs(),
   runHistory: generateRunHistory(),
@@ -239,9 +234,9 @@ export const workflowDepthStore = {
 
   // ── Users / RBAC ──────────────────────────────────────────────────────
   getCurrentUser: () => state.currentUser,
-  getUsers: () => DEMO_USERS,
+  getUsers: () => BUILTIN_USERS,
   setCurrentUser(userId: string) {
-    const u = DEMO_USERS.find((u) => u.user_id === userId);
+    const u = BUILTIN_USERS.find((u) => u.user_id === userId);
     if (u) { state = { ...state, currentUser: u }; emit(); }
   },
   getRBACPolicies: () => RBAC_POLICIES,
@@ -262,14 +257,14 @@ export const workflowDepthStore = {
   },
   saveAsTemplate(name: string, description: string, tags: string[], triggerType: string, actions: string[]): WorkflowTemplate {
     const tmpl: WorkflowTemplate = {
-      template_id: `tmpl-${fnv32(`${name}:${DEMO_TS}`).toString(16).slice(0, 6)}`,
+      template_id: `tmpl-${fnv32(`${name}:${new Date().toISOString()}`).toString(16).slice(0, 6)}`,
       name,
       description,
       tags,
       trigger_type: triggerType,
       actions,
       created_by: state.currentUser.user_id,
-      created_at: DEMO_TS,
+      created_at: new Date().toISOString(),
       use_count: 0,
     };
     state = { ...state, templates: [...state.templates, tmpl] };
@@ -281,10 +276,10 @@ export const workflowDepthStore = {
     if (!src) return null;
     const cloned: WorkflowTemplate = {
       ...src,
-      template_id: `tmpl-${fnv32(`clone:${templateId}:${DEMO_TS}`).toString(16).slice(0, 6)}`,
+      template_id: `tmpl-${fnv32(`clone:${templateId}:${new Date().toISOString()}`).toString(16).slice(0, 6)}`,
       name: `${src.name} (Copy)`,
       created_by: state.currentUser.user_id,
-      created_at: DEMO_TS,
+      created_at: new Date().toISOString(),
       use_count: 0,
     };
     state = { ...state, templates: [...state.templates, cloned] };
@@ -296,14 +291,14 @@ export const workflowDepthStore = {
   getScheduledJobs: () => state.scheduledJobs,
   createSchedule(workflowId: string, workflowName: string, cron: string): ScheduledJob {
     const job: ScheduledJob = {
-      job_id: `job-${fnv32(`${workflowId}:${cron}:${DEMO_TS}`).toString(16).slice(0, 6)}`,
+      job_id: `job-${fnv32(`${workflowId}:${cron}:${new Date().toISOString()}`).toString(16).slice(0, 6)}`,
       workflow_id: workflowId,
       workflow_name: workflowName,
       schedule_cron: cron,
       next_run: '2026-02-16T09:00:00Z',
       status: 'active',
       created_by: state.currentUser.user_id,
-      created_at: DEMO_TS,
+      created_at: new Date().toISOString(),
     };
     state = { ...state, scheduledJobs: [...state.scheduledJobs, job] };
     emit();
@@ -324,15 +319,15 @@ export const workflowDepthStore = {
   getRunById: (runId: string) => state.runHistory.find((r) => r.run_id === runId),
 
   triggerDeterministicRun(workflowId: string, workflowName: string): WorkflowRun {
-    const seed = fnv32(`${workflowId}:trigger:${state.runHistory.length}:${DEMO_TS}`);
+    const seed = fnv32(`${workflowId}:trigger:${state.runHistory.length}:${new Date().toISOString()}`);
     const run: WorkflowRun = {
       run_id: `run-${seed.toString(16).slice(0, 8)}`,
       workflow_id: workflowId,
       workflow_name: workflowName,
       job_id: null,
       status: 'success',
-      started_at: DEMO_TS,
-      completed_at: DEMO_TS,
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
       duration_ms: 2000 + (seed % 5000),
       triggered_by: 'manual',
       steps_completed: 3,
@@ -348,7 +343,7 @@ export const workflowDepthStore = {
   exportAudit(workflowId: string): AuditExport {
     const runs = state.runHistory.filter((r) => r.workflow_id === workflowId);
     const exportData: AuditExport = {
-      export_id: `export-${fnv32(`${workflowId}:export:${DEMO_TS}`).toString(16).slice(0, 8)}`,
+      export_id: `export-${fnv32(`${workflowId}:export:${new Date().toISOString()}`).toString(16).slice(0, 8)}`,
       workflow_id: workflowId,
       workflow_definition: { id: workflowId, type: 'demo' },
       template_metadata: null,
@@ -356,7 +351,7 @@ export const workflowDepthStore = {
       simulation_logs: ['[INFO] Workflow validated', '[INFO] Simulation started', '[INFO] All steps passed'],
       run_records: runs,
       hash: fnv32(JSON.stringify(runs)).toString(16).padStart(8, '0'),
-      exported_at: DEMO_TS,
+      exported_at: new Date().toISOString(),
     };
     return exportData;
   },
@@ -368,7 +363,7 @@ export const workflowDepthStore = {
 
   reset() {
     state = {
-      currentUser: DEMO_USERS[0],
+      currentUser: BUILTIN_USERS[0],
       templates: generateTemplates(),
       scheduledJobs: generateScheduledJobs(),
       runHistory: generateRunHistory(),

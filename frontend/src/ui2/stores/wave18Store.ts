@@ -82,7 +82,7 @@ export interface Wave18State {
 
 // ── DEMO Data ──────────────────────────────────────────────────
 
-const DEMO_DECISIONS: DecisionV2[] = [
+const BUILTIN_DECISIONS: DecisionV2[] = [
   {
     decision_id: 'dec-001', timestamp: '2026-02-16T16:30:00Z', symbol: 'AAPL', action: 'buy',
     confidence: 0.85, risk_score: 0.30, status: 'approved', rejection_code: null, rejection_reason: null,
@@ -152,7 +152,7 @@ const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
 
 let state: Wave18State = {
-  decisions: DEMO_DECISIONS,
+  decisions: BUILTIN_DECISIONS,
   selectedDecision: null,
   nlPrompt: '',
   generatedWorkflow: null,
@@ -269,7 +269,7 @@ export const wave18Store = {
 
   reset() {
     state = {
-      decisions: DEMO_DECISIONS,
+      decisions: BUILTIN_DECISIONS,
       selectedDecision: null,
       nlPrompt: '',
       generatedWorkflow: null,

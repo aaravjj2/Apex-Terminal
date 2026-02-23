@@ -67,9 +67,9 @@ export interface SearchState {
   error: string | null;
 }
 
-// ── Demo Search Data ──────────────────────────────────────────
+// ── Built-in Search Entities ──────────────────────────────────────────
 
-const DEMO_ENTITIES: SearchResult[] = [
+const BUILTIN_ENTITIES: SearchResult[] = [
   { id: 'ord-1', entity_type: 'order', title: 'Buy MSFT limit 100 @ $410', snippet: 'Pending limit order for Microsoft', score: 0.95, data: { symbol: 'MSFT', side: 'buy', status: 'pending' }, symbol: 'MSFT', timestamp: '2026-02-16T10:00:00Z', tags: ['limit', 'buy'] },
   { id: 'ord-2', entity_type: 'order', title: 'Sell AMZN market 50', snippet: 'Filled market sell for Amazon', score: 0.90, data: { symbol: 'AMZN', side: 'sell', status: 'filled' }, symbol: 'AMZN', timestamp: '2026-02-16T09:30:00Z', tags: ['market', 'sell'] },
   { id: 'trd-1', entity_type: 'trade', title: 'Sell AMZN 50 @ $178.92', snippet: 'Market sell executed', score: 0.88, data: { symbol: 'AMZN', price: 178.92 }, symbol: 'AMZN', timestamp: '2026-02-16T09:30:05Z' },
@@ -80,8 +80,8 @@ const DEMO_ENTITIES: SearchResult[] = [
   { id: 'strat-1', entity_type: 'strategy', title: 'RSI Oversold Bounce', snippet: 'Mean reversion strategy on MSFT', score: 0.76, data: { type: 'meanReversion', symbol: 'MSFT' }, symbol: 'MSFT', timestamp: '2026-02-14T14:00:00Z' },
   { id: 'strat-2', entity_type: 'strategy', title: 'Momentum Breakout', snippet: 'Breakout strategy on NVDA', score: 0.74, data: { type: 'breakout', symbol: 'NVDA' }, symbol: 'NVDA', timestamp: '2026-02-14T12:00:00Z' },
   { id: 'bt-1', entity_type: 'backtest', title: 'RSI Oversold Bounce on MSFT', snippet: 'Sharpe=1.85, Return=24.5%', score: 0.72, data: { sharpe: 1.85, return: 24.5 }, symbol: 'MSFT' },
-  { id: 'wf-demo-1', entity_type: 'workflow', title: 'Daily Risk Report', snippet: 'Automated daily risk assessment', score: 0.70, data: { steps: 3, trigger: 'schedule' }, timestamp: '2026-02-16T16:00:00Z' },
-  { id: 'wf-demo-2', entity_type: 'workflow', title: 'Backtest Pipeline', snippet: 'Run backtest and create order', score: 0.68, data: { steps: 2, trigger: 'manual' }, timestamp: '2026-02-16T15:00:00Z' },
+  { id: 'wf-builtin-1', entity_type: 'workflow', title: 'Daily Risk Report', snippet: 'Automated daily risk assessment', score: 0.70, data: { steps: 3, trigger: 'schedule' }, timestamp: '2026-02-16T16:00:00Z' },
+  { id: 'wf-builtin-2', entity_type: 'workflow', title: 'Backtest Pipeline', snippet: 'Run backtest and create order', score: 0.68, data: { steps: 2, trigger: 'manual' }, timestamp: '2026-02-16T15:00:00Z' },
   { id: 'inc-1', entity_type: 'incident', title: 'High API latency detected', snippet: 'Market data feed latency 150ms', score: 0.66, data: { severity: 'warning' }, severity: 'warning', timestamp: '2026-02-16T14:00:00Z' },
   { id: 'dec-001', entity_type: 'decision', title: 'AAPL buy — approved', snippet: 'Strong momentum + high volume breakout', score: 0.92, data: { confidence: 0.85, status: 'approved' }, symbol: 'AAPL', timestamp: '2026-02-16T16:30:00Z' },
   { id: 'dec-002', entity_type: 'decision', title: 'TSLA sell — rejected', snippet: 'Portfolio risk limit would be exceeded', score: 0.88, data: { confidence: 0.72, status: 'rejected' }, symbol: 'TSLA', timestamp: '2026-02-16T16:25:00Z' },
@@ -90,7 +90,7 @@ const DEMO_ENTITIES: SearchResult[] = [
 
 const ENTITY_TYPES: DocumentType[] = ['all', 'order', 'trade', 'position', 'strategy', 'workflow', 'decision', 'incident', 'report'];
 
-const DEMO_RECENT: RecentSearch[] = [
+const DEFAULT_RECENT: RecentSearch[] = [
   { query: 'AAPL', timestamp: '2026-02-16T16:00:00Z', result_count: 3 },
   { query: 'stop loss', timestamp: '2026-02-16T15:30:00Z', result_count: 1 },
   { query: 'momentum', timestamp: '2026-02-16T15:00:00Z', result_count: 2 },
@@ -130,14 +130,14 @@ let state: SearchState = {
   selectedResult: null,
   selectedEntity: null,
   relatedEntities: [],
-  recentSearches: [...DEMO_RECENT],
+  recentSearches: [...DEFAULT_RECENT],
   error: null,
 };
 
 /**
  * Search backend API — Wave 15 v2 pipeline.
  * Posts to /api/v1/search/v2/query with filters.
- * Falls back to local DEMO search on failure.
+ * Falls back to local search on failure.
  */
 async function searchBackendV2(query: string, filters: SearchFilters): Promise<{ results: SearchResult[]; total: number; groups: Record<string, number> }> {
   try {
@@ -179,7 +179,7 @@ function performSearch(query: string, entityType: DocumentType): SearchResult[] 
   const q = query.toLowerCase().trim();
   const words = q.split(/\s+/).filter(Boolean);
 
-  let results = DEMO_ENTITIES.filter(e => {
+  let results = BUILTIN_ENTITIES.filter(e => {
     if (entityType !== 'all' && e.entity_type !== entityType) return false;
     if (!q) return true;
 
@@ -220,7 +220,7 @@ export const searchStore = {
   getEntityTypes: () => ENTITY_TYPES,
 
   /**
-   * Synchronous search using DEMO data (instant, for typing).
+   * Synchronous search using local data (instant, for typing).
    */
   search(query: string, entityType?: DocumentType) {
     const et = entityType ?? state.entityType;
@@ -307,11 +307,11 @@ export const searchStore = {
   },
 
   selectResult(id: string | null) {
-    const entity = id ? DEMO_ENTITIES.find(e => e.id === id) ?? null : null;
+    const entity = id ? BUILTIN_ENTITIES.find(e => e.id === id) ?? null : null;
     // Compute related entities
     let related: RelatedEntity[] = [];
     if (entity && entity.symbol) {
-      related = DEMO_ENTITIES
+      related = BUILTIN_ENTITIES
         .filter(e => e.id !== id && e.symbol === entity.symbol)
         .map(e => ({ id: e.id, entity_type: e.entity_type, title: e.title, score: 0.5 }))
         .slice(0, 5);
@@ -340,7 +340,7 @@ export const searchStore = {
       selectedResult: null,
       selectedEntity: null,
       relatedEntities: [],
-      recentSearches: [...DEMO_RECENT],
+      recentSearches: [...DEFAULT_RECENT],
       error: null,
     };
     notify();

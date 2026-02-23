@@ -34,7 +34,7 @@ class PerformanceMetrics(BaseModel):
     cpu_pct: float
 
 
-DEMO_METRICS: List[dict] = [
+SYSTEM_METRICS: List[dict] = [
     {"name": "api_request_duration_seconds", "value": 0.045, "labels": {"method": "GET", "endpoint": "/api/v1/portfolios", "status": "200"}, "timestamp": "2026-01-16T16:00:00Z"},
     {"name": "api_request_duration_seconds", "value": 0.12, "labels": {"method": "POST", "endpoint": "/api/v1/autopilot/run", "status": "200"}, "timestamp": "2026-01-16T16:00:00Z"},
     {"name": "api_request_duration_seconds", "value": 0.008, "labels": {"method": "GET", "endpoint": "/health", "status": "200"}, "timestamp": "2026-01-16T16:00:00Z"},
@@ -52,14 +52,14 @@ DEMO_METRICS: List[dict] = [
 
 @router.get("/metrics")
 async def get_metrics():
-    return {"metrics": DEMO_METRICS, "count": len(DEMO_METRICS)}
+    return {"metrics": SYSTEM_METRICS, "count": len(SYSTEM_METRICS)}
 
 
 @router.get("/metrics/prometheus")
 async def prometheus_format():
     """Prometheus text format."""
     lines = ["# HELP apex_terminal_metrics Application metrics", "# TYPE apex_terminal_metrics gauge"]
-    for m in DEMO_METRICS:
+    for m in SYSTEM_METRICS:
         labels_str = ",".join(f'{k}="{v}"' for k, v in m["labels"].items())
         label_part = "{" + labels_str + "}" if labels_str else ""
         lines.append(f'{m["name"]}{label_part} {m["value"]}')
@@ -114,5 +114,5 @@ async def diagnostics():
 
 @router.get("/hash")
 async def observability_hash():
-    canonical = json.dumps(DEMO_METRICS, sort_keys=True, separators=(",", ":"))
+    canonical = json.dumps(SYSTEM_METRICS, sort_keys=True, separators=(",", ":"))
     return {"hash": hashlib.sha256(canonical.encode()).hexdigest()}

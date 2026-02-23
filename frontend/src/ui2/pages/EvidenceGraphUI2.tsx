@@ -92,10 +92,10 @@ export function EvidenceGraphUI2() {
     setRootId(inputId.trim());
   };
 
-  const handleSeedDemo = async () => {
+  const handleSeedSample = async () => {
     setSeeding(true);
-    const sid = `demo-strategy-001`;
-    const bid = `demo-backtest-001`;
+    const sid = `sample-strategy-001`;
+    const bid = `sample-backtest-001`;
     try {
       await fetch(`${API}/api/v3/evidence/graph/backtest`, {
         method: "POST",
@@ -222,7 +222,7 @@ export function EvidenceGraphUI2() {
         </button>
         <button
           data-testid="evidence-seed-btn"
-          onClick={handleSeedDemo}
+          onClick={handleSeedSample}
           disabled={seeding}
           style={{
             padding: "7px 12px",
@@ -234,7 +234,7 @@ export function EvidenceGraphUI2() {
             fontSize: "13px",
           }}
         >
-          {seeding ? "Seeding…" : "Seed Demo Graph"}
+          {seeding ? "Seeding…" : "Seed Sample Graph"}
         </button>
       </div>
 

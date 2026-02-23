@@ -110,7 +110,7 @@ export interface PlatformHealthV4 {
 
 // ── DEMO Data ──────────────────────────────────────────────────
 
-const DEMO_RUNS: AutomationRun[] = [
+const BUILTIN_RUNS: AutomationRun[] = [
   {
     run_id: 'run-demo-001',
     workflow_id: 'wf-v3-001',
@@ -173,7 +173,7 @@ const DEMO_RUNS: AutomationRun[] = [
   },
 ];
 
-const DEMO_WORKFLOWS: WorkflowData[] = [
+const BUILTIN_WORKFLOWS: WorkflowData[] = [
   {
     workflow_id: 'wf-v3-001',
     name: 'Daily Export at Market Close',
@@ -198,7 +198,7 @@ const DEMO_WORKFLOWS: WorkflowData[] = [
   },
 ];
 
-const DEMO_TEMPLATES: WorkflowTemplate[] = [
+const BUILTIN_TEMPLATES: WorkflowTemplate[] = [
   {
     template_id: 'tmpl-001', name: 'Daily Export',
     description: 'Export trading state at market close every weekday',
@@ -216,7 +216,7 @@ const DEMO_TEMPLATES: WorkflowTemplate[] = [
   },
 ];
 
-const DEMO_INCIDENTS: Incident[] = [
+const BUILTIN_INCIDENTS: Incident[] = [
   {
     incident_id: 'inc-demo-001', title: 'Market data feed disconnected',
     severity: 'warning', status: 'resolved',
@@ -235,7 +235,7 @@ const DEMO_INCIDENTS: Incident[] = [
   },
 ];
 
-const DEMO_DECISIONS: AutopilotDecision[] = [
+const BUILTIN_DECISIONS: AutopilotDecision[] = [
   {
     decision_id: 'dec-001', timestamp: '2026-02-16T16:30:00Z', symbol: 'AAPL', action: 'buy',
     confidence: 0.85, risk_score: 0.30, status: 'approved', rejection_code: null, rejection_reason: null,
@@ -272,11 +272,11 @@ const DEMO_DECISIONS: AutopilotDecision[] = [
   },
 ];
 
-const DEMO_REPLAY: ReplayState = {
+const BUILTIN_REPLAY: ReplayState = {
   status: 'playing', speed: 1.0, position: 0, total_events: 10, mode: 'demo',
 };
 
-const DEMO_SUGGESTIONS: SearchSuggestion[] = [
+const BUILTIN_SUGGESTIONS: SearchSuggestion[] = [
   { query: 'AAPL', category: 'symbol', score: 1.0 },
   { query: 'TSLA', category: 'symbol', score: 0.95 },
   { query: 'MSFT', category: 'symbol', score: 0.90 },
@@ -305,13 +305,13 @@ interface Wave1314State {
 }
 
 let state: Wave1314State = {
-  runs: DEMO_RUNS,
-  workflows: DEMO_WORKFLOWS,
-  templates: DEMO_TEMPLATES,
-  incidents: DEMO_INCIDENTS,
-  decisions: DEMO_DECISIONS,
-  replay: { ...DEMO_REPLAY },
-  suggestions: DEMO_SUGGESTIONS,
+  runs: BUILTIN_RUNS,
+  workflows: BUILTIN_WORKFLOWS,
+  templates: BUILTIN_TEMPLATES,
+  incidents: BUILTIN_INCIDENTS,
+  decisions: BUILTIN_DECISIONS,
+  replay: { ...BUILTIN_REPLAY },
+  suggestions: BUILTIN_SUGGESTIONS,
   searchBackend: 'local',
   llmProvider: 'deterministic',
   healthV4: {

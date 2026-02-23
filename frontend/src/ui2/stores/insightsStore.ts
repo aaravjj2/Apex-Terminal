@@ -17,8 +17,7 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
 
-// Deterministic insights for DEMO mode
-import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = new Date(RECORDING_TS).getTime(); // recording anchor
+
 
 let insights: Insight[] = [];
 
@@ -34,7 +33,7 @@ export const insightsStore = {
     const insight: Insight = {
       ...data,
       id: `insight-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      timestamp: DEMO_TS,
+      timestamp: Date.now(),
     };
     insights = [insight, ...insights];
     notify();

@@ -3,9 +3,6 @@
  * Deterministic scenario builder with export capability
  */
 
-// Online-only: use live timestamps
-const DEMO_TIMESTAMP = Date.now();
-
 export type Severity = 'mild' | 'moderate' | 'severe' | 'extreme';
 export type Horizon = '1d' | '5d' | '10d' | '30d';
 
@@ -77,7 +74,7 @@ function computeResult(inputs: ScenarioInput): ScenarioResult {
     maxDrawdown: Math.round(totalShockPct * severityMultiplier * 100) / 100,
     recoveryDays: Math.round(10 * horizonMultiplier * severityMultiplier),
     positionBreakdown,
-    timestamp: DEMO_TIMESTAMP,
+    timestamp: Date.now(),
     hash: hashInputs(inputs),
   };
 }
@@ -100,7 +97,7 @@ export const scenarioStore = {
     const manifest = {
       type: 'risk-scenario-export',
       version: '1.59',
-      timestamp: DEMO_TIMESTAMP,
+      timestamp: Date.now(),
       scenarioCount: scenarioResults.length,
       results: scenarioResults.map(r => ({
         id: r.id,

@@ -11,8 +11,11 @@ import { BottomDock, RightSidebar, CommandPalette, MarketTape, type CommandItem 
 import { DATA_MODE_LABEL, MARKET_PROVIDER } from './dataMode/config';
 // Online-only identity
 const APEX_USER = { name: 'Apex Trader' };
-// Market status: derived from real backend health endpoint
-const ONLINE_MARKET = { isOpen: false };
+// Phase A: Build-time version fingerprints
+declare const __GIT_SHA__: string;
+declare const __BUILD_TIME__: string;
+const FE_GIT_SHA = typeof __GIT_SHA__ !== 'undefined' ? __GIT_SHA__ : 'unknown';
+const FE_BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'unknown';
 import { COMMAND_REGISTRY } from './stores/commandRegistry';
 import { ToastProvider } from '../ui/Toast';
 import { OrdersBlotter } from '../features/orders/OrdersBlotter';
@@ -429,6 +432,10 @@ export function AppShellUI2() {
   const navigate = useNavigate();
   const location = useLocation();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [marketOpen, setMarketOpen] = useState(false);
+  const [marketSession, setMarketSession] = useState<string>('closed');
+  const [beGitSha, setBeGitSha] = useState<string>('');
+  const [versionMismatch, setVersionMismatch] = useState(false);
   const isE2EMode = typeof window !== 'undefined' && (
     window.location.search.includes('e2e=1') || 
     window.location.search.includes('PLAYWRIGHT_TEST_BASE_URL')
@@ -439,6 +446,46 @@ export function AppShellUI2() {
     tradingStore.subscribe, 
     tradingStore.getConnectionStatus
   );
+
+  // Phase A: Fetch backend version and check for mismatch
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('/api/ops/version');
+        if (r.ok) {
+          const data = await r.json();
+          if (!cancelled && data.git_sha) {
+            setBeGitSha(data.git_sha);
+            if (FE_GIT_SHA !== 'unknown' && data.git_sha !== FE_GIT_SHA) {
+              setVersionMismatch(true);
+            }
+          }
+        }
+      } catch { /* backend unreachable */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Phase D: Fetch market session status every 30s
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/ops/market_session');
+        if (r.ok) {
+          const data = await r.json();
+          if (!cancelled) {
+            setMarketOpen(data.is_open_now ?? false);
+            setMarketSession(data.session ?? 'closed');
+          }
+        }
+      } catch { /* backend unreachable */ }
+    };
+    poll();
+    const iv = setInterval(poll, 30_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
 
   const drawerVisible = true;
   const rightSidebarContent = (
@@ -503,6 +550,16 @@ export function AppShellUI2() {
 
   return (
     <ToastProvider>
+    {/* Phase A: Version mismatch banner */}
+    {versionMismatch && (
+      <div data-testid="version-mismatch-banner" style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000,
+        background: '#d97706', color: '#fff', textAlign: 'center',
+        padding: '6px 16px', fontSize: '12px', fontWeight: 600
+      }}>
+        Version mismatch — FE: {FE_GIT_SHA} / BE: {beGitSha}. Hard-refresh recommended.
+      </div>
+    )}
     {/* W104 — Skip-to-main-content link (visible on keyboard focus) */}
     <a
       href="#main-content"
@@ -662,13 +719,14 @@ export function AppShellUI2() {
             <span data-testid="ui2-data-mode-badge">Online</span>
           </div>
 
-          {/* Market Status */}
+          {/* Market Status — fetched from backend */}
           <div
-            className={`ui2-badge ${ONLINE_MARKET.isOpen ? 'ui2-badge-success' : 'ui2-badge-neutral'}`}
+            className={`ui2-badge ${marketOpen ? 'ui2-badge-success' : 'ui2-badge-neutral'}`}
             data-testid="ui2-market-status"
+            data-market-session={marketSession}
           >
-            <span>{ONLINE_MARKET.isOpen ? '●' : '○'}</span>
-            <span>{ONLINE_MARKET.isOpen ? 'Market Open' : 'Market Closed'}</span>
+            <span>{marketOpen ? '●' : '○'}</span>
+            <span>{marketOpen ? 'Market Open' : marketSession === 'pre' ? 'Pre-Market' : marketSession === 'post' ? 'After Hours' : 'Market Closed'}</span>
           </div>
 
           {/* Connectivity (v1.94: Real status from tradingStore) */}

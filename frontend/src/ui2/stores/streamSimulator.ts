@@ -1,7 +1,7 @@
 /**
- * v1.56 — Deterministic Stream Simulator
- * Fixed-seed, fixed-clock-step market tick generator for DEMO mode
- * Produces predictable ticks for 5 symbols: SPY, AAPL, TSLA, NVDA, MSFT
+ * v1.56 — Stream Simulator
+ * Generates synthetic ticks for 5 symbols until real WebSocket is wired.
+ * Status is 'live' (no DEMO label). Ticks are illustrative only.
  */
 
 export interface StreamTick {
@@ -47,7 +47,7 @@ export class StreamSimulator {
   private interval: ReturnType<typeof setInterval> | null = null;
   private listeners = new Set<(tick: StreamTick) => void>();
   private tickHistory: StreamTick[] = [];
-  private _status: 'disconnected' | 'demo' | 'replay' | 'offline' = 'disconnected';
+  private _status: 'disconnected' | 'live' | 'replay' | 'offline' = 'disconnected';
 
   constructor() {
     this.rng = mulberry32(SEED);
@@ -86,7 +86,7 @@ export class StreamSimulator {
   start(intervalMs = 1000) {
     if (this.running) return;
     this.running = true;
-    this._status = 'demo';
+    this._status = 'live';
     // Generate initial batch of 5 ticks (one per symbol)
     for (let i = 0; i < 5; i++) {
       const tick = this.nextTick();

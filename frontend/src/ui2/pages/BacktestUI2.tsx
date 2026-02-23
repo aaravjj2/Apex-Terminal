@@ -22,22 +22,8 @@ interface BacktestRun {
   createdAt: number;
 }
 
-// Online-only: runs are created via the UI, starts with a predictable seed run for deep-link testing
-const DEMO_TS = 1771165800000;
-const INITIAL_RUNS_SEED: BacktestRun[] = [{
-  id: 'bt-deep-link-test',
-  strategyId: 'strat-1',
-  symbol: 'AAPL',
-  startDate: DEMO_TS - 365 * 86400000,
-  endDate: DEMO_TS,
-  status: 'completed',
-  sharpeRatio: 1.52,
-  totalReturn: 22.4,
-  maxDrawdown: 8.1,
-  winRate: 58.3,
-  tradeCount: 47,
-  createdAt: DEMO_TS,
-}];
+// Online-only: starts empty — runs are created via the UI
+const INITIAL_RUNS_SEED: BacktestRun[] = [];
 // ── Deterministic runner ──────────────────────────────────────
 
 function fnv32(data: string): number {
@@ -65,7 +51,7 @@ function createDeterministicRun(symbol: string, strategyId: string, months: numb
   const maxDrawdown = 3 + ((seed >> 16 & 0xFF) / 255) * 25;     // 3% – 28%
   const winRate = 40 + ((seed >> 24 & 0xFF) / 255) * 30;        // 40% – 70%
   const tradeCount = 10 + (seed % 90);                           // 10 – 99
-  const now = 1771165800000; // DEMO_TIMESTAMP — deterministic "now"
+  const now = Date.now();
   const msPerMonth = 30 * 86400000;
   const id = `bt-${seed.toString(16).slice(0, 8)}`;
   return {

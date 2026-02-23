@@ -94,13 +94,9 @@ const DEFAULT_EXECUTION_PARAMS: ExecutionParams = {
   slippage_vol_multiplier: 1.5,
 };
 
-// ─── Deterministic Demo Data ────────────────────────────────────────────────
-import { RECORDING_TS } from '../dataMode/config';
-// RECORDING_TS anchors to data/recordings/core-default date_range.start (replaces synthetic DEMO_TS)
-const DEMO_TS = RECORDING_TS;
-
 function generateDeterministicEvaluation(runId: string, controls: RiskControls, params: ExecutionParams): RunEvaluation {
-  const seed = fnv32(`${runId}:${DEMO_TS}`);
+  // Use runId for deterministic seeding (same runId always produces same evaluation)
+  const seed = fnv32(`${runId}:eval`);
   const s1 = fnv32(`${seed}:fill1`);
   const s2 = fnv32(`${seed}:fill2`);
   const s3 = fnv32(`${seed}:fill3`);
@@ -123,7 +119,7 @@ function generateDeterministicEvaluation(runId: string, controls: RiskControls, 
       fill_price: Math.round(fillPrice * 100) / 100,
       slippage_bps: Math.round(slippageBps * 100) / 100,
       fee: Math.round(fee * 100) / 100,
-      timestamp: DEMO_TS,
+      timestamp: new Date(1700000000000 + i * 60000).toISOString(), // deterministic fill times
     };
   });
 

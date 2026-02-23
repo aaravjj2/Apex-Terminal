@@ -6,6 +6,24 @@
 const API_BT = '/api/v3/backtest';
 const API_ES = '/api/v3/elasticsearch';
 
+/** Safe JSON parse — never throws "Unexpected end of JSON input" */
+async function safeJson<T = any>(r: Response): Promise<T> {
+  if (!r.ok) {
+    const text = await r.text().catch(() => '');
+    throw new Error(`HTTP ${r.status}: ${text.slice(0, 200) || r.statusText}`);
+  }
+  const ct = r.headers.get('content-type') || '';
+  if (!ct.includes('json')) {
+    const text = await r.text().catch(() => '');
+    throw new Error(`Expected JSON but got ${ct || 'no content-type'}: ${text.slice(0, 200)}`);
+  }
+  const text = await r.text();
+  if (!text || text.trim().length === 0) {
+    throw new Error('Empty response body');
+  }
+  return JSON.parse(text) as T;
+}
+
 // Generic store factory
 function createStore<T extends object>(initialState: T) {
   let state = { ...initialState };
@@ -43,14 +61,14 @@ export const dataHealthStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/data/health`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ health: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
     async fetchSymbols() {
       try {
         const r = await fetch(`${API_BT}/data/symbols`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ symbols: data.symbols || [] });
       } catch {}
     },
@@ -58,7 +76,7 @@ export const dataHealthStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/data/quality/${symbol}`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ quality: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -66,7 +84,7 @@ export const dataHealthStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/data/ingest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol }) });
-        await r.json();
+        await safeJson(r);
         store.setState({ loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -98,49 +116,49 @@ export const backtestV4Store = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/run`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ result: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
     async fetchRuns() {
       try {
         const r = await fetch(`${API_BT}/runs`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ runs: data.runs || [] });
       } catch {}
     },
     async fetchTrace(runId: string) {
       try {
         const r = await fetch(`${API_BT}/runs/${runId}/trace`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ trace: data });
       } catch {}
     },
     async fetchExplain(runId: string) {
       try {
         const r = await fetch(`${API_BT}/runs/${runId}/explain`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ explain: data });
       } catch {}
     },
     async fetchCostModels() {
       try {
         const r = await fetch(`${API_BT}/cost-models`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ costModels: data.models || [] });
       } catch {}
     },
     async fetchRiskLimits() {
       try {
         const r = await fetch(`${API_BT}/risk-limits`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ riskLimits: data });
       } catch {}
     },
     async fetchOrderTypes() {
       try {
         const r = await fetch(`${API_BT}/order-types`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ orderTypes: data.order_types || [] });
       } catch {}
     },
@@ -171,7 +189,7 @@ export const evaluationStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/sweep`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ sweep: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -179,7 +197,7 @@ export const evaluationStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/walk-forward`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ walkForward: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -187,7 +205,7 @@ export const evaluationStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/robustness`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ robustness: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -195,7 +213,7 @@ export const evaluationStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/overfit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ overfit: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -203,7 +221,7 @@ export const evaluationStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/benchmark`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ benchmark: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -211,7 +229,7 @@ export const evaluationStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/monte-carlo-v2`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ monteCarlo: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -219,7 +237,7 @@ export const evaluationStore = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/portfolio-select`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ portfolioSelect: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -247,7 +265,7 @@ export const strategyV2Store = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/strategy/validate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(spec) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ validation: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -255,7 +273,7 @@ export const strategyV2Store = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/strategy/ai-assist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ aiAssist: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -263,7 +281,7 @@ export const strategyV2Store = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/strategy/candidates`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base_spec: baseSpec, n_candidates: n }) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ candidates: data.candidates || [], loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
@@ -271,7 +289,7 @@ export const strategyV2Store = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_BT}/jobs/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-        await r.json();
+        await safeJson(r);
         store.setState({ loading: false });
         await this.fetchJobs();
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
@@ -279,7 +297,7 @@ export const strategyV2Store = (() => {
     async fetchJobs() {
       try {
         const r = await fetch(`${API_BT}/jobs`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ jobs: data.jobs || [] });
       } catch {}
     },
@@ -317,35 +335,35 @@ export const elasticV3Store = (() => {
     async fetchTemplates() {
       try {
         const r = await fetch(`${API_ES}/index-templates`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ templates: data.templates || [] });
       } catch {}
     },
     async fetchAliases() {
       try {
         const r = await fetch(`${API_ES}/aliases`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ aliases: data.aliases || [] });
       } catch {}
     },
     async fetchPipelineMetrics() {
       try {
         const r = await fetch(`${API_ES}/pipeline/metrics`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ pipelineMetrics: data });
       } catch {}
     },
     async fetchDLQ() {
       try {
         const r = await fetch(`${API_ES}/pipeline/dlq`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ dlq: data.dlq || [] });
       } catch {}
     },
     async fetchLag() {
       try {
         const r = await fetch(`${API_ES}/pipeline/lag`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ lag: data });
       } catch {}
     },
@@ -353,14 +371,14 @@ export const elasticV3Store = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_ES}/search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, index, explain }) });
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ searchResult: data, loading: false });
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }
     },
     async fetchSavedQueries() {
       try {
         const r = await fetch(`${API_ES}/saved-queries`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ savedQueries: data.queries || [] });
       } catch {}
     },
@@ -373,14 +391,14 @@ export const elasticV3Store = (() => {
     async fetchSemanticStatus() {
       try {
         const r = await fetch(`${API_ES}/semantic/status`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ semanticEnabled: data.enabled || false });
       } catch {}
     },
     async fetchArtifacts() {
       try {
         const r = await fetch(`${API_ES}/artifacts`);
-        const data = await r.json();
+        const data = await safeJson(r);
         store.setState({ artifacts: data.artifacts || [] });
       } catch {}
     },
@@ -388,7 +406,7 @@ export const elasticV3Store = (() => {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API_ES}/artifacts/export`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ artifact_type: type, data }) });
-        await r.json();
+        await safeJson(r);
         store.setState({ loading: false });
         await this.fetchArtifacts();
       } catch (e: any) { store.setState({ error: e.message, loading: false }); }

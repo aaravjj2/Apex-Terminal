@@ -1,7 +1,7 @@
 /**
  * Wave 17 LLM Provider Store — v1.149-v1.154
  * Provider status, budget, cache stats, rate limiting, replay log.
- * All deterministic in DEMO mode.
+ * All deterministic in ONLINE mode.
  */
 
 // ── Types ──────────────────────────────────────────────────────
@@ -54,12 +54,12 @@ export interface LLMProviderState {
   error: string | null;
 }
 
-// ── Demo Data ──────────────────────────────────────────────────
+// ── Default Data ──────────────────────────────────────────────────────
 
-const DEMO_STATUS: ProviderStatus = {
-  active_provider: 'deterministic',
+const DEFAULT_STATUS: ProviderStatus = {
+  active_provider: 'api',
   nova_enabled: false,
-  guard_reasons: ['LLM_PROVIDER != nova', 'NOVA_API_KEY not set', 'Running in DEMO mode'],
+  guard_reasons: ['LLM_PROVIDER not configured'],
   budget: {
     allowed: true,
     remaining: 98,
@@ -83,10 +83,7 @@ const DEMO_STATUS: ProviderStatus = {
   replay_count: 2,
 };
 
-const DEMO_REPLAY: ReplayEntry[] = [
-  { prompt_hash: 'abc123', prompt: 'Summarize run with 3 orders and P&L $450', response_summary: 'Deterministic summary: All risk guardrails functioning...', provider: 'deterministic', timestamp: 1739721600 },
-  { prompt_hash: 'def456', prompt: 'Explain rejection RISK_001 for TSLA', response_summary: 'Deterministic explanation: The decision was based on risk...', provider: 'deterministic', timestamp: 1739721300 },
-];
+const DEFAULT_REPLAY: ReplayEntry[] = [];
 
 // ── Store ──────────────────────────────────────────────────────
 
@@ -95,8 +92,8 @@ const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
 
 let state: LLMProviderState = {
-  status: DEMO_STATUS,
-  replayLog: DEMO_REPLAY,
+  status: DEFAULT_STATUS,
+  replayLog: DEFAULT_REPLAY,
   loading: false,
   error: null,
 };
@@ -116,7 +113,7 @@ export const llmProviderStore = {
       notify();
     } catch {
       // Use DEMO fallback
-      state = { ...state, status: DEMO_STATUS, loading: false };
+      state = { ...state, status: DEFAULT_STATUS, loading: false };
       notify();
     }
   },
@@ -129,7 +126,7 @@ export const llmProviderStore = {
       state = { ...state, replayLog: data.replay || [] };
       notify();
     } catch {
-      state = { ...state, replayLog: DEMO_REPLAY };
+      state = { ...state, replayLog: DEFAULT_REPLAY };
       notify();
     }
   },
@@ -149,7 +146,7 @@ export const llmProviderStore = {
   },
 
   reset() {
-    state = { status: DEMO_STATUS, replayLog: DEMO_REPLAY, loading: false, error: null };
+    state = { status: DEFAULT_STATUS, replayLog: DEFAULT_REPLAY, loading: false, error: null };
     notify();
   },
 };

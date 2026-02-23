@@ -150,9 +150,15 @@ secrets:
 compliance:
 	python scripts/check_submission_compliance.py
 
-# Wave 126: Generate submission bundle zip
+# Wave 126: Generate submission bundle zip (staged, verified, Devpost-ready)
 bundle:
 	python scripts/generate_submission_bundle.py
+	@echo ""
+	@echo "=== Bundle contents (first 50 entries) ==="
+	python -c "import zipfile,sys; z=zipfile.ZipFile('artifacts/submission_bundle.zip'); [print(f'  {i.filename}  ({i.file_size//1024} KB)') for i in sorted(z.infolist(), key=lambda x: x.filename)][:50]"
+	@echo ""
+	@echo "=== Running pytest bundle gate ==="
+	cd phase1 && python -m pytest tests/integration/test_submission_bundle_contents.py -v
 
 # Wave 119: Determinism check (suite twice, diff results)
 determinism:

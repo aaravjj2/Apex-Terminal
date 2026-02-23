@@ -1,0 +1,51 @@
+Apex Terminal  Submission Bundle Verification Log
+=======================================================
+
+Bundle: artifacts\submission_bundle.zip
+Total files: 27
+Total size: 8702 KB (8.5 MB)
+
+Contents (sorted by path):
+-------------------------------------------------------
+  LICENSE                                                1 KB
+  MANIFEST.md                                            5 KB
+  README.md                                             25 KB
+  TOUR.webm                                           7647 KB
+  docs/submission/CHECKLIST.md                           2 KB
+  docs/submission/ELASTIHACK.md                          4 KB
+  docs/submission/ELASTIHACK_DEMO_SCRIPT.md              2 KB
+  docs/submission/TERRACODE.md                           3 KB
+  docs/submission/TERRACODE_DEMO_SCRIPT.md               2 KB
+  proof/det1.txt                                         4 KB
+  proof/det2.txt                                         4 KB
+  proof/determinism-diff.txt                             0 KB
+  proof/determinism-run1.json                           77 KB
+  proof/determinism-run2.json                           77 KB
+  screenshots/00-app-shell-loaded.png                   63 KB
+  screenshots/01-topbar-status-pills.png                63 KB
+  screenshots/02-data-mode-online.png                   63 KB
+  screenshots/03-left-rail-navigation.png               63 KB
+  screenshots/05-market-session-badge.png               63 KB
+  screenshots/06-broker-alpaca-paper.png                61 KB
+  screenshots/07-autopilot.png                          65 KB
+  screenshots/08-backtester-v3.png                      50 KB
+  screenshots/09-search-page.png                        82 KB
+  screenshots/10-workflow-builder.png                   65 KB
+  screenshots/11-observability-ops.png                  60 KB
+  screenshots/12-settings.png                           57 KB
+  screenshots/13-command-palette.png                    81 KB
+
+Required entries verification:
+  [PASS] TOUR.webm
+  [PASS] MANIFEST.md
+  [PASS] proof/determinism-run1.json
+  [PASS] proof/determinism-run2.json
+  [PASS] proof/determinism-diff.txt
+  [PASS] docs/submission/CHECKLIST.md
+  [PASS] docs/submission/TERRACODE_DEMO_SCRIPT.md
+  [PASS] docs/submission/ELASTIHACK_DEMO_SCRIPT.md
+  [PASS] screenshots count = 13 (>= 10)
+  [PASS] TOUR.webm = 7.47 MB (>= 1 MB)
+
+Result: VERIFICATION PASSED
+pytest gate: 21/21 passed (test_submission_bundle_contents.py)

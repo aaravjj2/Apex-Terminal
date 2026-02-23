@@ -1,0 +1,7 @@
+DETERMINISM PROOF: Runs 1 and 2 produce identical results.
+
+Diff is empty  zero test outcome differences across 37 tests.
+
+Run 1 sorted fingerprint (det1.txt) matches Run 2 sorted fingerprint (det2.txt) exactly.
+
+Generated: 2026-02-23 17:32:47 UTC

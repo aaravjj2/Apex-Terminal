@@ -129,6 +129,7 @@ export function OrderTicket({ testId = 'ui2-order-ticket', onOrderPlaced }: Orde
             <label style={{ width: '70px', fontSize: '12px', color: 'var(--ui2-text-secondary)' }}>Type</label>
             <select
               data-testid={`${testId}-type`}
+              aria-label="Order type"
               value={type}
               onChange={e => setType(e.target.value as OrderType)}
               style={{ flex: 1, padding: '6px 8px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px' }}
@@ -186,6 +187,7 @@ export function OrderTicket({ testId = 'ui2-order-ticket', onOrderPlaced }: Orde
             <label style={{ width: '70px', fontSize: '12px', color: 'var(--ui2-text-secondary)' }}>TIF</label>
             <select
               data-testid={`${testId}-tif`}
+              aria-label="Time in force"
               value={tif}
               onChange={e => setTif(e.target.value as OrderTIF)}
               style={{ flex: 1, padding: '6px 8px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px' }}

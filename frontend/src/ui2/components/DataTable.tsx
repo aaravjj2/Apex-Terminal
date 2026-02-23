@@ -22,6 +22,7 @@ export interface DataTableProps<T> {
   keyField?: string;
   onRowClick?: (row: T, index: number) => void;
   selectedRowKey?: string | number;
+  highlightRowKey?: string | number | null;
   density?: 'compact' | 'normal';
   testId?: string;
   striped?: boolean;
@@ -123,6 +124,7 @@ export function DataTable<T extends Record<string, any>>({
   keyField = 'id',
   onRowClick,
   selectedRowKey,
+  highlightRowKey,
   density = 'compact',
   testId,
   striped = false,
@@ -193,11 +195,14 @@ export function DataTable<T extends Record<string, any>>({
             data.map((row, rowIndex) => {
               const rowKey = row[keyField] ?? rowIndex;
               const isSelected = selectedRowKey === rowKey;
+              const isHighlighted = highlightRowKey !== null && highlightRowKey !== undefined && String(highlightRowKey) === String(rowKey);
               const isEvenRow = rowIndex % 2 === 0;
 
               // Determine background color
               let bgColor = 'transparent';
-              if (isSelected) {
+              if (isHighlighted) {
+                bgColor = 'var(--ui2-accent, #1a6b3a22)';
+              } else if (isSelected) {
                 bgColor = 'var(--ui2-bg-selected)';
               } else if (striped && !isEvenRow) {
                 bgColor = 'var(--ui2-bg-sunken)';
@@ -207,6 +212,8 @@ export function DataTable<T extends Record<string, any>>({
                 <tr
                   key={rowKey}
                   data-testid={`${testId}-row-${rowIndex}`}
+                  data-row-key={String(rowKey)}
+                  data-highlighted={isHighlighted ? 'true' : undefined}
                   onClick={() => onRowClick?.(row, rowIndex)}
                   style={{
                     height: rowHeight,

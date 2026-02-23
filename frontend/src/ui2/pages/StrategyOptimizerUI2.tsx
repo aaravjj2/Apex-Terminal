@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useEffect } from 'react';
+import { useSyncExternalStore, useEffect, useState } from 'react';
 import { strategyOptimizerStore } from '../stores/waveStores';
 
 function useStrategyOptimizer() {
@@ -7,9 +7,13 @@ function useStrategyOptimizer() {
 
 export function StrategyOptimizerUI2() {
   const { strategies, hash, loading, error } = useStrategyOptimizer();
-  useEffect(() => { strategyOptimizerStore.fetchAll(); }, []);
+  const [_pageReady, _setPageReady] = useState(false);
+  useEffect(() => { strategyOptimizerStore.fetchAll(); _setPageReady(true); }, []);
 
   return (
+    <>
+    {!_pageReady && <div data-testid="page-loading" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
+    {_pageReady && <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
     <div data-testid="strategy-optimizer-page" style={{ padding: 24, height: '100%', overflow: 'auto' }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Strategy Optimizer</h1>
       {loading && <p data-testid="so-loading">Optimizing strategies...</p>}
@@ -43,5 +47,6 @@ export function StrategyOptimizerUI2() {
         </table>
       </div>
     </div>
+    </>
   );
 }

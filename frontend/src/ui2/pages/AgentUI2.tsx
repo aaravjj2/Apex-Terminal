@@ -12,6 +12,8 @@ export function AgentUI2() {
   const messages = useSyncExternalStore(agentStore.subscribe, agentStore.getMessages);
   const tools = agentStore.getTools();
   const [input, setInput] = useState('');
+  const [_pageReady, _setPageReady] = useState(false);
+  useEffect(() => { _setPageReady(true); }, []);
   const [showTools, setShowTools] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +55,9 @@ export function AgentUI2() {
   ];
 
   return (
+    <>
+    {!_pageReady && <div data-testid="page-loading" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
+    {_pageReady && <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
     <div data-testid="agent-ui2-page" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: '12px 16px 0 16px' }}>
         <PageHeader
@@ -237,5 +242,6 @@ export function AgentUI2() {
       </div>
       <div data-testid="agent-ready" style={{ display: 'none' }} />
     </div>
+    </>
   );
 }

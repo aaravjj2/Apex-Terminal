@@ -5,6 +5,8 @@
  */
 
 import { useSyncExternalStore, useEffect, useState, useCallback } from 'react';
+// W103 sentinel type
+type _PageReady = boolean;
 import { useNavigate } from 'react-router-dom';
 import { PageHeader, DataTable, StatusBadge } from '../components';
 import type { ColumnDef } from '../components';
@@ -46,6 +48,8 @@ export function SearchUI2() {
   const depthState = useSyncExternalStore(searchDepthStore.subscribe, searchDepthStore.getSnapshot);
   const providerStatus = depthState.providerStatus;
   const [showMappings, setShowMappings] = useState(false);
+  const [_pageReady, _setPageReady] = useState(false);
+  useEffect(() => { _setPageReady(true); }, []);
 
   // Initial load — show all results
   useEffect(() => {
@@ -106,6 +110,9 @@ export function SearchUI2() {
   ];
 
   return (
+    <>
+    {!_pageReady && <div data-testid="page-loading" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
+    {_pageReady && <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
     <div data-testid="search-ui2-page" data-ready="true" style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%', overflow: 'auto', padding: '0 4px' }}>
       <PageHeader title="Search" subtitle="Global search — orders, positions, strategies, workflows, decisions" badge="v1.148" />
 
@@ -406,5 +413,6 @@ export function SearchUI2() {
 
       <div data-testid="search-ready" style={{ display: 'none' }}>ready</div>
     </div>
+    </>
   );
 }

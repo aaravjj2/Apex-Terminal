@@ -1,0 +1,101 @@
+---
+# W81 Move Map: OLD → NEW paths
+# Convention: OLD canonical path → NEW canonical path after W82 monorepo layout
+# Format: {old: "...", new: "...", status: "pending|done", wave: N}
+
+moves:
+  # Backend runtime
+  - old: "phase1/services/api/main.py"
+    new: "backend/main.py"
+    status: "pending"
+    wave: 82
+    notes: "Primary FastAPI entrypoint"
+
+  - old: "phase1/services/api/routes/"
+    new: "backend/routes/"
+    status: "pending"
+    wave: 82
+    notes: "All API route files"
+
+  - old: "phase1/services/api/websocket.py"
+    new: "backend/websocket.py"
+    status: "pending"
+    wave: 82
+
+  - old: "phase1/services/autopilot/"
+    new: "backend/domains/broker/"
+    status: "pending"
+    wave: 85
+    notes: "Autopilot → broker domain"
+
+  - old: "phase1/services/waves11_20/"
+    new: "backend/domains/"
+    status: "pending"
+    wave: 85
+    notes: "Domain isolation — each wave service → its domain folder"
+
+  - old: "phase1/services/waves21_50/"
+    new: "backend/domains/"
+    status: "pending"
+    wave: 85
+    notes: "Backtest engine → backend/domains/backtesting/"
+
+  - old: "phase1/services/config.py"
+    new: "backend/core/config.py"
+    status: "pending"
+    wave: 84
+
+  - old: "phase1/services/persistence.py"
+    new: "backend/core/persistence.py"
+    status: "pending"
+    wave: 84
+
+  # Frontend
+  - old: "frontend/src/ui2/"
+    new: "frontend/src/ui2/"
+    status: "keep"
+    wave: 82
+    notes: "UI2 stays in place; AppShell/routes/pages/stores/components all remain"
+
+  # Infrastructure
+  - old: "docker-compose.unified.yml"
+    new: "infrastructure/docker-compose.yml"
+    status: "pending"
+    wave: 82
+
+  - old: "docker-compose.local.yml"
+    new: "infrastructure/docker-compose.local.yml"
+    status: "pending"
+    wave: 82
+
+  # Scripts
+  - old: "run_all.sh"
+    new: "scripts/dev.sh"
+    status: "pending"
+    wave: 82
+
+  # Domain isolation targets (Wave 85)
+  - old: "phase1/services/api/routes/search.py"
+    new: "backend/domains/search/routes.py"
+    status: "pending"
+    wave: 85
+
+  - old: "phase1/services/api/routes/backtest.py"
+    new: "backend/domains/backtesting/routes.py"
+    status: "pending"
+    wave: 85
+
+  - old: "phase1/services/api/routes/agents.py"
+    new: "backend/domains/agents/routes.py"
+    status: "pending"
+    wave: 85
+
+  - old: "phase1/services/api/routes/audit_log.py"
+    new: "backend/domains/audit/routes.py"
+    status: "pending"
+    wave: 85
+
+  - old: "phase1/services/api/routes/automation.py"
+    new: "backend/domains/workflows/routes.py"
+    status: "pending"
+    wave: 85

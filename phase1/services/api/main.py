@@ -43,6 +43,35 @@ from .routes import (
 from .routes import w21_backtest_v4, w46_elasticsearch_v3
 # ── Ops Health ──────────────────────────────────────────────────────────────
 from .routes import ops_health
+from .routes import ops_health_v3  # Wave 84: /api/v3/ops/* endpoints
+from .routes import evidence        # Wave 93: /api/v3/evidence/* endpoints
+from .routes import agent_tools_v3  # Wave 94: /api/v3/agent/* endpoints
+from .routes import elastic_agent    # Wave 95: /api/v3/elastic-agent/* endpoints
+from .routes import search_ux_v3     # Wave 96: /api/v3/search-ux/* endpoints
+from .routes import backtest_contract # Wave 97: /api/v3/backtest-contract/* endpoints
+from .routes import walkforward_v3    # Wave 98: /api/v3/walkforward/* endpoints
+from .routes import strategy_studio_v3 # Wave 99: /api/v3/strategy-studio/* endpoints
+from .routes import job_queue_v2       # Wave 100: /api/v3/jobs/* endpoints
+from .routes import convergence_cockpit_v1 # Wave 101: /api/v3/cockpit/* endpoints
+from .routes import agent_eval_harness     # Wave 102: /api/v3/eval/* endpoints
+from .routes import ui_page_registry       # Wave 103: /api/v3/pages/* endpoints
+from .routes import a11y_audit             # Wave 104: /api/v3/a11y/* endpoints
+from .routes import perf_budget            # Wave 105: /api/v3/perf/* endpoints
+from .routes import controls_domain        # Wave 106: /api/v3/controls/* endpoints
+from .routes import safe_actions           # Wave 107: /api/v3/tickets/* endpoints
+from .routes import export_bundle          # Wave 108: /api/v3/export/* endpoints
+from .routes import ops_reset              # Wave 112: /api/v3/ops/reset* endpoints
+# ── Wave 85: Domain routers (audit, broker) ────────────────────────────────
+try:
+    from backend.domains.audit import routes as audit_domain_routes  # noqa: E402
+    from backend.domains.broker import routes as broker_domain_routes  # noqa: E402
+    _w85_domains_loaded = True
+except ImportError as _e:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(f"W85 domain routes not loaded: {_e}")
+    audit_domain_routes = None
+    broker_domain_routes = None
+    _w85_domains_loaded = False
 from .websocket import router as ws_router
 from .health_router import router as health_router
 from .verification_routes import router as verification_router
@@ -273,6 +302,39 @@ def create_app() -> FastAPI:
     app.include_router(platform_health.router, tags=["platform-health"])
     # ── Ops Health Probes (real connectivity) ──
     app.include_router(ops_health.router, tags=["ops-health"])
+    # ── Wave 84: v3 ops health with correlation_id ──
+    app.include_router(ops_health_v3.router, tags=["ops-v3"])
+    app.include_router(ops_reset.router, tags=["ops-reset"])
+    # ── Wave 93: Evidence graph (nodes + edges) ──
+    app.include_router(evidence.router, prefix="/api/v3/evidence", tags=["evidence-v3"])
+    # ── Wave 94: Agent tools v1 (strict tools + audit trail) ──
+    app.include_router(agent_tools_v3.router, prefix="/api/v3/agent", tags=["agent-v3"])
+    # ── Wave 95: Elastic Agent Builder integration ──
+    app.include_router(elastic_agent.router, prefix="/api/v3/elastic-agent", tags=["elastic-agent-v3"])
+    # ── Wave 96: Search UX v3 (facets + saved searches + explain) ──
+    app.include_router(search_ux_v3.router, prefix="/api/v3/search-ux", tags=["search-ux-v3"])
+    # ── Wave 97: Backtesting correctness contract + golden runs ──
+    app.include_router(backtest_contract.router, prefix="/api/v3/backtest-contract", tags=["backtest-contract-v3"])
+    # ── Wave 98: Walk-forward + robustness v3 ──
+    app.include_router(walkforward_v3.router, prefix="/api/v3/walkforward", tags=["walkforward-v3"])
+    # ── Wave 99: Strategy Studio v3 ──
+    app.include_router(strategy_studio_v3.router, prefix="/api/v3/strategy-studio", tags=["strategy-studio-v3"])
+    # ── Wave 100: Job Queue v2 + WebSocket progress ──
+    app.include_router(job_queue_v2.router, prefix="/api/v3/jobs", tags=["job-queue-v2"])
+    # ── Wave 101: Convergence Cockpit v1 ──
+    app.include_router(convergence_cockpit_v1.router, prefix="/api/v3/cockpit", tags=["convergence-cockpit-v1"])
+    app.include_router(agent_eval_harness.router, prefix="/api/v3/eval", tags=["agent-eval-harness"])
+    app.include_router(ui_page_registry.router, prefix="/api/v3/pages", tags=["ui-page-registry"])
+    app.include_router(a11y_audit.router, prefix="/api/v3/a11y", tags=["a11y-audit"])
+    app.include_router(perf_budget.router, prefix="/api/v3/perf", tags=["perf-budget"])
+    app.include_router(controls_domain.router, prefix="/api/v3/controls", tags=["controls-domain"])
+    app.include_router(safe_actions.router, prefix="/api/v3/tickets", tags=["safe-actions-v3"])
+    app.include_router(export_bundle.router, prefix="/api/v3/export", tags=["export-bundle-v3"])
+    # ── Wave 85: Domain routers (audit events + broker health) ──
+    if audit_domain_routes is not None:
+        app.include_router(audit_domain_routes.router, tags=["audit-domain-v3"])
+    if broker_domain_routes is not None:
+        app.include_router(broker_domain_routes.router, tags=["broker-domain-v3"])
     
     # ── Wave 6: Market Intelligence ──
     app.include_router(monte_carlo.router, tags=["monte-carlo"])

@@ -81,6 +81,7 @@ export function ObservabilityV2UI2() {
               {!a.acknowledged && (
                 <button
                   onClick={() => observabilityV2Store.ackAlert(a.alert_id)}
+                  data-testid={`obs-ack-${a.alert_id}`}
                   style={{ background: '#334155', color: '#e2e8f0', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}
                 >
                   Ack

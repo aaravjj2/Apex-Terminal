@@ -193,7 +193,7 @@ export function WorkflowBuilderUI2() {
                         data-testid={`ui2-workflow-action-config-${i}`}
                       />
                       <button onClick={() => setFormActions(formActions.filter((_, j) => j !== i))}
-                        className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
+                        className="text-red-400 hover:text-red-300" data-testid={`ui2-workflow-remove-action-${i}`}><Trash2 className="w-4 h-4" /></button>
                     </div>
                   ))}
                 </div>
@@ -209,7 +209,7 @@ export function WorkflowBuilderUI2() {
                     {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                     {saved ? 'Saved!' : 'Save'}
                   </button>
-                  <button onClick={resetForm} className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded text-sm">Cancel</button>
+                  <button onClick={resetForm} className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded text-sm" data-testid="ui2-workflow-cancel-btn">Cancel</button>
                 </div>
                 {validateResult && (
                   <div

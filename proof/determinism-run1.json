@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-02-23T17:36:31.367897+00:00",
+  "pytest": {
+    "run": 1,
+    "count_summary": "121 passed",
+    "full_summary": "121 passed in 79.31s",
+    "last_10": [
+      "backend\\tests\\integration\\test_w123_compliance.py .........              [ 48%]",
+      "backend\\tests\\integration\\test_w124_terracode.py ........                [ 55%]",
+      "backend\\tests\\integration\\test_w125_elastihack.py ........               [ 61%]",
+      "backend\\tests\\integration\\test_w126_bundle.py .......                    [ 67%]",
+      "backend\\tests\\integration\\test_w127_ci.py .......                        [ 73%]",
+      "backend\\tests\\integration\\test_w128_ux.py .......                        [ 79%]",
+      "backend\\tests\\integration\\test_w129_incident.py .........                [ 86%]",
+      "backend\\tests\\integration\\test_w130_final_proof.py ................      [100%]",
+      "",
+      "======================= 121 passed in 79.31s (0:01:19) ========================"
+    ],
+    "log": "proof/logs/pytest-run1.txt"
+  },
+  "playwright": {
+    "run": 1,
+    "count_summary": "100 passed",
+    "full_summary": "100 passed",
+    "last_10": [
+      "\u001b[1A\u001b[2K[92/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:32:1 \u0393\u00c7\u2551 w130 /api/v3/ops/reset/version \u0393\u00e5\u00c6 starts with w",
+      "\u001b[1A\u001b[2K[93/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:40:1 \u0393\u00c7\u2551 w130 proof/determinism-run1.json exists",
+      "\u001b[1A\u001b[2K[94/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:44:1 \u0393\u00c7\u2551 w130 proof/determinism-run2.json exists",
+      "\u001b[1A\u001b[2K[95/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:48:1 \u0393\u00c7\u2551 w130 proof/determinism-diff.txt is empty",
+      "\u001b[1A\u001b[2K[96/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:55:1 \u0393\u00c7\u2551 w130 README.md exists",
+      "\u001b[1A\u001b[2K[97/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:59:1 \u0393\u00c7\u2551 w130 ONBOARDING.md exists",
+      "\u001b[1A\u001b[2K[98/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:63:1 \u0393\u00c7\u2551 w130 TERRACODE demo script exists",
+      "\u001b[1A\u001b[2K[99/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:67:1 \u0393\u00c7\u2551 w130 ELASTIHACK demo script exists",
+      "\u001b[1A\u001b[2K[100/100] [chromium] \u0393\u00c7\u2551 tests\\e2e\\hardening\\w130-final-proof.spec.ts:71:1 \u0393\u00c7\u2551 w130 SLO doc exists",
+      "\u001b[1A\u001b[2K  100 passed (31.8s)"
+    ],
+    "log": "proof/logs/pw-run1.txt"
+  }
+}

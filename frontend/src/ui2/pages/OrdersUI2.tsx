@@ -224,6 +224,7 @@ export function OrdersUI2() {
         actions={
           <button
             className="ui2-btn ui2-btn-primary"
+            data-testid="orders-new-order-btn"
             style={{ height: '32px', fontSize: '12px' }}
             onClick={() => console.log('New Order')}
           >

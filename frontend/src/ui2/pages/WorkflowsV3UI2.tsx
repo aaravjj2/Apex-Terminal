@@ -30,6 +30,7 @@ export function WorkflowsV3UI2() {
             <div style={{ color: '#94a3b8', fontSize: 13 }}>{t.description || 'No description'}</div>
             <button
               onClick={() => workflowV3Store.createWorkflow({ name: `New ${id}`, description: `From ${id}`, steps: t.steps || [], schedule: t.schedule || {}, template_id: id })}
+              data-testid={`wf3-create-${id}`}
               style={{ marginTop: 8, background: '#334155', color: '#e2e8f0', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}
             >
               Create from Template
@@ -52,6 +53,7 @@ export function WorkflowsV3UI2() {
             <div><span style={{ color: '#94a3b8', fontSize: 12 }}>Steps</span><div>{w.steps?.length || 0}</div></div>
             <button
               onClick={() => workflowV3Store.fetchRuns(w.workflow_id)}
+              data-testid={`wf3-runs-${i}`}
               style={{ background: '#334155', color: '#e2e8f0', border: 'none', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}
             >
               View Runs

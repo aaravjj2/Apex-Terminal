@@ -38,10 +38,22 @@ export const COMMAND_REGISTRY: RegistryCommand[] = [
   { id: 'action-toggle-demo', label: 'Toggle Demo Mode Banner', description: 'Show/hide the demo mode indicator', icon: '>', category: 'action', keywords: ['demo', 'toggle', 'mode', 'banner'], action: 'toggle-demo' },
   { id: 'action-kill-switch', label: 'Kill Switch', description: 'Emergency stop all autopilot activity', icon: '!', category: 'action', keywords: ['kill', 'stop', 'emergency', 'halt', 'switch'], action: 'kill-switch' },
 
+  // Setting commands
+  { id: 'setting-theme', label: 'Theme Settings', description: 'Change color theme', icon: '#', category: 'setting', keywords: ['theme', 'dark', 'light', 'color'], action: 'open-settings-theme' },
+
   // Ticker search  
   { id: 'ticker-spy', label: 'SPY', description: 'SPDR S&P 500 ETF', icon: '$', category: 'ticker', keywords: ['spy', 'sp500', 'etf', 'index'], action: 'select-ticker-SPY' },
   { id: 'ticker-aapl', label: 'AAPL', description: 'Apple Inc.', icon: '$', category: 'ticker', keywords: ['aapl', 'apple', 'tech'], action: 'select-ticker-AAPL' },
   { id: 'ticker-tsla', label: 'TSLA', description: 'Tesla Inc.', icon: '$', category: 'ticker', keywords: ['tsla', 'tesla', 'ev'], action: 'select-ticker-TSLA' },
   { id: 'ticker-nvda', label: 'NVDA', description: 'NVIDIA Corporation', icon: '$', category: 'ticker', keywords: ['nvda', 'nvidia', 'gpu', 'ai'], action: 'select-ticker-NVDA' },
   { id: 'ticker-msft', label: 'MSFT', description: 'Microsoft Corporation', icon: '$', category: 'ticker', keywords: ['msft', 'microsoft', 'cloud'], action: 'select-ticker-MSFT' },
+
+  // Deep-link entity commands (W89) — navigate to entity page with row highlight
+  { id: 'deep-strategy-example', label: 'Strategy: SMA Cross', description: 'Open strategy detail (deep-link demo)', icon: '→', category: 'navigation', keywords: ['strategy', 'sma', 'deep-link', 'example'], path: '/ui2/research?highlight=strategy-sma-001' },
+  { id: 'deep-backtest-example', label: 'Backtest: Deep-Link Test', description: 'Open backtest detail (deep-link demo)', icon: '→', category: 'navigation', keywords: ['backtest', 'deep-link', 'example', 'sma'], path: '/ui2/backtest?highlight=bt-deep-link-test' },
+  { id: 'deep-run-example', label: 'Run: run-abc-001', description: 'Open run detail (deep-link demo)', icon: '→', category: 'navigation', keywords: ['run', 'deep-link', 'example', 'audit'], path: '/ui2/runs?highlight=run-abc-001' },
+  { id: 'deep-job-example', label: 'Job: data-ingest-42', description: 'Open job detail (deep-link demo)', icon: '→', category: 'navigation', keywords: ['job', 'deep-link', 'example', 'cron'], path: '/ui2/runs?highlight=job-data-ingest-42' },
+  { id: 'deep-event-example', label: 'Event: run_started', description: 'Open audit event (deep-link demo)', icon: '→', category: 'navigation', keywords: ['event', 'deep-link', 'example', 'audit'], path: '/ui2/runs?highlight=evt-run-started-001' },
+  { id: 'deep-ticket-example', label: 'Ticket: INC-001', description: 'Open ticket detail (deep-link demo)', icon: '→', category: 'navigation', keywords: ['ticket', 'deep-link', 'example', 'incident'], path: '/ui2/runs?highlight=ticket-inc-001' },
+  { id: 'deep-agent-run-example', label: 'Agent Run: nova-run-x', description: 'Open agent run (deep-link demo)', icon: '→', category: 'navigation', keywords: ['agent', 'run', 'deep-link', 'example', 'nova'], path: '/ui2/autopilot?highlight=agent-run-nova-x' },
 ];

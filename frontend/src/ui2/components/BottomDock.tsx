@@ -119,6 +119,7 @@ export function BottomDock({
         <button
           data-testid={`${testId}-collapse`}
           onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? 'Expand bottom dock' : 'Collapse bottom dock'}
           style={{
             padding: '4px 8px',
             fontSize: '12px',

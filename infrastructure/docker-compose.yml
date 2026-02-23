@@ -1,0 +1,132 @@
+version: "3.9"
+# Apex Terminal — Canonical infrastructure compose
+# Usage:
+#   docker compose -f infrastructure/docker-compose.yml up -d
+#   docker compose -f infrastructure/docker-compose.yml down
+
+services:
+  # ===========================================================================
+  # DATABASE
+  # ===========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: apex-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-apex_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apex_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-apex_terminal}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apex_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - apex-net
+
+  # ===========================================================================
+  # ELASTICSEARCH
+  # ===========================================================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: apex-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - cluster.name=apex-local
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx1g
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+    networks:
+      - apex-net
+
+  # ===========================================================================
+  # KIBANA (optional — useful for dev/demo)
+  # ===========================================================================
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.0
+    container_name: apex-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - apex-net
+    profiles:
+      - kibana
+
+  # ===========================================================================
+  # BACKEND API
+  # ===========================================================================
+  backend:
+    build:
+      context: ..
+      dockerfile: phase1/Dockerfile
+    container_name: apex-backend
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-apex_user}:${POSTGRES_PASSWORD:-apex_pass}@postgres:5432/${POSTGRES_DB:-apex_terminal}
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - APCA_API_KEY_ID=${APCA_API_KEY_ID}
+      - APCA_API_SECRET_KEY=${APCA_API_SECRET_KEY}
+      - APCA_ENDPOINT=${APCA_ENDPOINT:-https://paper-api.alpaca.markets}
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY:-}
+      - API_HOST=0.0.0.0
+      - API_PORT=8090
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - apex-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8090/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ===========================================================================
+  # FRONTEND (preview build)
+  # ===========================================================================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: apex-frontend
+    restart: unless-stopped
+    ports:
+      - "5100:5100"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - apex-net
+
+volumes:
+  postgres_data:
+  es_data:
+
+networks:
+  apex-net:
+    driver: bridge

@@ -82,6 +82,22 @@ import {
   ResearchQueueUI2,
   SearchV2UI2,
   EsOpsUI2,
+  EvidenceGraphUI2,
+  AgentToolsUI2,
+  AgentBuilderUI2,
+  SearchUXV3UI2,
+  BacktestContractUI2,
+  WalkForwardV3UI2,
+  StrategyStudioV3UI2,
+  JobQueueV2UI2,
+  ConvergenceCockpitV1UI2,
+  AgentEvalHarnessUI2,
+  AuditorUI2,
+  AccessibilityAuditUI2,
+  PerfBudgetUI2,
+  ControlsDomainUI2,
+  SafeActionsUI2,
+  ExportBundleUI2,
 } from './pages';
 
 export function UI2Routes() {
@@ -180,6 +196,36 @@ export function UI2Routes() {
         <Route path="research-queue" element={<ResearchQueueUI2 />} />
         <Route path="search-v2" element={<SearchV2UI2 />} />
         <Route path="es-ops" element={<EsOpsUI2 />} />
+        {/* Wave 93 — Evidence Graph */}
+        <Route path="evidence" element={<EvidenceGraphUI2 />} />
+        {/* Wave 94 — Agent Tools v1 */}
+        <Route path="agent-tools" element={<AgentToolsUI2 />} />
+        {/* Wave 95 — Elastic Agent Builder */}
+        <Route path="agent-builder" element={<AgentBuilderUI2 />} />
+        {/* Wave 96 — Search UX v3 */}
+        <Route path="search-v3" element={<SearchUXV3UI2 />} />
+        {/* Wave 97 — Backtesting Correctness Contract */}
+        <Route path="backtest-contract" element={<BacktestContractUI2 />} />
+        {/* Wave 98 — Walk-Forward + Robustness v3 */}
+        <Route path="walkforward-v3" element={<WalkForwardV3UI2 />} />
+        {/* Wave 99 — Strategy Studio v3 */}
+        <Route path="strategy-studio" element={<StrategyStudioV3UI2 />} />
+        {/* Wave 100 — Job Queue v2 + WS progress */}
+        <Route path="job-queue" element={<JobQueueV2UI2 />} />
+        {/* Wave 101 — Convergence Cockpit v1 */}
+        <Route path="convergence" element={<ConvergenceCockpitV1UI2 />} />
+        {/* Wave 102 — Agent Eval Harness */}
+        <Route path="agent-eval" element={<AgentEvalHarnessUI2 />} />
+        {/* Wave 103 — UI2 Standardization */}
+        <Route path="auditor" element={<AuditorUI2 />} />
+        {/* Wave 104 — Accessibility Audit */}
+        <Route path="accessibility" element={<AccessibilityAuditUI2 />} />
+        {/* Wave 105 — Performance Budget */}
+        <Route path="perf-budget" element={<PerfBudgetUI2 />} />
+        {/* Wave 106 — Controls Domain */}
+        <Route path="controls-domain" element={<ControlsDomainUI2 />} />
+        <Route path="safe-actions" element={<SafeActionsUI2 />} />
+        <Route path="export-bundle" element={<ExportBundleUI2 />} />
       </Route>
     </Routes>
   );

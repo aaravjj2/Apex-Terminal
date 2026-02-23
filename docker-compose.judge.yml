@@ -1,0 +1,128 @@
+# Apex Terminal — Judge Compose Stack
+# Runs the full stack: Postgres + Elasticsearch + Kibana + Backend (8090) + Frontend (5100)
+# Usage: docker compose -f docker-compose.judge.yml up -d
+
+version: "3.8"
+
+services:
+  # === POSTGRES ===
+  postgres:
+    image: postgres:15-alpine
+    container_name: apex-judge-postgres
+    restart: unless-stopped
+    env_file:
+      - keys.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dashboard_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-newpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-financial_dashboard}
+    ports:
+      - "5432:5432"
+    volumes:
+      - apex-judge-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dashboard_user}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # === ELASTICSEARCH ===
+  elasticsearch:
+    image: elasticsearch:8.12.2
+    container_name: apex-judge-es
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - apex-judge-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      interval: 10s
+      timeout: 8s
+      retries: 15
+      start_period: 30s
+
+  # === KIBANA ===
+  kibana:
+    image: kibana:8.12.2
+    container_name: apex-judge-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # === BACKEND (port 8090) ===
+  backend:
+    build:
+      context: ./phase1
+      dockerfile: Dockerfile
+    container_name: apex-judge-backend
+    restart: unless-stopped
+    env_file:
+      - keys.env
+    environment:
+      - DATABASE_URL=sqlite:///./data/bars.db
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - HOST=0.0.0.0
+      - PORT=8090
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./data:/app/data
+    command: ["python", "-m", "uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8090"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8090/api/v3/export/version || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # === FRONTEND PREVIEW (port 5100) ===
+  frontend:
+    image: node:20-alpine
+    container_name: apex-judge-frontend
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      - VITE_API_URL=http://localhost:8090
+    ports:
+      - "5100:5100"
+    volumes:
+      - ./frontend:/app
+      - apex-judge-frontend-modules:/app/node_modules
+    command: sh -c "npm install --prefer-offline && npm run dev -- --host 0.0.0.0 --port 5100"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5100 || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  apex-judge-pg-data:
+  apex-judge-es-data:
+  apex-judge-frontend-modules:

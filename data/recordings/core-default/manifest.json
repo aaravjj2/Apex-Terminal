@@ -91,13 +91,13 @@
       "sha256": "sha256:173d345135961036fb02cca6c055b93902b1b899a917ed99f1e469631f431ef3"
     },
     "broker_ledger/fills.jsonl": {
-      "size_bytes": 4392,
-      "sha256": "sha256:235b1089a5fb415edcfd72ab27565c1cd98e7926668d1f553f63ee66a732f4cb",
+      "size_bytes": 4410,
+      "sha256": "sha256:e5e8d1fb1f531f955defe188337a1b15f52b08340ffd41d1eadab42f4a9bc836",
       "num_records": 18
     },
     "broker_ledger/positions.jsonl": {
-      "size_bytes": 912,
-      "sha256": "sha256:a4f4bcbbf02085bc27fe3f14039fa896a03d84d9372d04605f3371c774c6729e",
+      "size_bytes": 916,
+      "sha256": "sha256:9df68c81b4ad4e75361d8bd2171f52c760eb62c83b56ef2ba0d67b3a17d1f4b1",
       "num_records": 4
     }
   },

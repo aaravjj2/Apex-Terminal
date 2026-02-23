@@ -1,4 +1,6 @@
 .PHONY: install run test test-backend test-frontend test-e2e test-risk-desk demo verify verify-all clean demo-smoke
+# ── Wave 82+ canonical targets ───────────────────────────────────────────────
+.PHONY: up down api web es proof tsc vitest pytest e2e hardening
 
 install:
 	pip install -r phase1/requirements.txt
@@ -103,6 +105,70 @@ proof-v1-10:
 verify-all: verify
 
 test: test-backend test-e2e
+
+# ── Wave 82: Canonical targets ────────────────────────────────────────────────
+up:
+	powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 up
+
+down:
+	powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 down
+
+api:
+	powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 api
+
+web:
+	powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 web
+
+es:
+	powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 es
+
+tsc:
+	cd frontend && npx.cmd tsc --noEmit
+
+vitest:
+	cd frontend && npx.cmd vitest run
+
+pytest:
+	python -m pytest tests/ -x -q
+	cd phase1 && ELASTICSEARCH_URL=http://localhost:9200 python -m pytest tests/ -x -q
+
+# Run full test suite: tsc + vitest + pytest
+test-all: tsc vitest pytest
+
+# Playwright hardening suite (headed, workers=1, no retries)
+hardening:
+	cd frontend && npx.cmd playwright test tests/e2e/hardening/ --reporter=line
+
+# Playwright full e2e
+e2e: hardening
+
+# Wave 122: Secret scanner
+secrets:
+	python scripts/check_secrets.py
+
+# Wave 123: Submission compliance checks
+compliance:
+	python scripts/check_submission_compliance.py
+
+# Wave 126: Generate submission bundle zip
+bundle:
+	python scripts/generate_submission_bundle.py
+
+# Wave 119: Determinism check (suite twice, diff results)
+determinism:
+	python scripts/determinism_check.py
+
+# Wave 118: Zero-flake 3x harness
+3x:
+	pwsh scripts/run_3x.ps1
+
+# Generate proof pack
+proof:
+	powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 proof
+
+# Assert no tracked bloat
+bloat-check:
+	powershell -ExecutionPolicy Bypass -File scripts/assert_no_tracked_bloat.ps1
 
 clean:
 	rm -rf phase1/__pycache__

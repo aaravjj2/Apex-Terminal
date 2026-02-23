@@ -1,0 +1,70 @@
+---
+# W81 Dependency Audit
+# Generated: 2026-02-23
+# Python: phase1 runtime modules (excluding tests)
+# TypeScript: frontend/src/ui2 runtime modules (excluding tests)
+
+python:
+  imported:
+    - alpaca
+    - aiofiles
+    - aiohttp
+    - aiosqlite
+    - alembic
+    - anyio
+    - cachetools
+    - certifi
+    - click
+    - cryptography
+    - databases
+    - dotenv
+    - fastapi
+    - httpx
+    - msgpack
+    - numpy
+    - orjson
+    - pandas
+    - pydantic
+    - requests
+    - scipy
+    - sklearn
+    - sqlalchemy
+    - starlette
+    - structlog
+    - tenacity
+    - tiktoken
+    - uvicorn
+    - websockets
+
+  installed_not_imported:
+    # These are installed but not found in runtime imports scan
+    - black
+    - isort
+    - mypy
+    - pylint
+    - pytest
+    - pytest-asyncio
+    - pytest-cov
+    - ruff
+    - tabulate
+
+typescript:
+  ui2_runtime_imports:
+    - react
+    - react-dom
+    - react-router-dom
+    - recharts
+    - zustand
+    - "@tanstack/react-virtual"
+    - axios
+    - date-fns
+    - lightweight-charts
+    - vite
+
+  installed_not_imported_in_ui2:
+    - "@vitejs/plugin-react"
+    - "@playwright/test"
+    - vitest
+    - "@testing-library/react"
+    - typescript
+    - eslint

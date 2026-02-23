@@ -79,6 +79,7 @@ export class ErrorBoundary extends Component<Props, State> {
           )}
           <button
             onClick={() => window.location.reload()}
+            data-testid="error-boundary-reload-btn"
             style={{
               padding: '8px 16px',
               background: 'var(--ui2-bg-accent)',

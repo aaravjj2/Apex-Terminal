@@ -490,7 +490,7 @@ export function AppShellUI2() {
       keywords: ws.keywords,
       path: ws.path,
     })),
-    ...COMMAND_REGISTRY.filter(c => c.category !== 'navigation').map(c => ({
+    ...COMMAND_REGISTRY.map(c => ({
       id: c.id,
       label: c.label,
       description: c.description,
@@ -503,6 +503,29 @@ export function AppShellUI2() {
 
   return (
     <ToastProvider>
+    {/* W104 — Skip-to-main-content link (visible on keyboard focus) */}
+    <a
+      href="#main-content"
+      data-testid="skip-to-main"
+      style={{
+        position: 'fixed',
+        top: '-40px',
+        left: '8px',
+        zIndex: 9999,
+        padding: '8px 16px',
+        background: 'var(--ui2-brand-primary, #4f8ef7)',
+        color: '#fff',
+        fontWeight: 600,
+        fontSize: '13px',
+        borderRadius: '4px',
+        textDecoration: 'none',
+        transition: 'top 0.1s',
+      }}
+      onFocus={(e) => { e.currentTarget.style.top = '8px'; }}
+      onBlur={(e) => { e.currentTarget.style.top = '-40px'; }}
+    >
+      Skip to main content
+    </a>
     <div
       className="ui2-root"
       data-testid="ui2-app-shell"
@@ -588,6 +611,7 @@ export function AppShellUI2() {
         <button
           onClick={() => setCommandPaletteOpen(true)}
           data-testid="ui2-command-trigger"
+          aria-label="Open command palette (Ctrl+K)"
           style={{
             flex: 1,
             maxWidth: '600px',
@@ -736,6 +760,7 @@ export function AppShellUI2() {
                 data-testid={`ui2-rail-${workspace.id}`}
                 onClick={() => navigate(workspace.path)}
                 title={workspace.label}
+                aria-label={workspace.label}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -802,6 +827,9 @@ export function AppShellUI2() {
 
       {/* Center Workspace */}
       <div
+        id="main-content"
+        role="main"
+        aria-label="Main workspace"
         data-testid="ui2-center"
         style={{
           gridArea: 'center',
@@ -832,7 +860,7 @@ export function AppShellUI2() {
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         commands={commands}
-        testId="ui2-command-palette"
+        testId="command-palette"
       />
     </div>
     </ToastProvider>

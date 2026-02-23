@@ -33,7 +33,7 @@ export function ResearchQueueUI2() {
               <span style={{ color: '#94a3b8', marginLeft: 12, fontSize: 13 }}>{job.status}</span>
             </div>
             {job.status === 'pending' && (
-              <button onClick={() => strategyV2Store.cancelJob(job.job_id)} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => strategyV2Store.cancelJob(job.job_id)} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 12, cursor: 'pointer' }} data-testid={`rq-cancel-${job.job_id}`}>Cancel</button>
             )}
           </div>
         ))}

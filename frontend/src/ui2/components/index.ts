@@ -61,3 +61,10 @@ export { formatValue, formatPnL, formatPercent } from './DataTable';
 
 export { MarketTape } from './MarketTape';
 export { OrderTicket } from './OrderTicket';
+
+// W103 — Standardization components
+export { PageShellUI2 } from './PageShellUI2';
+export type { PageShellUI2Props, PageStatus } from './PageShellUI2';
+
+export { DataTableUI2 } from './DataTableUI2';
+export type { DataTableUI2Props, ColumnDefUI2 } from './DataTableUI2';

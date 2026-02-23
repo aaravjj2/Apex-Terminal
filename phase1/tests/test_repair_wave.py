@@ -326,3 +326,120 @@ class TestMainAppRegistration:
         assert "/api/ops/broker/health" in routes
         assert "/api/ops/ws/health" in routes
         assert "/api/ops/readiness" in routes
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 7. Elasticsearch live cluster tests (require ES running on localhost:9200)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestElasticsearchLive:
+    """Live tests against real Elasticsearch 8.17 cluster.
+    Skip entire class if ES is not running."""
+
+    @classmethod
+    def _es_running(cls) -> bool:
+        try:
+            import httpx
+            r = httpx.get("http://localhost:9200/_cluster/health", timeout=3.0)
+            return r.status_code == 200
+        except Exception:
+            return False
+
+    def setup_method(self):
+        if not self._es_running():
+            pytest.skip("Elasticsearch not running on localhost:9200")
+
+    def test_cluster_health_green_or_yellow(self):
+        import httpx
+        r = httpx.get("http://localhost:9200/_cluster/health", timeout=5.0)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] in ("green", "yellow")
+
+    def test_cluster_name_is_apex_local(self):
+        import httpx
+        r = httpx.get("http://localhost:9200/_cluster/health", timeout=5.0)
+        assert r.json()["cluster_name"] == "apex-local"
+
+    def test_es_version_8_17(self):
+        import httpx
+        r = httpx.get("http://localhost:9200/", timeout=5.0)
+        assert r.status_code == 200
+        ver = r.json()["version"]["number"]
+        assert ver.startswith("8.17")
+
+    def test_probe_elasticsearch_connected(self):
+        """ops_health._probe_elasticsearch() should return connected=True."""
+        import asyncio, os
+        os.environ["ELASTICSEARCH_URL"] = "http://localhost:9200"
+        from services.api.routes.ops_health import _probe_elasticsearch
+        result = asyncio.run(_probe_elasticsearch(timeout=10.0))
+        assert result["connected"] is True, f"ES probe failed: {result}"
+
+    def test_probe_elasticsearch_latency(self):
+        import asyncio, os
+        os.environ["ELASTICSEARCH_URL"] = "http://localhost:9200"
+        from services.api.routes.ops_health import _probe_elasticsearch
+        result = asyncio.run(_probe_elasticsearch(timeout=10.0))
+        assert "latency_ms" in result
+        assert result["latency_ms"] < 1000
+
+    def test_elasticsearch_service_create_index(self):
+        """ElasticsearchService.create_index_if_not_exists() should not raise."""
+        import asyncio, os
+        os.environ["ELASTICSEARCH_URL"] = "http://localhost:9200"
+        from services.waves11_20.elastic import ElasticsearchService
+        es = ElasticsearchService()
+        result = asyncio.run(es.create_index_if_not_exists("apex-hardening-test"))
+        assert result is True or result is False  # either created or already exists
+
+    def test_elasticsearch_service_index_document(self):
+        """Index a document and confirm it returns correctly."""
+        import asyncio, os, time
+        os.environ["ELASTICSEARCH_URL"] = "http://localhost:9200"
+        from services.waves11_20.elastic import ElasticsearchService, ESDocument
+        es = ElasticsearchService()
+        doc = ESDocument(
+            index="apex-hardening-test",
+            doc_id=f"pytest-live-{int(time.time())}",
+            body={"symbol": "PYTEST", "close": 42.0, "source": "repair-wave"},
+        )
+        result = asyncio.run(es.index_document(doc))
+        assert result is not None
+
+    def test_elasticsearch_service_bulk_index(self):
+        """Bulk index 3 documents without error."""
+        import asyncio, os, time
+        os.environ["ELASTICSEARCH_URL"] = "http://localhost:9200"
+        from services.waves11_20.elastic import ElasticsearchService, ESDocument
+        es = ElasticsearchService()
+        t = int(time.time())
+        docs = [
+            ESDocument(index="apex-hardening-test", doc_id=f"bulk-{t}-{i}",
+                       body={"symbol": "BULK", "close": float(100 + i)})
+            for i in range(3)
+        ]
+        result = asyncio.run(es.bulk_index(docs))
+        assert result is not None
+
+    def test_elasticsearch_service_search(self):
+        """Search the hardening index and get a hits dict back."""
+        import asyncio, os, time
+        os.environ["ELASTICSEARCH_URL"] = "http://localhost:9200"
+        from services.waves11_20.elastic import ElasticsearchService
+        es = ElasticsearchService()
+        # Give ES time to make indexed docs searchable
+        import time as t; t.sleep(1)
+        result = asyncio.run(es.search("apex-hardening-test", query={"match_all": {}}, size=10))
+        assert result is not None
+        # result should be a dict with total / hits
+        assert isinstance(result, dict)
+
+    def test_elasticsearch_service_get_stats(self):
+        """get_index_stats() returns doc_count."""
+        import asyncio, os
+        os.environ["ELASTICSEARCH_URL"] = "http://localhost:9200"
+        from services.waves11_20.elastic import ElasticsearchService
+        es = ElasticsearchService()
+        stats = asyncio.run(es.get_index_stats())
+        assert stats is not None

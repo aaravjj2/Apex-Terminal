@@ -112,3 +112,19 @@ export { StrategyBuilderV2UI2 } from './StrategyBuilderV2UI2';
 export { ResearchQueueUI2 } from './ResearchQueueUI2';
 export { SearchV2UI2 } from './SearchV2UI2';
 export { EsOpsUI2 } from './EsOpsUI2';
+export { EvidenceGraphUI2 } from './EvidenceGraphUI2'; // Wave 93
+export { AgentToolsUI2 } from './AgentToolsUI2'; // Wave 94
+export { AgentBuilderUI2 } from './AgentBuilderUI2'; // Wave 95
+export { SearchUXV3UI2 } from './SearchUXV3UI2'; // Wave 96
+export { BacktestContractUI2 } from './BacktestContractUI2'; // Wave 97
+export { WalkForwardV3UI2 } from './WalkForwardV3UI2'; // Wave 98
+export { StrategyStudioV3UI2 } from './StrategyStudioV3UI2'; // Wave 99
+export { JobQueueV2UI2 } from './JobQueueV2UI2'; // Wave 100
+export { ConvergenceCockpitV1UI2 } from './ConvergenceCockpitV1UI2'; // Wave 101
+export { AgentEvalHarnessUI2 } from './AgentEvalHarnessUI2'; // Wave 102
+export { AuditorUI2 } from './AuditorUI2'; // Wave 103
+export { AccessibilityAuditUI2 } from './AccessibilityAuditUI2'; // Wave 104
+export { PerfBudgetUI2 } from './PerfBudgetUI2'; // Wave 105
+export { ControlsDomainUI2 } from './ControlsDomainUI2'; // Wave 106
+export { SafeActionsUI2 } from './SafeActionsUI2'; // Wave 107
+export { ExportBundleUI2 } from './ExportBundleUI2'; // Wave 108

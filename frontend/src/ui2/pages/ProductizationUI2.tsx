@@ -67,6 +67,7 @@ export function ProductizationUI2() {
                 <div style={{ color: '#94a3b8', fontSize: 13 }}>${u.market_cap_b.toFixed(1)}B</div>
                 <button
                   onClick={() => productizationStore.toggleSymbol(u.symbol, !u.enabled)}
+                  data-testid={`prod-toggle-${u.symbol}`}
                   style={{ background: u.enabled ? '#22c55e' : '#64748b', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', fontSize: 12 }}
                 >
                   {u.enabled ? 'Enabled' : 'Disabled'}
@@ -94,6 +95,7 @@ export function ProductizationUI2() {
                 {!p.is_active && (
                   <button
                     onClick={() => productizationStore.activateProfile(p.profile_id)}
+                    data-testid={`prod-activate-${p.profile_id}`}
                     style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}
                   >
                     Activate

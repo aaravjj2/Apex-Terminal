@@ -74,7 +74,7 @@ export function DecisionExplainerV2UI2() {
                 <BarChart3 className="w-5 h-5 text-blue-400" />
                 <h3 className="text-lg font-bold text-neutral-100">{selectedDecision.symbol} — {selectedDecision.action}</h3>
               </div>
-              <button onClick={() => wave18Store.selectDecision(null)} className="text-neutral-500 hover:text-neutral-300 text-sm">Close</button>
+              <button onClick={() => wave18Store.selectDecision(null)} className="text-neutral-500 hover:text-neutral-300 text-sm" data-testid="de-v2-close-btn">Close</button>
             </div>
 
             {/* Summary grid */}

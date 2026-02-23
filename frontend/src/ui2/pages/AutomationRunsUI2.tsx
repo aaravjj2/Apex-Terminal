@@ -101,7 +101,7 @@ export function AutomationRunsUI2() {
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-neutral-100">{selected.workflow_name}</h3>
-                <button onClick={() => setSelectedId(null)} className="text-neutral-500 hover:text-neutral-300">✕</button>
+                <button onClick={() => setSelectedId(null)} className="text-neutral-500 hover:text-neutral-300" data-testid="ar-close-btn">✕</button>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-sm">

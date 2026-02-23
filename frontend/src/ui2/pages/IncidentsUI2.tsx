@@ -75,7 +75,7 @@ export function IncidentsUI2() {
               </select>
               <div className="flex gap-2">
                 <button onClick={handleCreate} className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded text-sm" data-testid="ui2-incidents-submit-btn">Create</button>
-                <button onClick={() => setShowCreate(false)} className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded text-sm">Cancel</button>
+                <button onClick={() => setShowCreate(false)} className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded text-sm" data-testid="incidents-cancel-btn">Cancel</button>
               </div>
             </div>
           )}
@@ -116,7 +116,7 @@ export function IncidentsUI2() {
                 <AlertTriangle className="w-5 h-5 text-red-400" />
                 <h3 className="text-lg font-bold text-neutral-100">Incident Detail</h3>
               </div>
-              <button onClick={() => setSelected(null)} className="text-neutral-500 hover:text-neutral-300 text-sm">Close</button>
+              <button onClick={() => setSelected(null)} className="text-neutral-500 hover:text-neutral-300 text-sm" data-testid="incidents-close-btn">Close</button>
             </div>
 
             <div className="space-y-4">

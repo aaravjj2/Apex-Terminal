@@ -38,6 +38,9 @@ class ConnectionManager:
         self._heartbeat_interval: float = 30.0
         self._heartbeat_task: Optional[asyncio.Task] = None
         self._running: bool = False
+        # Wave 87: disconnect counter + last heartbeat timestamp
+        self._disconnect_count: int = 0
+        self._last_heartbeat_at: Optional[float] = None  # unix seconds
         
         self._lock = asyncio.Lock()
         self.logger = logger.bind(component="ws_manager")
@@ -92,6 +95,7 @@ class ConnectionManager:
                         if not self._subscriptions[key]:
                             del self._subscriptions[key]
                 del self._connections[websocket]
+                self._disconnect_count += 1  # Wave 87: track disconnects
             # Remove heartbeat tracking
             self._last_heartbeat.pop(websocket, None)
         self.logger.info("ws_disconnected", client=id(websocket))
@@ -203,6 +207,7 @@ class ConnectionManager:
         now = int(time.time() * 1000)
         timeout_ms = int(self._heartbeat_interval * 2000)  # 2x interval
         to_disconnect = []
+        self._last_heartbeat_at = time.time()  # Wave 87: record heartbeat time
 
         async with self._lock:
             clients = list(self._connections.keys())
@@ -225,6 +230,18 @@ class ConnectionManager:
     def subscription_count(self) -> int:
         """Get number of active subscriptions."""
         return sum(len(subs) for subs in self._subscriptions.values())
+
+    @property
+    def disconnect_count(self) -> int:
+        """Wave 87: Total disconnects since server start."""
+        return self._disconnect_count
+
+    @property
+    def last_heartbeat_age_s(self) -> Optional[float]:
+        """Wave 87: Seconds since last heartbeat was sent (None if never sent)."""
+        if self._last_heartbeat_at is None:
+            return None
+        return time.time() - self._last_heartbeat_at
 
 
 # Global connection manager

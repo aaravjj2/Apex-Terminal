@@ -64,7 +64,7 @@ export function DecisionExplorerUI2() {
                 <BrainCircuit className="w-5 h-5 text-blue-400" />
                 <h3 className="text-lg font-bold text-neutral-100">Decision Detail</h3>
               </div>
-              <button onClick={() => setSelected(null)} className="text-neutral-500 hover:text-neutral-300 text-sm">Close</button>
+              <button onClick={() => setSelected(null)} className="text-neutral-500 hover:text-neutral-300 text-sm" data-testid="de-close-btn">Close</button>
             </div>
 
             <div className="space-y-4">

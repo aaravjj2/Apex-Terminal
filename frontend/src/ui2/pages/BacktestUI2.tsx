@@ -3,8 +3,10 @@
  * Runs Manager + Offline Report Viewer + New Run Form (deterministic)
  */
 
-import { useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore, useEffect } from 'react';
 import { PageHeader, Tabs, DataTable, StatusBadge, type ColumnDef } from '../components';
+import { useRowHighlight } from '../stores/deepLinks';
+import { backtestDepthStore, type SweepConfig } from '../stores/backtestDepthStore';
 interface BacktestRun {
   id: string;
   strategyId: string;
@@ -20,10 +22,22 @@ interface BacktestRun {
   createdAt: number;
 }
 
-// Online-only: runs are created via the UI, starts empty
-const INITIAL_RUNS: BacktestRun[] = [];
-import { backtestDepthStore, type SweepConfig } from '../stores/backtestDepthStore';
-
+// Online-only: runs are created via the UI, starts with a predictable seed run for deep-link testing
+const DEMO_TS = 1771165800000;
+const INITIAL_RUNS_SEED: BacktestRun[] = [{
+  id: 'bt-deep-link-test',
+  strategyId: 'strat-1',
+  symbol: 'AAPL',
+  startDate: DEMO_TS - 365 * 86400000,
+  endDate: DEMO_TS,
+  status: 'completed',
+  sharpeRatio: 1.52,
+  totalReturn: 22.4,
+  maxDrawdown: 8.1,
+  winRate: 58.3,
+  tradeCount: 47,
+  createdAt: DEMO_TS,
+}];
 // ── Deterministic runner ──────────────────────────────────────
 
 function fnv32(data: string): number {
@@ -76,16 +90,19 @@ function formatDate(ts: number): string {
 
 export function BacktestUI2() {
   const [activeTab, setActiveTab] = useState('runs');
-  const [runs, setRuns] = useState<BacktestRun[]>(INITIAL_RUNS);
+  const [runs, setRuns] = useState<BacktestRun[]>(INITIAL_RUNS_SEED);
   const [selectedRun, setSelectedRun] = useState<BacktestRun | null>(null);
   const [filterSymbol, setFilterSymbol] = useState('');
   const [filterStrategy, setFilterStrategy] = useState('');
+  const { highlightKey, clearHighlight } = useRowHighlight();
 
   // New Run form state
   const [newSymbol, setNewSymbol] = useState(BACKTEST_SYMBOLS[0]);
   const [newStrategy, setNewStrategy] = useState(BACKTEST_STRATEGIES[0]);
   const [newMonths, setNewMonths] = useState(12);
   const [submitResult, setSubmitResult] = useState<BacktestRun | null>(null);
+  const [_pageReady, _setPageReady] = useState(false);
+  useEffect(() => { _setPageReady(true); }, []);
 
   // Depth stores
   const depthState = useSyncExternalStore(backtestDepthStore.subscribe, backtestDepthStore.getSnapshot);
@@ -145,6 +162,9 @@ export function BacktestUI2() {
   ];
 
   return (
+    <>
+    {!_pageReady && <div data-testid="page-loading" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
+    {_pageReady && <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
     <div data-testid="backtest-ui2-page" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: '12px 16px 0 16px' }}>
         <PageHeader
@@ -193,7 +213,7 @@ export function BacktestUI2() {
               </div>
             </div>
 
-            <DataTable data={filteredRuns as any} columns={runColumns} keyField="id" testId="backtest-runs-table" />
+            <DataTable data={filteredRuns as any} columns={runColumns} keyField="id" testId="backtest-runs-table" highlightRowKey={highlightKey} />
           </div>
         )}
 
@@ -635,5 +655,6 @@ export function BacktestUI2() {
       </div>
       <div data-testid="backtest-ready" style={{ display: 'none' }} />
     </div>
+    </>
   );
 }

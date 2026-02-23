@@ -22,12 +22,23 @@ export function TradesLedger({ embedded }: { embedded?: boolean }) {
     const fetchTrades = async () => {
         setLoading(true);
         try {
-            // const res = await fetch(`${API_BASE}/portfolio/trades`); ...
-            // Mock data
-            setTrades([
-                { id: 'TRD-101', order_id: 'ORD-001', symbol: 'AAPL', side: 'buy', quantity: 100, price: 175.50, commission: 1.00, timestamp: new Date().toISOString() },
-                { id: 'TRD-100', order_id: 'ORD-005', symbol: 'TSLA', side: 'sell', quantity: 10, price: 240.20, commission: 0.50, timestamp: new Date(Date.now() - 86400000).toISOString() },
-            ]);
+            const res = await fetch('/api/v1/portfolio/orders?status=filled');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const orders = await res.json();
+            // Map filled orders to trade records
+            setTrades(orders.map((o: any) => ({
+                id: o.id,
+                order_id: o.client_order_id || o.id,
+                symbol: o.symbol,
+                side: o.side,
+                quantity: o.filled_qty ?? o.quantity,
+                price: o.filled_price ?? o.limit_price ?? 0,
+                commission: 0,
+                timestamp: o.filled_at || o.submitted_at,
+            })));
+        } catch (e) {
+            console.error('Failed to fetch trades:', e);
+            setTrades([]);
         } finally {
             setLoading(false);
         }

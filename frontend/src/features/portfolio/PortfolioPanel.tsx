@@ -8,7 +8,7 @@ interface PortfolioData {
     positions: { symbol: string, qty: number, avg_price: number, current_price: number }[]
 }
 
-const API_BASE = 'http://127.0.0.1:8090/api/v1';
+const API_BASE = '/api/v1';
 
 export function PortfolioPanel({ embedded }: { embedded?: boolean }) {
     const [data, setData] = useState<PortfolioData | null>(null);
@@ -17,18 +17,12 @@ export function PortfolioPanel({ embedded }: { embedded?: boolean }) {
     const fetchData = async () => {
         try {
             const res = await fetch(`${API_BASE}/portfolio`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const d = await res.json();
             setData(d);
         } catch (e) {
-            setData({
-                equity: 102500.00,
-                cash: 45000.00,
-                buying_power: 90000.00,
-                positions: [
-                    { symbol: 'AAPL', qty: 10, avg_price: 170.00, current_price: 175.50 },
-                    { symbol: 'TSLA', qty: -5, avg_price: 260.00, current_price: 240.20 }
-                ]
-            });
+            console.error('Failed to fetch portfolio:', e);
+            setData(null);
         }
     };
 

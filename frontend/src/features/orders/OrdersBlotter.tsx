@@ -18,7 +18,7 @@ interface Order {
     strategy_id?: string;
 }
 
-const API_BASE = 'http://127.0.0.1:8090/api/v1';
+const API_BASE = '/api/v1';
 
 export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -35,18 +35,13 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/orders`);
+            const res = await fetch(`${API_BASE}/portfolio/orders`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             setOrders(data);
         } catch (e) {
             console.error('Failed to fetch orders:', e);
-            // Use mock data if API not available
-            setOrders([
-                { id: 'ORD-001', symbol: 'AAPL', side: 'buy', quantity: 100, order_type: 'market', status: 'filled', filled_qty: 100, avg_fill_price: 175.50, submitted_at: new Date().toISOString(), filled_at: new Date().toISOString() },
-                { id: 'ORD-002', symbol: 'TSLA', side: 'sell', quantity: 50, order_type: 'limit', limit_price: 250.00, status: 'submitted', filled_qty: 0, submitted_at: new Date().toISOString() },
-                { id: 'ORD-003', symbol: 'MSFT', side: 'buy', quantity: 75, order_type: 'stop', stop_price: 400.00, status: 'canceled', filled_qty: 0, submitted_at: new Date().toISOString() },
-            ]);
+            setOrders([]);
         } finally {
             setLoading(false);
         }

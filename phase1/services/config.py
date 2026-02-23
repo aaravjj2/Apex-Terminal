@@ -56,6 +56,16 @@ class Settings(BaseSettings):
     options_data_provider: str = Field(default="tradier")
     options_stream_provider: str = Field(default="tradier")
     
+    # Polygon
+    polygon_api_key: Optional[str] = Field(default=None)
+    
+    # Market Data Universe — swing/position symbols for 7-year hydration
+    market_universe: str = Field(
+        default="AAPL,MSFT,GOOGL,AMZN,NVDA,TSLA,META,SPY,QQQ,IWM",
+        description="Comma-separated list of symbols for canonical market data pipeline"
+    )
+    market_history_years: int = Field(default=7, description="Years of daily bar history to maintain")
+    
     # Ingestion
     ingestion_mode: Literal["mock", "live"] = Field(default="live")
     ingestion_symbols: str = Field(default="AAPL,MSFT")
@@ -103,6 +113,11 @@ class Settings(BaseSettings):
     def symbols_list(self) -> list[str]:
         """Parse ingestion symbols into list."""
         return [s.strip() for s in self.ingestion_symbols.split(",")]
+
+    @property
+    def universe_list(self) -> list[str]:
+        """Parse market universe symbols into list."""
+        return [s.strip().upper() for s in self.market_universe.split(",") if s.strip()]
 
 
 def _load_keys_env_if_dev() -> None:

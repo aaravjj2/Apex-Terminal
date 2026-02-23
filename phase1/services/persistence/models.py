@@ -169,3 +169,33 @@ class AuditLog(Base):
     user = Column(String(100), default="system")
     details = Column(JSON, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+# ── Phase 3: Market Data Pipeline tables ─────────────────────────────
+
+class MarketDataBatch(Base):
+    """
+    Batch provenance for every market data fetch.
+    Each row = one provider fetch for one symbol + timeframe + date range,
+    with a deterministic SHA-256 checksum over the bar payload.
+    """
+    __tablename__ = "market_data_batches"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    batch_id = Column(String(64), unique=True, nullable=False, index=True)
+    provider = Column(String(20), nullable=False, index=True)
+    symbol = Column(String(20), nullable=False, index=True)
+    timeframe = Column(String(10), nullable=False, default="1d")
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    row_count = Column(Integer, nullable=False, default=0)
+    sha256 = Column(String(64), nullable=False)
+    status = Column(String(20), nullable=False, default="ok")  # ok, gap, stale, error
+    gap_days = Column(Integer, nullable=True)
+    fetched_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    metadata_ = Column("metadata", JSON, nullable=True)
+
+    __table_args__ = (
+        Index("ix_batch_symbol_tf", "symbol", "timeframe"),
+        Index("ix_batch_provider", "provider"),
+    )

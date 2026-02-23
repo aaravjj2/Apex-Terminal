@@ -1,95 +1,71 @@
 """
 Market data providers package.
 
-Provides unified interface to multiple market data sources (demo, yahoo).
+Provides unified interface to multiple market data sources.
+Routes through ProviderRouter — NEVER falls back to demo/mock.
 """
 
-import os
 import structlog
-from typing import Dict
+from typing import Dict, Optional
 
 from .base import MarketDataProvider
 from .types import (
     BarsRequest, BarsResponse, QuoteRequest, QuoteResponse,
     ProviderName, ProviderInfo
 )
-from .demo_provider import DemoProvider
-from .yahoo_provider import YahooProvider
 
 logger = structlog.get_logger(__name__)
 
-
-# Global provider registry
+# Legacy provider registry kept for backward-compat; the authoritative
+# path is now through ProviderRouter.
 _providers: Dict[ProviderName, MarketDataProvider] = {}
 
 
 def _init_providers():
     """
-    Initialize all providers based on environment.
-    
-    Priority: Alpaca > Finnhub > Yahoo > Demo (fixture-only, no fabrication).
-    Never silently fall back to demo in production.
+    Initialize providers via the ProviderRouter.
+    Registers every router-managed provider into the legacy dict so
+    existing callsites (get_provider / get_market_data) keep working.
     """
     global _providers
-    
-    # Determine mode — DEMO_MODE env var controls fixture-only operation
-    demo_mode = os.getenv("DEMO_MODE", "0") == "1"
-    enable_replay_save = not demo_mode  # LOCAL mode can save replays
-    
-    # Yahoo provider (free, always available when yfinance installed)
-    try:
-        _providers[ProviderName.YAHOO] = YahooProvider()
-        logger.info("Yahoo provider enabled")
-    except Exception as e:
-        logger.warning(f"Yahoo provider initialization failed: {e}")
-    
-    # Demo provider — fixture-based, replay-first, no fabricated prices
-    _providers[ProviderName.DEMO] = DemoProvider(enable_replay_save=enable_replay_save)
-    logger.info(
-        "Demo provider initialized (fixture-only, no fake prices)",
-        mode=("DEMO" if demo_mode else "LOCAL"),
-        enable_replay_save=enable_replay_save
-    )
+    from ..provider_router import get_router
+    router = get_router()
+    for pname in router.available:
+        prov = router.get(pname)
+        if prov is not None:
+            _providers[pname] = prov
+    logger.info("providers_init_via_router", providers=list(_providers.keys()))
 
 
 def get_provider(provider_name: ProviderName) -> MarketDataProvider:
     """
     Get provider instance by name.
-    
-    Args:
-        provider_name: Provider to retrieve
-        
-    Returns:
-        MarketDataProvider instance
-        
+
     Raises:
         ValueError: If provider not available
     """
     if not _providers:
         _init_providers()
-    
+
     if provider_name not in _providers:
         raise ValueError(f"Provider {provider_name} not available")
-    
+
     return _providers[provider_name]
 
 
 async def get_market_data(provider_name: ProviderName, request) -> any:
     """
     Unified entry point for market data requests.
-    
+
     Args:
-        provider_name: Provider to use (demo, yahoo)
+        provider_name: Provider to use
         request: BarsRequest or QuoteRequest
-        
+
     Returns:
-        BarsResponse or QuoteResponse depending on request type
-        
-    Raises:
-        ValueError: If invalid provider or request
+        BarsResponse or QuoteResponse
     """
     provider = get_provider(provider_name)
-    
+
     if isinstance(request, BarsRequest):
         return await provider.get_bars(request)
     elif isinstance(request, QuoteRequest):
@@ -99,54 +75,9 @@ async def get_market_data(provider_name: ProviderName, request) -> any:
 
 
 def list_providers() -> list[ProviderInfo]:
-    """
-    List all available providers with replay status.
-    
-    Returns:
-        List of ProviderInfo
-    """
-    if not _providers:
-        _init_providers()
-    
-    # Get replay metadata
-    from ..replay import list_replays
-    replay_count = len(list_replays())
-    replay_available = replay_count > 0
-    
-    # Determine mode
-    demo_mode = os.getenv("DEMO_MODE", "0") == "1"
-    mode = "DEMO" if demo_mode else "LOCAL"
-    replay_enabled = not demo_mode  # Can save replays in LOCAL
-    
-    providers_info = []
-    
-    # Demo provider
-    if ProviderName.DEMO in _providers:
-        providers_info.append(ProviderInfo(
-            name=ProviderName.DEMO,
-            enabled=True,
-            description="Demo provider using CSV fixtures (replay-first)",
-            requires_auth=False,
-            supports_realtime=False,
-            replay_available=replay_available,
-            replay_enabled=replay_enabled,
-            mode=mode
-        ))
-    
-    # Yahoo provider
-    if ProviderName.YAHOO in _providers:
-        providers_info.append(ProviderInfo(
-            name=ProviderName.YAHOO,
-            enabled=True,
-            description="Yahoo Finance provider with caching",
-            requires_auth=False,
-            supports_realtime=True,
-            replay_available=False,  # Yahoo doesn't use replay cache
-            replay_enabled=False,
-            mode=mode
-        ))
-    
-    return providers_info
+    """List all available providers."""
+    from ..provider_router import get_router
+    return get_router().list_providers()
 
 
 __all__ = [

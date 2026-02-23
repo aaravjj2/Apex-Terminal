@@ -12,6 +12,9 @@ class ProviderName(str, Enum):
     """Supported market data providers."""
     DEMO = "demo"
     YAHOO = "yahoo"
+    FINNHUB = "finnhub"
+    POLYGON = "polygon"
+    TIINGO = "tiingo"
 
 
 class IntervalType(str, Enum):

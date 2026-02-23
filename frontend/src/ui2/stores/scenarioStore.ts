@@ -3,7 +3,8 @@
  * Deterministic scenario builder with export capability
  */
 
-import { DEMO_TIMESTAMP } from '../demo/constants';
+// Online-only: use live timestamps
+const DEMO_TIMESTAMP = Date.now();
 
 export type Severity = 'mild' | 'moderate' | 'severe' | 'extreme';
 export type Horizon = '1d' | '5d' | '10d' | '30d';

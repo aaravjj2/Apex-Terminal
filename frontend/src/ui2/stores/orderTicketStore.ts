@@ -3,7 +3,8 @@
  * Deterministic in-memory order management for DEMO mode
  */
 
-import { DEMO_TIMESTAMP } from '../demo/constants';
+// Online-only: use live timestamps
+const DEMO_TIMESTAMP = Date.now();
 
 export type OrderSide = 'buy' | 'sell';
 export type OrderType = 'market' | 'limit' | 'stop';

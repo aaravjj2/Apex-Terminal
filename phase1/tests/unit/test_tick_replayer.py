@@ -189,7 +189,12 @@ class TestDeterministicTickReplayer:
         replayer.register_batch_callback(on_batch)
         
         await replayer.start()
-        await asyncio.sleep(0.1)
+        # Wait for replay to finish (10 ticks at 100x speed = ~1ms real time).
+        # Poll up to 2 seconds so the test is robust under heavy event loop load.
+        for _ in range(200):
+            await asyncio.sleep(0.01)
+            if not replayer._running or (replayer._replay_task and replayer._replay_task.done()):
+                break
         await replayer.stop()
         
         assert len(batches) >= 2

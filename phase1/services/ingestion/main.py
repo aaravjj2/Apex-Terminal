@@ -55,7 +55,7 @@ class IngestionService:
         settings = get_settings()
 
         # If Alpaca credentials are present, prefer live mode even if mock was requested
-        if mode == "mock" and (settings.apca_api_key_id or settings.apca_api_secret_key or os.environ.get('APCA_API_KEY_ID') or os.environ.get('ALPACA3_KEY')) and not os.environ.get("E2E_MODE"):
+        if mode == "mock" and (settings.apca_api_key_id or settings.apca_api_secret_key or os.environ.get('APCA_API_KEY_ID') or os.environ.get('ALPACA3_KEY')):
             logger.info("auto_switching_to_live_in_init", reason="Alpaca keys detected, overriding mock mode")
             mode = "live"
 

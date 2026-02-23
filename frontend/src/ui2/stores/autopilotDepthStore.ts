@@ -95,7 +95,9 @@ const DEFAULT_EXECUTION_PARAMS: ExecutionParams = {
 };
 
 // ─── Deterministic Demo Data ────────────────────────────────────────────────
-const DEMO_TS = '2026-02-15T14:30:00Z';
+import { RECORDING_TS } from '../dataMode/config';
+// RECORDING_TS anchors to data/recordings/core-default date_range.start (replaces synthetic DEMO_TS)
+const DEMO_TS = RECORDING_TS;
 
 function generateDeterministicEvaluation(runId: string, controls: RiskControls, params: ExecutionParams): RunEvaluation {
   const seed = fnv32(`${runId}:${DEMO_TS}`);

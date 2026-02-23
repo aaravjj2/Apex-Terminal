@@ -32,6 +32,17 @@ from .routes import microstructure, liquidity
 from .routes import policy_signal, risk_network, hedge_fund
 # Core Depth Upgrade routes
 from .routes import autopilot_depth, backtest_depth, workflow_depth, search_depth
+# ── Waves 11-20: Online-Only Swing Equities v1 ──
+from .routes import (
+    w11_market_session, w11_elasticsearch, w11_data_spine, w11_broker,
+    w12_portfolio, w13_performance, w14_backtester, w15_discovery,
+    w16_ai_strategy, w17_sentiment, w18_workflows, w19_observability,
+    w20_productization,
+)
+# ── Waves 21-50: Backtest Engine v4 + Elasticsearch v3 ──
+from .routes import w21_backtest_v4, w46_elasticsearch_v3
+# ── Ops Health ──────────────────────────────────────────────────────────────
+from .routes import ops_health
 from .websocket import router as ws_router
 from .health_router import router as health_router
 from .verification_routes import router as verification_router
@@ -75,24 +86,21 @@ async def lifespan(app: FastAPI):
     # Start Ingestion Service (Background)
     settings = get_settings()
     
-    # Determine mode based on configured provider keys
-    mode = "mock"
+    # Waves 11-20: Online-only mode — no mock/demo/synthetic
+    # Prefer Alpaca, fallback to Finnhub, but never mock
+    mode = "live"
     csv_path = None
     provider_override = None
 
-    if settings.apca_api_key_id and not os.environ.get("E2E_MODE"):
-        mode = "live"
+    if settings.apca_api_key_id:
         provider_override = "alpaca"
         logger.info("using_alpaca_live_data")
-    elif settings.finnhub_api_key and not os.environ.get("E2E_MODE"):
-        mode = "live"
+    elif settings.finnhub_api_key:
         provider_override = "finnhub"
         logger.info("using_finnhub_live_data")
     else:
-        # Fallback to mock with sample CSV
-        mode = "mock"
-        csv_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "sample_ticks.csv")
-        logger.info("using_mock_csv_data", path=csv_path)
+        # Online-only: still set mode=live, ingestion will use yfinance
+        logger.warning("no_api_keys_configured_using_yfinance_fallback")
 
     ingestion = IngestionService(mode=mode, symbols=["AAPL", "TSLA", "MSFT"], provider=provider_override) # Default symbols
     
@@ -105,10 +113,6 @@ async def lifespan(app: FastAPI):
             app.state.ingestion = ingestion
         except Exception:
             pass
-        
-        if mode == "mock" and csv_path and os.path.exists(csv_path):
-            # Run replay in background task
-            asyncio.create_task(ingestion.run_mock_replay(csv_path))
             
     except Exception as e:
         logger.error("ingestion_startup_failed", error=str(e))
@@ -176,9 +180,9 @@ def create_app() -> FastAPI:
     settings = get_settings()
     
     app = FastAPI(
-        title="Phase 1: Deterministic Bar Engine API",
-        description="REST and WebSocket APIs for bar data",
-        version="1.0.0",
+        title="Apex Terminal — Online-Only Swing Equities v1",
+        description="Waves 11-20: REST and WebSocket APIs for swing equity trading",
+        version="2.0.0",
         lifespan=lifespan,
     )
     
@@ -267,6 +271,8 @@ def create_app() -> FastAPI:
     app.include_router(strategy_compare.router, tags=["strategy-compare"])
     # v1.50: Platform Health Dashboard
     app.include_router(platform_health.router, tags=["platform-health"])
+    # ── Ops Health Probes (real connectivity) ──
+    app.include_router(ops_health.router, tags=["ops-health"])
     
     # ── Wave 6: Market Intelligence ──
     app.include_router(monte_carlo.router, tags=["monte-carlo"])
@@ -308,6 +314,25 @@ def create_app() -> FastAPI:
     app.include_router(backtest_depth.router, tags=["backtest-depth"])
     app.include_router(workflow_depth.router, tags=["workflow-depth"])
     app.include_router(search_depth.router, tags=["search-depth"])
+    
+    # ── Waves 11-20: Online-Only Swing Equities v1 ──
+    app.include_router(w11_market_session.router, tags=["market-session-v2"])
+    app.include_router(w11_elasticsearch.router, tags=["elasticsearch-v2"])
+    app.include_router(w11_data_spine.router, tags=["data-spine-v2"])
+    app.include_router(w11_broker.router, tags=["broker-v2"])
+    app.include_router(w12_portfolio.router, tags=["portfolio-v2"])
+    app.include_router(w13_performance.router, tags=["performance-v2"])
+    app.include_router(w14_backtester.router, tags=["backtester-v3"])
+    app.include_router(w15_discovery.router, tags=["discovery-v2"])
+    app.include_router(w16_ai_strategy.router, tags=["ai-strategy-v2"])
+    app.include_router(w17_sentiment.router, tags=["sentiment-v2"])
+    app.include_router(w18_workflows.router, tags=["workflows-v3"])
+    app.include_router(w19_observability.router, tags=["observability-v2"])
+    app.include_router(w20_productization.router, tags=["productization-v2"])
+    
+    # ── Waves 21-50: Backtest Engine v4 + Elasticsearch v3 ──
+    app.include_router(w21_backtest_v4.router, tags=["backtest-v4"])
+    app.include_router(w46_elasticsearch_v3.router, tags=["elasticsearch-v3"])
     
     # ElevenLabs TTS
     from .tts_routes import router as tts_router

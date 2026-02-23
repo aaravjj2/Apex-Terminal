@@ -5,7 +5,30 @@
 
 import { useState } from 'react';
 import { PageHeader, Tabs, DataTable, StatusBadge, type ColumnDef } from '../components';
-import { DEMO_STRATEGIES, DEMO_ARTIFACTS, type Strategy } from '../demo/demoStore';
+interface Strategy {
+  id: string;
+  name: string;
+  type: 'momentum' | 'meanReversion' | 'breakout' | 'custom';
+  symbol: string;
+  status: 'draft' | 'validated' | 'backtested' | 'live';
+  version: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface Artifact {
+  id: string;
+  strategyId: string;
+  type: 'backtest' | 'validation' | 'export';
+  name: string;
+  status: 'running' | 'completed' | 'failed';
+  size: number;
+  createdAt: number;
+}
+
+// Online-only: data fetched from backend, starts empty
+const STRATEGIES: Strategy[] = [];
+const ARTIFACTS: Artifact[] = [];
 
 function formatSize(bytes: number): string {
   if (bytes > 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
@@ -33,7 +56,7 @@ export function ResearchUI2() {
     { key: 'id', label: 'Actions', width: '200px', render: (_v: unknown, row: Record<string, unknown>) => (
       <div style={{ display: 'flex', gap: '4px' }}>
         <button data-testid={`strategy-select-${row['id']}`}
-          onClick={() => { setSelectedStrategy(DEMO_STRATEGIES.find(s => s.id === row['id']) || null); setActiveTab('artifacts'); }}
+          onClick={() => { setSelectedStrategy(STRATEGIES.find(s => s.id === row['id']) || null); setActiveTab('artifacts'); }}
           style={{ padding: '2px 6px', fontSize: '10px', background: 'var(--ui2-brand-primary)', color: 'white', border: 'none', borderRadius: 'var(--ui2-radius-sm)', cursor: 'pointer' }}>
           Artifacts
         </button>
@@ -55,7 +78,7 @@ export function ResearchUI2() {
           Validate
         </button>
         <button data-testid={`strategy-diff-${row['id']}`}
-          onClick={() => { setSelectedStrategy(DEMO_STRATEGIES.find(s => s.id === row['id']) || null); setActiveTab('diff'); }}
+          onClick={() => { setSelectedStrategy(STRATEGIES.find(s => s.id === row['id']) || null); setActiveTab('diff'); }}
           style={{ padding: '2px 6px', fontSize: '10px', background: 'var(--ui2-bg-tertiary)', color: 'var(--ui2-text-primary)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', cursor: 'pointer' }}>
           Diff
         </button>
@@ -81,8 +104,8 @@ export function ResearchUI2() {
   ];
 
   const filteredArtifacts = selectedStrategy
-    ? DEMO_ARTIFACTS.filter(a => a.strategyId === selectedStrategy.id)
-    : DEMO_ARTIFACTS;
+    ? ARTIFACTS.filter(a => a.strategyId === selectedStrategy.id)
+    : ARTIFACTS;
 
   return (
     <div data-testid="research-ui2-page" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -107,7 +130,7 @@ export function ResearchUI2() {
       <div style={{ flex: 1, overflow: 'auto', padding: '0 16px 16px 16px' }}>
         {activeTab === 'strategies' && (
           <div data-testid="research-strategies-panel">
-            <DataTable data={DEMO_STRATEGIES as unknown as Record<string, unknown>[]} columns={strategyColumns} keyField="id" testId="research-strategies-table" />
+            <DataTable data={STRATEGIES as unknown as Record<string, unknown>[]} columns={strategyColumns} keyField="id" testId="research-strategies-table" />
           </div>
         )}
 

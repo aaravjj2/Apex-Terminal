@@ -1,0 +1,149 @@
+{
+  "set_name": "core-default",
+  "version": "1.0.0",
+  "description": "Authentic recorded market data for core algorithm testing",
+  "captured_at": "2026-02-20T16:06:31.109802+00:00",
+  "captured_by": "scripts/record_market_data.py v1.0.0",
+  "provider": {
+    "name": "Yahoo Finance",
+    "library": "yfinance",
+    "version": "0.2.58",
+    "url": "https://finance.yahoo.com"
+  },
+  "symbols": [
+    "AAPL",
+    "MSFT",
+    "SPY",
+    "TSLA"
+  ],
+  "timeframes": [
+    "1d"
+  ],
+  "date_range": {
+    "start": "2024-01-02",
+    "end": "2024-03-28"
+  },
+  "performance_summary": {
+    "AAPL": {
+      "1d": {
+        "bars": 60,
+        "first_date": "2024-01-02",
+        "last_date": "2024-03-27",
+        "first_close": 183.7313,
+        "last_close": 171.747,
+        "total_return_pct": -6.5228,
+        "annualized_sharpe": -1.3371,
+        "max_drawdown_pct": -13.3028
+      }
+    },
+    "MSFT": {
+      "1d": {
+        "bars": 60,
+        "first_date": "2024-01-02",
+        "last_date": "2024-03-27",
+        "first_close": 365.4216,
+        "last_close": 416.0067,
+        "total_return_pct": 13.8429,
+        "annualized_sharpe": 2.9656,
+        "max_drawdown_pct": -4.2127
+      }
+    },
+    "SPY": {
+      "1d": {
+        "bars": 60,
+        "first_date": "2024-01-02",
+        "last_date": "2024-03-27",
+        "first_close": 461.2475,
+        "last_close": 512.1349,
+        "total_return_pct": 11.0326,
+        "annualized_sharpe": 4.1166,
+        "max_drawdown_pct": -1.7078
+      }
+    },
+    "TSLA": {
+      "1d": {
+        "bars": 60,
+        "first_date": "2024-01-02",
+        "last_date": "2024-03-27",
+        "first_close": 248.42,
+        "last_close": 179.83,
+        "total_return_pct": -27.6105,
+        "annualized_sharpe": -2.6878,
+        "max_drawdown_pct": -34.5866
+      }
+    }
+  },
+  "files": {
+    "market_data/AAPL_1d.parquet": {
+      "size_bytes": 8445,
+      "sha256": "sha256:2f899ce7734c7b43e0c4b089d64baa6e9ddd8024d365e7a5e3483c4e0a50a135"
+    },
+    "market_data/MSFT_1d.parquet": {
+      "size_bytes": 8438,
+      "sha256": "sha256:0836febba40613326fae687c1466d48c4ed29b44d126ff55ac09a7b6ef631492"
+    },
+    "market_data/SPY_1d.parquet": {
+      "size_bytes": 9040,
+      "sha256": "sha256:858250d221d1fabe7463f1c984ab83137c7bde6fc6521ca6169d582ca7f632bb"
+    },
+    "market_data/TSLA_1d.parquet": {
+      "size_bytes": 8082,
+      "sha256": "sha256:173d345135961036fb02cca6c055b93902b1b899a917ed99f1e469631f431ef3"
+    },
+    "broker_ledger/fills.jsonl": {
+      "size_bytes": 4392,
+      "sha256": "sha256:235b1089a5fb415edcfd72ab27565c1cd98e7926668d1f553f63ee66a732f4cb",
+      "num_records": 18
+    },
+    "broker_ledger/positions.jsonl": {
+      "size_bytes": 912,
+      "sha256": "sha256:a4f4bcbbf02085bc27fe3f14039fa896a03d84d9372d04605f3371c774c6729e",
+      "num_records": 4
+    }
+  },
+  "broker_ledger_summary": {
+    "strategy": "momentum_5_20",
+    "initial_capital": 100000.0,
+    "total_realized_pnl": -4125.895,
+    "total_num_fills": 18,
+    "per_symbol": {
+      "AAPL": {
+        "num_fills": 3,
+        "total_realized_pnl": -231.9204,
+        "final_position": {
+          "qty": 108,
+          "side": "short",
+          "unrealized_pnl": 1316.7559
+        }
+      },
+      "MSFT": {
+        "num_fills": 9,
+        "total_realized_pnl": -683.5342,
+        "final_position": {
+          "qty": 48,
+          "side": "long",
+          "unrealized_pnl": 299.9297
+        }
+      },
+      "SPY": {
+        "num_fills": 1,
+        "total_realized_pnl": 0.0,
+        "final_position": {
+          "qty": 41,
+          "side": "long",
+          "unrealized_pnl": 1356.5847
+        }
+      },
+      "TSLA": {
+        "num_fills": 5,
+        "total_realized_pnl": -3210.4404,
+        "final_position": {
+          "qty": 113,
+          "side": "short",
+          "unrealized_pnl": -371.771
+        }
+      }
+    }
+  },
+  "broker_ledger_recorded_at": "2026-02-20T16:11:29.445554+00:00"
+}

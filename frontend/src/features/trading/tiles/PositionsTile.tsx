@@ -24,13 +24,14 @@ interface Position {
     unrealizedPLPercent: number;
 }
 
-import { DEMO_QUOTES } from '../../../ui2/demo/canonicalDemo';
+// Online-only: seed prices for initial position display
+const SEED_PRICES: Record<string, number> = { SPY: 547.23, AAPL: 182.41, TSLA: 218.77, NVDA: 789.55, MSFT: 412.33 };
 
 const MOCK_POSITIONS: Position[] = [
-    { symbol: 'SPY', quantity: 150, avgCost: 535.20, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'SPY')!.last, marketValue: 82084.50, unrealizedPL: 1804.50, unrealizedPLPercent: 2.24 },
-    { symbol: 'AAPL', quantity: 200, avgCost: 185.30, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'AAPL')!.last, marketValue: 36482.00, unrealizedPL: -578.00, unrealizedPLPercent: -1.56 },
-    { symbol: 'TSLA', quantity: 75, avgCost: 210.15, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'TSLA')!.last, marketValue: 16407.75, unrealizedPL: 646.50, unrealizedPLPercent: 4.10 },
-    { symbol: 'NVDA', quantity: 50, avgCost: 805.40, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'NVDA')!.last, marketValue: 39477.50, unrealizedPL: -792.50, unrealizedPLPercent: -1.97 },
+    { symbol: 'SPY', quantity: 150, avgCost: 535.20, currentPrice: SEED_PRICES['SPY'], marketValue: 82084.50, unrealizedPL: 1804.50, unrealizedPLPercent: 2.24 },
+    { symbol: 'AAPL', quantity: 200, avgCost: 185.30, currentPrice: SEED_PRICES['AAPL'], marketValue: 36482.00, unrealizedPL: -578.00, unrealizedPLPercent: -1.56 },
+    { symbol: 'TSLA', quantity: 75, avgCost: 210.15, currentPrice: SEED_PRICES['TSLA'], marketValue: 16407.75, unrealizedPL: 646.50, unrealizedPLPercent: 4.10 },
+    { symbol: 'NVDA', quantity: 50, avgCost: 805.40, currentPrice: SEED_PRICES['NVDA'], marketValue: 39477.50, unrealizedPL: -792.50, unrealizedPLPercent: -1.97 },
 ];
 
 export function PositionsTile({ tileId: _tileId, isMaximized: _isMaximized }: TileProps) {

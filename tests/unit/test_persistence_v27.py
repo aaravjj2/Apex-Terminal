@@ -1,18 +1,14 @@
 """
 v1.27 — Portfolio Persistence Hardening + Session-State Audit
-Uses FastAPI TestClient.
+Uses shared FastAPI TestClient from conftest.
 """
 import pytest
 
 
 @pytest.fixture(scope="module")
-def client():
-    from fastapi.testclient import TestClient
-    import os
-    os.environ.setdefault("E2E_MODE", "1")
-    from services.api.main import app
-    with TestClient(app) as c:
-        yield c
+def client(test_client):
+    """Re-use session-scoped test_client to avoid async teardown errors."""
+    return test_client
 
 
 def _reset(client):

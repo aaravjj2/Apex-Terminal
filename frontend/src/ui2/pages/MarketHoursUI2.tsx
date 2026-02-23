@@ -18,12 +18,12 @@ export function MarketHoursUI2() {
       {loading && <p>Loading market data...</p>}
       {error && <p style={{ color: '#ef4444' }}>{error}</p>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
-        {canTrade !== null && (
-          <div data-testid="mh-can-trade" style={{ background: '#1e293b', padding: 20, borderRadius: 8, borderLeft: `4px solid ${canTrade ? '#22c55e' : '#ef4444'}` }}>
-            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 4 }}>Trading Status</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: canTrade ? '#22c55e' : '#ef4444' }}>{canTrade ? 'Markets Open' : 'Markets Closed'}</div>
+        <div data-testid="mh-can-trade" style={{ background: '#1e293b', padding: 20, borderRadius: 8, borderLeft: `4px solid ${canTrade ? '#22c55e' : '#ef4444'}` }}>
+          <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 4 }}>Trading Status</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: canTrade ? '#22c55e' : '#ef4444' }}>
+            {canTrade === null ? 'Loading...' : (canTrade ? 'Markets Open' : 'Markets Closed')}
           </div>
-        )}
+        </div>
         {session && (
           <>
             <div style={{ background: '#1e293b', padding: 20, borderRadius: 8 }}>

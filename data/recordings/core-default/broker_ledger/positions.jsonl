@@ -1,0 +1,4 @@
+{"symbol": "AAPL", "side": "short", "quantity": 108, "avg_price": 183.9391, "market_price": 171.747, "unrealized_pnl": 1316.7559, "as_of": "2024-03-27T00:00:00-04:00", "recording_set": "core-default", "strategy": "momentum_5_20"}
+{"symbol": "MSFT", "side": "long", "quantity": 48, "avg_price": 409.7582, "market_price": 416.0067, "unrealized_pnl": 299.9297, "as_of": "2024-03-27T00:00:00-04:00", "recording_set": "core-default", "strategy": "momentum_5_20"}
+{"symbol": "SPY", "side": "long", "quantity": 41, "avg_price": 479.0475, "market_price": 512.1349, "unrealized_pnl": 1356.5847, "as_of": "2024-03-27T00:00:00-04:00", "recording_set": "core-default", "strategy": "momentum_5_20"}
+{"symbol": "TSLA", "side": "short", "quantity": 113, "avg_price": 176.54, "market_price": 179.83, "unrealized_pnl": -371.771, "as_of": "2024-03-27T00:00:00-04:00", "recording_set": "core-default", "strategy": "momentum_5_20"}

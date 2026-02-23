@@ -19,16 +19,20 @@ export function NovaUI2() {
     }
   };
 
+  const st = status as any;
+  const enabled = st?.enabled ?? false;
+  const connected = st?.connected ?? false;
+  const modelId = st?.model_id ?? st?.model ?? 'demo-nova';
+  const available = enabled && connected;
+
   return (
     <div data-testid="nova-ui2-page" style={{ height: '100%', overflow: 'auto', padding: 24 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Nova LLM Gateway</h1>
-      {status && (
-        <div data-testid="nova-status" style={{ display: 'flex', gap: 16, marginBottom: 20, fontSize: 13, color: '#94a3b8' }}>
-          <span>Mode: <strong style={{ color: '#e2e8f0' }}>{(status as any).mode}</strong></span>
-          <span>Model: <strong style={{ color: '#e2e8f0' }}>{(status as any).model}</strong></span>
-          <span>Available: <strong style={{ color: (status as any).available ? '#22c55e' : '#ef4444' }}>{(status as any).available ? 'Yes' : 'No'}</strong></span>
-        </div>
-      )}
+      <div data-testid="nova-status" style={{ display: 'flex', gap: 16, marginBottom: 20, fontSize: 13, color: '#94a3b8' }}>
+        <span>Mode: <strong style={{ color: '#e2e8f0' }}>{enabled ? 'live' : 'demo'}</strong></span>
+        <span>Model: <strong style={{ color: '#e2e8f0' }}>{modelId}</strong></span>
+        <span>Available: <strong style={{ color: available ? '#22c55e' : '#ef4444' }}>{available ? 'Yes' : 'Demo'}</strong></span>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
         <textarea
           data-testid="nova-prompt"

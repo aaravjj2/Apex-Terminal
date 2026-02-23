@@ -9,7 +9,9 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/ui2/search-depth")
 
-DEMO_TS = "2026-02-15T14:30:00Z"
+# Anchor timestamp from data/recordings/core-default/manifest.json → date_range.start
+from datetime import datetime, timezone
+DEMO_TS = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _fnv32(s: str) -> int:

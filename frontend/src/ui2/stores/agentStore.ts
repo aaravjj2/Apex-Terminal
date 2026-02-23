@@ -4,7 +4,8 @@
  * Deterministic — StubProvider mode only.
  */
 
-import { DEMO_TIMESTAMP } from '../demo/constants';
+// Online-only: use live timestamps
+const DEMO_TIMESTAMP = Date.now();
 
 // ── Types ──────────────────────────────────────────────────────
 

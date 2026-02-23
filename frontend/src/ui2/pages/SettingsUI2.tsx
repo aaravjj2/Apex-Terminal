@@ -5,7 +5,6 @@
 
 import { useState } from 'react';
 import { PageHeader, Tabs } from '../components';
-import { DEMO_TIMESTAMP } from '../demo/constants';
 
 const SETTINGS_SECTIONS = [
   { id: 'display', label: 'Display', items: [
@@ -84,8 +83,8 @@ export function SettingsUI2() {
               <div data-testid="settings-about-info" style={{ fontSize: '13px', lineHeight: 2, fontFamily: 'monospace', color: 'var(--ui2-text-secondary)' }}>
                 <div>Version: 1.62.0</div>
                 <div>Build: dde87004</div>
-                <div>Mode: DEMO</div>
-                <div>Demo Timestamp: {new Date(DEMO_TIMESTAMP).toISOString()}</div>
+                <div>Mode: Online</div>
+                <div>Session Start: {new Date().toISOString()}</div>
                 <div>Environment: production</div>
               </div>
             </div>

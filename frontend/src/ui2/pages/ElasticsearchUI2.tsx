@@ -21,16 +21,20 @@ export function ElasticsearchUI2() {
     }
   };
 
+  const st = status as any;
+  const connected = st?.connected ?? false;
+  const clusterName = st?.cluster_name ?? (connected ? 'connected' : 'offline');
+  const docCount = st?.doc_count ?? null;
+
   return (
     <div data-testid="elasticsearch-ui2-page" style={{ height: '100%', overflow: 'auto', padding: 24 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Elasticsearch Gateway</h1>
-      {status && (
-        <div data-testid="es-status" style={{ display: 'flex', gap: 16, marginBottom: 20, fontSize: 13, color: '#94a3b8' }}>
-          <span>Mode: <strong style={{ color: '#e2e8f0' }}>{(status as any).mode}</strong></span>
-          <span>Cluster: <strong style={{ color: (status as any).cluster_status === 'green' ? '#22c55e' : '#f59e0b' }}>{(status as any).cluster_status}</strong></span>
-          {(status as any).document_count != null && <span>Docs: {(status as any).document_count}</span>}
-        </div>
-      )}
+      <div data-testid="es-status" style={{ display: 'flex', gap: 16, marginBottom: 20, fontSize: 13, color: '#94a3b8' }}>
+        <span>Mode: <strong style={{ color: '#e2e8f0' }}>{connected ? 'live' : 'demo'}</strong></span>
+        <span>Cluster: <strong style={{ color: connected ? '#22c55e' : '#f59e0b' }}>{clusterName}</strong></span>
+        {docCount != null && <span>Docs: {docCount}</span>}
+        <span>Status: <strong style={{ color: connected ? '#22c55e' : '#64748b' }}>{connected ? 'Connected' : 'Offline'}</strong></span>
+      </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <input
           data-testid="es-search-input"

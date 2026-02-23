@@ -49,9 +49,9 @@ test.describe('Backtest — Runs Manager', () => {
     await expect(page.getByTestId('backtest-runs-table')).toBeVisible();
   });
 
-  test('at least 2 demo runs are present', async ({ page }) => {
-    const rows = page.locator('[data-testid="backtest-runs-table"] tbody tr');
-    expect(await rows.count()).toBeGreaterThanOrEqual(2);
+  test('runs table starts empty in online mode', async ({ page }) => {
+    const dataRows = page.locator('[data-testid^="backtest-runs-table-row-"]');
+    await expect(dataRows).toHaveCount(0);
   });
 
   test('filtering by symbol "MSFT" narrows results', async ({ page }) => {
@@ -69,20 +69,36 @@ test.describe('Backtest — Runs Manager', () => {
   });
 
   test('clearing symbol filter restores all runs', async ({ page }) => {
+    // Create a run first so there's data to filter
+    await page.getByTestId('backtest-tabs-tab-new-run').click();
+    await page.getByTestId('backtest-submit-btn').click();
+    await expect(page.getByTestId('backtest-submit-result')).toBeVisible();
+    await page.getByTestId('backtest-tabs-tab-runs').click();
+    // Now filter and clear
     await page.getByTestId('backtest-filter-symbol').fill('ZZZZZZ');
     await page.getByTestId('backtest-filter-symbol').fill('');
-    const rows = page.locator('[data-testid="backtest-runs-table"] tbody tr');
-    expect(await rows.count()).toBeGreaterThanOrEqual(2);
+    const dataRows = page.locator('[data-testid^="backtest-runs-table-row-"]');
+    expect(await dataRows.count()).toBeGreaterThanOrEqual(1);
   });
 
   test('status badges are rendered in runs table', async ({ page }) => {
+    // Create a run first so there's data with status badges
+    await page.getByTestId('backtest-tabs-tab-new-run').click();
+    await page.getByTestId('backtest-submit-btn').click();
+    await expect(page.getByTestId('backtest-submit-result')).toBeVisible();
+    await page.getByTestId('backtest-tabs-tab-runs').click();
     const badges = page.locator('[data-testid^="backtest-status-"]');
     expect(await badges.count()).toBeGreaterThanOrEqual(1);
   });
 
   test('open button is present for each run', async ({ page }) => {
+    // Create a run first so open buttons appear
+    await page.getByTestId('backtest-tabs-tab-new-run').click();
+    await page.getByTestId('backtest-submit-btn').click();
+    await expect(page.getByTestId('backtest-submit-result')).toBeVisible();
+    await page.getByTestId('backtest-tabs-tab-runs').click();
     const openBtns = page.locator('[data-testid^="backtest-open-"]');
-    expect(await openBtns.count()).toBeGreaterThanOrEqual(2);
+    expect(await openBtns.count()).toBeGreaterThanOrEqual(1);
   });
 
   test('backtest-ready hidden marker is attached', async ({ page }) => {
@@ -96,6 +112,11 @@ test.describe('Backtest — Report Viewer', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     await expect(page.getByTestId('backtest-ui2-page')).toBeVisible();
+    // Submit a run so there's data for report viewer tests
+    await page.getByTestId('backtest-tabs-tab-new-run').click();
+    await page.getByTestId('backtest-submit-btn').click();
+    await expect(page.getByTestId('backtest-submit-result')).toBeVisible();
+    await page.getByTestId('backtest-tabs-tab-runs').click();
   });
 
   test('clicking open on a run navigates to report tab', async ({ page }) => {

@@ -120,3 +120,24 @@ test.describe('Core Regression Smoke', () => {
   });
 
 });
+
+test.describe('Online Mode badge', () => {
+  test('mode badge is visible and shows Online (not DEMO)', async ({ page }) => {
+    await page.goto(BASE);
+    await page.waitForSelector('[data-testid="ui2-mode-badge"]', { timeout: 10000 });
+    const badge = page.getByTestId('ui2-mode-badge');
+    await expect(badge).toBeVisible();
+    // Must NOT contain the word DEMO
+    await expect(badge).not.toContainText('DEMO');
+    // Must contain 'Online'
+    const dataBadge = page.getByTestId('ui2-data-mode-badge');
+    await expect(dataBadge).toBeVisible();
+    await expect(dataBadge).toContainText('Online');
+  });
+
+  test('market status badge is visible', async ({ page }) => {
+    await page.goto(BASE);
+    const ms = page.getByTestId('ui2-market-status');
+    await expect(ms).toBeVisible();
+  });
+});

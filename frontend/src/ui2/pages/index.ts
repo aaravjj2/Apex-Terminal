@@ -86,3 +86,29 @@ export { LiquidityUI2 } from './LiquidityUI2';
 export { PolicySignalUI2 } from './PolicySignalUI2';
 export { RiskNetworkUI2 } from './RiskNetworkUI2';
 export { HedgeFundUI2 } from './HedgeFundUI2';
+
+// Waves 11-20 — Online-Only Swing Equities v1
+export { MarketSessionV2UI2 } from './MarketSessionV2UI2';
+export { DataSpineUI2 } from './DataSpineUI2';
+export { BrokerV2UI2 } from './BrokerV2UI2';
+export { PortfolioV2UI2 } from './PortfolioV2UI2';
+export { PerformanceV2UI2 } from './PerformanceV2UI2';
+export { BacktesterV3UI2 } from './BacktesterV3UI2';
+export { DiscoveryUI2 } from './DiscoveryUI2';
+export { AIStrategyUI2 } from './AIStrategyUI2';
+export { SentimentV2UI2 } from './SentimentV2UI2';
+export { WorkflowsV3UI2 } from './WorkflowsV3UI2';
+export { ObservabilityV2UI2 } from './ObservabilityV2UI2';
+export { ProductizationUI2 } from './ProductizationUI2';
+
+// Waves 21-50 — Backtest Engine v4 + Elasticsearch v3
+export { DataHealthUI2 } from './DataHealthUI2';
+export { BacktestV4UI2 } from './BacktestV4UI2';
+export { SweepV2UI2 } from './SweepV2UI2';
+export { WalkForwardV2UI2 } from './WalkForwardV2UI2';
+export { RobustnessUI2 } from './RobustnessUI2';
+export { MonteCarloV2UI2 } from './MonteCarloV2UI2';
+export { StrategyBuilderV2UI2 } from './StrategyBuilderV2UI2';
+export { ResearchQueueUI2 } from './ResearchQueueUI2';
+export { SearchV2UI2 } from './SearchV2UI2';
+export { EsOpsUI2 } from './EsOpsUI2';

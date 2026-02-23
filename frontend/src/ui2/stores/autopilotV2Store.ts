@@ -113,7 +113,7 @@ export interface KillSwitchStateV2 {
 
 // ── Demo Timestamp ─────────────────────────────────────────────
 
-const DEMO_TS = '2026-02-15T14:30:00Z';
+import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
 
 // ── Store ───────────────────────────────────────────────────────
 

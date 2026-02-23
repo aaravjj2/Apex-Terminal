@@ -238,7 +238,8 @@ test.describe('Autopilot — Decision Ledger Tab', () => {
   test('postmortem contains deterministic timestamp', async ({ page }) => {
     await page.getByTestId('autopilot-ledger-tab-postmortem').click();
     const text = await page.getByTestId('autopilot-ledger-postmortem').textContent();
-    expect(text).toContain('2026-02-15T14:30:00Z');
+    // Online mode: verify a valid ISO timestamp is present (no hardcoded demo date)
+    expect(text).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
   });
 
 });

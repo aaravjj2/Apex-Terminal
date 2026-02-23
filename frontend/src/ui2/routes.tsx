@@ -60,6 +60,28 @@ import {
   PolicySignalUI2,
   RiskNetworkUI2,
   HedgeFundUI2,
+  MarketSessionV2UI2,
+  DataSpineUI2,
+  BrokerV2UI2,
+  PortfolioV2UI2,
+  PerformanceV2UI2,
+  BacktesterV3UI2,
+  DiscoveryUI2,
+  AIStrategyUI2,
+  SentimentV2UI2,
+  WorkflowsV3UI2,
+  ObservabilityV2UI2,
+  ProductizationUI2,
+  DataHealthUI2,
+  BacktestV4UI2,
+  SweepV2UI2,
+  WalkForwardV2UI2,
+  RobustnessUI2,
+  MonteCarloV2UI2,
+  StrategyBuilderV2UI2,
+  ResearchQueueUI2,
+  SearchV2UI2,
+  EsOpsUI2,
 } from './pages';
 
 export function UI2Routes() {
@@ -134,6 +156,30 @@ export function UI2Routes() {
         <Route path="policy-signal" element={<PolicySignalUI2 />} />
         <Route path="risk-network" element={<RiskNetworkUI2 />} />
         <Route path="hedge-fund" element={<HedgeFundUI2 />} />
+        {/* Waves 11-20 — Online-Only Swing Equities v1 */}
+        <Route path="market-session-v2" element={<MarketSessionV2UI2 />} />
+        <Route path="data-spine" element={<DataSpineUI2 />} />
+        <Route path="broker-v2" element={<BrokerV2UI2 />} />
+        <Route path="portfolio-v2" element={<PortfolioV2UI2 />} />
+        <Route path="performance-v2" element={<PerformanceV2UI2 />} />
+        <Route path="backtester-v3" element={<BacktesterV3UI2 />} />
+        <Route path="discovery" element={<DiscoveryUI2 />} />
+        <Route path="ai-strategy" element={<AIStrategyUI2 />} />
+        <Route path="sentiment-v2" element={<SentimentV2UI2 />} />
+        <Route path="workflows-v3" element={<WorkflowsV3UI2 />} />
+        <Route path="observability-v2" element={<ObservabilityV2UI2 />} />
+        <Route path="productization" element={<ProductizationUI2 />} />
+        {/* Waves 21-50 — Backtest Engine v4 + Elasticsearch v3 */}
+        <Route path="data-health" element={<DataHealthUI2 />} />
+        <Route path="backtest-v4" element={<BacktestV4UI2 />} />
+        <Route path="sweep-v2" element={<SweepV2UI2 />} />
+        <Route path="walk-forward-v2" element={<WalkForwardV2UI2 />} />
+        <Route path="robustness" element={<RobustnessUI2 />} />
+        <Route path="monte-carlo-v2" element={<MonteCarloV2UI2 />} />
+        <Route path="strategy-builder-v2" element={<StrategyBuilderV2UI2 />} />
+        <Route path="research-queue" element={<ResearchQueueUI2 />} />
+        <Route path="search-v2" element={<SearchV2UI2 />} />
+        <Route path="es-ops" element={<EsOpsUI2 />} />
       </Route>
     </Routes>
   );

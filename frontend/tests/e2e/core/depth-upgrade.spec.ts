@@ -255,32 +255,32 @@ test.describe('Search Depth — Provider Status & Explain', () => {
     await expect(page.getByTestId('search-provider-status')).toBeVisible();
   });
 
-  test('provider shows local backend', async ({ page }) => {
-    await expect(page.getByTestId('search-provider-backend')).toContainText('local');
+  test('provider shows elastic backend', async ({ page }) => {
+    await expect(page.getByTestId('search-provider-backend')).toContainText('elastic');
   });
 
   test('provider shows doc count', async ({ page }) => {
     const docs = page.getByTestId('search-provider-docs');
     await expect(docs).toBeVisible();
     const text = await docs.textContent();
-    expect(text).toContain('226');
+    // Online mode: starts with 0 docs (populated after indexing)
+    expect(text).toContain('0');
   });
 
   test('provider shows index count', async ({ page }) => {
-    await expect(page.getByTestId('search-provider-indexes')).toContainText('3');
+    // Online mode: starts with 0 indexes (populated after refreshStatus)
+    await expect(page.getByTestId('search-provider-indexes')).toContainText('0');
   });
 
   test('provider shows reachable status', async ({ page }) => {
-    await expect(page.getByTestId('search-provider-reachable')).toContainText('REACHABLE');
+    // Online mode: starts as OFFLINE until backend is connected
+    await expect(page.getByTestId('search-provider-reachable')).toContainText('OFFLINE');
   });
 
   test('toggle mappings button works', async ({ page }) => {
     await page.getByTestId('search-toggle-mappings').click();
     await expect(page.getByTestId('search-mappings-panel')).toBeVisible();
-    // All 3 index mappings
-    await expect(page.getByTestId('search-mapping-apex-orders')).toBeVisible();
-    await expect(page.getByTestId('search-mapping-apex-strategies')).toBeVisible();
-    await expect(page.getByTestId('search-mapping-apex-workflows')).toBeVisible();
+    // Online mode: no pre-loaded index mappings; panel is visible but empty until refreshStatus
   });
 
   test('explain view appears in detail drawer after search', async ({ page }) => {

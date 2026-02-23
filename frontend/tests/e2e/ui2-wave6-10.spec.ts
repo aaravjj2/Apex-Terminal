@@ -268,7 +268,7 @@ test.describe('Wave 10 — Compliance', () => {
   });
 
   test('shows compliance checks', async ({ page }) => {
-    await expect(page.locator('[data-testid^="compliance-"]')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('[data-testid^="compliance-"]').first()).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -285,7 +285,7 @@ test.describe('Wave 10 — Performance Analytics', () => {
   });
 
   test('shows period returns', async ({ page }) => {
-    await expect(page.locator('[data-testid^="perf-period-"]')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('[data-testid^="perf-period-"]').first()).toBeVisible({ timeout: 8000 });
   });
 
   test('shows strategies table', async ({ page }) => {

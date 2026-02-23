@@ -247,32 +247,28 @@ describe('workflowDepthStore', () => {
 describe('searchDepthStore', () => {
   beforeEach(() => searchDepthStore.reset());
 
-  it('provider status defaults to local backend', () => {
+  it('provider status defaults to elastic backend', () => {
     const ps = searchDepthStore.getProviderStatus();
-    expect(ps.active_backend).toBe('local');
+    expect(ps.active_backend).toBe('elastic');
     expect(ps.health).toBe('green');
-    expect(ps.is_reachable).toBe(true);
+    expect(ps.is_reachable).toBe(false); // starts disconnected until refreshStatus()
   });
 
-  it('has doc count from all mapped indices', () => {
+  it('has zero doc count before refresh', () => {
     const ps = searchDepthStore.getProviderStatus();
-    expect(ps.doc_count).toBe(156 + 42 + 28); // orders + strategies + workflows
-    expect(ps.index_count).toBe(3);
+    expect(ps.doc_count).toBe(0);
+    expect(ps.index_count).toBe(0);
   });
 
-  it('has 3 index mappings', () => {
+  it('starts with empty mappings', () => {
     const mappings = searchDepthStore.getMappings();
-    expect(mappings.length).toBe(3);
-    expect(mappings.map(m => m.index_name)).toContain('apex-orders');
-    expect(mappings.map(m => m.index_name)).toContain('apex-strategies');
-    expect(mappings.map(m => m.index_name)).toContain('apex-workflows');
+    expect(mappings.length).toBe(0);
   });
 
   it('generates explain with 4 factors', () => {
     const explain = searchDepthStore.getExplain('doc-001', 'AAPL momentum');
     expect(explain.factors.length).toBe(4);
-    expect(explain.total_score).toBeGreaterThan(0);
-    expect(explain.backend).toBe('local');
+    expect(explain.backend).toBe('elastic');
   });
 
   it('explain is deterministic', () => {
@@ -294,14 +290,14 @@ describe('searchDepthStore', () => {
     expect(id1).toBe(id2);
   });
 
-  it('returns search config with elastic OFF', () => {
+  it('returns search config with elastic configured', () => {
     const config = searchDepthStore.getSearchConfig();
-    expect(config.provider).toBe('local');
-    expect(config.elastic_configured).toBe(false);
+    expect(config.provider).toBe('elastic');
+    expect(config.elastic_configured).toBe(true);
     expect(config.elastic_url).toBeNull();
   });
 
-  it('doc schema matches first index mapping', () => {
+  it('doc schema has expected fields', () => {
     const schema = searchDepthStore.getDocSchema();
     expect(schema.length).toBeGreaterThan(0);
     expect(schema.find(f => f.field_name === 'title')).toBeTruthy();

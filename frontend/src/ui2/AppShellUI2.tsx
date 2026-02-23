@@ -8,7 +8,11 @@
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BottomDock, RightSidebar, CommandPalette, MarketTape, type CommandItem } from './components';
-import { DEMO_USER, DEMO_MARKET_STATUS } from './demo/constants';
+import { DATA_MODE_LABEL, MARKET_PROVIDER } from './dataMode/config';
+// Online-only identity
+const APEX_USER = { name: 'Apex Trader' };
+// Market status: derived from real backend health endpoint
+const ONLINE_MARKET = { isOpen: false };
 import { COMMAND_REGISTRY } from './stores/commandRegistry';
 import { ToastProvider } from '../ui/Toast';
 import { OrdersBlotter } from '../features/orders/OrdersBlotter';
@@ -305,11 +309,120 @@ const WORKSPACES: WorkspaceConfig[] = [
     description: 'Natural language workflow generator with validation',
     keywords: ['nl', 'workflow', 'generate', 'natural', 'language', 'simulation']
   },
+  // Waves 11-20 — Online-Only Swing Equities v1
+  {
+    id: 'market-session-v2',
+    label: 'Market Session',
+    icon: '🕐',
+    path: '/ui2/market-session-v2',
+    section: 'system',
+    description: 'NYSE market session engine with holidays',
+    keywords: ['market', 'session', 'holidays', 'hours', 'nyse']
+  },
+  {
+    id: 'data-spine',
+    label: 'Data Spine',
+    icon: '🔌',
+    path: '/ui2/data-spine',
+    section: 'system',
+    description: 'Online-only data ingestion pipeline',
+    keywords: ['data', 'spine', 'ingest', 'yfinance', 'universe']
+  },
+  {
+    id: 'broker-v2',
+    label: 'Paper Broker',
+    icon: '🏦',
+    path: '/ui2/broker-v2',
+    section: 'main',
+    description: 'Paper-only Alpaca broker with kill switch',
+    keywords: ['broker', 'paper', 'alpaca', 'orders', 'kill switch']
+  },
+  {
+    id: 'portfolio-v2',
+    label: 'Allocator',
+    icon: '⚖️',
+    path: '/ui2/portfolio-v2',
+    section: 'tools',
+    description: 'Portfolio allocation with equal-weight and inverse-vol',
+    keywords: ['portfolio', 'allocator', 'weight', 'exposure']
+  },
+  {
+    id: 'performance-v2',
+    label: 'Ledger',
+    icon: '📊',
+    path: '/ui2/performance-v2',
+    section: 'tools',
+    description: 'Performance ledger with Sharpe, drawdown, auto-disable',
+    keywords: ['performance', 'sharpe', 'drawdown', 'leaderboard']
+  },
+  {
+    id: 'backtester-v3',
+    label: 'Backtester V3',
+    icon: '🧪',
+    path: '/ui2/backtester-v3',
+    section: 'tools',
+    description: 'Backtester v3 with calibration and corporate actions',
+    keywords: ['backtester', 'v3', 'calibration', 'sma']
+  },
+  {
+    id: 'discovery',
+    label: 'Discovery',
+    icon: '🔎',
+    path: '/ui2/discovery',
+    section: 'tools',
+    description: 'Strategy discovery with walk-forward and robustness',
+    keywords: ['discovery', 'strategy', 'walk-forward', 'robustness']
+  },
+  {
+    id: 'ai-strategy',
+    label: 'AI Strategy',
+    icon: '🤖',
+    path: '/ui2/ai-strategy',
+    section: 'tools',
+    description: 'AI strategy builder with guardrails and sweeps',
+    keywords: ['ai', 'strategy', 'guardrail', 'sweep', 'groq']
+  },
+  {
+    id: 'sentiment-v2',
+    label: 'Sentiment V2',
+    icon: '📰',
+    path: '/ui2/sentiment-v2',
+    section: 'tools',
+    description: 'FinBERT sentiment with time-decay and signal overlay',
+    keywords: ['sentiment', 'finbert', 'news', 'articles']
+  },
+  {
+    id: 'workflows-v3',
+    label: 'Workflows V3',
+    icon: '🔗',
+    path: '/ui2/workflows-v3',
+    section: 'tools',
+    description: 'DAG-based workflow engine with schedule triggers',
+    keywords: ['workflow', 'dag', 'schedule', 'trigger']
+  },
+  {
+    id: 'observability-v2',
+    label: 'Ops Center',
+    icon: '📡',
+    path: '/ui2/observability-v2',
+    section: 'system',
+    description: 'System observability with query perf and ILM',
+    keywords: ['observability', 'health', 'metrics', 'alerts', 'ilm']
+  },
+  {
+    id: 'productization',
+    label: 'Productization',
+    icon: '🚀',
+    path: '/ui2/productization',
+    section: 'system',
+    description: 'Universe management, config profiles, runbooks',
+    keywords: ['productization', 'universe', 'profiles', 'runbooks', 'backup']
+  },
 ];
 
-// Core Correctness Track — only 4 core features + 2 minimal ops shown in nav.
+// Core Correctness Track — Autopilot, Strategies/Backtester, Workflows/Agents, Search, Ops/Settings
 // All other workspaces are still routable but hidden from the left rail.
-const CORE_NAV_IDS = new Set(['autopilot', 'search', 'workflow-builder', 'backtest', 'runs', 'settings']);
+const CORE_NAV_IDS = new Set(['autopilot', 'search', 'workflow-builder', 'backtester-v3', 'broker-v2', 'runs', 'settings', 'observability-v2', 'productization']);
 const VISIBLE_WORKSPACES = WORKSPACES.filter(w => CORE_NAV_IDS.has(w.id));
 
 export function AppShellUI2() {
@@ -519,19 +632,19 @@ export function AppShellUI2() {
 
         {/* Status Pills */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-          {/* Mode Badge */}
+          {/* Data Mode Badge */}
           <div className="ui2-badge ui2-badge-info" data-testid="ui2-mode-badge">
-            <span>🎯</span>
-            <span>DEMO</span>
+            <span>🌐</span>
+            <span data-testid="ui2-data-mode-badge">Online</span>
           </div>
 
           {/* Market Status */}
           <div
-            className={`ui2-badge ${DEMO_MARKET_STATUS.isOpen ? 'ui2-badge-success' : 'ui2-badge-neutral'}`}
+            className={`ui2-badge ${ONLINE_MARKET.isOpen ? 'ui2-badge-success' : 'ui2-badge-neutral'}`}
             data-testid="ui2-market-status"
           >
-            <span>{DEMO_MARKET_STATUS.isOpen ? '●' : '○'}</span>
-            <span>{DEMO_MARKET_STATUS.isOpen ? 'Market Open' : 'Market Closed'}</span>
+            <span>{ONLINE_MARKET.isOpen ? '●' : '○'}</span>
+            <span>{ONLINE_MARKET.isOpen ? 'Market Open' : 'Market Closed'}</span>
           </div>
 
           {/* Connectivity (v1.94: Real status from tradingStore) */}
@@ -580,10 +693,10 @@ export function AppShellUI2() {
                 fontWeight: 600,
               }}
             >
-              {DEMO_USER.name.slice(0, 2).toUpperCase()}
+              {APEX_USER.name.slice(0, 2).toUpperCase()}
             </div>
             <span style={{ color: 'var(--ui2-text-primary)', fontSize: '13px', fontWeight: 500 }}>
-              {DEMO_USER.name}
+              {APEX_USER.name}
             </span>
           </div>
         </div>

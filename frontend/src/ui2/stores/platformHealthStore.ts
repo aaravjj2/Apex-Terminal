@@ -28,7 +28,7 @@ export interface PlatformHealth {
 
 // ── Demo Data ──────────────────────────────────────────────────
 
-const DEMO_TS = '2026-02-15T14:30:00Z';
+import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
 
 const DEMO_HEALTH: PlatformHealth = {
   status: 'healthy',

@@ -5,7 +5,23 @@
 
 import { useState, useSyncExternalStore } from 'react';
 import { PageHeader, Tabs, DataTable, StatusBadge, type ColumnDef } from '../components';
-import { DEMO_BACKTEST_RUNS, type BacktestRun } from '../demo/demoStore';
+interface BacktestRun {
+  id: string;
+  strategyId: string;
+  symbol: string;
+  startDate: number;
+  endDate: number;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  sharpeRatio?: number;
+  totalReturn?: number;
+  maxDrawdown?: number;
+  winRate?: number;
+  tradeCount?: number;
+  createdAt: number;
+}
+
+// Online-only: runs are created via the UI, starts empty
+const INITIAL_RUNS: BacktestRun[] = [];
 import { backtestDepthStore, type SweepConfig } from '../stores/backtestDepthStore';
 
 // ── Deterministic runner ──────────────────────────────────────
@@ -60,7 +76,7 @@ function formatDate(ts: number): string {
 
 export function BacktestUI2() {
   const [activeTab, setActiveTab] = useState('runs');
-  const [runs, setRuns] = useState<BacktestRun[]>(DEMO_BACKTEST_RUNS);
+  const [runs, setRuns] = useState<BacktestRun[]>(INITIAL_RUNS);
   const [selectedRun, setSelectedRun] = useState<BacktestRun | null>(null);
   const [filterSymbol, setFilterSymbol] = useState('');
   const [filterStrategy, setFilterStrategy] = useState('');

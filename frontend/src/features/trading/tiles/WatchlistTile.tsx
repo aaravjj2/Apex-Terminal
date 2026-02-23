@@ -23,16 +23,16 @@ interface WatchlistItem {
     volume: number;
 }
 
-import { DEMO_QUOTES } from '../../../ui2/demo/canonicalDemo';
+// Online-only: seed prices from stream simulator, live data via backend
+const SEED_PRICES: Record<string, number> = { SPY: 547.23, AAPL: 182.41, TSLA: 218.77, NVDA: 789.55, MSFT: 412.33, AMZN: 178.92, GOOGL: 152.89, META: 505.12 };
 
-// Derive mock watchlist from canonical demo quotes (single source of truth)
-const MOCK_WATCHLIST: WatchlistItem[] = DEMO_QUOTES.map(q => ({
-  symbol: q.symbol,
-  name: q.symbol,
-  price: q.last,
-  change: q.change,
-  changePercent: q.changePct,
-  volume: q.volume,
+const MOCK_WATCHLIST: WatchlistItem[] = Object.entries(SEED_PRICES).map(([symbol, price]) => ({
+  symbol,
+  name: symbol,
+  price,
+  change: 0,
+  changePercent: 0,
+  volume: 0,
 }));
 
 export function WatchlistTile({ tileId: _tileId, isMaximized: _isMaximized }: TileProps) {

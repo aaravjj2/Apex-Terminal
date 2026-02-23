@@ -7,17 +7,9 @@ from fastapi.testclient import TestClient
 
 
 @pytest.fixture(scope="module")
-def client():
-    """Module-scoped test client for wave 6-10 tests."""
-    import os, sys
-    from pathlib import Path
-    p1 = Path(__file__).resolve().parent.parent.parent / "phase1"
-    if str(p1) not in sys.path:
-        sys.path.insert(0, str(p1))
-    os.environ.setdefault("E2E_MODE", "1")
-    from services.api.main import app
-    with TestClient(app) as c:
-        yield c
+def client(test_client):
+    """Re-use session-scoped test_client to avoid async teardown errors."""
+    return test_client
 
 
 # ═══════════════════════════════════════════════════════════════════

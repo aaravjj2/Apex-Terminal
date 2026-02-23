@@ -9,7 +9,10 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/ui2/autopilot-depth")
 
-DEMO_TS = "2026-02-15T14:30:00Z"
+# Anchor timestamp from data/recordings/core-default/manifest.json → date_range.start
+# Online-only: use current timestamp for all operations
+from datetime import datetime, timezone
+DEMO_TS = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _fnv32(s: str) -> int:

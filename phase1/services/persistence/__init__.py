@@ -1,5 +1,6 @@
 """
 Database models and persistence layer.
+Uses Postgres (asyncpg) for online-only operation.
 """
 
 from datetime import datetime
@@ -16,8 +17,8 @@ import enum
 from ..models import Bar, BarState
 from ..config import get_settings
 
-
-Base = declarative_base()
+# Import the canonical Base from models.py for unified schema
+from .models import Base
 
 
 class BarStateDB(str, enum.Enum):
@@ -64,7 +65,7 @@ class BarRecord(Base):
     
     __table_args__ = (
         UniqueConstraint('symbol', 'timeframe', 'bar_index', name='uix_bar_identity'),
-        Index('ix_bar_lookup', 'symbol', 'timeframe', 'ts_start_ms'),
+        Index('ix_legacy_bar_lookup', 'symbol', 'timeframe', 'ts_start_ms'),
     )
     
     def to_bar(self) -> Bar:
@@ -140,26 +141,24 @@ class RawTickRecord(Base):
 class Database:
     """
     Database connection and session management.
+    Uses Postgres (asyncpg) for online-only operation.
     """
     
     def __init__(self, database_url: Optional[str] = None):
-        """
-        Initialize database connection.
-        
-        Args:
-            database_url: SQLAlchemy database URL
-        """
         settings = get_settings()
         self.database_url = database_url or settings.database_url
         
-        # Create async engine
-        self.engine = create_async_engine(
-            self.database_url,
-            echo=settings.debug_mode,
-            future=True,
-        )
+        # Engine kwargs differ by dialect
+        engine_kwargs = dict(echo=settings.debug_mode, future=True)
+        if "sqlite" in self.database_url:
+            # Allow SQLite for test harness only
+            pass
+        else:
+            # Postgres pool settings
+            engine_kwargs.update(pool_size=5, max_overflow=10, pool_pre_ping=True)
         
-        # Session factory
+        self.engine = create_async_engine(self.database_url, **engine_kwargs)
+        
         self.async_session = async_sessionmaker(
             self.engine,
             class_=AsyncSession,

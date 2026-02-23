@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     
     # Database
     database_url: str = Field(
-        default="sqlite+aiosqlite:///./phase1.db",
-        description="Database connection URL"
+        default="postgresql+asyncpg://dashboard_user:newpassword@localhost:5432/financial_dashboard",
+        description="Database connection URL (Postgres required)"
     )
     
     # API Server

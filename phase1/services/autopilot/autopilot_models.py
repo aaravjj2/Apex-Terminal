@@ -2,16 +2,16 @@
 Autopilot SQLAlchemy Models
 
 DB-backed persistence for autopilot runs, orders, positions, and incidents.
-Uses same SQLite database as the rest of phase1 (phase1.db).
+Uses canonical Postgres Base from persistence/models.py.
 """
 
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, ForeignKey, JSON, Enum as SQLEnum
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import relationship
 from enum import Enum
 
-Base = declarative_base()
+from ..persistence.models import Base
 
 
 class RunStatus(str, Enum):

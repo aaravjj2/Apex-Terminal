@@ -17,10 +17,14 @@ export interface StreamTick {
 // Fixed seed
 const SEED = 42;
 const SYMBOLS = ['SPY', 'AAPL', 'TSLA', 'NVDA', 'MSFT'] as const;
-// Use canonical demo base prices (single source of truth)
-import { BASE_PRICES as CANONICAL_BASE_PRICES } from '../demo/canonicalDemo';
-
-const BASE_PRICES: Record<string, number> = { ...CANONICAL_BASE_PRICES };
+// Online-only: inline base prices (canonical reference values)
+const BASE_PRICES: Record<string, number> = {
+  SPY: 547.23,
+  AAPL: 182.41,
+  TSLA: 218.77,
+  NVDA: 789.55,
+  MSFT: 412.33,
+};
 
 // Deterministic PRNG (Mulberry32)
 function mulberry32(seed: number): () => number {

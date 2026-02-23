@@ -10,6 +10,12 @@ from typing import AsyncGenerator, List
 import pytest
 import pytest_asyncio
 
+# ── Gate Repair Wave 20.1 ─────────────────────────────────────────────────────
+# Override DATABASE_URL to SQLite BEFORE any service imports so that
+# pydantic-settings and dotenv never see the Postgres default.
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test_phase1.db"
+# ─────────────────────────────────────────────────────────────────────────────
+
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))

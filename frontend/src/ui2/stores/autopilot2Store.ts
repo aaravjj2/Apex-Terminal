@@ -100,7 +100,7 @@ const CONFIDENCE_THRESHOLD = 0.70;
 const MAX_POSITION_SIZE = 100;
 const MAX_BUDGET_PER_TRADE = 50000;
 const MAX_PORTFOLIO_EXPOSURE = 0.45;
-const DEMO_TS = '2026-02-15T14:30:00Z';
+import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = RECORDING_TS; // recording anchor replaces synthetic ts
 
 function runPipeline(symbols: string[], budget: number): AP2Run {
   const runId = `ap2-run-${stableHash({ symbols, budget, t: DEMO_TS })}`;

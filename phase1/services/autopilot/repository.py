@@ -34,9 +34,10 @@ def get_engine():
     if _engine is None:
         from ..config import get_settings
         settings = get_settings()
-        # Use sync SQLite (no aiosqlite needed for repo operations)
-        db_url = settings.database_url.replace("+aiosqlite", "")
-        _engine = create_engine(db_url, echo=False)
+        db_url = settings.database_url
+        # Convert async URL to sync: asyncpg → psycopg2, aiosqlite → sqlite
+        db_url = db_url.replace("+asyncpg", "+psycopg2").replace("+aiosqlite", "")
+        _engine = create_engine(db_url, echo=False, pool_pre_ping=True)
     return _engine
 
 

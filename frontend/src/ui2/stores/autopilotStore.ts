@@ -3,7 +3,8 @@
  * Kill switch, rule toggles, activity feed for DEMO mode
  */
 
-import { DEMO_TIMESTAMP } from '../demo/constants';
+// Online-only: use live timestamps
+const DEMO_TIMESTAMP = Date.now();
 
 export interface AutopilotRule {
   id: string;

@@ -25,13 +25,14 @@ interface Alert {
     triggered: boolean;
 }
 
-import { DEMO_QUOTES } from '../../../ui2/demo/canonicalDemo';
+// Online-only: seed prices for alert conditions
+const SEED_PRICES: Record<string, number> = { SPY: 547.23, AAPL: 182.41, TSLA: 218.77, NVDA: 789.55, MSFT: 412.33 };
 
 const MOCK_ALERTS: Alert[] = [
-    { id: '1', symbol: 'AAPL', condition: 'above', price: 180.00, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'AAPL')!.last, enabled: true, triggered: false },
-    { id: '2', symbol: 'MSFT', condition: 'below', price: 375.00, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'MSFT')!.last, enabled: true, triggered: false },
-    { id: '3', symbol: 'NVDA', condition: 'crosses', price: 900.00, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'NVDA')!.last, enabled: false, triggered: true },
-    { id: '4', symbol: 'TSLA', condition: 'below', price: 250.00, currentPrice: DEMO_QUOTES.find(q => q.symbol === 'TSLA')!.last, enabled: true, triggered: true },
+    { id: '1', symbol: 'AAPL', condition: 'above', price: 180.00, currentPrice: SEED_PRICES['AAPL'], enabled: true, triggered: false },
+    { id: '2', symbol: 'MSFT', condition: 'below', price: 375.00, currentPrice: SEED_PRICES['MSFT'], enabled: true, triggered: false },
+    { id: '3', symbol: 'NVDA', condition: 'crosses', price: 900.00, currentPrice: SEED_PRICES['NVDA'], enabled: false, triggered: true },
+    { id: '4', symbol: 'TSLA', condition: 'below', price: 250.00, currentPrice: SEED_PRICES['TSLA'], enabled: true, triggered: true },
 ];
 
 export function AlertsTile({ tileId: _tileId, isMaximized: _isMaximized }: TileProps) {

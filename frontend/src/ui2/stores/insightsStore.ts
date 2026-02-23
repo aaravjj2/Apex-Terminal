@@ -18,7 +18,7 @@ const listeners = new Set<Listener>();
 function notify() { listeners.forEach(fn => fn()); }
 
 // Deterministic insights for DEMO mode
-const DEMO_TS = new Date('2026-02-15T14:30:00Z').getTime();
+import { RECORDING_TS } from '../dataMode/config'; const DEMO_TS = new Date(RECORDING_TS).getTime(); // recording anchor
 
 let insights: Insight[] = [];
 

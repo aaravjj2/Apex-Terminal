@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageShellUI2, DataTableUI2, type ColumnDefUI2 } from '../components';
 
-const API = 'http://localhost:8090/api/v3/perf';
+const API = '/api/v3/perf';
 
 interface PerfSample {
   id: string;

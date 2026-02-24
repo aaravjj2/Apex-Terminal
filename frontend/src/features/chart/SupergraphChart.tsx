@@ -21,7 +21,7 @@ import {
 } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, Time, SeriesMarker } from 'lightweight-charts';
 
-const API_BASE = 'http://127.0.0.1:8090/api/v1';
+const API_BASE = '/api/v1';
 
 // Types
 interface Candle {

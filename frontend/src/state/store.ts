@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { Candle, WSMessage, Indicator, Drawing, ToolType, IndicatorType } from '../core/types.ts';
 import { WebSocketClient, type WSConnectionState } from '../data/WebSocketClient.ts';
 import { ClockClient, type ClockState } from '../data/ClockClient.ts';
-import { API_BASE } from '../config/api';
+import { API_BASE, WS_BASE } from '../config/api';
 // Core indicator calculators
 import {
     calculateSMA,
@@ -146,7 +146,7 @@ export const useStore = create<AppState>((set, get) => ({
 
     connect: () => {
         const { symbol, timeframe } = get();
-        const url = `ws://127.0.0.1:8090/ws/bars/${symbol}/${timeframe}`;
+        const url = `${WS_BASE}/ws/bars/${symbol}/${timeframe}`;
 
         const onStateChange = (newState: WSConnectionState, _prev: WSConnectionState, details?: { reconnectAttempts: number }) => {
             set({

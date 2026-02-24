@@ -9,7 +9,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 
-const API = "http://localhost:8090";
+const API = "";
 
 interface GraphNode {
   id: string;

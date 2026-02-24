@@ -1,11 +1,11 @@
-﻿/**
- * Autopilot V2 Store (Wave 8 â€” v1.73-v1.75)
+/**
+ * Autopilot V2 Store (Wave 8 — v1.73-v1.75)
  * State machine with candidate generation, scoring, risk checks,
  * vol-target sizing, execution simulation, kill-switch, explainability.
- * Deterministic â€” no network required.
+ * Deterministic — no network required.
  */
 
-// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Types ───────────────────────────────────────────────────────
 
 export type PipelineState = 'idle' | 'scanning' | 'scoring' | 'risk_check' | 'sizing' | 'submitting' | 'completed' | 'rejected';
 
@@ -142,7 +142,7 @@ export const autopilotV2Store = {
     
     // Call backend API instead of local simulation
     try {
-      const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8090') + '/api/v1/autopilot/v2/run', {
+      const response = await fetch((import.meta.env.VITE_API_URL || '') + '/api/v1/autopilot/v2/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

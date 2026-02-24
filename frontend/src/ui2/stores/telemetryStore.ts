@@ -37,7 +37,7 @@ function notify() {
 }
 
 // WebSocket support
-const WS_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8090').replace(/^http/, 'ws');
+const WS_BASE = (import.meta.env.VITE_API_URL || '').replace(/^http/, 'ws');
 let wsConnection: WebSocket | null = null;
 let useWebSocket = true;
 let reconnectAttempts = 0;

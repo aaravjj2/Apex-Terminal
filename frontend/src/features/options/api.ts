@@ -17,7 +17,7 @@ import type {
   VerticalSpreadRequest,
 } from './types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8090';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 class OptionsAPI {
   private baseUrl: string;

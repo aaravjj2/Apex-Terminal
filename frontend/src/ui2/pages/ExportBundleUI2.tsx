@@ -7,7 +7,7 @@
 import { useState, useCallback } from 'react';
 import { PageShellUI2, type PageStatus } from '../components';
 
-const API = 'http://localhost:8090/api/v3/export';
+const API = '/api/v3/export';
 
 interface BundleResult {
   filename: string;

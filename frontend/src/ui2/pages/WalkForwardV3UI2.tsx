@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API = 'http://localhost:8090/api/v3/walkforward';
+const API = '/api/v3/walkforward';
 
 interface Fold {
   fold_idx: number;

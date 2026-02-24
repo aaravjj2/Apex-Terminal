@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Wave 106 - Controls Domain UI2
  * ES-first search for AP/AR and reconciliation controls with evidence graph.
  * Route: /ui2/controls-domain
@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageShellUI2, type PageStatus } from '../components';
 
-const API = 'http://localhost:8090/api/v3/controls';
+const API = '/api/v3/controls';
 
 interface ControlDoc {
   id: string;

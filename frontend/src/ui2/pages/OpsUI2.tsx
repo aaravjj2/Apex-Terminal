@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageHeader, Tabs, StatusBadge, DataTable, type ColumnDef } from '../components';
 
-const API = 'http://localhost:8090';
+const API = '';
 
 // ── W91: ES Template health hook ───────────────────────────────────────────
 interface EsTemplateRow {

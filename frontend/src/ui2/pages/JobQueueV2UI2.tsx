@@ -15,7 +15,7 @@ interface Job {
   params?: Record<string, unknown>;
 }
 
-const API = 'http://localhost:8090/api/v3/jobs';
+const API = '/api/v3/jobs';
 const JOB_TYPES = ['backtest', 'search_index', 'data_export', 'report_gen', 'model_train'];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -99,7 +99,8 @@ export function JobQueueV2UI2() {
       wsRef.current.close();
     }
     if (!['succeeded', 'failed', 'canceled'].includes(detail.status)) {
-      const wsUrl = `ws://localhost:8090/api/v3/jobs/ws/jobs/${job.id}`;
+      const _wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${_wsProto}//${window.location.host}/api/v3/jobs/ws/jobs/${job.id}`;
       const ws = new WebSocket(wsUrl);
       ws.onmessage = async (msg) => {
         const payload = JSON.parse(msg.data);

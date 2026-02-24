@@ -4,11 +4,15 @@
  * All API calls should use these constants instead of hardcoded URLs.
  */
 
-// API Base URL - configurable via environment variable
-export const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8090';
+// API Base URL - empty string means relative paths, routing through Vite proxy
+export const API_BASE = import.meta.env.VITE_API_URL || '';
 
-// WebSocket Base URL - derived from API base
-export const WS_BASE = API_BASE.replace(/^http/, 'ws');
+// WebSocket Base URL - derived from API base or falls back to current host
+const _wsProto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const _wsHost = typeof window !== 'undefined' ? window.location.host : 'localhost:5100';
+export const WS_BASE = API_BASE
+    ? API_BASE.replace(/^http/, 'ws')
+    : `${_wsProto}//${_wsHost}`;
 
 // API Endpoints
 export const API_ENDPOINTS = {

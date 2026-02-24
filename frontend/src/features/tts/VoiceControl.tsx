@@ -15,7 +15,7 @@ export const VoiceControl = () => {
 
     // Initial Status Check
     useEffect(() => {
-        fetch('http://localhost:8090/api/v1/tts/status')
+        fetch('/api/v1/tts/status')
             .then(res => res.json())
             .then(data => {
                 setStatus(data);

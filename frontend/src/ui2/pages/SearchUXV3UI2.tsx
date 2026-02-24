@@ -6,7 +6,7 @@
  */
 import { useState, useCallback, useEffect } from "react";
 
-const API = "http://localhost:8090";
+const API = "";
 
 interface FacetValue { key: string; count: number }
 interface Facets {

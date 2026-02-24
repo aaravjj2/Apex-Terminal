@@ -11,7 +11,7 @@ interface ProviderStatus {
     requests_limit?: number;
 }
 
-const API_BASE = 'http://127.0.0.1:8090/api/v1';
+const API_BASE = '/api/v1';
 
 export function ProviderHealth() {
     const [providers, setProviders] = useState<ProviderStatus[]>([]);

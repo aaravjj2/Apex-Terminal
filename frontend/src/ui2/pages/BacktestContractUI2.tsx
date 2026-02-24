@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API = 'http://localhost:8090/api/v3/backtest-contract';
+const API = '/api/v3/backtest-contract';
 
 interface GoldenRun {
   id: string;

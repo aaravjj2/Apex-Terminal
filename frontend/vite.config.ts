@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { execSync } from 'child_process'
 
 // Backend port — single source of truth for dev/preview proxy
-const BACKEND_PORT = process.env.APEX_BACKEND_PORT || '8090'
+const BACKEND_PORT = process.env.APEX_BACKEND_PORT || '8091'
 const BACKEND_URL = `http://localhost:${BACKEND_PORT}`
 
 // Phase A — Build-time fingerprints

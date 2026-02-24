@@ -30,7 +30,7 @@ interface EvalRun {
   created_at: string;
 }
 
-const API = 'http://localhost:8090/api/v3/eval';
+const API = '/api/v3/eval';
 
 const scoreColor = (score: number) => {
   if (score >= 0.8) return '#10B981';

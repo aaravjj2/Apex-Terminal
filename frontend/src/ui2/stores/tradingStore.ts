@@ -54,9 +54,10 @@ export interface TapeEvent {
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'fallback';
 
 // ── API Base ────────────────────────────────────────────────────
-
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8090') + '/api/v1/trading';
-const WS_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8090').replace(/^http/, 'ws');
+// Use /api/v1/portfolio/* (the real backend routes) via relative paths → Vite proxy
+const API_BASE = '/api/v1/portfolio';
+const _wsProto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const WS_BASE = typeof window !== 'undefined' ? `${_wsProto}//${window.location.host}` : '';
 
 // ── State ───────────────────────────────────────────────────────
 
@@ -202,7 +203,8 @@ async function fetchOrders() {
     const response = await fetch(`${API_BASE}/orders`);
     if (!response.ok) return;
     const data = await response.json();
-    orders = data.orders || [];
+    // Backend returns raw array or { orders: [...] }
+    orders = Array.isArray(data) ? data : (data.orders || []);
     notify();
   } catch (error) {
     console.error('fetchOrders error:', error);
@@ -214,7 +216,8 @@ async function fetchPositions() {
     const response = await fetch(`${API_BASE}/positions`);
     if (!response.ok) return;
     const data = await response.json();
-    positions = data.positions || [];
+    // Backend returns raw array or { positions: [...] }
+    positions = Array.isArray(data) ? data : (data.positions || []);
     notify();
   } catch (error) {
     console.error('fetchPositions error:', error);
@@ -223,9 +226,20 @@ async function fetchPositions() {
 
 async function fetchPnL() {
   try {
-    const response = await fetch(`${API_BASE}/pnl/snapshot`);
+    // Derive P&L from the unified portfolio endpoint
+    const response = await fetch(`${API_BASE}/unified`);
     if (!response.ok) return;
-    pnl = await response.json();
+    const data = await response.json();
+    const stats = data.stats || {};
+    pnl = {
+      realized_pnl: stats.day_pnl ?? 0,
+      unrealized_pnl: stats.open_pnl ?? 0,
+      total_pnl: (stats.day_pnl ?? 0) + (stats.open_pnl ?? 0),
+      total_notional: stats.total_equity ?? 0,
+      positions_count: stats.position_count ?? 0,
+      orders_count: stats.order_count ?? 0,
+      timestamp: new Date().toISOString(),
+    };
     notify();
   } catch (error) {
     console.error('fetchPnL error:', error);
@@ -233,15 +247,8 @@ async function fetchPnL() {
 }
 
 async function fetchTape() {
-  try {
-    const response = await fetch(`${API_BASE}/market/tape?limit=100`);
-    if (!response.ok) return;
-    const data = await response.json();
-    tape = data.tape || [];
-    notify();
-  } catch (error) {
-    console.error('fetchTape error:', error);
-  }
+  // Market tape WebSocket endpoint — no REST fallback; skip gracefully
+  tape = tape.length > 0 ? tape : [];
 }
 
 async function fetchAll() {

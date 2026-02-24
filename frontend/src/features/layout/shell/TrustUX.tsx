@@ -19,7 +19,7 @@ interface TrustMetrics {
     alpacaKeysConfigured: boolean;
 }
 
-const API_BASE = 'http://127.0.0.1:8090';
+const API_BASE = '';
 
 export function TrustUX() {
     const { mode, symbol, providers } = useAppStore();

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Wave 104  Accessibility Audit UI2
  * Shows axe-core audit results per page.
  * Route: /ui2/accessibility
@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageShellUI2, DataTableUI2, type ColumnDefUI2 } from '../components';
 
-const API = 'http://localhost:8090/api/v3/a11y';
+const API = '/api/v3/a11y';
 
 interface AuditRun {
   id: string;

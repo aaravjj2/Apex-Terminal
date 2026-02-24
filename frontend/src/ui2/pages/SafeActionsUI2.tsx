@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageShellUI2, type PageStatus } from '../components';
 
-const API = 'http://localhost:8090/api/v3/tickets';
+const API = '/api/v3/tickets';
 
 interface Ticket {
   id: string;

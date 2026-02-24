@@ -28,7 +28,7 @@ import {
 import { cn } from '../../../ui/utils';
 
 // API_BASE is defined for future use
-const _API_BASE = 'http://127.0.0.1:8090/api/v1';
+const _API_BASE = '/api/v1';
 void _API_BASE;
 
 // Types

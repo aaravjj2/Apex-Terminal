@@ -213,7 +213,7 @@ export class YahooFinanceProvider implements DataProvider {
     requiresNetwork: true,
   };
 
-  constructor(apiBase: string = 'http://127.0.0.1:8090') {
+  constructor(apiBase: string = '') {
     this.apiBase = apiBase;
     this.fallback = new FixtureProvider();
   }

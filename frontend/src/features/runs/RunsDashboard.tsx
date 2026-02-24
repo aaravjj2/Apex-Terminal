@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Pause, Square, RefreshCw, AlertCircle, CheckCircle, Clock, Zap } from 'lucide-react';
 
-const API_BASE = 'http://127.0.0.1:8090/api/v1';
+const API_BASE = '/api/v1';
 
 interface Run {
     run_id: string;

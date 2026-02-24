@@ -9,7 +9,7 @@ interface AccountInfo {
     is_paper: boolean;
 }
 
-const API_BASE = 'http://127.0.0.1:8090/api/v1';
+const API_BASE = '/api/v1';
 
 export function TradingBanner() {
     const [account, setAccount] = useState<AccountInfo | null>(null);

@@ -48,7 +48,7 @@ interface Ticket {
   created_at: string;
 }
 
-const API = 'http://localhost:8090/api/v3/cockpit';
+const API = '/api/v3/cockpit';
 
 const SCENARIOS = [
   { id: 'scen-volatility', name: 'Market Volatility Scan' },

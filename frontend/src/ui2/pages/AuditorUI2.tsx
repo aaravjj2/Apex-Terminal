@@ -10,7 +10,7 @@ import { DataTableUI2 } from '../components/DataTableUI2';
 import type { ColumnDefUI2 } from '../components/DataTableUI2';
 import type { PageStatus } from '../components/PageShellUI2';
 
-const API_BASE = 'http://localhost:8090';
+const API_BASE = '';
 
 interface AuditEvent {
   id: string;

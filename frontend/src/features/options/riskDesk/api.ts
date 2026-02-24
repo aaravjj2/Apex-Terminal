@@ -5,7 +5,7 @@
 
 import type { ValidationResult, RiskRunResult, TicketDraft, ScenarioOption } from './types';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8090';
+const BASE = import.meta.env.VITE_API_URL || '';
 
 // ── DETERMINISTIC MOCK DATA (Week 3 E2E Support) ────────────────────
 

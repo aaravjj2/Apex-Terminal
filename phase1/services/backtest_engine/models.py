@@ -83,6 +83,7 @@ class BacktestMetrics(BaseModel):
     cagr_pct: float
     max_drawdown_pct: float
     sharpe_ratio: float
+    sortino_ratio: float = 0.0
     win_rate_pct: float
     total_trades: int
     winning_trades: int
@@ -90,6 +91,9 @@ class BacktestMetrics(BaseModel):
     avg_win: float
     avg_loss: float
     profit_factor: float
+    expectancy: float = 0.0
+    exposure_pct: float = 0.0
+    turnover: float = 0.0
     final_equity: float
     
     model_config = {
@@ -99,6 +103,7 @@ class BacktestMetrics(BaseModel):
                 "cagr_pct": 15.1,
                 "max_drawdown_pct": -8.2,
                 "sharpe_ratio": 1.45,
+                "sortino_ratio": 1.82,
                 "win_rate_pct": 58.3,
                 "total_trades": 24,
                 "winning_trades": 14,
@@ -106,6 +111,9 @@ class BacktestMetrics(BaseModel):
                 "avg_win": 850.0,
                 "avg_loss": -420.0,
                 "profit_factor": 2.02,
+                "expectancy": 215.0,
+                "exposure_pct": 72.5,
+                "turnover": 1.8,
                 "final_equity": 115300.0
             }
         }
@@ -116,6 +124,12 @@ class EquityPoint(BaseModel):
     """Single point in equity curve"""
     timestamp: datetime
     equity: float
+
+
+class DrawdownPoint(BaseModel):
+    """Single point in drawdown series"""
+    timestamp: datetime
+    drawdown_pct: float
 
 
 class ProvenanceInfo(BaseModel):
@@ -136,6 +150,7 @@ class BacktestRun(BaseModel):
     # Results
     trades: List[TradeFill] = Field(default_factory=list)
     equity_curve: List[EquityPoint] = Field(default_factory=list)
+    drawdown_series: List[DrawdownPoint] = Field(default_factory=list)
     metrics: Optional[BacktestMetrics] = None
     
     # Determinism

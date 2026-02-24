@@ -1,10 +1,29 @@
 /**
  * v1.56 — MarketTape Component
- * Scrolling ticker tape with live stream display
+ * Scrolling ticker tape with live prices from backend API.
+ * Falls back to streamSimulator if API unavailable.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { streamSimulator, type StreamTick } from '../stores/streamSimulator';
+
+const SYMBOLS = ['AAPL', 'MSFT', 'NVDA', 'SPY', 'TSLA'];
+const QUOTE_INTERVAL_MS = 15_000; // refresh every 15 s
+
+async function fetchQuote(symbol: string): Promise<number | null> {
+  try {
+    const res = await fetch('/api/v1/market-data/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return typeof d.price === 'number' && d.price > 0 ? d.price : null;
+  } catch {
+    return null;
+  }
+}
 
 interface MarketTapeProps {
   testId?: string;
@@ -12,39 +31,96 @@ interface MarketTapeProps {
 
 export function MarketTape({ testId = 'ui2-market-tape' }: MarketTapeProps) {
   const [ticks, setTicks] = useState<StreamTick[]>([]);
-  const [status, setStatus] = useState(streamSimulator.status);
+  const [status, setStatus] = useState<'live' | 'replay' | 'offline' | 'disconnected'>('disconnected');
+  const prevPricesRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
-    // Start the simulator
-    streamSimulator.reset();
-    streamSimulator.start(2000);
-    setStatus(streamSimulator.status);
+    let cancelled = false;
 
-    // Expose simulator on window for E2E determinism checks
-    try {
-      (window as any).__streamSimulator = streamSimulator;
-    } catch (err) {
-      // ignore (SSR or restricted env)
-    }
+    // Merge a real price into ticks, computing change vs previous
+    function applyRealPrice(symbol: string, price: number) {
+      if (cancelled) return;
+      const prev = prevPricesRef.current[symbol] ?? price;
+      const change = Math.round((price - prev) * 100) / 100;
+      const changePct = prev > 0 ? Math.round(((price - prev) / prev) * 10000) / 100 : 0;
+      prevPricesRef.current[symbol] = price;
 
-    const unsub = streamSimulator.subscribe((tick) => {
+      const tick: StreamTick = {
+        symbol,
+        price,
+        change,
+        changePct,
+        volume: 0,
+        timestamp: Date.now(),
+        sequence: 0,
+      };
       setTicks(prev => {
         const updated = [...prev];
-        const idx = updated.findIndex(t => t.symbol === tick.symbol);
-        if (idx >= 0) {
-          updated[idx] = tick;
-        } else {
-          updated.push(tick);
-        }
+        const idx = updated.findIndex(t => t.symbol === symbol);
+        if (idx >= 0) updated[idx] = tick; else updated.push(tick);
         return updated.sort((a, b) => a.symbol.localeCompare(b.symbol));
       });
-      setStatus(streamSimulator.status);
+    }
+
+    // Fetch all symbols from real API
+    async function fetchAll() {
+      let anySuccess = false;
+      await Promise.all(
+        SYMBOLS.map(async sym => {
+          const price = await fetchQuote(sym);
+          if (price !== null) {
+            anySuccess = true;
+            applyRealPrice(sym, price);
+          }
+        })
+      );
+      if (!cancelled) {
+        setStatus(anySuccess ? 'live' : 'offline');
+      }
+      return anySuccess;
+    }
+
+    // Initial fetch; fall back to simulator if backend unavailable
+    fetchAll().then(ok => {
+      if (cancelled) return;
+      if (!ok) {
+        // Backend quotes unavailable — use simulator
+        streamSimulator.reset();
+        streamSimulator.start(2000);
+        setStatus(streamSimulator.status as any);
+        try { (window as any).__streamSimulator = streamSimulator; } catch { /* no-op */ }
+      }
     });
 
+    // Subscribe to simulator for fast updates between real fetches
+    const unsub = streamSimulator.subscribe(tick => {
+      if (cancelled) return;
+      // Only apply simulator updates for symbols that don't yet have real data
+      setTicks(prev => {
+        const hasPrev = prev.some(t => t.symbol === tick.symbol);
+        if (hasPrev) {
+          // If we have a real price (non-zero prev), don't overwrite with sim
+          if (prevPricesRef.current[tick.symbol]) return prev;
+        }
+        const updated = [...prev];
+        const idx = updated.findIndex(t => t.symbol === tick.symbol);
+        if (idx >= 0) updated[idx] = tick; else updated.push(tick);
+        return updated.sort((a, b) => a.symbol.localeCompare(b.symbol));
+      });
+    });
+
+    // Poll real API every 15 s
+    const pollTimer = setInterval(fetchAll, QUOTE_INTERVAL_MS);
+
+    // Expose simulator on window for E2E determinism checks
+    try { (window as any).__streamSimulator = streamSimulator; } catch { /* no-op */ }
+
     return () => {
+      cancelled = true;
       unsub();
+      clearInterval(pollTimer);
       streamSimulator.stop();
-      try { delete (window as any).__streamSimulator; } catch (e) { /* no-op */ }
+      try { delete (window as any).__streamSimulator; } catch { /* no-op */ }
     };
   }, []);
 

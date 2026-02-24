@@ -169,37 +169,52 @@ async def get_bars(req: BarsRequest):
 async def get_quote(req: QuoteRequest):
     """
     Get real-time quote with provenance.
-    In DEMO mode, derives from bars fixture.
+    Fetches latest close from Yahoo Finance via yfinance.
+    Falls back to last-known Alpaca bar if yfinance is unavailable.
     """
-    demo_mode = os.getenv("DEMO_MODE", "0") == "1"
-    
-    if demo_mode:
-        # DEMO: simple fixture
-        price = 100.0 + hash(req.symbol) % 100
-        
-        provenance = ProvenanceInfo(
-            source="DEMO",
-            provider="fixture"
-        )
-        
-        return QuoteResponse(
-            symbol=req.symbol,
-            price=price,
-            provenance=provenance
-        )
-    
-    # LOCAL mode: use bars API or separate quote cache
-    # For simplicity, return mock
+    import logging
+    _log = logging.getLogger(__name__)
+
+    price: float = 0.0
+    provider_name = "unknown"
+
+    # --- Try yfinance (delayed quotes, free tier) ---
+    try:
+        import yfinance as yf  # type: ignore
+        ticker = yf.Ticker(req.symbol)
+        hist = ticker.history(period="2d")
+        if not hist.empty:
+            price = float(hist["Close"].iloc[-1])
+            provider_name = "yahoo"
+    except Exception as e:
+        _log.warning(f"yfinance quote failed for {req.symbol}: {e}")
+
+    # --- Fall back to Alpaca latest bar if yfinance returned nothing ---
+    if price == 0.0:
+        try:
+            from ...market_data.providers import get_provider
+            provider = get_provider("alpaca")
+            from ...market_data.providers.types import QuoteRequest as ProviderQuoteRequest
+            resp = await provider.get_quote(ProviderQuoteRequest(symbol=req.symbol))
+            price = float(resp.quote.price)
+            provider_name = "alpaca"
+        except Exception as e2:
+            _log.warning(f"Alpaca quote fallback failed for {req.symbol}: {e2}")
+
+    if price == 0.0:
+        raise HTTPException(status_code=503, detail=f"No market data available for {req.symbol}")
+
     provenance = ProvenanceInfo(
         source="LOCAL_FETCH",
-        provider="yahoo"
+        provider=provider_name
     )
-    
+
     return QuoteResponse(
         symbol=req.symbol,
-        price=150.0,
+        price=price,
         provenance=provenance
     )
+
 
 
 @router.get("/replays", response_model=List[Dict[str, Any]])

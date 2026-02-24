@@ -1,646 +1,827 @@
 /**
- * v1.60-v1.61 — BacktestUI2 Page (Enhanced with Run Submission)
- * Runs Manager + Offline Report Viewer + New Run Form (deterministic)
+ * BacktestUI2 — Production-grade Backtester Page
+ *
+ * Tabs:
+ *  1. New Run     — form + quick result preview
+ *  2. Runs        — table of all runs
+ *  3. Results     — KPIs + equity curve + drawdown + trades
+ *  4. Compare     — side-by-side two runs
+ *  5. Data Health — yfinance coverage
  */
 
-import { useState, useSyncExternalStore, useEffect } from 'react';
-import { PageHeader, Tabs, DataTable, StatusBadge, type ColumnDef } from '../components';
-import { useRowHighlight } from '../stores/deepLinks';
-import { backtestDepthStore, type SweepConfig } from '../stores/backtestDepthStore';
-interface BacktestRun {
-  id: string;
-  strategyId: string;
-  symbol: string;
-  startDate: number;
-  endDate: number;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  sharpeRatio?: number;
-  totalReturn?: number;
-  maxDrawdown?: number;
-  winRate?: number;
-  tradeCount?: number;
-  createdAt: number;
+import { useState, useEffect, useSyncExternalStore, useRef, useCallback } from 'react';
+import { PageHeader, Tabs, DataTable, StatusBadge, Skeleton, EmptyState, type ColumnDef } from '../components';
+import {
+  backtestEngineStore,
+  type BacktestRunResult,
+  type BacktestMetrics,
+  type EquityPoint,
+  type DrawdownPoint,
+  type StrategyInfo,
+  type SymbolHealthInfo,
+} from '../stores/backtestEngineStore';
+
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const SYMBOLS = ['SPY', 'AAPL', 'MSFT', 'TSLA', 'NVDA', 'GOOGL', 'AMZN', 'META', 'QQQ', 'AMD'];
+
+function fmtDate(d: string | Date | undefined | null): string {
+  if (!d) return '-';
+  return new Date(d).toISOString().split('T')[0];
 }
 
-// Online-only: starts empty — runs are created via the UI
-const INITIAL_RUNS_SEED: BacktestRun[] = [];
-// ── Deterministic runner ──────────────────────────────────────
-
-function fnv32(data: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < data.length; i++) {
-    h ^= data.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
+function pctColor(v: number): string {
+  return v >= 0 ? 'var(--green, #22c55e)' : 'var(--red, #ef4444)';
 }
 
-const BACKTEST_SYMBOLS = ['AAPL', 'AMZN', 'MSFT', 'NVDA', 'SPY', 'TSLA', 'GOOGL', 'META'];
-const BACKTEST_STRATEGIES = ['strat-1', 'strat-2', 'strat-3', 'strat-4'];
-const STRATEGY_LABELS: Record<string, string> = {
-  'strat-1': 'RSI Oversold Bounce',
-  'strat-2': 'Momentum + MACD',
-  'strat-3': 'Mean Reversion VWAPBand',
-  'strat-4': 'Breakout + Volume Filter',
+// ── Shared inline styles ────────────────────────────────────────────────────
+
+const selectCss: React.CSSProperties = {
+  padding: '7px 10px', background: 'var(--bg-input, #242438)', border: '1px solid var(--border, #2d2d44)',
+  borderRadius: '6px', color: 'var(--text, #e2e8f0)', fontSize: '13px', width: '100%',
+};
+const labelCss: React.CSSProperties = { fontSize: '11px', color: 'var(--text-muted, #94a3b8)', display: 'block', marginBottom: '4px' };
+const inputCss: React.CSSProperties = { ...selectCss };
+const btnPrimary: React.CSSProperties = {
+  padding: '9px 22px', background: 'var(--brand, #6366f1)', color: 'white',
+  border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
 };
 
-function createDeterministicRun(symbol: string, strategyId: string, months: number): BacktestRun {
-  const seed = fnv32(`${symbol}:${strategyId}:${months}`);
-  const sharpeRatio = 0.5 + ((seed & 0xFF) / 255) * 2.5;        // 0.5 – 3.0
-  const totalReturn = -5 + ((seed >> 8 & 0xFF) / 255) * 60;     // -5% – 55%
-  const maxDrawdown = 3 + ((seed >> 16 & 0xFF) / 255) * 25;     // 3% – 28%
-  const winRate = 40 + ((seed >> 24 & 0xFF) / 255) * 30;        // 40% – 70%
-  const tradeCount = 10 + (seed % 90);                           // 10 – 99
-  const now = Date.now();
-  const msPerMonth = 30 * 86400000;
-  const id = `bt-${seed.toString(16).slice(0, 8)}`;
-  return {
-    id,
-    strategyId,
-    symbol,
-    startDate: now - msPerMonth * months,
-    endDate: now - msPerMonth,
-    status: 'completed',
-    sharpeRatio: Math.round(sharpeRatio * 100) / 100,
-    totalReturn: Math.round(totalReturn * 10) / 10,
-    maxDrawdown: Math.round(maxDrawdown * 10) / 10,
-    winRate: Math.round(winRate * 10) / 10,
-    tradeCount,
-    createdAt: now,
-  };
+// ── Mini equity-curve chart (canvas) ────────────────────────────────────────
+
+function EquityCurveChart({ data, height = 220, testId }: {
+  data: EquityPoint[];
+  height?: number;
+  testId: string;
+}) {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const c = ref.current;
+    if (!c || data.length < 2) return;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth;
+    const h2 = c.clientHeight;
+    c.width = w * dpr;
+    c.height = h2 * dpr;
+    ctx.scale(dpr, dpr);
+
+    const eqs = data.map(d => d.equity);
+    const lo = Math.min(...eqs) * 0.998;
+    const hi = Math.max(...eqs) * 1.002;
+    const rng = hi - lo || 1;
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, w, h2);
+
+    // grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) {
+      const y = (h2 * i) / 4;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // line
+    const up = eqs[eqs.length - 1] >= eqs[0];
+    ctx.beginPath();
+    ctx.strokeStyle = up ? '#22c55e' : '#ef4444';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < eqs.length; i++) {
+      const x = (i / (eqs.length - 1)) * w;
+      const y = h2 - ((eqs[i] - lo) / rng) * h2;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // fill
+    const g = ctx.createLinearGradient(0, 0, 0, h2);
+    g.addColorStop(0, up ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.lineTo(w, h2); ctx.lineTo(0, h2); ctx.closePath();
+    ctx.fillStyle = g; ctx.fill();
+
+    // y-labels
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = hi - (rng * i) / 4;
+      ctx.fillText(`$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, w - 4, (h2 * i) / 4 + 12);
+    }
+    // x-labels
+    ctx.textAlign = 'center';
+    const ln = Math.min(6, data.length);
+    for (let i = 0; i < ln; i++) {
+      const idx = Math.floor((i / (ln - 1)) * (data.length - 1));
+      ctx.fillText(fmtDate(data[idx].timestamp), (idx / (data.length - 1)) * w, h2 - 4);
+    }
+  }, [data]);
+
+  return (
+    <canvas
+      ref={ref}
+      data-testid={testId}
+      style={{ width: '100%', height, display: 'block', borderRadius: '6px', border: '1px solid var(--border, #2d2d44)' }}
+    />
+  );
 }
 
-function formatDate(ts: number): string {
-  return new Date(ts).toISOString().split('T')[0];
+// ── Drawdown chart ──────────────────────────────────────────────────────────
+
+function DrawdownChart({ data, height = 120, testId }: {
+  data: DrawdownPoint[];
+  height?: number;
+  testId: string;
+}) {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const c = ref.current;
+    if (!c || data.length < 2) return;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth;
+    const h2 = c.clientHeight;
+    c.width = w * dpr;
+    c.height = h2 * dpr;
+    ctx.scale(dpr, dpr);
+
+    const dds = data.map(d => d.drawdown_pct);
+    const minDD = Math.min(...dds, 0);
+    const rng = Math.abs(minDD) || 1;
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, w, h2);
+
+    // fill
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    for (let i = 0; i < dds.length; i++) {
+      const x = (i / (dds.length - 1)) * w;
+      const y = (Math.abs(dds[i]) / rng) * h2;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, 0); ctx.closePath();
+    ctx.fillStyle = 'rgba(239,68,68,0.2)'; ctx.fill();
+
+    // line
+    ctx.beginPath();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < dds.length; i++) {
+      const x = (i / (dds.length - 1)) * w;
+      const y = (Math.abs(dds[i]) / rng) * h2;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('0%', w - 4, 12);
+    ctx.fillText(`${minDD.toFixed(1)}%`, w - 4, h2 - 4);
+  }, [data]);
+
+  return (
+    <canvas
+      ref={ref}
+      data-testid={testId}
+      style={{ width: '100%', height, display: 'block', borderRadius: '6px', border: '1px solid var(--border, #2d2d44)' }}
+    />
+  );
 }
+
+// ── Compare equity overlay chart ────────────────────────────────────────────
+
+function CompareEquityChart({ dataA, dataB, labelA, labelB, testId }: {
+  dataA: EquityPoint[];
+  dataB: EquityPoint[];
+  labelA: string;
+  labelB: string;
+  testId: string;
+}) {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const c = ref.current;
+    if (!c || dataA.length < 2 || dataB.length < 2) return;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth;
+    const h = 200;
+    c.width = w * dpr;
+    c.height = h * dpr;
+    ctx.scale(dpr, dpr);
+
+    const baseA = dataA[0].equity;
+    const baseB = dataB[0].equity;
+    const retA = dataA.map(d => ((d.equity - baseA) / baseA) * 100);
+    const retB = dataB.map(d => ((d.equity - baseB) / baseB) * 100);
+    const all = [...retA, ...retB];
+    const lo = Math.min(...all);
+    const hi = Math.max(...all);
+    const rng = (hi - lo) || 1;
+    const pad = rng * 0.05;
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, w, h);
+
+    // zero line
+    const zeroY = h - ((0 - (lo - pad)) / (rng + 2 * pad)) * h;
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(w, zeroY); ctx.stroke();
+
+    const drawLine = (pts: number[], color: string) => {
+      ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2;
+      for (let i = 0; i < pts.length; i++) {
+        const x = (i / (pts.length - 1)) * w;
+        const y = h - ((pts[i] - (lo - pad)) / (rng + 2 * pad)) * h;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    };
+    drawLine(retA, '#3b82f6');
+    drawLine(retB, '#f59e0b');
+
+    ctx.font = '11px monospace';
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillText(`● ${labelA.slice(0, 16)}`, 8, 14);
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillText(`● ${labelB.slice(0, 16)}`, 8, 28);
+  }, [dataA, dataB, labelA, labelB]);
+
+  return (
+    <canvas
+      ref={ref}
+      data-testid={testId}
+      style={{ width: '100%', height: 200, display: 'block', borderRadius: '6px', border: '1px solid var(--border, #2d2d44)' }}
+    />
+  );
+}
+
+// ── KPI Card ────────────────────────────────────────────────────────────────
+
+function KpiCard({ label, value, color, testId }: {
+  label: string;
+  value: string;
+  color?: string;
+  testId: string;
+}) {
+  return (
+    <div data-testid={testId} style={{
+      padding: '14px', background: 'var(--bg-panel, #1e1e32)', border: '1px solid var(--border, #2d2d44)',
+      borderRadius: '6px', textAlign: 'center', minWidth: 0,
+    }}>
+      <div style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+      <div style={{ fontSize: '20px', fontWeight: 700, color: color || 'var(--text, #e2e8f0)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+    </div>
+  );
+}
+
+// ── Error card ──────────────────────────────────────────────────────────────
+
+function ErrorCard({ message, testId }: { message: string; testId: string }) {
+  return (
+    <div data-testid={testId} style={{
+      padding: '16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
+      borderRadius: '6px', color: '#ef4444',
+    }}>
+      <div style={{ fontWeight: 600, marginBottom: '4px' }}>Error</div>
+      <div style={{ fontSize: '13px', opacity: 0.9 }}>{message}</div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MAIN
+// ══════════════════════════════════════════════════════════════════════════
 
 export function BacktestUI2() {
-  const [activeTab, setActiveTab] = useState('runs');
-  const [runs, setRuns] = useState<BacktestRun[]>(INITIAL_RUNS_SEED);
-  const [selectedRun, setSelectedRun] = useState<BacktestRun | null>(null);
-  const [filterSymbol, setFilterSymbol] = useState('');
-  const [filterStrategy, setFilterStrategy] = useState('');
-  const { highlightKey, clearHighlight } = useRowHighlight();
+  const [activeTab, setActiveTab] = useState('new-run');
+  const state = useSyncExternalStore(backtestEngineStore.subscribe, backtestEngineStore.getSnapshot);
+  const [pageReady, setPageReady] = useState(false);
 
-  // New Run form state
-  const [newSymbol, setNewSymbol] = useState(BACKTEST_SYMBOLS[0]);
-  const [newStrategy, setNewStrategy] = useState(BACKTEST_STRATEGIES[0]);
-  const [newMonths, setNewMonths] = useState(12);
-  const [submitResult, setSubmitResult] = useState<BacktestRun | null>(null);
-  const [_pageReady, _setPageReady] = useState(false);
-  useEffect(() => { _setPageReady(true); }, []);
-
-  // Depth stores
-  const depthState = useSyncExternalStore(backtestDepthStore.subscribe, backtestDepthStore.getSnapshot);
-  const [sweepSymbol, setSweepSymbol] = useState(BACKTEST_SYMBOLS[0]);
-  const [sweepStrategy, setSweepStrategy] = useState(BACKTEST_STRATEGIES[0]);
-  const [wfSymbol, setWfSymbol] = useState(BACKTEST_SYMBOLS[0]);
-  const [wfStrategy, setWfStrategy] = useState(BACKTEST_STRATEGIES[0]);
-  const [robSymbol, setRobSymbol] = useState(BACKTEST_SYMBOLS[0]);
-  const [robStrategy, setRobStrategy] = useState(BACKTEST_STRATEGIES[0]);
-  const [activeSweepId, setActiveSweepId] = useState<string | null>(null);
-  const [activeWfId, setActiveWfId] = useState<string | null>(null);
-  const [activeRobId, setActiveRobId] = useState<string | null>(null);
-
-  const filteredRuns = runs.filter(r => {
-    if (filterSymbol && !r.symbol.toLowerCase().includes(filterSymbol.toLowerCase())) return false;
-    if (filterStrategy && !r.strategyId.toLowerCase().includes(filterStrategy.toLowerCase())) return false;
-    return true;
+  // ── form ──
+  const [symbol, setSymbol] = useState('SPY');
+  const [strategyId, setStrategyId] = useState('');
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date(); d.setFullYear(d.getFullYear() - 7);
+    return d.toISOString().split('T')[0];
   });
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [capital, setCapital] = useState(100000);
+  const [slippage, setSlippage] = useState(5);
+  const [feePerTrade, setFeePerTrade] = useState(1);
 
-  const handleSubmitRun = () => {
-    const run = createDeterministicRun(newSymbol, newStrategy, newMonths);
-    // Only add if not duplicate (same run_id = same deterministic result)
-    setRuns(prev => prev.find(r => r.id === run.id) ? prev : [...prev, run]);
-    setSubmitResult(run);
-  };
+  // ── compare ──
+  const [compareA, setCompareA] = useState('');
+  const [compareB, setCompareB] = useState('');
 
-  const runColumns: ColumnDef<Record<string, unknown>>[] = [
-    { key: 'id', label: 'Run ID', width: '100px' },
-    { key: 'symbol', label: 'Symbol', width: '80px' },
-    { key: 'strategyId', label: 'Strategy', width: '100px' },
-    { key: 'status', label: 'Status', width: '100px', render: (_v: unknown, row: Record<string, unknown>) => {
-      const st = row['status'] as string;
-      const variant = st === 'completed' ? 'success' : st === 'running' ? 'working' : st === 'failed' ? 'danger' : 'neutral';
-      return <StatusBadge variant={variant} testId={`backtest-status-${row['id']}`}>{st}</StatusBadge>;
+  // init
+  useEffect(() => {
+    setPageReady(true);
+    backtestEngineStore.fetchStrategies();
+    backtestEngineStore.fetchRuns();
+    backtestEngineStore.fetchDataHealth();
+  }, []);
+
+  // auto-select first strategy
+  useEffect(() => {
+    if (!strategyId && state.strategies.length > 0) {
+      setStrategyId(state.strategies[0].id);
+    }
+  }, [state.strategies, strategyId]);
+
+  const handleRun = useCallback(async () => {
+    await backtestEngineStore.runBacktest({
+      strategy_id: strategyId,
+      symbol,
+      start_date: startDate,
+      end_date: endDate,
+      initial_capital: capital,
+      slippage_bps: slippage,
+      fee_per_trade: feePerTrade,
+    });
+  }, [strategyId, symbol, startDate, endDate, capital, slippage, feePerTrade]);
+
+  const handleCompare = useCallback(() => {
+    if (compareA && compareB && compareA !== compareB) {
+      backtestEngineStore.compareRuns(compareA, compareB);
+    }
+  }, [compareA, compareB]);
+
+  const run = state.currentRun;
+  const metrics = run?.metrics;
+
+  // trade columns
+  const tradeColumns: ColumnDef<Record<string, unknown>>[] = [
+    { key: 'trade_id', label: 'ID', width: '90px' },
+    { key: 'timestamp', label: 'Date', width: '110px', render: (v: unknown) => fmtDate(v as string) },
+    { key: 'side', label: 'Side', width: '60px', render: (v: unknown) => {
+      const s = v as string;
+      return <span style={{ color: s === 'buy' ? '#22c55e' : '#ef4444', fontWeight: 600, textTransform: 'uppercase', fontSize: '11px' }}>{s}</span>;
     }},
-    { key: 'sharpeRatio', label: 'Sharpe', width: '80px', render: (v: unknown) => v != null ? (v as number).toFixed(2) : '-' },
-    { key: 'totalReturn', label: 'Return %', width: '80px', render: (v: unknown) => {
+    { key: 'quantity', label: 'Qty', width: '70px' },
+    { key: 'price', label: 'Price', width: '90px', render: (v: unknown) => `$${(v as number).toFixed(2)}` },
+    { key: 'fees', label: 'Fees', width: '60px', render: (v: unknown) => `$${(v as number).toFixed(2)}` },
+    { key: 'pnl', label: 'PnL', width: '100px', render: (v: unknown) => {
       if (v == null) return '-';
       const n = v as number;
-      return <span style={{ color: n >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)' }}>+{n.toFixed(1)}%</span>;
+      return <span style={{ color: pctColor(n), fontWeight: 600 }}>{n >= 0 ? '+' : ''}{n.toFixed(2)}</span>;
     }},
-    { key: 'maxDrawdown', label: 'Max DD', width: '80px', render: (v: unknown) => v != null ? `${v}%` : '-' },
-    { key: 'winRate', label: 'Win Rate', width: '80px', render: (v: unknown) => v != null ? `${v}%` : '-' },
-    { key: 'tradeCount', label: 'Trades', width: '70px' },
-    { key: 'id', label: 'Action', width: '80px', render: (_v: unknown, row: Record<string, unknown>) => (
-      <button
-        data-testid={`backtest-open-${row['id']}`}
-        onClick={() => {
-          const run = runs.find(r => r.id === row['id']);
-          if (run) { setSelectedRun(run); setActiveTab('report'); }
-        }}
-        style={{ padding: '2px 8px', fontSize: '11px', background: 'var(--ui2-brand-primary)', color: 'white', border: 'none', borderRadius: 'var(--ui2-radius-sm)', cursor: 'pointer' }}
-      >
-        Open
-      </button>
-    )},
   ];
 
   return (
     <>
-    {!_pageReady && <div data-testid="page-loading" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
-    {_pageReady && <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none'}} />}
-    <div data-testid="backtest-ui2-page" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '12px 16px 0 16px' }}>
-        <PageHeader
-          title="Backtest"
-          subtitle="Run manager, results, and offline report viewer"
-          icon="B"
-          testId="backtest-header"
-        />
-      </div>
+      {pageReady && <div data-testid="page-ready" style={{ display: 'none' }} />}
+      <div data-testid="backtest-ui2-page" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      <div style={{ padding: '0 16px 8px 16px' }}>
-        <Tabs
-          items={[
-            { id: 'runs', label: 'Runs Manager' },
-            { id: 'report', label: 'Report Viewer' },
-            { id: 'new-run', label: 'New Run' },
-            { id: 'sweeps', label: 'Param Sweep' },
-            { id: 'walkforward', label: 'Walk-Forward' },
-            { id: 'robustness', label: 'Robustness' },
-          ]}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          testId="backtest-tabs"
-        />
-      </div>
+        {/* Header */}
+        <div style={{ padding: '12px 16px 0 16px' }}>
+          <PageHeader title="Backtester" subtitle="7y yfinance data · real strategies · credible simulation" icon="📊" testId="backtest-header" />
+        </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 16px 16px 16px' }}>
-        {activeTab === 'runs' && (
-          <div data-testid="backtest-runs-manager">
-            {/* Filters */}
-            <div data-testid="backtest-filters" style={{
-              display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'center',
-            }}>
-              <div>
-                <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', marginRight: '6px' }}>Symbol:</label>
-                <input data-testid="backtest-filter-symbol" value={filterSymbol} onChange={e => setFilterSymbol(e.target.value)}
-                  placeholder="Filter..." style={{ padding: '4px 8px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '12px', width: '100px' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', marginRight: '6px' }}>Strategy:</label>
-                <input data-testid="backtest-filter-strategy" value={filterStrategy} onChange={e => setFilterStrategy(e.target.value)}
-                  placeholder="Filter..." style={{ padding: '4px 8px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '12px', width: '100px' }} />
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--ui2-text-muted)' }}>
-                {filteredRuns.length} of {runs.length} runs
-              </div>
-            </div>
+        {/* Tabs */}
+        <div style={{ padding: '0 16px 8px 16px' }}>
+          <Tabs
+            items={[
+              { id: 'new-run', label: 'New Run' },
+              { id: 'runs', label: 'Runs' },
+              { id: 'results', label: 'Results' },
+              { id: 'compare', label: 'Compare' },
+              { id: 'data-health', label: 'Data Health' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            testId="backtest-tabs"
+          />
+        </div>
 
-            <DataTable data={filteredRuns as any} columns={runColumns} keyField="id" testId="backtest-runs-table" highlightRowKey={highlightKey} />
-          </div>
-        )}
+        {/* Body */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '0 16px 16px 16px' }}>
 
-        {activeTab === 'report' && (
-          <div data-testid="backtest-report-viewer">
-            {selectedRun ? (
-              <div data-testid="backtest-report-content">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div>
-                    <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      Run: {selectedRun.id}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--ui2-text-secondary)' }}>
-                      {selectedRun.symbol} | Strategy: {selectedRun.strategyId} | {formatDate(selectedRun.startDate)} to {formatDate(selectedRun.endDate)}
-                    </div>
-                  </div>
-                  <StatusBadge variant={selectedRun.status === 'completed' ? 'success' : 'neutral'} testId="backtest-report-status">
-                    {selectedRun.status}
-                  </StatusBadge>
+          {/* ═══ NEW RUN TAB ═══ */}
+          {activeTab === 'new-run' && (
+            <div data-testid="backtest-new-run-form" style={{ display: 'flex', gap: '24px' }}>
+              {/* Left — form */}
+              <div style={{ maxWidth: 420, flex: '0 0 420px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text, #e2e8f0)' }}>Configure Backtest</div>
+
+                <div>
+                  <label style={labelCss}>Symbol</label>
+                  <select data-testid="backtest-symbol" value={symbol} onChange={e => setSymbol(e.target.value)} style={selectCss}>
+                    {SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
                 </div>
 
-                {/* Provenance Section */}
-                <div data-testid="backtest-report-provenance" style={{
-                  padding: '12px', background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)',
-                  borderRadius: 'var(--ui2-radius-md)', marginBottom: '16px',
-                }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)', marginBottom: '8px' }}>
-                    Provenance
+                <div>
+                  <label style={labelCss}>Strategy</label>
+                  {state.strategiesLoading ? <Skeleton height={32} testId="strat-skeleton" /> : (
+                    <select data-testid="backtest-strategy" value={strategyId} onChange={e => setStrategyId(e.target.value)} style={selectCss}>
+                      {state.strategies.map((s: StrategyInfo) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelCss}>Start Date</label>
+                    <input data-testid="backtest-start-date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={inputCss} />
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ui2-text-secondary)', lineHeight: 1.8, fontFamily: 'monospace' }}>
-                    <div>Run ID: {selectedRun.id}</div>
-                    <div>Strategy: {selectedRun.strategyId}</div>
-                    <div>Symbol: {selectedRun.symbol}</div>
-                    <div>Period: {formatDate(selectedRun.startDate)} to {formatDate(selectedRun.endDate)}</div>
-                    <div>Created: {new Date(selectedRun.createdAt).toISOString()}</div>
-                    <div>Status: {selectedRun.status}</div>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelCss}>End Date</label>
+                    <input data-testid="backtest-end-date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={inputCss} />
                   </div>
                 </div>
 
-                {/* Results Summary */}
-                {selectedRun.status === 'completed' && (
-                  <div data-testid="backtest-report-results" style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px',
-                  }}>
-                    {[
-                      { label: 'Sharpe Ratio', value: selectedRun.sharpeRatio?.toFixed(2) || '-' },
-                      { label: 'Total Return', value: selectedRun.totalReturn ? `+${selectedRun.totalReturn.toFixed(1)}%` : '-' },
-                      { label: 'Max Drawdown', value: selectedRun.maxDrawdown ? `${selectedRun.maxDrawdown.toFixed(1)}%` : '-' },
-                      { label: 'Win Rate', value: selectedRun.winRate ? `${selectedRun.winRate.toFixed(1)}%` : '-' },
-                      { label: 'Trade Count', value: String(selectedRun.tradeCount || 0) },
-                    ].map((stat, i) => (
-                      <div key={i} data-testid={`backtest-stat-${stat.label.toLowerCase().replace(/\s+/g, '-')}`} style={{
-                        padding: '12px', background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)',
-                        borderRadius: 'var(--ui2-radius-md)', textAlign: 'center',
-                      }}>
-                        <div style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', marginBottom: '4px' }}>{stat.label}</div>
-                        <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ui2-text-primary)' }}>{stat.value}</div>
-                      </div>
-                    ))}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelCss}>Initial Capital</label>
+                    <input data-testid="backtest-capital" type="number" value={capital} onChange={e => setCapital(+e.target.value)} style={inputCss} />
                   </div>
-                )}
-              </div>
-            ) : (
-              <div data-testid="backtest-report-empty" style={{ padding: '40px', textAlign: 'center', color: 'var(--ui2-text-muted)', fontSize: '13px' }}>
-                Select a run from the Runs Manager tab to view its report.
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'new-run' && (
-          <div data-testid="backtest-new-run-form">
-            <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)', marginBottom: '4px' }}>
-                Submit Backtest Run
-              </div>
-
-              {/* Symbol */}
-              <div>
-                <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Symbol</label>
-                <select
-                  data-testid="backtest-new-symbol"
-                  value={newSymbol}
-                  onChange={e => setNewSymbol(e.target.value)}
-                  style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}
-                >
-                  {BACKTEST_SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-
-              {/* Strategy */}
-              <div>
-                <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Strategy</label>
-                <select
-                  data-testid="backtest-new-strategy"
-                  value={newStrategy}
-                  onChange={e => setNewStrategy(e.target.value)}
-                  style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}
-                >
-                  {BACKTEST_STRATEGIES.map(s => <option key={s} value={s}>{STRATEGY_LABELS[s]}</option>)}
-                </select>
-              </div>
-
-              {/* Period */}
-              <div>
-                <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Lookback Period</label>
-                <select
-                  data-testid="backtest-new-months"
-                  value={newMonths}
-                  onChange={e => setNewMonths(Number(e.target.value))}
-                  style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}
-                >
-                  {[3, 6, 12, 18, 24, 36].map(m => <option key={m} value={m}>{m} months</option>)}
-                </select>
-              </div>
-
-              <button
-                data-testid="backtest-submit-btn"
-                onClick={handleSubmitRun}
-                style={{
-                  padding: '8px 20px', background: 'var(--ui2-brand-primary)', color: 'white',
-                  border: 'none', borderRadius: 'var(--ui2-radius-md)', fontSize: '13px', fontWeight: 600,
-                  cursor: 'pointer', alignSelf: 'flex-start',
-                }}
-              >
-                Run Backtest
-              </button>
-
-              {/* Result */}
-              {submitResult && (
-                <div data-testid="backtest-submit-result" style={{
-                  padding: '12px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)',
-                  borderRadius: 'var(--ui2-radius-md)',
-                }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-success)', marginBottom: '8px' }}>
-                    ✓ Backtest Queued: {submitResult.id}
+                  <div style={{ flex: 1 }}>
+                    <label style={labelCss}>Slippage (bps)</label>
+                    <input data-testid="backtest-slippage" type="number" value={slippage} onChange={e => setSlippage(+e.target.value)} style={inputCss} />
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ui2-text-secondary)', fontFamily: 'monospace', lineHeight: 1.8 }}>
-                    <div>Symbol: <strong data-testid="backtest-result-symbol">{submitResult.symbol}</strong></div>
-                    <div>Strategy: <strong data-testid="backtest-result-strategy">{submitResult.strategyId}</strong></div>
-                    <div>Period: {formatDate(submitResult.startDate)} → {formatDate(submitResult.endDate)}</div>
-                    <div>Sharpe: <strong data-testid="backtest-result-sharpe">{submitResult.sharpeRatio?.toFixed(2)}</strong></div>
-                    <div>Return: <strong data-testid="backtest-result-return" style={{ color: (submitResult.totalReturn ?? 0) >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)' }}>
-                      {(submitResult.totalReturn ?? 0) >= 0 ? '+' : ''}{submitResult.totalReturn?.toFixed(1)}%
-                    </strong></div>
-                    <div>Trades: <strong data-testid="backtest-result-trades">{submitResult.tradeCount}</strong></div>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelCss}>Fee/Trade</label>
+                    <input data-testid="backtest-fee" type="number" value={feePerTrade} step="0.5" onChange={e => setFeePerTrade(+e.target.value)} style={inputCss} />
                   </div>
+                </div>
+
+                <button
+                  data-testid="backtest-submit-btn"
+                  onClick={handleRun}
+                  disabled={state.runLoading || !strategyId}
+                  style={{ ...btnPrimary, opacity: state.runLoading ? 0.6 : 1, alignSelf: 'flex-start' }}
+                >
+                  {state.runLoading ? 'Running…' : 'Run Backtest'}
+                </button>
+
+                {state.runError && <ErrorCard message={state.runError} testId="backtest-run-error" />}
+              </div>
+
+              {/* Right — quick preview */}
+              {run && run.status === 'completed' && metrics && (
+                <div data-testid="backtest-quick-result" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#22c55e' }}>
+                    ✓ Run {run.run_id} · {run.config.symbol} · {fmtDate(run.config.start_date)} → {fmtDate(run.config.end_date)}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                    <KpiCard label="CAGR" value={`${metrics.cagr_pct.toFixed(1)}%`} color={pctColor(metrics.cagr_pct)} testId="kpi-cagr-preview" />
+                    <KpiCard label="Sharpe" value={metrics.sharpe_ratio.toFixed(2)} testId="kpi-sharpe-preview" />
+                    <KpiCard label="Max DD" value={`${metrics.max_drawdown_pct.toFixed(1)}%`} color="#ef4444" testId="kpi-maxdd-preview" />
+                    <KpiCard label="Win Rate" value={`${metrics.win_rate_pct.toFixed(0)}%`} testId="kpi-winrate-preview" />
+                  </div>
+                  <EquityCurveChart data={run.equity_curve} testId="equity-chart-preview" height={160} />
                   <button
-                    data-testid="backtest-view-new-run-btn"
-                    onClick={() => { setSelectedRun(submitResult); setActiveTab('report'); }}
-                    style={{
-                      marginTop: '8px', padding: '6px 14px', background: 'var(--ui2-accent)', color: 'white',
-                      border: 'none', borderRadius: 'var(--ui2-radius-sm)', fontSize: '12px', cursor: 'pointer',
-                    }}
+                    data-testid="goto-results-btn"
+                    onClick={() => setActiveTab('results')}
+                    style={{ ...btnPrimary, background: '#6366f1', fontSize: '12px', padding: '7px 16px', alignSelf: 'flex-start' }}
                   >
-                    View Report →
+                    View Full Results →
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-        )}
 
-        {/* ── Param Sweep Tab ── */}
-        {activeTab === 'sweeps' && (
-          <div data-testid="backtest-sweep-panel">
-            <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)', marginBottom: '4px' }}>
-                Parameter Sweep Builder
-              </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Symbol</label>
-                  <select data-testid="backtest-sweep-symbol" value={sweepSymbol} onChange={e => setSweepSymbol(e.target.value)}
-                    style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}>
-                    {BACKTEST_SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Strategy</label>
-                  <select data-testid="backtest-sweep-strategy" value={sweepStrategy} onChange={e => setSweepStrategy(e.target.value)}
-                    style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}>
-                    {BACKTEST_STRATEGIES.map(s => <option key={s} value={s}>{STRATEGY_LABELS[s]}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div data-testid="backtest-sweep-params" style={{ padding: '12px', background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-md)' }}>
-                <div style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', marginBottom: '8px' }}>Grid Parameters (fixed for determinism)</div>
-                <div style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--ui2-text-secondary)', lineHeight: 1.6 }}>
-                  <div>SMA Fast: 5 → 25 (step 5)</div>
-                  <div>SMA Slow: 20 → 60 (step 10)</div>
-                </div>
-              </div>
-              <button data-testid="backtest-sweep-run-btn" onClick={() => {
-                const config: SweepConfig = {
-                  sweep_id: `sweep-${fnv32(`${sweepSymbol}:${sweepStrategy}:sweep`).toString(16).slice(0, 8)}`,
-                  symbol: sweepSymbol,
-                  strategy_id: sweepStrategy,
-                  params: [
-                    { name: 'sma_fast', min: 5, max: 25, step: 5 },
-                    { name: 'sma_slow', min: 20, max: 60, step: 10 },
-                  ],
-                  metric: 'sharpe',
-                };
-                const result = backtestDepthStore.runSweep(config);
-                setActiveSweepId(result.sweep_id);
-              }} style={{
-                padding: '8px 20px', background: 'var(--ui2-brand-primary)', color: 'white',
-                border: 'none', borderRadius: 'var(--ui2-radius-md)', fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', alignSelf: 'flex-start',
-              }}>Run Sweep</button>
+              {run && run.status === 'failed' && (
+                <ErrorCard message={run.error || 'Backtest failed'} testId="backtest-run-fail" />
+              )}
             </div>
+          )}
 
-            {/* Sweep Results */}
-            {activeSweepId && depthState.sweeps[activeSweepId] && (() => {
-              const sweep = depthState.sweeps[activeSweepId];
-              return (
-                <div data-testid="backtest-sweep-results" style={{ marginTop: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      Sweep Results — {sweep.cells.length} cells
+          {/* ═══ RUNS TAB ═══ */}
+          {activeTab === 'runs' && (
+            <div data-testid="backtest-runs-manager">
+              {state.runsLoading ? (
+                <Skeleton height={200} testId="runs-skeleton" />
+              ) : state.runs.length === 0 ? (
+                <EmptyState title="No runs yet" description="Create a new backtest from the New Run tab." testId="backtest-empty-runs" />
+              ) : (
+                <DataTable
+                  data={state.runs.map((r: BacktestRunResult) => ({
+                    run_id: r.run_id,
+                    symbol: r.config.symbol,
+                    strategy: r.config.strategy_id,
+                    status: r.status,
+                    return_pct: r.metrics?.total_return_pct ?? null,
+                    sharpe: r.metrics?.sharpe_ratio ?? null,
+                    max_dd: r.metrics?.max_drawdown_pct ?? null,
+                    trades: r.metrics?.total_trades ?? '-',
+                    date: fmtDate(r.completed_at || r.started_at),
+                  }))}
+                  columns={[
+                    { key: 'run_id', label: 'Run ID', width: '120px' },
+                    { key: 'symbol', label: 'Symbol', width: '70px' },
+                    { key: 'strategy', label: 'Strategy', width: '140px' },
+                    { key: 'status', label: 'Status', width: '90px', render: (v: unknown) => {
+                      const s = v as string;
+                      const variant = s === 'completed' ? 'success' : s === 'failed' ? 'danger' : 'neutral';
+                      return <StatusBadge variant={variant} testId={`run-status-${s}`}>{s}</StatusBadge>;
+                    }},
+                    { key: 'return_pct', label: 'Return', width: '80px', render: (v: unknown) => v != null ? <span style={{ color: pctColor(v as number) }}>{(v as number).toFixed(1)}%</span> : '-' },
+                    { key: 'sharpe', label: 'Sharpe', width: '70px', render: (v: unknown) => v != null ? (v as number).toFixed(2) : '-' },
+                    { key: 'max_dd', label: 'Max DD', width: '80px', render: (v: unknown) => v != null ? `${(v as number).toFixed(1)}%` : '-' },
+                    { key: 'trades', label: 'Trades', width: '60px' },
+                    { key: 'date', label: 'Date', width: '100px' },
+                    { key: 'run_id', label: '', width: '70px', render: (_v: unknown, row: Record<string, unknown>) => (
+                      <button
+                        data-testid={`open-run-${row['run_id']}`}
+                        onClick={() => {
+                          const found = state.runs.find((r: BacktestRunResult) => r.run_id === row['run_id']);
+                          if (found) { backtestEngineStore.selectRun(found); setActiveTab('results'); }
+                        }}
+                        style={{ padding: '3px 10px', fontSize: '11px', background: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        View
+                      </button>
+                    )},
+                  ]}
+                  keyField="run_id"
+                  testId="backtest-runs-table"
+                />
+              )}
+            </div>
+          )}
+
+          {/* ═══ RESULTS TAB ═══ */}
+          {activeTab === 'results' && (
+            <div data-testid="backtest-results-panel">
+              {!run ? (
+                <EmptyState title="No run selected" description="Run a backtest or select one from the Runs tab." testId="backtest-empty-results" />
+              ) : run.status === 'failed' ? (
+                <ErrorCard message={run.error || 'Backtest failed'} testId="backtest-results-error" />
+              ) : !metrics ? (
+                <Skeleton height={400} testId="results-skeleton" />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div data-testid="results-title" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text, #e2e8f0)' }}>
+                        {run.config.symbol} · {run.config.strategy_id} · {fmtDate(run.config.start_date)} → {fmtDate(run.config.end_date)}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', fontFamily: 'monospace', marginTop: '2px' }}>
+                        Run {run.run_id} · Hash {run.config_hash.slice(0, 12)}… · {run.provenance?.provider || '-'}
+                      </div>
                     </div>
-                    <span data-testid="backtest-sweep-hash" style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--ui2-text-muted)' }}>
-                      Hash: {sweep.hash}
-                    </span>
+                    <StatusBadge variant="success" testId="results-status">{run.status}</StatusBadge>
                   </div>
 
-                  {/* Heatmap grid */}
-                  <div data-testid="backtest-sweep-heatmap" style={{ overflowX: 'auto', marginBottom: '16px' }}>
-                    <table style={{ borderCollapse: 'collapse', fontSize: '11px' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ padding: '6px 10px', color: 'var(--ui2-text-muted)', textAlign: 'left' }}>Fast \ Slow</th>
-                          {[20, 30, 40, 50, 60].map(v => (
-                            <th key={v} style={{ padding: '6px 10px', color: 'var(--ui2-text-muted)', textAlign: 'center' }}>{v}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[5, 10, 15, 20, 25].map(fast => (
-                          <tr key={fast}>
-                            <td style={{ padding: '6px 10px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>{fast}</td>
-                            {[20, 30, 40, 50, 60].map(slow => {
-                              const cell = sweep.cells.find(c => c.param_values['sma_fast'] === fast && c.param_values['sma_slow'] === slow);
-                              const sharpe = cell?.sharpe ?? 0;
-                              const bg = sharpe > 1.5 ? 'rgba(34,197,94,0.25)' : sharpe > 0.5 ? 'rgba(34,197,94,0.1)' : sharpe > 0 ? 'rgba(250,204,21,0.15)' : 'rgba(239,68,68,0.15)';
+                  {/* Primary KPIs */}
+                  <div data-testid="kpi-grid-primary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
+                    <KpiCard label="CAGR" value={`${metrics.cagr_pct.toFixed(1)}%`} color={pctColor(metrics.cagr_pct)} testId="kpi-cagr" />
+                    <KpiCard label="Sharpe" value={metrics.sharpe_ratio.toFixed(2)} testId="kpi-sharpe" />
+                    <KpiCard label="Sortino" value={metrics.sortino_ratio.toFixed(2)} testId="kpi-sortino" />
+                    <KpiCard label="Max DD" value={`${metrics.max_drawdown_pct.toFixed(1)}%`} color="#ef4444" testId="kpi-maxdd" />
+                    <KpiCard label="Win Rate" value={`${metrics.win_rate_pct.toFixed(0)}%`} testId="kpi-winrate" />
+                    <KpiCard label="Profit Factor" value={metrics.profit_factor.toFixed(2)} testId="kpi-pf" />
+                    <KpiCard label="Expectancy" value={`$${metrics.expectancy.toFixed(0)}`} color={pctColor(metrics.expectancy)} testId="kpi-exp" />
+                    <KpiCard label="Trades" value={String(metrics.total_trades)} testId="kpi-trades" />
+                  </div>
+
+                  {/* Secondary KPIs */}
+                  <div data-testid="kpi-grid-secondary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                    <KpiCard label="Total Return" value={`${metrics.total_return_pct.toFixed(1)}%`} color={pctColor(metrics.total_return_pct)} testId="kpi-return" />
+                    <KpiCard label="Final Equity" value={`$${metrics.final_equity.toLocaleString()}`} testId="kpi-equity" />
+                    <KpiCard label="Avg Win" value={`$${metrics.avg_win.toFixed(0)}`} color="#22c55e" testId="kpi-avgwin" />
+                    <KpiCard label="Avg Loss" value={`$${metrics.avg_loss.toFixed(0)}`} color="#ef4444" testId="kpi-avgloss" />
+                    <KpiCard label="Exposure" value={`${metrics.exposure_pct.toFixed(0)}%`} testId="kpi-exposure" />
+                    <KpiCard label="Turnover" value={`${metrics.turnover.toFixed(1)}x`} testId="kpi-turnover" />
+                  </div>
+
+                  {/* Equity curve */}
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text, #e2e8f0)', marginBottom: '6px' }}>Equity Curve</div>
+                    <EquityCurveChart data={run.equity_curve} testId="equity-chart" />
+                  </div>
+
+                  {/* Drawdown */}
+                  {run.drawdown_series.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text, #e2e8f0)', marginBottom: '6px' }}>Drawdown</div>
+                      <DrawdownChart data={run.drawdown_series} testId="drawdown-chart" />
+                    </div>
+                  )}
+
+                  {/* Trades table */}
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text, #e2e8f0)', marginBottom: '6px' }}>
+                      Trades ({run.trades.length})
+                    </div>
+                    {run.trades.length === 0 ? (
+                      <div data-testid="no-trades-msg" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted, #94a3b8)', fontSize: '12px' }}>
+                        No trades generated — strategy conditions were never met.
+                      </div>
+                    ) : (
+                      <DataTable
+                        data={run.trades as unknown as Record<string, unknown>[]}
+                        columns={tradeColumns}
+                        keyField="trade_id"
+                        testId="trades-table"
+                      />
+                    )}
+                  </div>
+
+                  {/* Provenance */}
+                  {run.provenance && (
+                    <div data-testid="provenance-info" style={{
+                      padding: '10px 14px', background: 'var(--bg-panel, #1e1e32)', border: '1px solid var(--border, #2d2d44)',
+                      borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-muted, #94a3b8)',
+                    }}>
+                      Source: {run.provenance.source} · Provider: {run.provenance.provider} · Checksum: {run.provenance.checksum?.slice(0, 16)}…
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ═══ COMPARE TAB ═══ */}
+          {activeTab === 'compare' && (
+            <div data-testid="backtest-compare-panel">
+              {state.runs.filter((r: BacktestRunResult) => r.status === 'completed').length < 2 ? (
+                <EmptyState title="Need 2+ completed runs" description="Run at least two backtests to compare." testId="compare-empty" />
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelCss}>Run A</label>
+                      <select data-testid="compare-select-a" value={compareA} onChange={e => setCompareA(e.target.value)} style={selectCss}>
+                        <option value="">Select…</option>
+                        {state.runs.filter((r: BacktestRunResult) => r.status === 'completed').map((r: BacktestRunResult) => (
+                          <option key={r.run_id} value={r.run_id}>{r.run_id} ({r.config.symbol} · {r.config.strategy_id})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelCss}>Run B</label>
+                      <select data-testid="compare-select-b" value={compareB} onChange={e => setCompareB(e.target.value)} style={selectCss}>
+                        <option value="">Select…</option>
+                        {state.runs.filter((r: BacktestRunResult) => r.status === 'completed').map((r: BacktestRunResult) => (
+                          <option key={r.run_id} value={r.run_id}>{r.run_id} ({r.config.symbol} · {r.config.strategy_id})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      data-testid="compare-btn"
+                      onClick={handleCompare}
+                      disabled={!compareA || !compareB || compareA === compareB || state.compareLoading}
+                      style={{ ...btnPrimary, opacity: (!compareA || !compareB || state.compareLoading) ? 0.5 : 1 }}
+                    >
+                      {state.compareLoading ? 'Comparing…' : 'Compare'}
+                    </button>
+                  </div>
+
+                  {state.compareResult && (() => {
+                    const cr = state.compareResult;
+                    const rows: [keyof BacktestMetrics, string][] = [
+                      ['cagr_pct', 'CAGR (%)'],
+                      ['total_return_pct', 'Total Return (%)'],
+                      ['sharpe_ratio', 'Sharpe Ratio'],
+                      ['sortino_ratio', 'Sortino Ratio'],
+                      ['max_drawdown_pct', 'Max Drawdown (%)'],
+                      ['win_rate_pct', 'Win Rate (%)'],
+                      ['total_trades', 'Total Trades'],
+                      ['profit_factor', 'Profit Factor'],
+                      ['expectancy', 'Expectancy ($)'],
+                      ['final_equity', 'Final Equity ($)'],
+                    ];
+                    return (
+                      <div data-testid="compare-results">
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text, #e2e8f0)', marginBottom: '10px' }}>
+                          {cr.run_id_a} vs {cr.run_id_b}
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '2px solid var(--border, #2d2d44)' }}>
+                              <th style={{ textAlign: 'left', padding: '8px', color: 'var(--text-muted, #94a3b8)' }}>Metric</th>
+                              <th style={{ textAlign: 'right', padding: '8px', color: 'var(--text-muted, #94a3b8)' }}>Run A</th>
+                              <th style={{ textAlign: 'right', padding: '8px', color: 'var(--text-muted, #94a3b8)' }}>Run B</th>
+                              <th style={{ textAlign: 'right', padding: '8px', color: 'var(--text-muted, #94a3b8)' }}>Δ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map(([k, label]) => {
+                              const a = cr.metrics_a[k];
+                              const b = cr.metrics_b[k];
+                              const delta = typeof a === 'number' && typeof b === 'number' ? b - a : 0;
                               return (
-                                <td key={slow} data-testid={`backtest-sweep-cell-${fast}-${slow}`} style={{
-                                  padding: '8px 12px', textAlign: 'center', background: bg,
-                                  border: '1px solid var(--ui2-border)',
-                                  fontWeight: cell?.cell_id === sweep.best_cell_id ? 700 : 400,
-                                  color: cell?.cell_id === sweep.best_cell_id ? 'var(--ui2-accent)' : 'var(--ui2-text-primary)',
-                                }}>
-                                  {sharpe.toFixed(2)}
-                                </td>
+                                <tr key={k} data-testid={`compare-row-${k}`} style={{ borderBottom: '1px solid var(--border, #2d2d44)' }}>
+                                  <td style={{ padding: '8px', color: 'var(--text, #e2e8f0)' }}>{label}</td>
+                                  <td style={{ textAlign: 'right', padding: '8px', fontFamily: 'monospace' }}>{typeof a === 'number' ? a.toFixed(2) : a}</td>
+                                  <td style={{ textAlign: 'right', padding: '8px', fontFamily: 'monospace' }}>{typeof b === 'number' ? b.toFixed(2) : b}</td>
+                                  <td style={{ textAlign: 'right', padding: '8px', fontFamily: 'monospace', fontWeight: 600, color: pctColor(delta) }}>
+                                    {delta >= 0 ? '+' : ''}{delta.toFixed(2)}
+                                  </td>
+                                </tr>
                               );
                             })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                          </tbody>
+                        </table>
 
-                  {/* Best cell */}
-                  <div data-testid="backtest-sweep-best" style={{
-                    padding: '8px 12px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
-                    borderRadius: 'var(--ui2-radius-sm)', fontSize: '12px', marginBottom: '12px',
-                  }}>
-                    Best: {sweep.best_cell_id} — Sharpe {sweep.cells.find(c => c.cell_id === sweep.best_cell_id)?.sharpe.toFixed(2)}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+                        {/* equity overlay */}
+                        {(() => {
+                          const rA = state.runs.find((r: BacktestRunResult) => r.run_id === cr.run_id_a);
+                          const rB = state.runs.find((r: BacktestRunResult) => r.run_id === cr.run_id_b);
+                          if (rA?.equity_curve?.length && rB?.equity_curve?.length) {
+                            return (
+                              <div style={{ marginTop: '16px' }}>
+                                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text, #e2e8f0)', marginBottom: '6px' }}>Equity Curve Overlay</div>
+                                <CompareEquityChart dataA={rA.equity_curve} dataB={rB.equity_curve} labelA={cr.run_id_a} labelB={cr.run_id_b} testId="compare-equity-chart" />
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
 
-        {/* ── Walk-Forward Tab ── */}
-        {activeTab === 'walkforward' && (
-          <div data-testid="backtest-wf-panel">
-            <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>Walk-Forward Validation</div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Symbol</label>
-                  <select data-testid="backtest-wf-symbol" value={wfSymbol} onChange={e => setWfSymbol(e.target.value)}
-                    style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}>
-                    {BACKTEST_SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Strategy</label>
-                  <select data-testid="backtest-wf-strategy" value={wfStrategy} onChange={e => setWfStrategy(e.target.value)}
-                    style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}>
-                    {BACKTEST_STRATEGIES.map(s => <option key={s} value={s}>{STRATEGY_LABELS[s]}</option>)}
-                  </select>
+          {/* ═══ DATA HEALTH TAB ═══ */}
+          {activeTab === 'data-health' && (
+            <div data-testid="backtest-data-health">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text, #e2e8f0)' }}>Data Coverage (yfinance)</div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    data-testid="refresh-health-btn"
+                    onClick={() => backtestEngineStore.fetchDataHealth()}
+                    style={{ ...btnPrimary, background: '#6366f1', fontSize: '12px', padding: '6px 14px' }}
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    data-testid="prime-btn"
+                    onClick={() => backtestEngineStore.primeData()}
+                    disabled={state.primeLoading}
+                    style={{ ...btnPrimary, fontSize: '12px', padding: '6px 14px', opacity: state.primeLoading ? 0.5 : 1 }}
+                  >
+                    {state.primeLoading ? 'Priming…' : 'Prime All (7y)'}
+                  </button>
                 </div>
               </div>
-              <button data-testid="backtest-wf-run-btn" onClick={() => {
-                const result = backtestDepthStore.runWalkForward(wfSymbol, wfStrategy);
-                setActiveWfId(result.wf_id);
-              }} style={{
-                padding: '8px 20px', background: 'var(--ui2-brand-primary)', color: 'white',
-                border: 'none', borderRadius: 'var(--ui2-radius-md)', fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', alignSelf: 'flex-start',
-              }}>Run Walk-Forward</button>
-            </div>
 
-            {activeWfId && depthState.walkForwards[activeWfId] && (() => {
-              const wf = depthState.walkForwards[activeWfId];
-              return (
-                <div data-testid="backtest-wf-results" style={{ marginTop: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      Walk-Forward Results — {wf.windows.length} windows
-                    </div>
-                    <span data-testid="backtest-wf-hash" style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--ui2-text-muted)' }}>
-                      Hash: {wf.hash}
-                    </span>
-                  </div>
-
-                  {/* Summary */}
-                  <div data-testid="backtest-wf-summary" style={{
-                    display: 'flex', gap: '16px', padding: '10px 14px', marginBottom: '12px',
-                    background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)',
-                    borderRadius: 'var(--ui2-radius-md)',
-                  }}>
-                    <div><span style={{ fontSize: '11px', color: 'var(--ui2-text-muted)' }}>OOS Sharpe</span><br/>
-                      <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ui2-text-primary)' }}>{wf.aggregate_sharpe.toFixed(2)}</span></div>
-                    <div><span style={{ fontSize: '11px', color: 'var(--ui2-text-muted)' }}>OOS Return</span><br/>
-                      <span style={{ fontSize: '16px', fontWeight: 700, color: wf.aggregate_return >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)' }}>{wf.aggregate_return.toFixed(2)}%</span></div>
-                    <div><span style={{ fontSize: '11px', color: 'var(--ui2-text-muted)' }}>OOS Degradation</span><br/>
-                      <span style={{ fontSize: '16px', fontWeight: 700, color: wf.oos_degradation > 50 ? 'var(--ui2-danger)' : 'var(--ui2-text-primary)' }}>{wf.oos_degradation.toFixed(1)}%</span></div>
-                  </div>
-
-                  {/* Windows table */}
-                  <table data-testid="backtest-wf-windows" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                    <thead><tr style={{ borderBottom: '1px solid var(--ui2-border)' }}>
-                      <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>#</th>
-                      <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>Train</th>
-                      <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>Test</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>IS Sharpe</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>OOS Sharpe</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>IS Return</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>OOS Return</th>
-                    </tr></thead>
-                    <tbody>
-                      {wf.windows.map(w => (
-                        <tr key={w.window_id} data-testid={`backtest-wf-window-${w.window_id}`} style={{ borderBottom: '1px solid var(--ui2-border)' }}>
-                          <td style={{ padding: '6px 8px', color: 'var(--ui2-text-primary)', fontWeight: 600 }}>{w.window_id}</td>
-                          <td style={{ padding: '6px 8px', color: 'var(--ui2-text-secondary)', fontSize: '11px' }}>{w.train_start} → {w.train_end}</td>
-                          <td style={{ padding: '6px 8px', color: 'var(--ui2-text-secondary)', fontSize: '11px' }}>{w.test_start} → {w.test_end}</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-primary)' }}>{w.in_sample_sharpe.toFixed(2)}</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: w.out_of_sample_sharpe >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)' }}>{w.out_of_sample_sharpe.toFixed(2)}</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-secondary)' }}>{w.in_sample_return.toFixed(2)}%</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: w.out_of_sample_return >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)' }}>{w.out_of_sample_return.toFixed(2)}%</td>
-                        </tr>
+              {state.dataHealthLoading ? (
+                <Skeleton height={200} testId="health-skeleton" />
+              ) : state.dataHealth.length === 0 ? (
+                <EmptyState
+                  title="No data primed"
+                  description="Click 'Prime All (7y)' to download 7 years of daily history for the default universe."
+                  testId="empty-health"
+                />
+              ) : (
+                <table data-testid="health-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid var(--border, #2d2d44)' }}>
+                      {['Symbol', 'Status', 'Rows', 'Earliest', 'Latest', 'Missing %', 'Provider', 'Last Fetch'].map(h => (
+                        <th key={h} style={{ textAlign: 'left', padding: '8px', color: 'var(--text-muted, #94a3b8)', fontSize: '11px', textTransform: 'uppercase' }}>{h}</th>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state.dataHealth.map((h: SymbolHealthInfo) => (
+                      <tr key={h.symbol} data-testid={`health-row-${h.symbol}`} style={{ borderBottom: '1px solid var(--border, #2d2d44)' }}>
+                        <td style={{ padding: '8px', fontWeight: 600, color: 'var(--text, #e2e8f0)' }}>{h.symbol}</td>
+                        <td style={{ padding: '8px' }}>
+                          <StatusBadge variant={h.status === 'ok' ? 'success' : h.total_rows === 0 ? 'neutral' : 'warning'} testId={`health-status-${h.symbol}`}>
+                            {h.total_rows === 0 ? 'not primed' : h.status}
+                          </StatusBadge>
+                        </td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace' }}>{h.total_rows || '-'}</td>
+                        <td style={{ padding: '8px' }}>{h.earliest_date || '-'}</td>
+                        <td style={{ padding: '8px' }}>{h.latest_date || '-'}</td>
+                        <td style={{ padding: '8px', fontFamily: 'monospace', color: h.missing_pct > 5 ? '#ef4444' : undefined }}>{h.total_rows ? `${h.missing_pct}%` : '-'}</td>
+                        <td style={{ padding: '8px', color: 'var(--text-muted, #94a3b8)' }}>{h.provider || '-'}</td>
+                        <td style={{ padding: '8px', fontSize: '11px', color: 'var(--text-muted, #94a3b8)' }}>{h.last_fetch ? fmtDate(h.last_fetch) : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
-        {/* ── Robustness Tab ── */}
-        {activeTab === 'robustness' && (
-          <div data-testid="backtest-rob-panel">
-            <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>Robustness Checks</div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Symbol</label>
-                  <select data-testid="backtest-rob-symbol" value={robSymbol} onChange={e => setRobSymbol(e.target.value)}
-                    style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}>
-                    {BACKTEST_SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+              {state.primeResult && (
+                <div data-testid="prime-result" style={{ marginTop: '12px', padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '6px', fontSize: '12px' }}>
+                  Prime complete. {Object.values((state.primeResult as Record<string, unknown>).results as Record<string, Record<string, string>> || {}).filter((r) => r.status === 'ok').length} symbols primed.
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '11px', color: 'var(--ui2-text-muted)', display: 'block', marginBottom: '4px' }}>Strategy</label>
-                  <select data-testid="backtest-rob-strategy" value={robStrategy} onChange={e => setRobStrategy(e.target.value)}
-                    style={{ padding: '6px 10px', background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)', fontSize: '13px', width: '100%' }}>
-                    {BACKTEST_STRATEGIES.map(s => <option key={s} value={s}>{STRATEGY_LABELS[s]}</option>)}
-                  </select>
-                </div>
-              </div>
-              <button data-testid="backtest-rob-run-btn" onClick={() => {
-                const result = backtestDepthStore.runRobustness(robSymbol, robStrategy);
-                setActiveRobId(result.rob_id);
-              }} style={{
-                padding: '8px 20px', background: 'var(--ui2-brand-primary)', color: 'white',
-                border: 'none', borderRadius: 'var(--ui2-radius-md)', fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', alignSelf: 'flex-start',
-              }}>Run Robustness</button>
+              )}
             </div>
+          )}
 
-            {activeRobId && depthState.robustness[activeRobId] && (() => {
-              const rob = depthState.robustness[activeRobId];
-              return (
-                <div data-testid="backtest-rob-results" style={{ marginTop: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      Robustness Score: <span style={{ color: rob.robustness_score >= 75 ? 'var(--ui2-success)' : rob.robustness_score >= 50 ? 'var(--ui2-warning, #f59e0b)' : 'var(--ui2-danger)' }}>{rob.robustness_score}%</span>
-                    </div>
-                    <span data-testid="backtest-rob-hash" style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--ui2-text-muted)' }}>
-                      Hash: {rob.hash}
-                    </span>
-                  </div>
+        </div>
 
-                  <table data-testid="backtest-rob-scenarios" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                    <thead><tr style={{ borderBottom: '1px solid var(--ui2-border)' }}>
-                      <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>Scenario</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>Fee×</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>Slip×</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>Delay</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>Sharpe</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>ΔSharpe</th>
-                      <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-muted)' }}>Return</th>
-                    </tr></thead>
-                    <tbody>
-                      {rob.scenarios.map((s, i) => (
-                        <tr key={s.scenario_id} data-testid={`backtest-rob-scenario-${i}`} style={{ borderBottom: '1px solid var(--ui2-border)' }}>
-                          <td style={{ padding: '6px 8px', color: 'var(--ui2-text-primary)', fontWeight: s.label === 'Base Case' ? 700 : 400 }}>{s.label}</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-secondary)' }}>{s.fee_multiplier}×</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-secondary)' }}>{s.slippage_multiplier}×</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--ui2-text-secondary)' }}>{s.delay_ms}ms</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: s.sharpe >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)' }}>{s.sharpe.toFixed(2)}</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: s.delta_sharpe >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)' }}>{s.delta_sharpe >= 0 ? '+' : ''}{s.delta_sharpe.toFixed(2)}</td>
-                          <td style={{ textAlign: 'right', padding: '6px 8px', color: s.total_return >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)' }}>{s.total_return.toFixed(2)}%</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+        <div data-testid="backtest-ready" style={{ display: 'none' }} />
       </div>
-      <div data-testid="backtest-ready" style={{ display: 'none' }} />
-    </div>
     </>
   );
 }

@@ -24,15 +24,8 @@ export function TradingBanner() {
                 setAccount(data);
                 setMode(data.is_paper ? 'paper' : 'live');
             } catch (e) {
-                // Mock
-                setAccount({
-                    account_id: 'PA30UB1Y6NLQ',
-                    status: 'ACTIVE',
-                    equity: 102848.62,
-                    buying_power: 205697.24,
-                    is_paper: true,
-                });
-                setMode('paper');
+                // No fallback — real account data only
+                setAccount(null);
             }
         };
         fetchAccount();

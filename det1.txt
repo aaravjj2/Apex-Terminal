@@ -1,0 +1,37 @@
+﻿reality\reality-broker-alpaca.spec.ts > Reality ΓÇö Alpaca Paper Broker > Broker account returns Alpaca schema or error : passed
+reality\reality-broker-alpaca.spec.ts > Reality ΓÇö Alpaca Paper Broker > Broker health shows connected with Alpaca account : passed
+reality\reality-broker-alpaca.spec.ts > Reality ΓÇö Alpaca Paper Broker > Broker orders returns wrapped array or error : passed
+reality\reality-broker-alpaca.spec.ts > Reality ΓÇö Alpaca Paper Broker > Broker positions returns wrapped array or error : passed
+reality\reality-broker-alpaca.spec.ts > Reality ΓÇö Alpaca Paper Broker > BrokerV2 page renders without crash : passed
+reality\reality-json-contract.spec.ts > Reality ΓÇö JSON Error Contract > 404 on unknown endpoint returns JSON error : passed
+reality\reality-json-contract.spec.ts > Reality ΓÇö JSON Error Contract > All error responses include X-Correlation-Id header : passed
+reality\reality-json-contract.spec.ts > Reality ΓÇö JSON Error Contract > Broker health returns valid JSON : passed
+reality\reality-json-contract.spec.ts > Reality ΓÇö JSON Error Contract > Health endpoint returns valid JSON : passed
+reality\reality-json-contract.spec.ts > Reality ΓÇö JSON Error Contract > Market session returns valid JSON : passed
+reality\reality-market-session.spec.ts > Reality ΓÇö Market Session > Market badge does NOT show hardcoded MARKET CLOSED : passed
+reality\reality-market-session.spec.ts > Reality ΓÇö Market Session > Market session schema is complete : passed
+reality\reality-market-session.spec.ts > Reality ΓÇö Market Session > Session type is one of valid values : passed
+reality\reality-market-session.spec.ts > Reality ΓÇö Market Session > UI shows market status badge with session attribute : passed
+reality\reality-no-demo.spec.ts > Reality ΓÇö No Demo Data > Autopilot activity feed starts empty : passed
+reality\reality-no-demo.spec.ts > Reality ΓÇö No Demo Data > Backtest runs list starts empty : passed
+reality\reality-no-demo.spec.ts > Reality ΓÇö No Demo Data > Market tape does not show DEMO STREAM : passed
+reality\reality-no-demo.spec.ts > Reality ΓÇö No Demo Data > No DEMO mode badge in header or settings : passed
+reality\reality-no-demo.spec.ts > Reality ΓÇö No Demo Data > Settings shows LIVE mode, not DEMO : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 00 ΓÇö App Shell loaded : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 01 ΓÇö Top bar status pills : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 02 ΓÇö Data mode badge says Online : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 03 ΓÇö Left rail navigation : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 04 ΓÇö Version endpoint JSON : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 05 ΓÇö Market session badge : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 06 ΓÇö Broker V2 (Alpaca Paper) : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 07 ΓÇö Autopilot page : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 08 ΓÇö Backtester V3 : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 09 ΓÇö Search page : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 10 ΓÇö Workflow Builder : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 11 ΓÇö Observability / Ops Center : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 12 ΓÇö Settings page : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 13 ΓÇö Command palette : passed
+reality\reality-screenshots.spec.ts > Reality ΓÇö Screenshot Pack (15) > 14 ΓÇö Backend health JSON : passed
+reality\reality-tour.spec.ts > Reality ΓÇö Full Tour Walkthrough > Complete UI walkthrough (ΓëÑ3 min video) : passed
+reality\reality-version-match.spec.ts > Reality ΓÇö Version Fingerprint > GET /api/ops/version returns valid schema : passed
+reality\reality-version-match.spec.ts > Reality ΓÇö Version Fingerprint > Version mismatch banner hidden when SHAs match : passed

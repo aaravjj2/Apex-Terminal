@@ -1,0 +1,1894 @@
+﻿{
+  "config": {
+    "configFile": "C:\\Tradingview\\Tradingview recreation\\frontend\\playwright.config.ts",
+    "rootDir": "C:/Tradingview/Tradingview recreation/frontend/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Tradingview/Tradingview recreation/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Tradingview/Tradingview recreation/frontend/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "reality\\reality-broker-alpaca.spec.ts",
+      "file": "reality/reality-broker-alpaca.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Reality ΓÇö Alpaca Paper Broker",
+          "file": "reality/reality-broker-alpaca.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Broker health shows connected with Alpaca account",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 660,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:42.712Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-broker-alp-1d456-nnected-with-Alpaca-account-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4e2ed0464761685675a9-261bd8fb553b1392193c",
+              "file": "reality/reality-broker-alpaca.spec.ts",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "Broker account returns Alpaca schema or error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 184,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:43.388Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-broker-alp-ee348-urns-Alpaca-schema-or-error-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4e2ed0464761685675a9-7105b932cd0c8c93100b",
+              "file": "reality/reality-broker-alpaca.spec.ts",
+              "line": 27,
+              "column": 3
+            },
+            {
+              "title": "Broker orders returns wrapped array or error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 255,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:43.582Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-broker-alp-30fd1-urns-wrapped-array-or-error-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4e2ed0464761685675a9-db4e634162884ff767d8",
+              "file": "reality/reality-broker-alpaca.spec.ts",
+              "line": 48,
+              "column": 3
+            },
+            {
+              "title": "Broker positions returns wrapped array or error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 322,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:43.845Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-broker-alp-78870-urns-wrapped-array-or-error-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4e2ed0464761685675a9-f7d65a4443cd6943dd31",
+              "file": "reality/reality-broker-alpaca.spec.ts",
+              "line": 61,
+              "column": 3
+            },
+            {
+              "title": "BrokerV2 page renders without crash",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3399,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:44.175Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-broker-alp-7baaa--page-renders-without-crash-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-broker-alp-7baaa--page-renders-without-crash-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-broker-alp-7baaa--page-renders-without-crash-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4e2ed0464761685675a9-7d7825698c899ed4f5cf",
+              "file": "reality/reality-broker-alpaca.spec.ts",
+              "line": 75,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "reality\\reality-json-contract.spec.ts",
+      "file": "reality/reality-json-contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Reality ΓÇö JSON Error Contract",
+          "file": "reality/reality-json-contract.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "404 on unknown endpoint returns JSON error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 712,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:47.739Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-json-contr-b011b-endpoint-returns-JSON-error-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "acdfd34d015be0efe560-a515b5aae0104c8bb908",
+              "file": "reality/reality-json-contract.spec.ts",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "All error responses include X-Correlation-Id header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:48.465Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-json-contr-d22a2-ude-X-Correlation-Id-header-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "acdfd34d015be0efe560-f237d8fd3e0787c059dc",
+              "file": "reality/reality-json-contract.spec.ts",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "Health endpoint returns valid JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 688,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:48.491Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-json-contr-15340-endpoint-returns-valid-JSON-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "acdfd34d015be0efe560-2cf2eb90a583e5614fde",
+              "file": "reality/reality-json-contract.spec.ts",
+              "line": 29,
+              "column": 3
+            },
+            {
+              "title": "Broker health returns valid JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 246,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:49.192Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-json-contr-fcadc-r-health-returns-valid-JSON-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "acdfd34d015be0efe560-794f9bd63b866e03e32e",
+              "file": "reality/reality-json-contract.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "Market session returns valid JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:49.456Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-json-contr-a8cfc--session-returns-valid-JSON-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "acdfd34d015be0efe560-a13c076937805a1e586b",
+              "file": "reality/reality-json-contract.spec.ts",
+              "line": 50,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "reality\\reality-market-session.spec.ts",
+      "file": "reality/reality-market-session.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Reality ΓÇö Market Session",
+          "file": "reality/reality-market-session.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Market session schema is complete",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:49.507Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-market-ses-28823--session-schema-is-complete-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dc42fcf05b2817c925fd-72b7421ef987726e22c0",
+              "file": "reality/reality-market-session.spec.ts",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "Session type is one of valid values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:49.529Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-market-ses-3f7ba-type-is-one-of-valid-values-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dc42fcf05b2817c925fd-7431a2404d5c0109a11f",
+              "file": "reality/reality-market-session.spec.ts",
+              "line": 26,
+              "column": 3
+            },
+            {
+              "title": "UI shows market status badge with session attribute",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4697,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:49.550Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-market-ses-303b7-adge-with-session-attribute-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-market-ses-303b7-adge-with-session-attribute-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-market-ses-303b7-adge-with-session-attribute-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dc42fcf05b2817c925fd-f9d0bdfb56680ccdc4e2",
+              "file": "reality/reality-market-session.spec.ts",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "Market badge does NOT show hardcoded MARKET CLOSED",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4784,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:54.283Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-market-ses-8934e-how-hardcoded-MARKET-CLOSED-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-market-ses-8934e-how-hardcoded-MARKET-CLOSED-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-market-ses-8934e-how-hardcoded-MARKET-CLOSED-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dc42fcf05b2817c925fd-78f23febf09453655160",
+              "file": "reality/reality-market-session.spec.ts",
+              "line": 46,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "reality\\reality-no-demo.spec.ts",
+      "file": "reality/reality-no-demo.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Reality ΓÇö No Demo Data",
+          "file": "reality/reality-no-demo.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Market tape does not show DEMO STREAM",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1726,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:02:59.141Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-4beea-e-does-not-show-DEMO-STREAM-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-4beea-e-does-not-show-DEMO-STREAM-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-4beea-e-does-not-show-DEMO-STREAM-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9bd4addbceee41e432b3-92d29a95d7c2472ad614",
+              "file": "reality/reality-no-demo.spec.ts",
+              "line": 9,
+              "column": 3
+            },
+            {
+              "title": "No DEMO mode badge in header or settings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1756,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:00.903Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-61306-badge-in-header-or-settings-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-61306-badge-in-header-or-settings-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-61306-badge-in-header-or-settings-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9bd4addbceee41e432b3-4875c9dca6449dea90cd",
+              "file": "reality/reality-no-demo.spec.ts",
+              "line": 17,
+              "column": 3
+            },
+            {
+              "title": "Autopilot activity feed starts empty",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1741,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:02.696Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-c82cb--activity-feed-starts-empty-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-c82cb--activity-feed-starts-empty-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-c82cb--activity-feed-starts-empty-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9bd4addbceee41e432b3-32173206e1b6f85fd231",
+              "file": "reality/reality-no-demo.spec.ts",
+              "line": 30,
+              "column": 3
+            },
+            {
+              "title": "Backtest runs list starts empty",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1692,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:04.474Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-d959f-test-runs-list-starts-empty-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-d959f-test-runs-list-starts-empty-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-d959f-test-runs-list-starts-empty-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9bd4addbceee41e432b3-215c90efc96668d20f45",
+              "file": "reality/reality-no-demo.spec.ts",
+              "line": 45,
+              "column": 3
+            },
+            {
+              "title": "Settings shows LIVE mode, not DEMO",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1713,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:06.202Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-49e0f-gs-shows-LIVE-mode-not-DEMO-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-49e0f-gs-shows-LIVE-mode-not-DEMO-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-no-demo-Re-49e0f-gs-shows-LIVE-mode-not-DEMO-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9bd4addbceee41e432b3-0343e1a3b36c89e89e85",
+              "file": "reality/reality-no-demo.spec.ts",
+              "line": 61,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "reality\\reality-screenshots.spec.ts",
+      "file": "reality/reality-screenshots.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Reality ΓÇö Screenshot Pack (15)",
+          "file": "reality/reality-screenshots.spec.ts",
+          "line": 37,
+          "column": 6,
+          "specs": [
+            {
+              "title": "00 ΓÇö App Shell loaded",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1695,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:07.979Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-47ba1-ck-15-00-ΓÇö-App-Shell-loaded-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-47ba1-ck-15-00-ΓÇö-App-Shell-loaded-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-47ba1-ck-15-00-ΓÇö-App-Shell-loaded-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-4f00b264f4bf68ebf04c",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 38,
+              "column": 3
+            },
+            {
+              "title": "01 ΓÇö Top bar status pills",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1791,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:09.721Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-ee22c-5-01-ΓÇö-Top-bar-status-pills-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-ee22c-5-01-ΓÇö-Top-bar-status-pills-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-ee22c-5-01-ΓÇö-Top-bar-status-pills-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-ec27bd987c3b61600809",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 45,
+              "column": 3
+            },
+            {
+              "title": "02 ΓÇö Data mode badge says Online",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1770,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:11.546Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-2ca28-Data-mode-badge-says-Online-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-2ca28-Data-mode-badge-says-Online-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-2ca28-Data-mode-badge-says-Online-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-ec90ad45fd57e7d6fab3",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 55,
+              "column": 3
+            },
+            {
+              "title": "03 ΓÇö Left rail navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1814,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:13.351Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-13813-5-03-ΓÇö-Left-rail-navigation-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-13813-5-03-ΓÇö-Left-rail-navigation-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-13813-5-03-ΓÇö-Left-rail-navigation-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-64866dd0ccbd6732ca9b",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 64,
+              "column": 3
+            },
+            {
+              "title": "04 ΓÇö Version endpoint JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 328,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:15.202Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-a3337--04-ΓÇö-Version-endpoint-JSON-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-20ef4fb9c67288bbec7e",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 76,
+              "column": 3
+            },
+            {
+              "title": "05 ΓÇö Market session badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1753,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:15.539Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-90a0d-5-05-ΓÇö-Market-session-badge-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-90a0d-5-05-ΓÇö-Market-session-badge-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-90a0d-5-05-ΓÇö-Market-session-badge-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-d368b1e9e5edb2e8c9fb",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 85,
+              "column": 3
+            },
+            {
+              "title": "06 ΓÇö Broker V2 (Alpaca Paper)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1840,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:17.321Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-6c1d2-6-ΓÇö-Broker-V2-Alpaca-Paper--chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-6c1d2-6-ΓÇö-Broker-V2-Alpaca-Paper--chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-6c1d2-6-ΓÇö-Broker-V2-Alpaca-Paper--chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-b31487a9451893d22f76",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 96,
+              "column": 3
+            },
+            {
+              "title": "07 ΓÇö Autopilot page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1952,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:19.194Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-fb971-Pack-15-07-ΓÇö-Autopilot-page-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-fb971-Pack-15-07-ΓÇö-Autopilot-page-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-fb971-Pack-15-07-ΓÇö-Autopilot-page-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-f22912cccd3e429b242e",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 104,
+              "column": 3
+            },
+            {
+              "title": "08 ΓÇö Backtester V3",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1871,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:21.186Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-3727b--Pack-15-08-ΓÇö-Backtester-V3-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-3727b--Pack-15-08-ΓÇö-Backtester-V3-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-3727b--Pack-15-08-ΓÇö-Backtester-V3-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-32693cca82744bf3678c",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 112,
+              "column": 3
+            },
+            {
+              "title": "09 ΓÇö Search page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1842,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:23.090Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-b0fa5-ot-Pack-15-09-ΓÇö-Search-page-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-b0fa5-ot-Pack-15-09-ΓÇö-Search-page-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-b0fa5-ot-Pack-15-09-ΓÇö-Search-page-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-6943f0dffd02915f2329",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 120,
+              "column": 3
+            },
+            {
+              "title": "10 ΓÇö Workflow Builder",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1894,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:24.970Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-4b581-ck-15-10-ΓÇö-Workflow-Builder-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-4b581-ck-15-10-ΓÇö-Workflow-Builder-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-4b581-ck-15-10-ΓÇö-Workflow-Builder-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-d86c77e59edd854cca2f",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 128,
+              "column": 3
+            },
+            {
+              "title": "11 ΓÇö Observability / Ops Center",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1867,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:26.903Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-c45ce--ΓÇö-Observability-Ops-Center-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-c45ce--ΓÇö-Observability-Ops-Center-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-c45ce--ΓÇö-Observability-Ops-Center-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-3eb4bdebe603d619bc33",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 136,
+              "column": 3
+            },
+            {
+              "title": "12 ΓÇö Settings page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1897,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:28.809Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-61120--Pack-15-12-ΓÇö-Settings-page-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-61120--Pack-15-12-ΓÇö-Settings-page-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-61120--Pack-15-12-ΓÇö-Settings-page-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-e1b1e5acfd734523dfcb",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 144,
+              "column": 3
+            },
+            {
+              "title": "13 ΓÇö Command palette",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2132,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:30.742Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-23428-ack-15-13-ΓÇö-Command-palette-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-23428-ack-15-13-ΓÇö-Command-palette-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-23428-ack-15-13-ΓÇö-Command-palette-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-c23fd7e6a2c4f4eb258a",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 152,
+              "column": 3
+            },
+            {
+              "title": "14 ΓÇö Backend health JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1028,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:32.907Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-screenshot-fa298-15-14-ΓÇö-Backend-health-JSON-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c620aa45fc72e777486-e0276b5d3e20cd2d064a",
+              "file": "reality/reality-screenshots.spec.ts",
+              "line": 163,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "reality\\reality-tour.spec.ts",
+      "file": "reality/reality-tour.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Reality ΓÇö Full Tour Walkthrough",
+          "file": "reality/reality-tour.spec.ts",
+          "line": 70,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Complete UI walkthrough (ΓëÑ3 min video)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 92997,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:03:33.979Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-tour-Reali-488e2-I-walkthrough-ΓëÑ3-min-video--chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-tour-Reali-488e2-I-walkthrough-ΓëÑ3-min-video--chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-tour-Reali-488e2-I-walkthrough-ΓëÑ3-min-video--chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c374eb27015fa9b65921-9561df3131d0a8c8c289",
+              "file": "reality/reality-tour.spec.ts",
+              "line": 71,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "reality\\reality-version-match.spec.ts",
+      "file": "reality/reality-version-match.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Reality ΓÇö Version Fingerprint",
+          "file": "reality/reality-version-match.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET /api/ops/version returns valid schema",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 321,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:05:10.472Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-version-ma-00c3e-ersion-returns-valid-schema-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f8d7a843807a9e8a5162-9f7ab08d440a12e8cfbf",
+              "file": "reality/reality-version-match.spec.ts",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "Version mismatch banner hidden when SHAs match",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3733,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-23T22:05:10.803Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-version-ma-471f6-nner-hidden-when-SHAs-match-chromium\\test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-version-ma-471f6-nner-hidden-when-SHAs-match-chromium\\video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Tradingview\\Tradingview recreation\\frontend\\test-results\\reality-reality-version-ma-471f6-nner-hidden-when-SHAs-match-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f8d7a843807a9e8a5162-a05923676d61514217aa",
+              "file": "reality/reality-version-match.spec.ts",
+              "line": 24,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-02-23T22:02:41.835Z",
+    "duration": 156166.458,
+    "expected": 37,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

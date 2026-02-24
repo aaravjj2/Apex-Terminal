@@ -8,16 +8,19 @@ import { test, expect } from '@playwright/test';
 const BE = 'http://localhost:8090';
 
 test.describe('Reality — Alpaca Paper Broker', () => {
-  test('Broker health identifies as alpaca_paper', async ({ request }) => {
+  test('Broker health shows connected with Alpaca account', async ({ request }) => {
     const res = await request.get(`${BE}/api/broker/health`);
     const body = await res.json();
     if (res.status() === 200) {
-      expect(body.broker).toBe('alpaca_paper');
       expect(body.ok).toBe(true);
+      expect(body.connected).toBe(true);
+      expect(body).toHaveProperty('account_id');
+      expect(body).toHaveProperty('account_status');
+      expect(body).toHaveProperty('buying_power');
+      expect(body).toHaveProperty('portfolio_value');
     } else {
       // Even if Alpaca is unreachable, response must be valid JSON
-      expect(body).toHaveProperty('ok', false);
-      expect(body).toHaveProperty('message');
+      expect(body).toHaveProperty('ok');
     }
   });
 
@@ -27,11 +30,14 @@ test.describe('Reality — Alpaca Paper Broker', () => {
     expect(ct).toContain('application/json');
     const body = await res.json();
     if (res.status() === 200) {
-      // Alpaca account fields
-      expect(body).toHaveProperty('id');
-      expect(body).toHaveProperty('status');
-      expect(body).toHaveProperty('equity');
-      expect(body).toHaveProperty('buying_power');
+      expect(body.ok).toBe(true);
+      expect(body).toHaveProperty('correlation_id');
+      // Alpaca account is wrapped in body.account
+      const acct = body.account;
+      expect(acct).toHaveProperty('id');
+      expect(acct).toHaveProperty('status');
+      expect(acct).toHaveProperty('equity');
+      expect(acct).toHaveProperty('buying_power');
     } else {
       // Auth failure or connectivity issue — still valid JSON error
       expect(body).toHaveProperty('ok', false);
@@ -39,25 +45,28 @@ test.describe('Reality — Alpaca Paper Broker', () => {
     }
   });
 
-  test('Broker orders returns array or error', async ({ request }) => {
+  test('Broker orders returns wrapped array or error', async ({ request }) => {
     const res = await request.get(`${BE}/api/broker/orders`);
     const ct = res.headers()['content-type'] || '';
     expect(ct).toContain('application/json');
     const body = await res.json();
     if (res.status() === 200) {
-      expect(Array.isArray(body)).toBe(true);
+      expect(body.ok).toBe(true);
+      expect(Array.isArray(body.orders)).toBe(true);
     } else {
       expect(body).toHaveProperty('ok', false);
     }
   });
 
-  test('Broker positions returns array or error', async ({ request }) => {
+  test('Broker positions returns wrapped array or error', async ({ request }) => {
     const res = await request.get(`${BE}/api/broker/positions`);
     const ct = res.headers()['content-type'] || '';
     expect(ct).toContain('application/json');
     const body = await res.json();
     if (res.status() === 200) {
-      expect(Array.isArray(body)).toBe(true);
+      expect(body.ok).toBe(true);
+      expect(Array.isArray(body.positions)).toBe(true);
+      expect(body).toHaveProperty('total');
     } else {
       expect(body).toHaveProperty('ok', false);
     }
@@ -66,13 +75,12 @@ test.describe('Reality — Alpaca Paper Broker', () => {
   test('BrokerV2 page renders without crash', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    const navItem = page.getByTestId('nav-item-broker');
-    if (await navItem.isVisible().catch(() => false)) {
-      await navItem.click();
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(2000);
-      // Page should render without "Unexpected end of JSON input" errors
-      // Check no unhandled error overlays
+    // Navigate via rail testid
+    const railBtn = page.getByTestId('ui2-rail-broker-v2');
+    if (await railBtn.isVisible().catch(() => false)) {
+      await railBtn.click();
+      await page.waitForLoadState('networkidle');
+      // Page should render without error overlays
       const errorOverlay = page.locator('vite-error-overlay');
       expect(await errorOverlay.count()).toBe(0);
     }

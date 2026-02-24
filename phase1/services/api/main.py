@@ -19,7 +19,7 @@ import structlog
 
 from ..config import get_settings
 from ..persistence import init_database, get_database
-from .routes import bars, ingest, parity, debug, clock, drawings, strategies, portfolio, alerts, versions, runs, packages, metrics, incidents, notes, reports, options, profiles, patterns, fundamentals, automation, forecast, intelligence, risk_desk, strategy_lab, strategy_artifacts, backtest, unified_runs, ticker, market_data_v1_13, cache, provider_registry, citations, search, agents, watchlist, correlation, journal, notifications, audit_log, attribution, risk_scenarios, data_quality, strategy_compare, platform_health
+from .routes import bars, ingest, parity, debug, clock, drawings, strategies, portfolio, alerts, versions, runs, packages, metrics, incidents, notes, reports, options, profiles, patterns, fundamentals, automation, forecast, intelligence, risk_desk, strategy_lab, strategy_artifacts, backtest, backtest_v2, unified_runs, ticker, market_data_v1_13, cache, provider_registry, citations, search, agents, watchlist, correlation, journal, notifications, audit_log, attribution, risk_scenarios, data_quality, strategy_compare, platform_health
 # Wave 6-10 routes
 from .routes import monte_carlo, walk_forward, scoring, sentiment, regime
 from .routes import elasticsearch_gateway, nova
@@ -268,7 +268,7 @@ def create_app() -> FastAPI:
     # Strategy Lab and Backtest (NEW)
     app.include_router(strategy_lab.router, tags=["strategy_lab"])
     app.include_router(strategy_artifacts.router, tags=["strategy_artifacts"])
-    app.include_router(backtest.router, tags=["backtest"])
+    app.include_router(backtest_v2.router, tags=["backtest"])
     # Unified Run Ledger (v1.5)
     app.include_router(unified_runs.router, tags=["unified-runs"])
     # Cache API (v1.16)
@@ -407,6 +407,10 @@ def create_app() -> FastAPI:
     # ── Waves 21-50: Backtest Engine v4 + Elasticsearch v3 ──
     app.include_router(w21_backtest_v4.router, tags=["backtest-v4"])
     app.include_router(w46_elasticsearch_v3.router, tags=["elasticsearch-v3"])
+    
+    # ── ElastiHack: Unified ES Excellence Router (Waves 001-070) ──
+    from .routes import elastihack
+    app.include_router(elastihack.router, tags=["elastihack"])
     
     # ElevenLabs TTS
     from .tts_routes import router as tts_router

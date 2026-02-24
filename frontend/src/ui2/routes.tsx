@@ -98,6 +98,9 @@ import {
   ControlsDomainUI2,
   SafeActionsUI2,
   ExportBundleUI2,
+  ElastiHackUI2,
+  QueryStudioUI2,
+  DlqOpsUI2,
 } from './pages';
 
 export function UI2Routes() {
@@ -226,6 +229,10 @@ export function UI2Routes() {
         <Route path="controls-domain" element={<ControlsDomainUI2 />} />
         <Route path="safe-actions" element={<SafeActionsUI2 />} />
         <Route path="export-bundle" element={<ExportBundleUI2 />} />
+        {/* ElastiHack — Hackathon Pages */}
+        <Route path="elastihack" element={<ElastiHackUI2 />} />
+        <Route path="query-studio" element={<QueryStudioUI2 />} />
+        <Route path="dlq-ops" element={<DlqOpsUI2 />} />
       </Route>
     </Routes>
   );

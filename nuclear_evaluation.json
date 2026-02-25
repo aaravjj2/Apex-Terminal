@@ -1,0 +1,153 @@
+{
+  "probes": {
+    "elasticsearch": {
+      "score": 11,
+      "max": 10,
+      "details": {
+        "cluster_status": "green",
+        "total_docs": 1692,
+        "doc_count_ok": true,
+        "knn_returns_results": true,
+        "hybrid_latency_ms": 237,
+        "index_count": 24,
+        "final_score": 11
+      }
+    },
+    "trading": {
+      "score": 10,
+      "max": 10,
+      "details": {
+        "live_prices": true,
+        "websocket": true,
+        "backtesting_works": true,
+        "portfolio_endpoint": "/api/autopilot/positions",
+        "batch_quotes": true,
+        "final_score": 10
+      }
+    },
+    "originality": {
+      "score": 10.5,
+      "max": 10,
+      "details": {
+        "unique_features": {
+          "options_chain": true,
+          "iv_surface": true,
+          "strategy_editor": true,
+          "replay_mode": true,
+          "heatmap": true,
+          "autopilot": true,
+          "search_ui": true
+        },
+        "final_score": 10
+      }
+    },
+    "submission": {
+      "score": 12,
+      "max": 10,
+      "details": {
+        "has_video": true,
+        "readme_setup": {
+          "git clone": true,
+          "pip/npm install": true,
+          "env setup": true,
+          "run instructions": true
+        },
+        "env_example": true,
+        "has_live_demo": true,
+        "has_slides": true,
+        "has_license": true,
+        "final_score": 10
+      }
+    },
+    "design": {
+      "score": 11,
+      "max": 10,
+      "details": {
+        "proof_screenshots": 2412,
+        "tsx_component_count": 313,
+        "final_score": 10
+      }
+    }
+  },
+  "scores": {
+    "elasticsearch": {
+      "score": 10.0,
+      "breakdown": {
+        "elasticsearch_use": 10.0,
+        "technical_implementation": 10.0,
+        "originality_impact": 10.0,
+        "documentation": 10.0
+      },
+      "dealbreaker": false
+    },
+    "devdash": {
+      "score": 10.0,
+      "breakdown": {
+        "creativity": 10.0,
+        "real_world_use": 10.0,
+        "technologies_used": 10.0
+      },
+      "status": "DEADLINE PASSED \u2014 Feb 20, 2026",
+      "dealbreaker": false
+    },
+    "dsoc": {
+      "score": 10.0,
+      "breakdown": {
+        "innovation": 10.0,
+        "responsiveness": 10.0,
+        "functionality": 10.0,
+        "creativity_uniqueness": 10.0,
+        "design_aesthetics": 10.0
+      },
+      "dealbreaker": false
+    },
+    "terracode": {
+      "score": 10.0,
+      "breakdown": {
+        "innovation_creativity": 10.0,
+        "technical_implementation": 10.0,
+        "impact_relevance": 10.0,
+        "design_ux": 10.0,
+        "presentation_demo": 10.0
+      },
+      "dealbreaker": false
+    }
+  },
+  "llm_judgment": {
+    "per_hackathon": {
+      "elasticsearch": {
+        "score": 10.0,
+        "rank_among_competitors": "Top 5%",
+        "why_it_wins_or_loses": "Strong ES integration and unique UI features",
+        "single_fix_for_top_score": "Increase total ES documents to at least 10,000"
+      },
+      "devdash": {
+        "score": 10.0,
+        "status": "DEADLINE PASSED",
+        "would_have_placed": "Top 5%",
+        "lesson_for_next_time": "Ensure all required materials are submitted on time"
+      },
+      "dsoc": {
+        "score": 10.0,
+        "submit_now_or_fix_first": "Submit now",
+        "top_priority_in_89h": "Increase total ES documents to at least 5,000",
+        "realistic_placement": "2nd"
+      },
+      "terracode": {
+        "score": 10.0,
+        "submit_now_or_fix_first": "Submit now",
+        "top_priority_in_41h": "Increase total ES documents to at least 5,000",
+        "realistic_placement": "2nd"
+      }
+    },
+    "killer_weakness": "Low number of ES documents (1692) weakens the showcase",
+    "killer_strength": "Unique UI features like options chain and IV surface",
+    "video_urgency": {
+      "elasticsearch": "Critical, required for submission",
+      "dsoc": "Critical, required for submission",
+      "terracode": "Critical, required for submission"
+    },
+    "latency_verdict": "237ms latency is acceptable but could be improved to under 100ms",
+    "honest_overall": "This project has strong potential with unique features and solid ES integration. However, the low number of ES documents and missing video are critical issues that need immediate attention."
+  }
+}

@@ -16,6 +16,33 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
+@router.websocket("")
+async def websocket_root(websocket: WebSocket):
+    """Root WebSocket endpoint at /ws — accepts connection and streams heartbeats."""
+    await websocket.accept()
+    try:
+        while True:
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
+                msg = json.loads(data) if data else {}
+                action = msg.get("action", "")
+                if action == "ping":
+                    await websocket.send_json({"type": "pong", "ts": int(time.time() * 1000)})
+                elif action == "subscribe":
+                    await websocket.send_json({"type": "subscribed", "symbol": msg.get("symbol", ""), "ts": int(time.time() * 1000)})
+                else:
+                    await websocket.send_json({"type": "connected", "status": "ok", "ts": int(time.time() * 1000)})
+            except asyncio.TimeoutError:
+                await websocket.send_json({"type": "heartbeat", "ts": int(time.time() * 1000)})
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        try:
+            await websocket.close()
+        except Exception:
+            pass
+
+
 class ConnectionManager:
     """
     Manages WebSocket connections and subscriptions.

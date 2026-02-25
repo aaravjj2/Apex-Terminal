@@ -61,6 +61,10 @@ from .routes import controls_domain        # Wave 106: /api/v3/controls/* endpoi
 from .routes import safe_actions           # Wave 107: /api/v3/tickets/* endpoints
 from .routes import export_bundle          # Wave 108: /api/v3/export/* endpoints
 from .routes import ops_reset              # Wave 112: /api/v3/ops/reset* endpoints
+# ── Autopilot Options (real options autopilot) ─────────────────────────────
+from .routes import autopilot_options as autopilot_options_router_mod
+# ── Autopilot V3 (closed-loop trading system) ───────────────────────────────
+from .routes import autopilot_v3 as autopilot_v3_router_mod
 # ── Reality Repair routes (Phases A-G) ─────────────────────────────────────
 from .routes import ops_version            # Phase A: /api/ops/version
 from .routes import ops_market_session     # Phase D: /api/ops/market_session
@@ -338,6 +342,10 @@ def create_app() -> FastAPI:
     app.include_router(controls_domain.router, prefix="/api/v3/controls", tags=["controls-domain"])
     app.include_router(safe_actions.router, prefix="/api/v3/tickets", tags=["safe-actions-v3"])
     app.include_router(export_bundle.router, prefix="/api/v3/export", tags=["export-bundle-v3"])
+    # ── Autopilot Options (real options autopilot with Alpaca paper) ──
+    app.include_router(autopilot_options_router_mod.router, tags=["autopilot-options"])
+    # ── Autopilot V3 (closed-loop trading system) ──────────────────────────
+    app.include_router(autopilot_v3_router_mod.router, tags=["autopilot-v3"])
     # ── Reality Repair routes (Phases A-G) ──
     app.include_router(ops_version.router, tags=["ops-version"])
     app.include_router(ops_market_session.router, tags=["ops-market-session"])
@@ -411,6 +419,14 @@ def create_app() -> FastAPI:
     # ── ElastiHack: Unified ES Excellence Router (Waves 001-070) ──
     from .routes import elastihack
     app.include_router(elastihack.router, tags=["elastihack"])
+    
+    # ── Market Quote (live prices for judge) ──
+    from .routes.market_quote import router as market_quote_router
+    app.include_router(market_quote_router, tags=["market-quote"])
+    
+    # ── Nuclear Compatibility endpoints (backtest aliases, indicators, etc.) ──
+    from .routes.nuclear_compat import router as nuclear_compat_router
+    app.include_router(nuclear_compat_router, tags=["nuclear-compat"])
     
     # ElevenLabs TTS
     from .tts_routes import router as tts_router

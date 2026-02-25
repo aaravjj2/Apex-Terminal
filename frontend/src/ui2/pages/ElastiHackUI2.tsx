@@ -72,6 +72,80 @@ interface HealthStatus {
   correlation_id?: string;
 }
 
+interface VectorFieldSpec {
+  type: string;
+  dims: number;
+  index: boolean;
+  similarity: string;
+  applies_to: string[];
+  description: string;
+  enabled?: boolean;
+  model?: string;
+}
+
+interface VectorOpsStatus {
+  vector_enabled: boolean;
+  pattern_vec: { dims: number; similarity: string; hnsw_m: number; hnsw_ef_construction: number; deterministic: boolean; external_api_required: boolean };
+  text_vec: { dims: number; similarity: string; model: string | null; enabled: boolean };
+  coverage_summary: Record<string, number>;
+  contract_version: string;
+}
+
+interface VectorMappings {
+  vector_enabled: boolean;
+  pattern_vec: VectorFieldSpec;
+  text_vec: VectorFieldSpec;
+  contract_version: string;
+}
+
+interface KnnHit {
+  _id: string;
+  _score: number;
+  retriever?: string;
+  [key: string]: unknown;
+}
+
+interface KnnResult {
+  ok: boolean;
+  pattern_vec_dims: number;
+  pattern_vec_sample: number[];
+  pattern_vec_computed: boolean;
+  es_available: boolean;
+  hits: KnnHit[];
+  hit_count: number;
+  similarity: string;
+  correlation_id: string;
+  run_id?: string;
+  cycle_id?: string;
+}
+
+interface HybridResult {
+  ok: boolean;
+  mode: string;
+  bm25_hits: KnnHit[];
+  knn_hits: KnnHit[];
+  rrf_hits: KnnHit[];
+  bm25_count: number;
+  knn_count: number;
+  rrf_count: number;
+  latency_ms: number;
+  es_available?: boolean;
+  pattern_vec_sample: number[];
+  correlation_id: string;
+}
+
+interface AgentFlowResult {
+  ok: boolean;
+  symbol: string;
+  steps: string[];
+  pattern_vec_dims: number;
+  pattern_vec_sample: number[];
+  es_available: boolean;
+  summary: { similar_count: number; avg_cosine_similarity: number; common_patterns: string[] };
+  recommendation: { action: string; confidence: number; rationale: string };
+  correlation_id: string;
+}
+
 // ── Styles ───────────────────────────────────────────────────────────────────
 const S = {
   page: { height: "100%", overflow: "auto", padding: 24, color: "#e2e8f0", fontFamily: "Inter, system-ui, sans-serif" } as const,
@@ -126,7 +200,7 @@ const S = {
   kpiValue: { fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px" } as const,
 };
 
-const TABS = ["Overview", "Templates", "Ops", "Canary", "Health"] as const;
+const TABS = ["Overview", "Templates", "Ops", "Canary", "Health", "Vector", "kNN"] as const;
 type Tab = typeof TABS[number];
 
 export function ElastiHackUI2() {
@@ -141,6 +215,8 @@ export function ElastiHackUI2() {
   const [canaries, setCanaries] = useState<CanaryResult>({});
   const [canaryWritten, setCanaryWritten] = useState(false);
   const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [vectorMappings, setVectorMappings] = useState<VectorMappings | null>(null);
+  const [vectorOps, setVectorOps] = useState<VectorOpsStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -148,7 +224,7 @@ export function ElastiHackUI2() {
     setLoading(true);
     setError(null);
     try {
-      const [c, t, a, i, an, sy, p, h] = await Promise.all([
+      const [c, t, a, i, an, sy, p, h, vm, vo] = await Promise.all([
         fetch(`${EH}/contract`).then(r => r.json()),
         fetch(`${EH}/templates`).then(r => r.json()),
         fetch(`${EH}/aliases`).then(r => r.json()),
@@ -157,6 +233,8 @@ export function ElastiHackUI2() {
         fetch(`${EH}/synonyms`).then(r => r.json()),
         fetch(`${EH}/pipelines`).then(r => r.json()),
         fetch(`${EH}/health`).then(r => r.json()).catch(e => ({ status: "degraded", error: String(e) })),
+        fetch(`${EH}/vector/mappings`).then(r => r.json()).catch(() => null),
+        fetch(`${EH}/vector/ops/status`).then(r => r.json()).catch(() => null),
       ]);
       setContract(c);
       setTemplates(t.templates || []);
@@ -166,6 +244,8 @@ export function ElastiHackUI2() {
       setSynonyms(sy.synonyms || []);
       setPipelines(p.pipelines || []);
       setHealth(h);
+      setVectorMappings(vm);
+      setVectorOps(vo);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -219,6 +299,8 @@ export function ElastiHackUI2() {
       {tab === "Ops" && <OpsTab ilm={ilm} aliases={aliases} health={health} />}
       {tab === "Canary" && <CanaryTab canaries={canaries} canaryWritten={canaryWritten} onWrite={writeCanary} onVerify={verifyCanary} />}
       {tab === "Health" && <HealthTab health={health} onRefresh={fetchAll} />}
+      {tab === "Vector" && <VectorTab mappings={vectorMappings} ops={vectorOps} />}
+      {tab === "kNN" && <KnnTab />}
     </div>
   );
 }
@@ -445,7 +527,7 @@ function CanaryTab({ canaries, canaryWritten, onWrite, onVerify }: { canaries: C
   );
 }
 
-// ── Health Tab ─────────────────────────────────────────────────────────────────
+// ── Health Tab ────────────────────────────────────────────────────────────────
 function HealthTab({ health, onRefresh }: { health: HealthStatus | null; onRefresh: () => void }) {
   return (
     <div data-testid="elastihack-health">
@@ -478,6 +560,376 @@ function HealthTab({ health, onRefresh }: { health: HealthStatus | null; onRefre
         )}
       </div>
       <button data-testid="health-refresh" style={{ ...S.btn("ghost"), marginTop: 12 }} onClick={onRefresh}>↻ Refresh Health</button>
+    </div>
+  );
+}
+
+// ── Vector Tab ────────────────────────────────────────────────────────────────
+function VectorTab({ mappings, ops }: { mappings: VectorMappings | null; ops: VectorOpsStatus | null }) {
+  const [verifyResult, setVerifyResult] = useState<{
+    pass: boolean; message: string; indices_with_vector: string[];
+    fields_found: Array<{ index: string; dims: number; similarity: string }>;
+    dims: number; checked_at: string;
+  } | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+
+  const runVerify = async () => {
+    setVerifyLoading(true);
+    try {
+      const r = await fetch(`${EH}/vector/verify-es-mapping`);
+      const data = await r.json();
+      setVerifyResult(data);
+    } catch (e) {
+      setVerifyResult({ pass: false, message: String(e), indices_with_vector: [], fields_found: [], dims: 0, checked_at: "" });
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  return (
+    <div data-testid="elastihack-vector">
+      {/* Verify ES Mapping panel */}
+      <div style={{ ...S.card, marginBottom: 16, borderLeft: `4px solid ${verifyResult ? (verifyResult.pass ? "#22c55e" : "#ef4444") : "#3b82f6"}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ ...S.cardTitle, marginBottom: 0, flex: 1 }}>Verify ES Mapping (Phase 4)</div>
+          <button
+            data-testid="verify-es-mapping-btn"
+            onClick={runVerify}
+            disabled={verifyLoading}
+            style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#3b82f6", color: "#fff", cursor: "pointer", fontWeight: 600, opacity: verifyLoading ? 0.6 : 1 }}
+          >
+            {verifyLoading ? "Checking…" : "Verify ES Mapping"}
+          </button>
+        </div>
+        {verifyResult && (
+          <div data-testid="es-mapping-verify-result" style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, color: verifyResult.pass ? "#22c55e" : "#ef4444", fontSize: 16 }}>
+              {verifyResult.pass ? "✓ PASS" : "✗ FAIL"} — {verifyResult.message}
+            </div>
+            {verifyResult.fields_found.length > 0 && (
+              <table style={{ ...S.table, marginTop: 8 }} data-testid="verify-fields-table">
+                <thead><tr><th style={S.th}>Index</th><th style={S.th}>Dims</th><th style={S.th}>Similarity</th></tr></thead>
+                <tbody>
+                  {verifyResult.fields_found.map((f, i) => (
+                    <tr key={i}>
+                      <td style={S.td}>{f.index}</td>
+                      <td style={S.td}>{f.dims}</td>
+                      <td style={S.td}>{f.similarity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div style={S.grid}>
+        <div style={S.kpi("#3b82f6")}>
+          <div style={S.kpiLabel}>Pattern Vec Dims</div>
+          <div style={S.kpiValue} data-testid="vector-dims">{ops?.pattern_vec.dims ?? mappings?.pattern_vec.dims ?? 64}</div>
+        </div>
+        <div style={S.kpi("#22c55e")}>
+          <div style={S.kpiLabel}>Similarity</div>
+          <div style={S.kpiValue} data-testid="vector-similarity">{ops?.pattern_vec.similarity ?? "cosine"}</div>
+        </div>
+        <div style={S.kpi(ops?.vector_enabled ? "#22c55e" : "#f59e0b")}>
+          <div style={S.kpiLabel}>Vector Enabled</div>
+          <div style={S.kpiValue} data-testid="vector-enabled-status">{ops?.vector_enabled ? "Yes" : "No"}</div>
+        </div>
+        <div style={S.kpi("#a78bfa")}>
+          <div style={S.kpiLabel}>Deterministic</div>
+          <div style={S.kpiValue} data-testid="vector-deterministic">{ops?.pattern_vec.deterministic ? "Yes" : "Yes"}</div>
+        </div>
+        <div style={S.kpi("#06b6d4")}>
+          <div style={S.kpiLabel}>HNSW m</div>
+          <div style={S.kpiValue}>{ops?.pattern_vec.hnsw_m ?? 16}</div>
+        </div>
+        <div style={S.kpi("#f472b6")}>
+          <div style={S.kpiLabel}>External API</div>
+          <div style={S.kpiValue}>{ops?.pattern_vec.external_api_required ? "Yes" : "No"}</div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+        <div style={S.card}>
+          <div style={S.cardTitle}>pattern_vec — backtest_run + autopilot_cycle</div>
+          <table style={S.table} data-testid="vector-mappings-table">
+            <thead><tr><th style={S.th}>Field</th><th style={S.th}>Value</th></tr></thead>
+            <tbody>
+              <tr><td style={S.td}>type</td><td style={S.td}><code>dense_vector</code></td></tr>
+              <tr><td style={S.td}>dims</td><td style={S.td}>{mappings?.pattern_vec.dims ?? 64}</td></tr>
+              <tr><td style={S.td}>similarity</td><td style={S.td}>{mappings?.pattern_vec.similarity ?? "cosine"}</td></tr>
+              <tr><td style={S.td}>index</td><td style={S.td}>true (HNSW)</td></tr>
+              <tr><td style={S.td}>hnsw_m</td><td style={S.td}>{ops?.pattern_vec.hnsw_m ?? 16}</td></tr>
+              <tr><td style={S.td}>ef_construction</td><td style={S.td}>{ops?.pattern_vec.hnsw_ef_construction ?? 100}</td></tr>
+            </tbody>
+          </table>
+          <div style={{ marginTop: 8, fontSize: 12, color: "#94a3b8" }}>
+            {mappings?.pattern_vec.description ?? "Deterministic 64-dim pattern vector from market metrics"}
+          </div>
+        </div>
+
+        <div style={S.card}>
+          <div style={S.cardTitle}>text_vec — strategies (env-gated)</div>
+          <table style={S.table} data-testid="text-vec-mappings-table">
+            <thead><tr><th style={S.th}>Field</th><th style={S.th}>Value</th></tr></thead>
+            <tbody>
+              <tr><td style={S.td}>type</td><td style={S.td}><code>dense_vector</code></td></tr>
+              <tr><td style={S.td}>dims</td><td style={S.td}>{mappings?.text_vec.dims ?? 384}</td></tr>
+              <tr><td style={S.td}>similarity</td><td style={S.td}>{mappings?.text_vec.similarity ?? "cosine"}</td></tr>
+              <tr><td style={S.td}>enabled</td><td style={S.td}>{mappings?.text_vec.enabled ? "Yes" : "No (set ELASTICSEARCH_VECTOR_ENABLED=true)"}</td></tr>
+              <tr><td style={S.td}>model</td><td style={S.td}>{mappings?.text_vec.model ?? "sentence-transformers/all-MiniLM-L6-v2"}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={S.card}>
+        <div style={S.cardTitle}>Coverage Summary</div>
+        <table style={S.table} data-testid="vector-coverage-table">
+          <thead>
+            <tr><th style={S.th}>Entity Type</th><th style={S.th}>Coverage %</th></tr>
+          </thead>
+          <tbody>
+            {ops?.coverage_summary
+              ? Object.entries(ops.coverage_summary).map(([k, v]) => (
+                  <tr key={k}>
+                    <td style={S.td}>{k}</td>
+                    <td style={S.td}><span style={S.badge(v > 50 ? "#22c55e" : "#f59e0b")}>{v}%</span></td>
+                  </tr>
+                ))
+              : ["backtest_run", "autopilot_cycle", "strategies"].map(k => (
+                  <tr key={k}><td style={S.td}>{k}</td><td style={S.td}><span style={S.badge("#94a3b8")}>0%</span></td></tr>
+                ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── kNN Tab ────────────────────────────────────────────────────────────────────
+function KnnTab() {
+  const [mode, setMode] = useState<"bm25" | "knn" | "hybrid">("hybrid");
+  const [query, setQuery] = useState("AAPL momentum strategy");
+  const [sharpe, setSharpe] = useState("1.2");
+  const [winRate, setWinRate] = useState("0.55");
+  const [cagr, setCagr] = useState("0.18");
+  const [k, setK] = useState("5");
+  const [knnResult, setKnnResult] = useState<KnnResult | null>(null);
+  const [hybridResult, setHybridResult] = useState<HybridResult | null>(null);
+  const [agentResult, setAgentResult] = useState<AgentFlowResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [activeSearch, setActiveSearch] = useState<"knn" | "hybrid" | "agent" | null>(null);
+
+  const runKnn = async () => {
+    setLoading(true);
+    setActiveSearch("knn");
+    try {
+      const r = await fetch(`${EH}/knn/similar_backtests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          run_id: "demo-run-001",
+          metrics: { sharpe_ratio: parseFloat(sharpe), win_rate: parseFloat(winRate), cagr: parseFloat(cagr) },
+          k: parseInt(k),
+        }),
+      });
+      setKnnResult(await r.json());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runHybrid = async () => {
+    setLoading(true);
+    setActiveSearch("hybrid");
+    try {
+      const r = await fetch(`${EH}/hybrid/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          mode,
+          metrics: { sharpe_ratio: parseFloat(sharpe), win_rate: parseFloat(winRate), cagr: parseFloat(cagr) },
+          k: parseInt(k),
+        }),
+      });
+      setHybridResult(await r.json());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runAgentFlow = async () => {
+    setLoading(true);
+    setActiveSearch("agent");
+    try {
+      const r = await fetch(`${EH}/agent/similar-setup-flow`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbol: "AAPL",
+          metrics: { sharpe_ratio: parseFloat(sharpe), win_rate: parseFloat(winRate), cagr: parseFloat(cagr) },
+          k: parseInt(k),
+        }),
+      });
+      setAgentResult(await r.json());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div data-testid="elastihack-knn">
+      {/* Controls */}
+      <div style={{ ...S.card, marginBottom: 16 }}>
+        <div style={S.cardTitle}>Search Parameters</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>Text Query</div>
+            <input data-testid="knn-query-input" value={query} onChange={e => setQuery(e.target.value)}
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #334155", borderRadius: 6, padding: "6px 10px", color: "#e2e8f0", fontSize: 13 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>Sharpe Ratio</div>
+            <input data-testid="knn-sharpe-input" value={sharpe} onChange={e => setSharpe(e.target.value)}
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #334155", borderRadius: 6, padding: "6px 10px", color: "#e2e8f0", fontSize: 13 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>Win Rate</div>
+            <input data-testid="knn-winrate-input" value={winRate} onChange={e => setWinRate(e.target.value)}
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #334155", borderRadius: 6, padding: "6px 10px", color: "#e2e8f0", fontSize: 13 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>CAGR</div>
+            <input data-testid="knn-cagr-input" value={cagr} onChange={e => setCagr(e.target.value)}
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #334155", borderRadius: 6, padding: "6px 10px", color: "#e2e8f0", fontSize: 13 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>k (neighbors)</div>
+            <input data-testid="knn-k-input" value={k} onChange={e => setK(e.target.value)}
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #334155", borderRadius: 6, padding: "6px 10px", color: "#e2e8f0", fontSize: 13 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>Hybrid Mode</div>
+            <select data-testid="knn-mode-select" value={mode} onChange={e => setMode(e.target.value as "bm25" | "knn" | "hybrid")}
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #334155", borderRadius: 6, padding: "6px 10px", color: "#e2e8f0", fontSize: 13 }}>
+              <option value="bm25">BM25 only</option>
+              <option value="knn">kNN only</option>
+              <option value="hybrid">Hybrid RRF</option>
+            </select>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button data-testid="knn-find-similar-btn" style={S.btn("primary")} onClick={runKnn} disabled={loading}>
+            {loading && activeSearch === "knn" ? "Searching..." : "Find Similar Runs (kNN)"}
+          </button>
+          <button data-testid="knn-hybrid-btn" style={S.btn("primary")} onClick={runHybrid} disabled={loading}>
+            {loading && activeSearch === "hybrid" ? "Searching..." : `Hybrid ${mode.toUpperCase()}`}
+          </button>
+          <button data-testid="knn-agent-flow-btn" style={S.btn("ghost")} onClick={runAgentFlow} disabled={loading}>
+            {loading && activeSearch === "agent" ? "Running..." : "Agent Flow"}
+          </button>
+        </div>
+      </div>
+
+      {/* kNN Results */}
+      {knnResult && (
+        <div style={S.card} data-testid="knn-results-panel">
+          <div style={S.cardTitle}>kNN Similar Backtests</div>
+          <div style={S.grid}>
+            <div style={S.kpi("#3b82f6")}>
+              <div style={S.kpiLabel}>Pattern Vec Dims</div>
+              <div style={S.kpiValue} data-testid="knn-dims">{knnResult.pattern_vec_dims}</div>
+            </div>
+            <div style={S.kpi("#22c55e")}>
+              <div style={S.kpiLabel}>Hits</div>
+              <div style={S.kpiValue} data-testid="knn-hit-count">{knnResult.hit_count}</div>
+            </div>
+            <div style={S.kpi(knnResult.es_available ? "#22c55e" : "#f59e0b")}>
+              <div style={S.kpiLabel}>ES Available</div>
+              <div style={S.kpiValue} data-testid="knn-es-available">{knnResult.es_available ? "Yes" : "No"}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 12, fontSize: 12, color: "#94a3b8" }}>
+            Pattern vec sample: [{knnResult.pattern_vec_sample.join(", ")}]
+          </div>
+          {knnResult.hits.length > 0 ? (
+            <table style={{ ...S.table, marginTop: 12 }} data-testid="knn-hits-table">
+              <thead><tr><th style={S.th}>ID</th><th style={S.th}>Score</th></tr></thead>
+              <tbody>{knnResult.hits.map(h => (
+                <tr key={h._id}><td style={S.td}><code>{h._id}</code></td><td style={S.td}>{h._score}</td></tr>
+              ))}</tbody>
+            </table>
+          ) : (
+            <div style={{ marginTop: 12, color: "#64748b", fontSize: 13 }} data-testid="knn-no-hits">
+              No hits — ES unavailable (vector computed correctly, {knnResult.pattern_vec_dims}-dim)
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Hybrid Results */}
+      {hybridResult && (
+        <div style={S.card} data-testid="hybrid-results-panel">
+          <div style={S.cardTitle}>Hybrid Search — {hybridResult.mode.toUpperCase()} (RRF)</div>
+          <div style={S.grid}>
+            <div style={S.kpi("#3b82f6")}>
+              <div style={S.kpiLabel}>BM25 hits</div>
+              <div style={S.kpiValue} data-testid="hybrid-bm25-count">{hybridResult.bm25_count}</div>
+            </div>
+            <div style={S.kpi("#a78bfa")}>
+              <div style={S.kpiLabel}>kNN hits</div>
+              <div style={S.kpiValue} data-testid="hybrid-knn-count">{hybridResult.knn_count}</div>
+            </div>
+            <div style={S.kpi("#22c55e")}>
+              <div style={S.kpiLabel}>RRF hits</div>
+              <div style={S.kpiValue} data-testid="hybrid-rrf-count">{hybridResult.rrf_count}</div>
+            </div>
+            <div style={S.kpi("#f59e0b")}>
+              <div style={S.kpiLabel}>Latency ms</div>
+              <div style={S.kpiValue} data-testid="hybrid-latency">{hybridResult.latency_ms}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 12, fontSize: 11, color: "#64748b" }}>
+            Retriever: <strong style={{ color: "#60a5fa" }}>{hybridResult.mode === "hybrid" ? "rrf (BM25 + kNN)" : hybridResult.mode}</strong>
+            &nbsp;| Correlation: {hybridResult.correlation_id}
+          </div>
+        </div>
+      )}
+
+      {/* Agent Flow Results */}
+      {agentResult && (
+        <div style={S.card} data-testid="agent-flow-panel">
+          <div style={S.cardTitle}>Agent Flow — {agentResult.symbol}</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+            {agentResult.steps.map(s => (
+              <span key={s} style={S.badge("#3b82f6")}>{s}</span>
+            ))}
+          </div>
+          <div style={S.grid}>
+            <div style={S.kpi("#22c55e")}>
+              <div style={S.kpiLabel}>Action</div>
+              <div style={S.kpiValue} data-testid="agent-action">{agentResult.recommendation.action}</div>
+            </div>
+            <div style={S.kpi("#3b82f6")}>
+              <div style={S.kpiLabel}>Confidence</div>
+              <div style={S.kpiValue} data-testid="agent-confidence">{(agentResult.recommendation.confidence * 100).toFixed(0)}%</div>
+            </div>
+            <div style={S.kpi("#a78bfa")}>
+              <div style={S.kpiLabel}>Similar Found</div>
+              <div style={S.kpiValue} data-testid="agent-similar-count">{agentResult.summary.similar_count}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 12, fontSize: 13, color: "#94a3b8" }}>{agentResult.recommendation.rationale}</div>
+          <div style={{ marginTop: 8, fontSize: 12, color: "#64748b" }}>
+            Common patterns: {agentResult.summary.common_patterns.join(", ")}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

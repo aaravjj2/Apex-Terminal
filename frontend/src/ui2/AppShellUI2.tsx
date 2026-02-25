@@ -17,6 +17,7 @@ declare const __BUILD_TIME__: string;
 const FE_GIT_SHA = typeof __GIT_SHA__ !== 'undefined' ? __GIT_SHA__ : 'unknown';
 const FE_BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'unknown';
 import { COMMAND_REGISTRY } from './stores/commandRegistry';
+import { useContextBus } from './stores/contextBusStore';
 import { ToastProvider } from '../ui/Toast';
 import { OrdersBlotter } from '../features/orders/OrdersBlotter';
 import { TradesLedger } from '../features/trades/TradesLedger';
@@ -135,16 +136,26 @@ const WORKSPACES: WorkspaceConfig[] = [
     description: 'Execution audit trail',
     keywords: ['runs', 'audit', 'history', 'log']
   },
-  { 
-    id: 'ops', 
-    label: 'Ops', 
-    icon: '⚙️', 
-    path: '/ui2/ops', 
+  {
+    id: 'ops',
+    label: 'Ops',
+    icon: '⚙️',
+    path: '/ui2/ops',
     section: 'system',
     description: 'System operations and monitoring',
     keywords: ['ops', 'operations', 'system', 'monitoring']
   },
-  { 
+  // W01 — Monitor Grid
+  {
+    id: 'monitor',
+    label: 'Monitor',
+    icon: '🖥️',
+    path: '/ui2/monitor',
+    section: 'main',
+    description: 'Multi-panel trading monitor',
+    keywords: ['monitor', 'grid', 'panels', 'multi', 'chart', 'watchlist']
+  },
+  {
     id: 'settings', 
     label: 'Settings', 
     icon: '🔧', 
@@ -527,6 +538,8 @@ export function AppShellUI2() {
   }, []);
 
   // Build command palette items from COMMAND_REGISTRY + workspace navigation
+  // W01: Wire ticker commands to ContextBus
+  const setActiveSymbol = useContextBus((s) => s.setActiveSymbol);
   const commands: CommandItem[] = [
     ...WORKSPACES.map((ws) => ({
       id: ws.id,
@@ -545,6 +558,10 @@ export function AppShellUI2() {
       category: c.category,
       keywords: c.keywords,
       path: c.path,
+      // W01: Ticker commands set the active symbol via ContextBus
+      ...(c.action?.startsWith('select-ticker-') ? {
+        onSelect: () => setActiveSymbol(c.action!.replace('select-ticker-', '')),
+      } : {}),
     })),
   ];
 
@@ -710,6 +727,24 @@ export function AppShellUI2() {
         </button>
 
         <div style={{ flex: 1 }} />
+
+        {/* W01: Active Symbol Indicator from ContextBus */}
+        <div
+          data-testid="ui2-active-symbol"
+          style={{
+            padding: '4px 10px',
+            background: 'var(--ui2-bg-panel)',
+            border: '1px solid var(--ui2-brand-primary, #6366f1)',
+            borderRadius: 'var(--ui2-radius-md)',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: 'var(--ui2-brand-primary, #6366f1)',
+            fontFamily: 'monospace',
+            letterSpacing: '0.5px',
+          }}
+        >
+          {useContextBus((s) => s.activeSymbol)}
+        </div>
 
         {/* Status Pills */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>

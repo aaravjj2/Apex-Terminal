@@ -102,6 +102,7 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
             {!embedded && (
                 <button
                     onClick={() => setIsOpen(!isOpen)}
+                    data-testid="orders-blotter-toggle"
                     className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors"
                 >
                     <ClipboardList size={14} />
@@ -115,7 +116,7 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
             )}
 
             {(isOpen || embedded) && (
-                <div className={containerClass}>
+                <div className={containerClass} data-testid="orders-blotter-panel">
                     {/* Header - Only show if NOT embedded, or simplified if embedded */}
                     {!embedded ? (
                         <div className="p-4 border-b border-gray-700 flex items-center justify-between">
@@ -172,7 +173,7 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
                     )}
 
                     {/* Table */}
-                    <div className="flex-1 overflow-auto">
+                    <div className="flex-1 overflow-auto" data-testid="orders-blotter-table">
                         <table className="w-full text-xs">
                             <thead className="bg-gray-800 sticky top-0">
                                 <tr className="text-gray-400 text-left">
@@ -194,6 +195,7 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
                                 {filteredOrders.map((order) => (
                                     <tr
                                         key={order.id}
+                                        data-testid={`order-row-${order.id}`}
                                         onClick={() => setSelectedOrder(order)}
                                         className="border-b border-gray-800 hover:bg-gray-800 cursor-pointer transition-colors"
                                     >

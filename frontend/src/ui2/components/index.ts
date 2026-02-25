@@ -61,6 +61,7 @@ export { formatValue, formatPnL, formatPercent } from './DataTable';
 
 export { MarketTape } from './MarketTape';
 export { OrderTicket } from './OrderTicket';
+export { MonitorGrid } from './MonitorGrid';
 
 // W103 — Standardization components
 export { PageShellUI2 } from './PageShellUI2';

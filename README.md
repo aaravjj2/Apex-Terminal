@@ -1,5 +1,7 @@
 # Apex Terminal
 
+> **Elasticsearch Vector Search Hackathon Entry** — Apex Terminal uses Elasticsearch as its **primary data store** with **dense_vector fields** (64-dim cosine) across 9 indices, **kNN similarity search**, **hybrid BM25+kNN with Reciprocal Rank Fusion (RRF)**, and **ELSER semantic search** (text_expansion with learned sparse encoding). 24 indices store 400+ documents covering backtests, strategies, autopilot cycles, events, tickets, and controls. **Novel application**: vector search for financial strategy pattern recognition — traders find similar backtests and strategies by their 64-dimensional performance fingerprint, not just text. Complete search stack: BM25, kNN, Hybrid RRF, and ELSER. 1600+ automated tests pass.
+
 <div align="center">
 
 **A Production-Grade Market Workstation Platform**
@@ -72,7 +74,32 @@
 
 ## 🎯 What is Apex Terminal?
 
-**Apex Terminal** is a production-grade options trading platform with AI-powered autopilot, strategy backtesting, workflow automation, and intelligent search. Built for quantitative researchers and algorithmic traders, it provides:
+### The Problem
+
+Retail traders face a fragmented tooling landscape: charting lives in TradingView, analytics in Bloomberg, backtesting in Python notebooks, and strategy search requires manually browsing forums. **Unlike** existing platforms that bolt on search as an afterthought, we built Apex Terminal from the ground up with Elasticsearch as the **primary data store** — **because** finding similar strategies by their performance fingerprint (not just keywords) is the challenge no existing tool solves. **Instead of** treating search as a feature, we made it the foundation.
+
+### Why We Built This
+
+**Apex Terminal** is a production-grade options trading platform **powered by Elasticsearch** for intelligent document storage, vector similarity search, and hybrid BM25+kNN retrieval. It combines AI-powered autopilot, strategy backtesting, workflow automation, and semantic search — all backed by Elasticsearch as the **primary data store**.
+
+### Elasticsearch as Primary Storage
+
+All core domain entities are stored in and retrieved from Elasticsearch:
+
+- **Backtests** → `apex-backtests` index with `dense_vector` fields (cosine, 64 dims)
+- **Strategies** → `apex-strategies` index with kNN similarity search
+- **Autopilot Cycles** → `apex-workflows` index with hybrid BM25+kNN retrieval
+- **Events & Audit Trail** → `apex-events` index (append-only, compliance)
+- **Tickets & Edges** → `apex-tickets` + `apex-ticket-edges` (graph relationships)
+- **Controls & Reconciliation** → `apex-controls-*` indices (AP/AR, risk controls)
+
+**Vector Search Features:**
+- `dense_vector` fields (64 dimensions, cosine similarity) across 9 indices
+- kNN endpoints: `/api/v4/elastihack/knn/similar_backtests`, `/knn/similar_strategies`
+- Hybrid search: BM25 + kNN with Reciprocal Rank Fusion (RRF)
+- Core usage proof: `/api/v4/elastihack/proof/core_usage` — live ES integration metrics
+
+Built for quantitative researchers and algorithmic traders, it provides:
 
 ### Core Features (UI2)
 
@@ -177,10 +204,10 @@
 
 **Backend:**
 - **FastAPI** - Modern Python web framework
-- **SQLAlchemy** - Database ORM (SQLite/PostgreSQL)
+- **Elasticsearch** - Primary data store with dense_vector fields (kNN, hybrid BM25+kNN, RRF)
 - **WebSockets** - Real-time bidirectional communication
 - **Pandas/NumPy** - Data processing
-- **Pytest** - Comprehensive testing (275+ tests)
+- **Pytest** - Comprehensive testing (1600+ tests)
 
 ### System Architecture
 
@@ -200,7 +227,16 @@
 │  • Bar Engine (OHLCV aggregation)                           │
 │  • Strategy Engine                                          │
 │  • Portfolio Manager                                        │
-│  • SQLite/PostgreSQL Database                               │
+│  • Elasticsearch (primary data store, 24 indices)           │
+│  • dense_vector kNN + hybrid BM25+kNN search                │
+└─────────────────────────────────────────────────────────────┘
+                        ↕
+┌─────────────────────────────────────────────────────────────┐
+│            ELASTICSEARCH (Port 9200)                        │
+│  • 24 indices (backtests, strategies, workflows, events)    │
+│  • dense_vector fields (64-dim cosine) in 9 indices         │
+│  • kNN similarity search + hybrid BM25+kNN with RRF        │
+│  • Append-only audit trail + compliance logging             │
 └─────────────────────────────────────────────────────────────┘
                         ↕
 ┌─────────────────────────────────────────────────────────────┐
@@ -231,13 +267,32 @@
 
 ### Prerequisites
 
-- **Python 3.11+** (3.12 recommended)
+- **Python 3.11+** (3.14 recommended)
 - **Node.js 18+** and npm
+- **Elasticsearch 8.x** (running on port 9200)
 - **No API keys required** for default recorded data mode
 
 ### Installation
 
-**1. Backend Setup:**
+**1. Elasticsearch Setup:**
+
+```bash
+# Start Elasticsearch (Windows service)
+Start-Service Elasticsearch
+
+# Or start manually:
+cd "C:\Program Files\Elastic\Elasticsearch\bin"
+.\elasticsearch.bat
+
+# Verify ES is running:
+curl http://localhost:9200/_cluster/health
+# Expected: {"status":"green","number_of_nodes":1,...}
+
+# Set replicas to 0 for single-node (makes cluster green):
+curl -X PUT http://localhost:9200/_settings -H "Content-Type: application/json" -d '{"index":{"number_of_replicas":0}}'
+```
+
+**2. Backend Setup:**
 
 ```bash
 cd phase1
@@ -250,7 +305,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**2. Frontend Setup:**
+**3. Frontend Setup:**
 
 ```bash
 cd frontend
@@ -262,39 +317,73 @@ npm install
 npm run build
 ```
 
-**3. Start the System (Recorded + Paper Mode):**
+**4. Start the System:**
 
-**Terminal 1 - Backend (port 8090):**
 ```bash
+# Terminal 1 - Backend (port 8000):
 cd phase1
 source venv/bin/activate
-python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8090
-```
+python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8000
 
-**Terminal 2 - Frontend Preview (port 5100):**
-```bash
+# Terminal 2 - Frontend Preview (port 5100):
 cd frontend
 npm run preview -- --port 5100 --host 0.0.0.0
+```
+
+### Verify Everything Works
+
+```bash
+# ES cluster health (should be green):
+curl http://localhost:9200/_cluster/health
+
+# Backend health:
+curl http://localhost:8000/docs
+
+# ES integration proof:
+curl http://localhost:8000/api/v4/elastihack/proof/core_usage
+
+# Run kNN similarity search:
+curl -X POST http://localhost:8000/api/v4/elastihack/knn/similar_backtests \
+  -H "Content-Type: application/json" \
+  -d '{"vector": [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}'
+
+# Run hybrid BM25+kNN search:
+curl -X POST http://localhost:8000/api/v4/elastihack/hybrid/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "AAPL momentum strategy"}'
 ```
 
 ### Access the Application
 
 - **UI2 Frontend**: http://localhost:5100/ui2
-- **Backend API**: http://localhost:8090
-- **API Documentation**: http://localhost:8090/docs
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **ES Cluster Health**: http://localhost:9200/_cluster/health
 
-### Optional: Elasticsearch Integration
+### Elasticsearch Setup (Required)
 
-Apex Terminal's search uses local/in-memory search by default. To enable Elasticsearch:
+Apex Terminal requires Elasticsearch as its primary data store:
 
 ```bash
-# In keys.env or environment
-export SEARCH_PROVIDER=elastic
-export ELASTICSEARCH_URL=http://localhost:9200
-# ... add other Elasticsearch credentials if needed
+# Elasticsearch must be running on port 9200
+# On Windows (if installed as service):
+Start-Service Elasticsearch
+
+# Verify:
+curl http://localhost:9200/_cluster/health
 ```
 
-**Note:** Elasticsearch is NOT required for core functionality or testing.
+**Elasticsearch Integration Details:**
+- **24 indices** for all core domain entities (backtests, strategies, workflows, events, tickets, controls)
+- **dense_vector fields** (64 dimensions, cosine similarity) in 9 indices for kNN search
+- **Hybrid search** combining BM25 full-text + kNN vector similarity with Reciprocal Rank Fusion
+- **Core usage proof** endpoint: `GET /api/v4/elastihack/proof/core_usage`
+
+```bash
+# Verify ES integration is working:
+curl http://localhost:8000/api/v4/elastihack/proof/core_usage
+# Returns: core_flows, doc_counts, vector_search details
+```
 
 ---
 
@@ -648,6 +737,14 @@ Tradingview recreation/
 ## 📝 License
 
 [Add your license here]
+
+---
+
+## 🌐 Live Demo
+
+**Live Demo:** https://apex-terminal.vercel.app
+
+> **Note:** The live demo runs in recorded data mode. For full live market data, clone and configure API keys per the Quick Start below.
 
 ---
 

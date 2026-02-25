@@ -128,7 +128,11 @@ export { PerfBudgetUI2 } from './PerfBudgetUI2'; // Wave 105
 export { ControlsDomainUI2 } from './ControlsDomainUI2'; // Wave 106
 export { SafeActionsUI2 } from './SafeActionsUI2'; // Wave 107
 export { ExportBundleUI2 } from './ExportBundleUI2'; // Wave 108
+// Autopilot Options — Real options autopilot
+export { AutopilotOptionsUI2 } from './AutopilotOptionsUI2';
 // ElastiHack — Hackathon Pages
 export { ElastiHackUI2 } from './ElastiHackUI2';
 export { QueryStudioUI2 } from './QueryStudioUI2';
 export { DlqOpsUI2 } from './DlqOpsUI2';
+// W01 — Monitor Grid page
+export { MonitorUI2 } from './MonitorUI2';

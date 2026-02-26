@@ -130,9 +130,104 @@ export { SafeActionsUI2 } from './SafeActionsUI2'; // Wave 107
 export { ExportBundleUI2 } from './ExportBundleUI2'; // Wave 108
 // Autopilot Options — Real options autopilot
 export { AutopilotOptionsUI2 } from './AutopilotOptionsUI2';
+export { AutopilotCommandCenterUI2 } from './AutopilotCommandCenterUI2';
 // ElastiHack — Hackathon Pages
 export { ElastiHackUI2 } from './ElastiHackUI2';
 export { QueryStudioUI2 } from './QueryStudioUI2';
 export { DlqOpsUI2 } from './DlqOpsUI2';
 // W01 — Monitor Grid page
 export { MonitorUI2 } from './MonitorUI2';
+// W14 — Dataset Snapshot Management
+export { DatasetSnapshotUI2 } from './DatasetSnapshotUI2';
+
+// ── Masterplan W15-W104: 2-Year Feature Set ──
+export { CrossAssetQuoteUI2 } from './CrossAssetQuoteUI2'; // W15
+export { CorporateActionsUI2 } from './CorporateActionsUI2'; // W16
+export { EconomicCalendarUI2 } from './EconomicCalendarUI2'; // W17
+export { NewsEnrichmentUI2 } from './NewsEnrichmentUI2'; // W18
+export { EntityResolutionUI2 } from './EntityResolutionUI2'; // W19
+export { ThemeClusteringUI2 } from './ThemeClusteringUI2'; // W20
+export { ResearchNotebookUI2 } from './ResearchNotebookUI2'; // W21
+export { BqlQueryUI2 } from './BqlQueryUI2'; // W22
+export { SearchExplainUI2 } from './SearchExplainUI2'; // W23
+export { ScreenersUI2 } from './ScreenersUI2'; // W24
+export { CollaborationUI2 } from './CollaborationUI2'; // W25
+export { ResearchGovernanceUI2 } from './ResearchGovernanceUI2'; // W26
+export { ExecutionCockpitUI2 } from './ExecutionCockpitUI2'; // W27
+export { BlotterUI2 } from './BlotterUI2'; // W28
+export { PreTradeRiskUI2 } from './PreTradeRiskUI2'; // W29
+export { SurveillanceUI2 } from './SurveillanceUI2'; // W30
+export { AttributionUI2 } from './AttributionUI2'; // W31
+export { FactorModelUI2 } from './FactorModelUI2'; // W32
+export { StressScenariosUI2 } from './StressScenariosUI2'; // W33
+export { PnlExplainUI2 } from './PnlExplainUI2'; // W34
+export { ReconciliationUI2 } from './ReconciliationUI2'; // W35
+export { SmartRoutingUI2 } from './SmartRoutingUI2'; // W36
+export { BrokerScoringUI2 } from './BrokerScoringUI2'; // W37
+export { CrossAccountUI2 } from './CrossAccountUI2'; // W38
+export { RiskGovernanceUI2 } from './RiskGovernanceUI2'; // W39
+export { AgentRegistryUI2 } from './AgentRegistryUI2'; // W40
+export { AutopilotPlaybookUI2 } from './AutopilotPlaybookUI2'; // W41
+export { PromptFirewallUI2 } from './PromptFirewallUI2'; // W42
+export { ModelRouterUI2 } from './ModelRouterUI2'; // W43
+export { EvalHarnessUI2 } from './EvalHarnessUI2'; // W44
+export { ApprovalQueueUI2 } from './ApprovalQueueUI2'; // W45
+export { StrategySimUI2 } from './StrategySimUI2'; // W46
+export { SignalProvenanceUI2 } from './SignalProvenanceUI2'; // W47
+export { IncidentAiUI2 } from './IncidentAiUI2'; // W48
+export { DriftDetectionUI2 } from './DriftDetectionUI2'; // W49
+export { ControlTowerUI2 } from './ControlTowerUI2'; // W50
+export { PolicyAttestationUI2 } from './PolicyAttestationUI2'; // W51
+export { AiGovernanceUI2 } from './AiGovernanceUI2'; // W52
+export { OptionsMatrixUI2 } from './OptionsMatrixUI2'; // W53
+export { GreeksServiceUI2 } from './GreeksServiceUI2'; // W54
+export { VolSurfaceUI2 } from './VolSurfaceUI2'; // W55
+export { PayoffLabUI2 } from './PayoffLabUI2'; // W56
+export { SpreadToolsUI2 } from './SpreadToolsUI2'; // W57
+export { FuturesCurveUI2 } from './FuturesCurveUI2'; // W58
+export { RatesMonitorUI2 } from './RatesMonitorUI2'; // W59
+export { CrossMarginUI2 } from './CrossMarginUI2'; // W60
+export { DerivativesOmsUI2 } from './DerivativesOmsUI2'; // W61
+export { VolScannerUI2 } from './VolScannerUI2'; // W62
+export { HedgeEngineUI2 } from './HedgeEngineUI2'; // W63
+export { RiskAdjExecUI2 } from './RiskAdjExecUI2'; // W64
+export { DerivativesGovUI2 } from './DerivativesGovUI2'; // W65
+export { PolicyCodeUI2 } from './PolicyCodeUI2'; // W66
+export { EntitlementsUI2 } from './EntitlementsUI2'; // W67
+export { ApprovalChainUI2 } from './ApprovalChainUI2'; // W68
+export { EvidenceVaultUI2 } from './EvidenceVaultUI2'; // W69
+export { RetentionPolicyUI2 } from './RetentionPolicyUI2'; // W70
+export { AuditReplayUI2 } from './AuditReplayUI2'; // W71
+export { IncidentComplianceUI2 } from './IncidentComplianceUI2'; // W72
+export { SupervisoryUI2 } from './SupervisoryUI2'; // W73
+export { KriScoringUI2 } from './KriScoringUI2'; // W74
+export { ThirdPartyRiskUI2 } from './ThirdPartyRiskUI2'; // W75
+export { SsoHardeningUI2 } from './SsoHardeningUI2'; // W76
+export { JurisdictionUI2 } from './JurisdictionUI2'; // W77
+export { ControlFrameworkUI2 } from './ControlFrameworkUI2'; // W78
+export { PluginRuntimeUI2 } from './PluginRuntimeUI2'; // W79
+export { SdkApiUI2 } from './SdkApiUI2'; // W80
+export { AppSandboxUI2 } from './AppSandboxUI2'; // W81
+export { MarketplaceUI2 } from './MarketplaceUI2'; // W82
+export { PartnerCiUI2 } from './PartnerCiUI2'; // W83
+export { UsageMeteringUI2 } from './UsageMeteringUI2'; // W84
+export { BillingEventsUI2 } from './BillingEventsUI2'; // W85
+export { ExtObservabilityUI2 } from './ExtObservabilityUI2'; // W86
+export { TenantQuotaUI2 } from './TenantQuotaUI2'; // W87
+export { CompatMatrixUI2 } from './CompatMatrixUI2'; // W88
+export { DevPortalUI2 } from './DevPortalUI2'; // W89
+export { SupportSlaUI2 } from './SupportSlaUI2'; // W90
+export { MarketplaceTrustUI2 } from './MarketplaceTrustUI2'; // W91
+export { MultiRegionUI2 } from './MultiRegionUI2'; // W92
+export { LatencyBudgetUI2 } from './LatencyBudgetUI2'; // W93
+export { CostProfilerUI2 } from './CostProfilerUI2'; // W94
+export { ReliabilityEconUI2 } from './ReliabilityEconUI2'; // W95
+export { RegionalFailoverUI2 } from './RegionalFailoverUI2'; // W96
+export { DataResidencyUI2 } from './DataResidencyUI2'; // W97
+export { OpsAutomationAiUI2 } from './OpsAutomationAiUI2'; // W98
+export { HotPathUI2 } from './HotPathUI2'; // W99
+export { ReleaseQualityUI2 } from './ReleaseQualityUI2'; // W100
+export { CapacityPlanUI2 } from './CapacityPlanUI2'; // W101
+export { PlatformDebtUI2 } from './PlatformDebtUI2'; // W102
+export { OperatorEnableUI2 } from './OperatorEnableUI2'; // W103
+export { GlobalReadinessUI2 } from './GlobalReadinessUI2'; // W104

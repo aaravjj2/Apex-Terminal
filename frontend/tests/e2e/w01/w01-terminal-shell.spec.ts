@@ -311,7 +311,7 @@ test.describe('W01 — Ops Health Page', () => {
 
   test('service cards have data-ready attribute', async ({ page }) => {
     await page.goto(`${BASE}/ui2/ops`);
-    await page.waitForSelector('[data-testid="ops-ready"][data-ready="true"]', { timeout: 30000 });
+    await page.waitForSelector('[data-testid="ops-ready"][data-ready="true"]', { state: 'attached', timeout: 30000 });
     
     const esCard = page.locator('[data-testid="ops-es-card"]');
     const readyVal = await esCard.getAttribute('data-ready');
@@ -320,7 +320,7 @@ test.describe('W01 — Ops Health Page', () => {
 
   test('correlation_id copy button exists on service cards', async ({ page }) => {
     await page.goto(`${BASE}/ui2/ops`);
-    await page.waitForSelector('[data-testid="ops-ready"][data-ready="true"]', { timeout: 30000 });
+    await page.waitForSelector('[data-testid="ops-ready"][data-ready="true"]', { state: 'attached', timeout: 30000 });
     
     const copyBtn = page.locator('[data-testid="ops-es-card-copy-cid"]');
     await expect(copyBtn).toBeVisible();
@@ -328,7 +328,7 @@ test.describe('W01 — Ops Health Page', () => {
 
   test('refresh button triggers data reload', async ({ page }) => {
     await page.goto(`${BASE}/ui2/ops`);
-    await page.waitForSelector('[data-testid="ops-ready"][data-ready="true"]', { timeout: 30000 });
+    await page.waitForSelector('[data-testid="ops-ready"][data-ready="true"]', { state: 'attached', timeout: 30000 });
     
     const refreshBtn = page.locator('[data-testid="ops-refresh-btn"]');
     await expect(refreshBtn).toBeVisible();
@@ -351,14 +351,9 @@ test.describe('W01 — Ops Health Page', () => {
     await page.goto(`${BASE}/ui2/ops`);
     await page.waitForSelector('[data-testid="ops-ui2-page"]', { state: 'visible' });
     
-    // Find and click the About tab
-    const aboutTab = page.locator('[data-testid="ops-tabs"] button').filter({ hasText: 'About' });
-    if (await aboutTab.count() === 0) {
-      // Try alternative selector for tab button
-      const tabs = page.locator('[data-testid="ops-tabs"]');
-      await expect(tabs).toBeVisible();
-      return; // Skip if tabs structure differs
-    }
+    // Click the About tab using data-testid
+    const aboutTab = page.locator('[data-testid="ops-tabs-tab-about"]');
+    await expect(aboutTab).toBeVisible();
     await aboutTab.click();
     const aboutPanel = page.locator('[data-testid="ops-about-panel"]');
     await expect(aboutPanel).toBeVisible();

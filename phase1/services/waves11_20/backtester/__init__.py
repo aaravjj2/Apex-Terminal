@@ -37,7 +37,9 @@ class ExecutionModel:
     """Configurable fee/slippage model for execution calibration."""
     commission_per_share: float = 0.0
     commission_min: float = 0.0
+    fee_per_trade: float = 1.0  # Flat fee per trade (alias for commission_min when set)
     slippage_bps: float = 5.0  # Basis points
+    spread_bps: float = 2.0   # Bid-ask spread in basis points
     fill_ratio: float = 1.0  # Partial fill rate
     market_impact_bps: float = 2.0
 
@@ -48,14 +50,17 @@ class ExecutionModel:
         return slip + impact
 
     def compute_commission(self, qty: float) -> float:
-        """Compute commission."""
-        return max(qty * self.commission_per_share, self.commission_min)
+        """Compute commission (uses fee_per_trade as floor if set)."""
+        base = max(qty * self.commission_per_share, self.commission_min)
+        return max(base, self.fee_per_trade)
 
     def to_dict(self) -> dict:
         return {
             "commission_per_share": self.commission_per_share,
             "commission_min": self.commission_min,
+            "fee_per_trade": self.fee_per_trade,
             "slippage_bps": self.slippage_bps,
+            "spread_bps": self.spread_bps,
             "fill_ratio": self.fill_ratio,
             "market_impact_bps": self.market_impact_bps,
         }

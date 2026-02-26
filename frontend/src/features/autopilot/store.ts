@@ -57,6 +57,8 @@ interface AutopilotStore {
   triggerRun: (force?: boolean) => Promise<CycleResult | null>;
   activateKillSwitch: (closeAll?: boolean) => Promise<void>;
   deactivateKillSwitch: () => Promise<void>;
+  startLoop: () => Promise<void>;
+  stopLoop: () => Promise<void>;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   fetchDailyReport: (date?: string) => Promise<void>;
@@ -217,6 +219,34 @@ export const useAutopilotStore = create<AutopilotStore>()(
         set((state) => {
           state.error = err instanceof Error ? err.message : 'Failed to deactivate kill switch';
           state.killSwitchPending = false;
+        });
+      }
+    },
+
+    startLoop: async () => {
+      set((state) => { state.isLoading = true; state.error = null; });
+      try {
+        await autopilotApi.startLoop();
+        await get().fetchStatus();
+        set((state) => { state.isLoading = false; });
+      } catch (err) {
+        set((state) => {
+          state.error = err instanceof Error ? err.message : 'Failed to start autopilot loop';
+          state.isLoading = false;
+        });
+      }
+    },
+
+    stopLoop: async () => {
+      set((state) => { state.isLoading = true; state.error = null; });
+      try {
+        await autopilotApi.stopLoop();
+        await get().fetchStatus();
+        set((state) => { state.isLoading = false; });
+      } catch (err) {
+        set((state) => {
+          state.error = err instanceof Error ? err.message : 'Failed to stop autopilot loop';
+          state.isLoading = false;
         });
       }
     },

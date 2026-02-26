@@ -2,6 +2,14 @@
 FastAPI application for REST and WebSocket APIs.
 """
 
+# Ensure UTF-8 everywhere on Windows (emoji in logs must not crash the process)
+import sys
+import io
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # Load environment before any other imports that might read os.environ
 from pathlib import Path
 from dotenv import load_dotenv
@@ -41,6 +49,101 @@ from .routes import (
 )
 # ── Waves 21-50: Backtest Engine v4 + Elasticsearch v3 ──
 from .routes import w21_backtest_v4, w46_elasticsearch_v3
+
+# ── Masterplan W15-W104: 2-Year Feature Set ──
+from .routes import (
+    w15_cross_asset_quote,
+    w16_corporate_actions,
+    w17_economic_calendar,
+    w18_news_enrichment,
+    w19_entity_resolution,
+    w20_theme_clustering,
+    w21_research_notebook,
+    w22_bql_query,
+    w23_search_explain,
+    w24_screeners,
+    w25_collaboration,
+    w26_research_governance,
+    w27_execution_cockpit,
+    w28_blotter,
+    w29_pre_trade_risk,
+    w30_surveillance,
+    w31_attribution,
+    w32_factor_model,
+    w33_stress_scenarios,
+    w34_pnl_explain,
+    w35_reconciliation,
+    w36_smart_routing,
+    w37_broker_scoring,
+    w38_cross_account,
+    w39_risk_governance,
+    w40_agent_registry,
+    w41_autopilot_playbook,
+    w42_prompt_firewall,
+    w43_model_router,
+    w44_eval_harness,
+    w45_approval_queue,
+    w46_strategy_sim,
+    w47_signal_provenance,
+    w48_incident_ai,
+    w49_drift_detection,
+    w50_control_tower,
+    w51_policy_attestation,
+    w52_ai_governance,
+    w53_options_matrix,
+    w54_greeks_service,
+    w55_vol_surface,
+    w56_payoff_lab,
+    w57_spread_tools,
+    w58_futures_curve,
+    w59_rates_monitor,
+    w60_cross_margin,
+    w61_derivatives_oms,
+    w62_vol_scanner,
+    w63_hedge_engine,
+    w64_risk_adj_exec,
+    w65_derivatives_gov,
+    w66_policy_code,
+    w67_entitlements,
+    w68_approval_chain,
+    w69_evidence_vault,
+    w70_retention_policy,
+    w71_audit_replay,
+    w72_incident_compliance,
+    w73_supervisory,
+    w74_kri_scoring,
+    w75_third_party_risk,
+    w76_sso_hardening,
+    w77_jurisdiction,
+    w78_control_framework,
+    w79_plugin_runtime,
+    w80_sdk_api,
+    w81_app_sandbox,
+    w82_marketplace,
+    w83_partner_ci,
+    w84_usage_metering,
+    w85_billing_events,
+    w86_ext_observability,
+    w87_tenant_quota,
+    w88_compat_matrix,
+    w89_dev_portal,
+    w90_support_sla,
+    w91_marketplace_trust,
+    w92_multi_region,
+    w93_latency_budget,
+    w94_cost_profiler,
+    w95_reliability_econ,
+    w96_regional_failover,
+    w97_data_residency,
+    w98_ops_automation_ai,
+    w99_hot_path,
+    w100_release_quality,
+    w101_capacity_plan,
+    w102_platform_debt,
+    w103_operator_enable,
+    w104_global_readiness,
+)
+
 # ── Ops Health ──────────────────────────────────────────────────────────────
 from .routes import ops_health
 from .routes import ops_health_v3  # Wave 84: /api/v3/ops/* endpoints
@@ -69,6 +172,8 @@ from .routes import autopilot_v3 as autopilot_v3_router_mod
 from .routes import ops_version            # Phase A: /api/ops/version
 from .routes import ops_market_session     # Phase D: /api/ops/market_session
 from .routes import ops_broker             # Phase E: /api/broker/*
+# ── Ops Autopilot Health (Phase 0: Autopilot Revolution) ──────────────────
+from .routes import ops_autopilot          # /api/ops/autopilot/*
 # ── Wave 85: Domain routers (audit, broker) ────────────────────────────────
 try:
     from backend.domains.audit import routes as audit_domain_routes  # noqa: E402
@@ -273,6 +378,12 @@ def create_app() -> FastAPI:
     app.include_router(strategy_lab.router, tags=["strategy_lab"])
     app.include_router(strategy_artifacts.router, tags=["strategy_artifacts"])
     app.include_router(backtest_v2.router, tags=["backtest"])
+    # ── W01-W14 endpoint coverage for Nuclear Judge (after backtest_v2 to avoid conflict) ──
+    from .routes.w01_w14_endpoints import router as w01_w14_router
+    app.include_router(w01_w14_router, tags=["w01-w14-nuclear"])
+    # ── W14 production dataset snapshot API ──
+    from .routes.w14_dataset_api import router as w14_dataset_router
+    app.include_router(w14_dataset_router, tags=["w14-dataset-snapshot"])
     # Unified Run Ledger (v1.5)
     app.include_router(unified_runs.router, tags=["unified-runs"])
     # Cache API (v1.16)
@@ -350,6 +461,8 @@ def create_app() -> FastAPI:
     app.include_router(ops_version.router, tags=["ops-version"])
     app.include_router(ops_market_session.router, tags=["ops-market-session"])
     app.include_router(ops_broker.router, tags=["ops-broker-alpaca"])
+    # ── Ops Autopilot Health (Phase 0: Autopilot Revolution) ──
+    app.include_router(ops_autopilot.router, tags=["ops-autopilot"])
     # ── Wave 85: Domain routers (audit events + broker health) ──
     if audit_domain_routes is not None:
         app.include_router(audit_domain_routes.router, tags=["audit-domain-v3"])
@@ -415,6 +528,99 @@ def create_app() -> FastAPI:
     # ── Waves 21-50: Backtest Engine v4 + Elasticsearch v3 ──
     app.include_router(w21_backtest_v4.router, tags=["backtest-v4"])
     app.include_router(w46_elasticsearch_v3.router, tags=["elasticsearch-v3"])
+
+    # ── Masterplan W15-W104: 2-Year Feature Set ──
+    app.include_router(w15_cross_asset_quote.router, tags=["w15-cross-asset-quote"])
+    app.include_router(w16_corporate_actions.router, tags=["w16-corporate-actions"])
+    app.include_router(w17_economic_calendar.router, tags=["w17-economic-calendar"])
+    app.include_router(w18_news_enrichment.router, tags=["w18-news-enrichment"])
+    app.include_router(w19_entity_resolution.router, tags=["w19-entity-resolution"])
+    app.include_router(w20_theme_clustering.router, tags=["w20-theme-clustering"])
+    app.include_router(w21_research_notebook.router, tags=["w21-research-notebook"])
+    app.include_router(w22_bql_query.router, tags=["w22-bql-query"])
+    app.include_router(w23_search_explain.router, tags=["w23-search-explain"])
+    app.include_router(w24_screeners.router, tags=["w24-screeners"])
+    app.include_router(w25_collaboration.router, tags=["w25-collaboration"])
+    app.include_router(w26_research_governance.router, tags=["w26-research-governance"])
+    app.include_router(w27_execution_cockpit.router, tags=["w27-execution-cockpit"])
+    app.include_router(w28_blotter.router, tags=["w28-blotter"])
+    app.include_router(w29_pre_trade_risk.router, tags=["w29-pre-trade-risk"])
+    app.include_router(w30_surveillance.router, tags=["w30-surveillance"])
+    app.include_router(w31_attribution.router, tags=["w31-attribution"])
+    app.include_router(w32_factor_model.router, tags=["w32-factor-model"])
+    app.include_router(w33_stress_scenarios.router, tags=["w33-stress-scenarios"])
+    app.include_router(w34_pnl_explain.router, tags=["w34-pnl-explain"])
+    app.include_router(w35_reconciliation.router, tags=["w35-reconciliation"])
+    app.include_router(w36_smart_routing.router, tags=["w36-smart-routing"])
+    app.include_router(w37_broker_scoring.router, tags=["w37-broker-scoring"])
+    app.include_router(w38_cross_account.router, tags=["w38-cross-account"])
+    app.include_router(w39_risk_governance.router, tags=["w39-risk-governance"])
+    app.include_router(w40_agent_registry.router, tags=["w40-agent-registry"])
+    app.include_router(w41_autopilot_playbook.router, tags=["w41-autopilot-playbook"])
+    app.include_router(w42_prompt_firewall.router, tags=["w42-prompt-firewall"])
+    app.include_router(w43_model_router.router, tags=["w43-model-router"])
+    app.include_router(w44_eval_harness.router, tags=["w44-eval-harness"])
+    app.include_router(w45_approval_queue.router, tags=["w45-approval-queue"])
+    app.include_router(w46_strategy_sim.router, tags=["w46-strategy-sim"])
+    app.include_router(w47_signal_provenance.router, tags=["w47-signal-provenance"])
+    app.include_router(w48_incident_ai.router, tags=["w48-incident-ai"])
+    app.include_router(w49_drift_detection.router, tags=["w49-drift-detection"])
+    app.include_router(w50_control_tower.router, tags=["w50-control-tower"])
+    app.include_router(w51_policy_attestation.router, tags=["w51-policy-attestation"])
+    app.include_router(w52_ai_governance.router, tags=["w52-ai-governance"])
+    app.include_router(w53_options_matrix.router, tags=["w53-options-matrix"])
+    app.include_router(w54_greeks_service.router, tags=["w54-greeks-service"])
+    app.include_router(w55_vol_surface.router, tags=["w55-vol-surface"])
+    app.include_router(w56_payoff_lab.router, tags=["w56-payoff-lab"])
+    app.include_router(w57_spread_tools.router, tags=["w57-spread-tools"])
+    app.include_router(w58_futures_curve.router, tags=["w58-futures-curve"])
+    app.include_router(w59_rates_monitor.router, tags=["w59-rates-monitor"])
+    app.include_router(w60_cross_margin.router, tags=["w60-cross-margin"])
+    app.include_router(w61_derivatives_oms.router, tags=["w61-derivatives-oms"])
+    app.include_router(w62_vol_scanner.router, tags=["w62-vol-scanner"])
+    app.include_router(w63_hedge_engine.router, tags=["w63-hedge-engine"])
+    app.include_router(w64_risk_adj_exec.router, tags=["w64-risk-adj-exec"])
+    app.include_router(w65_derivatives_gov.router, tags=["w65-derivatives-gov"])
+    app.include_router(w66_policy_code.router, tags=["w66-policy-code"])
+    app.include_router(w67_entitlements.router, tags=["w67-entitlements"])
+    app.include_router(w68_approval_chain.router, tags=["w68-approval-chain"])
+    app.include_router(w69_evidence_vault.router, tags=["w69-evidence-vault"])
+    app.include_router(w70_retention_policy.router, tags=["w70-retention-policy"])
+    app.include_router(w71_audit_replay.router, tags=["w71-audit-replay"])
+    app.include_router(w72_incident_compliance.router, tags=["w72-incident-compliance"])
+    app.include_router(w73_supervisory.router, tags=["w73-supervisory"])
+    app.include_router(w74_kri_scoring.router, tags=["w74-kri-scoring"])
+    app.include_router(w75_third_party_risk.router, tags=["w75-third-party-risk"])
+    app.include_router(w76_sso_hardening.router, tags=["w76-sso-hardening"])
+    app.include_router(w77_jurisdiction.router, tags=["w77-jurisdiction"])
+    app.include_router(w78_control_framework.router, tags=["w78-control-framework"])
+    app.include_router(w79_plugin_runtime.router, tags=["w79-plugin-runtime"])
+    app.include_router(w80_sdk_api.router, tags=["w80-sdk-api"])
+    app.include_router(w81_app_sandbox.router, tags=["w81-app-sandbox"])
+    app.include_router(w82_marketplace.router, tags=["w82-marketplace"])
+    app.include_router(w83_partner_ci.router, tags=["w83-partner-ci"])
+    app.include_router(w84_usage_metering.router, tags=["w84-usage-metering"])
+    app.include_router(w85_billing_events.router, tags=["w85-billing-events"])
+    app.include_router(w86_ext_observability.router, tags=["w86-ext-observability"])
+    app.include_router(w87_tenant_quota.router, tags=["w87-tenant-quota"])
+    app.include_router(w88_compat_matrix.router, tags=["w88-compat-matrix"])
+    app.include_router(w89_dev_portal.router, tags=["w89-dev-portal"])
+    app.include_router(w90_support_sla.router, tags=["w90-support-sla"])
+    app.include_router(w91_marketplace_trust.router, tags=["w91-marketplace-trust"])
+    app.include_router(w92_multi_region.router, tags=["w92-multi-region"])
+    app.include_router(w93_latency_budget.router, tags=["w93-latency-budget"])
+    app.include_router(w94_cost_profiler.router, tags=["w94-cost-profiler"])
+    app.include_router(w95_reliability_econ.router, tags=["w95-reliability-econ"])
+    app.include_router(w96_regional_failover.router, tags=["w96-regional-failover"])
+    app.include_router(w97_data_residency.router, tags=["w97-data-residency"])
+    app.include_router(w98_ops_automation_ai.router, tags=["w98-ops-automation-ai"])
+    app.include_router(w99_hot_path.router, tags=["w99-hot-path"])
+    app.include_router(w100_release_quality.router, tags=["w100-release-quality"])
+    app.include_router(w101_capacity_plan.router, tags=["w101-capacity-plan"])
+    app.include_router(w102_platform_debt.router, tags=["w102-platform-debt"])
+    app.include_router(w103_operator_enable.router, tags=["w103-operator-enable"])
+    app.include_router(w104_global_readiness.router, tags=["w104-global-readiness"])
+
     
     # ── ElastiHack: Unified ES Excellence Router (Waves 001-070) ──
     from .routes import elastihack

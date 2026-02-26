@@ -289,6 +289,7 @@ export function AdvancedAutopilotPanel() {
         config,
         status,
         portfolio,
+        runs,
         isLoading,
         fetchConfig,
         fetchStatus,
@@ -298,62 +299,32 @@ export function AdvancedAutopilotPanel() {
         resume
     } = useAutopilotStore();
 
-    // Initial data - set directly without useEffect for static mock data
-    const [decisions] = useState<AIDecision[]>(() => [
+    // Live decisions derived from last cycle data (no mock data)
+    const decisions: AIDecision[] = [];
+
+    // Map real cycle run history to CycleMetrics
+    const cycles: CycleMetrics[] = runs.slice(0, 10).map((r, idx) => ({
+        cycle_number: runs.length - idx,
+        candidates_scanned: r.candidates?.generated ?? 0,
+        candidates_passed: r.selection?.selected ?? 0,
+        trades_executed: r.execution?.filled ?? 0,
+        cycle_pnl: 0, // not available per-cycle from API
+        duration_ms: r.duration_ms ?? 0,
+        timestamp: r.started_at,
+    }));
+
+    // Strategy stats from status broker metrics
+    const strategies: StrategyStats[] = status ? [
         {
-            id: '1',
-            timestamp: new Date().toISOString(),
-            action: 'open_long',
-            symbol: 'AAPL260130C00252500',
-            reasoning: [
-                'RSI showing bullish divergence at 35',
-                'Price broke above 20-day SMA with volume confirmation',
-                'Implied volatility rank at 25% - favorable for long calls',
-                'Earnings in 45 days - time decay manageable'
-            ],
-            confidence: 0.82,
-            signals: [
-                { name: 'RSI', value: 35, direction: 'bullish', weight: 0.2 },
-                { name: 'MACD', value: 0.5, direction: 'bullish', weight: 0.25 },
-                { name: 'IV Rank', value: 25, direction: 'bullish', weight: 0.3 },
-                { name: 'Trend', value: 0.7, direction: 'bullish', weight: 0.25 }
-            ],
-            risk_assessment: 'Low to moderate risk. Stop loss at 8% below entry.',
-            expected_return: 0.25,
-            max_loss: -0.08
+            strategy_name: 'All Strategies',
+            total_trades: status.broker_metrics?.total_orders ?? 0,
+            win_rate: status.win_rate ?? 0,
+            avg_return: status.avg_win ?? 0,
+            total_pnl: status.portfolio?.total_pnl ?? 0,
+            sharpe_ratio: status.sharpe_ratio ?? 0,
+            max_drawdown: 0,
         },
-        {
-            id: '2',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            action: 'skip',
-            symbol: 'NVDA',
-            reasoning: [
-                'IV rank above 70% - premiums too expensive',
-                'No clear directional bias in technicals',
-                'Earnings announcement too close (5 days)'
-            ],
-            confidence: 0.45,
-            signals: [
-                { name: 'RSI', value: 55, direction: 'neutral', weight: 0.2 },
-                { name: 'IV Rank', value: 72, direction: 'bearish', weight: 0.4 },
-                { name: 'Trend', value: 0.1, direction: 'neutral', weight: 0.4 }
-            ],
-            risk_assessment: 'High IV environment not favorable for directional plays.',
-            expected_return: 0.15,
-            max_loss: -0.20
-        }
-    ]);
-
-    const [cycles] = useState<CycleMetrics[]>(() => [
-        { cycle_number: 5, candidates_scanned: 15, candidates_passed: 3, trades_executed: 1, cycle_pnl: 45, duration_ms: 2340, timestamp: new Date().toISOString() },
-        { cycle_number: 4, candidates_scanned: 15, candidates_passed: 2, trades_executed: 1, cycle_pnl: -22, duration_ms: 1890, timestamp: new Date(Date.now() - 300000).toISOString() },
-        { cycle_number: 3, candidates_scanned: 15, candidates_passed: 4, trades_executed: 2, cycle_pnl: 78, duration_ms: 3120, timestamp: new Date(Date.now() - 600000).toISOString() }
-    ]);
-
-    const [strategies] = useState<StrategyStats[]>([
-        { strategy_name: 'RSI Divergence', total_trades: 24, win_rate: 0.67, avg_return: 0.034, total_pnl: 892, sharpe_ratio: 1.45, max_drawdown: -0.08 },
-        { strategy_name: 'IV Crush', total_trades: 18, win_rate: 0.72, avg_return: 0.028, total_pnl: 634, sharpe_ratio: 1.82, max_drawdown: -0.05 }
-    ]);
+    ] : [];
 
     useEffect(() => {
         fetchConfig();

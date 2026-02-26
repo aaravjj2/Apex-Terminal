@@ -458,14 +458,28 @@ export const autopilotApi = {
   },
 
   /**
-   * Pause autopilot
+   * Start the continuous autopilot loop
+   */
+  async startLoop(): Promise<{ status: string; timestamp: string }> {
+    return fetchJSON(`${API_BASE}/start`, { method: 'POST' });
+  },
+
+  /**
+   * Stop the continuous autopilot loop
+   */
+  async stopLoop(): Promise<{ status: string; timestamp: string }> {
+    return fetchJSON(`${API_BASE}/stop`, { method: 'POST' });
+  },
+
+  /**
+   * Pause autopilot (alias for stop)
    */
   async pause(): Promise<{ status: string }> {
     return fetchJSON(`${API_BASE}/pause`, { method: 'POST' });
   },
 
   /**
-   * Resume autopilot
+   * Resume autopilot (alias for start)
    */
   async resume(): Promise<{ status: string }> {
     return fetchJSON(`${API_BASE}/resume`, { method: 'POST' });

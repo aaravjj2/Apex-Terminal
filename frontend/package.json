@@ -17,6 +17,8 @@
     "verify:tsc": "tsc --noEmit",
     "verify:unit": "vitest run",
     "verify:e2e": "npm run selector-gate && npx playwright test",
+    "test:e2e:mcp": "npx playwright test --config=playwright.config.mcp.ts",
+    "test:e2e:mcp:twice": "npx playwright test --config=playwright.config.mcp.ts && npx playwright test --config=playwright.config.mcp.ts",
     "verify:all": "npm run verify:tsc && npm run verify:unit && npm run verify:e2e"
   },
   "dependencies": {

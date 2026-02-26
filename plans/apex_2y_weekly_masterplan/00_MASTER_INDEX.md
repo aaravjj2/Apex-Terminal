@@ -1,6 +1,6 @@
-# Apex Terminal 2-Year Master Plan (8 Expanded Docs)
+# Apex Terminal 2-Year Master Plan (10 Docs + Backtesting Execution Spec)
 
-This index tracks the 8 detailed weekly plan documents. Each week now has unique epics, APIs, schemas, and artifact requirements.
+This index tracks the original 8 block documents plus a dedicated Week 14-104 backtesting extension and execution spec.
 
 ## Files
 - [01] 01_W01-W13_Foundation_and_Execution_Core.md
@@ -11,8 +11,13 @@ This index tracks the 8 detailed weekly plan documents. Each week now has unique
 - [06] 06_W66-W78_Enterprise_Workflows_Compliance_and_Controls.md
 - [07] 07_W79-W91_Platform_Ecosystem_and_Developer_Marketplace.md
 - [08] 08_W92-W104_Global_Scale_Optimization_and_Operating_Excellence.md
+- [09] 09_W14-W104_Backtesting_Engine_Rebuild_Masterplan.md
+- [10] 10_W14-W26_Equities_Bulletproof_Execution_Spec.md
 
 ## Standards
-- More than 100,000 self-tested LOC per week.
-- Full quality gates and non-headless Playwright regression every week.
-- Weekly evidence packs for UX, backend, data, and governance.
+- Invariant pass rate >= 99.5 percent for no-lookahead, equity-balance, fill-rules, and deterministic-RNG suites.
+- Reproducibility pass rate = 100 percent for same config + same dataset snapshot + same seed reruns.
+- Weekly performance budgets are mandatory for engine runtime, API latency, and UI rendering paths.
+- Weekly evidence packs are mandatory for API contracts, fixtures, regression outputs, and release signoff.
+
+- Structural audit: 09_STRUCTURE_AUDIT_AND_TESTS.md

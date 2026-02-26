@@ -75,6 +75,8 @@ export const AutopilotDashboard: React.FC = () => {
     fetchStatus,
     fetchPositions,
     triggerRun,
+    startLoop,
+    stopLoop,
     activateKillSwitch,
     deactivateKillSwitch,
     pause,
@@ -116,6 +118,14 @@ export const AutopilotDashboard: React.FC = () => {
     await triggerRun(true);
     await fetchPositions('open');
   }, [triggerRun, fetchPositions]);
+
+  const handleStartStopLoop = useCallback(async () => {
+    if (status?.state === 'running') {
+      await stopLoop();
+    } else {
+      await startLoop();
+    }
+  }, [status, startLoop, stopLoop]);
 
   const handleKillSwitch = useCallback(async () => {
     if (status?.kill_switch) {
@@ -193,6 +203,19 @@ export const AutopilotDashboard: React.FC = () => {
             data-testid="pause-resume-btn"
           >
             {status?.state === 'paused' ? '▶️ Resume' : '⏸️ Pause'}
+          </button>
+
+          <button
+            onClick={handleStartStopLoop}
+            disabled={isLoading || status?.kill_switch}
+            className={`px-4 py-2 rounded font-medium transition-colors ${
+              status?.state === 'running'
+                ? 'bg-red-700 hover:bg-red-800'
+                : 'bg-green-700 hover:bg-green-800'
+            } disabled:bg-gray-600`}
+            data-testid="start-stop-loop-btn"
+          >
+            {isLoading ? '⏳ Working...' : status?.state === 'running' ? '⏹️ Stop Loop' : '▶️ Start Loop'}
           </button>
 
           <button

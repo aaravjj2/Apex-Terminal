@@ -83,9 +83,9 @@ let pollInterval: number | null = null;
 
 let connectionStatus: ConnectionStatus = 'disconnected';
 let wsConnections: Map<string, WebSocket> = new Map();
-let useWebSocket = true; // Prefer WS, fallback to polling if unavailable
+let useWebSocket = false; // WS endpoints not available in dev; use polling
 let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 3;
+const MAX_RECONNECT_ATTEMPTS = 0; // Skip WS retries, go straight to polling
 
 // ── WebSocket Handlers ─────────────────────────────────────────
 

@@ -290,7 +290,19 @@ export const backtesterV3Store = (() => {
   const store = createStore<BacktesterV3State>({ result: null, comparison: null, loading: false, error: '' });
   return {
     ...store,
-    async runBacktest(params: { symbol: string; fast_period?: number; slow_period?: number; initial_capital?: number }) {
+    async runBacktest(params: {
+      symbol: string;
+      strategy_id?: string;
+      strategy_name?: string;
+      start_date?: string;
+      end_date?: string;
+      initial_capital?: number;
+      fee_per_trade?: number;
+      slippage_bps?: number;
+      spread_bps?: number;
+      fast_period?: number;
+      slow_period?: number;
+    }) {
       store.setState({ loading: true, error: '' });
       try {
         const r = await fetch(`${API}/backtester/run`, {

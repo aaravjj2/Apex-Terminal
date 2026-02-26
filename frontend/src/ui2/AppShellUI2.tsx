@@ -432,11 +432,831 @@ const WORKSPACES: WorkspaceConfig[] = [
     description: 'Universe management, config profiles, runbooks',
     keywords: ['productization', 'universe', 'profiles', 'runbooks', 'backup']
   },
+  {
+    id: 'dataset-snapshots',
+    label: 'Datasets',
+    icon: '🗃️',
+    path: '/ui2/dataset-snapshots',
+    section: 'tools',
+    description: 'Immutable dataset snapshots with SHA-256 integrity',
+    keywords: ['dataset', 'snapshot', 'sha256', 'integrity', 'immutable', 'data']
+  },
+  // ── Masterplan W15-W104: 2-Year Feature Set ──
+  {
+    id: 'cross-asset-quote',
+    label: 'Cross-Asset Quotes',
+    icon: '💹',
+    path: '/ui2/cross-asset-quote',
+    section: 'tools',
+    description: 'Real-time cross-asset quote aggregation',
+    keywords: ['cross', 'asset', 'quote']
+  },
+  {
+    id: 'corporate-actions',
+    label: 'Corporate Actions',
+    icon: '📋',
+    path: '/ui2/corporate-actions',
+    section: 'tools',
+    description: 'Corporate actions ingestion and audit trail',
+    keywords: ['corporate', 'actions']
+  },
+  {
+    id: 'economic-calendar',
+    label: 'Economic Calendar',
+    icon: '📅',
+    path: '/ui2/economic-calendar',
+    section: 'tools',
+    description: 'Global economic event calendar',
+    keywords: ['economic', 'calendar']
+  },
+  {
+    id: 'news-enrichment',
+    label: 'News Enrichment',
+    icon: '📰',
+    path: '/ui2/news-enrichment',
+    section: 'tools',
+    description: 'NLP-enriched news with sentiment scoring',
+    keywords: ['news', 'enrichment']
+  },
+  {
+    id: 'entity-resolution',
+    label: 'Entity Resolution',
+    icon: '🔗',
+    path: '/ui2/entity-resolution',
+    section: 'tools',
+    description: 'Entity resolution and deduplication',
+    keywords: ['entity', 'resolution']
+  },
+  {
+    id: 'theme-clustering',
+    label: 'Theme Clustering',
+    icon: '🎯',
+    path: '/ui2/theme-clustering',
+    section: 'tools',
+    description: 'ML-powered thematic clustering',
+    keywords: ['theme', 'clustering']
+  },
+  {
+    id: 'research-notebook',
+    label: 'Research Notebook',
+    icon: '📓',
+    path: '/ui2/research-notebook',
+    section: 'tools',
+    description: 'Collaborative research notebooks',
+    keywords: ['research', 'notebook']
+  },
+  {
+    id: 'bql-query',
+    label: 'BQL Query',
+    icon: '⌨️',
+    path: '/ui2/bql-query',
+    section: 'tools',
+    description: 'Bloomberg-style query language',
+    keywords: ['bql', 'query']
+  },
+  {
+    id: 'search-explain',
+    label: 'Search Explain',
+    icon: '🔍',
+    path: '/ui2/search-explain',
+    section: 'tools',
+    description: 'Search ranking explainability',
+    keywords: ['search', 'explain']
+  },
+  {
+    id: 'screeners',
+    label: 'Screeners',
+    icon: '📊',
+    path: '/ui2/screeners',
+    section: 'tools',
+    description: 'Stock screeners with monitoring',
+    keywords: ['screeners']
+  },
+  {
+    id: 'collaboration',
+    label: 'Collaboration',
+    icon: '👥',
+    path: '/ui2/collaboration',
+    section: 'tools',
+    description: 'Analyst collaboration toolkit',
+    keywords: ['collaboration']
+  },
+  {
+    id: 'research-governance',
+    label: 'Research Gov',
+    icon: '🏛️',
+    path: '/ui2/research-governance',
+    section: 'tools',
+    description: 'Research QA and governance',
+    keywords: ['research', 'governance']
+  },
+  {
+    id: 'execution-cockpit',
+    label: 'Exec Cockpit',
+    icon: '🎛️',
+    path: '/ui2/execution-cockpit',
+    section: 'main',
+    description: 'Real-time execution monitoring',
+    keywords: ['execution', 'cockpit']
+  },
+  {
+    id: 'blotter',
+    label: 'Blotter',
+    icon: '📑',
+    path: '/ui2/blotter',
+    section: 'main',
+    description: 'Execution blotter with audit trail',
+    keywords: ['blotter']
+  },
+  {
+    id: 'pre-trade-risk',
+    label: 'Pre-Trade Risk',
+    icon: '⚠️',
+    path: '/ui2/pre-trade-risk',
+    section: 'tools',
+    description: 'Pre-trade risk checks',
+    keywords: ['pre', 'trade', 'risk']
+  },
+  {
+    id: 'surveillance',
+    label: 'Surveillance',
+    icon: '👁️',
+    path: '/ui2/surveillance',
+    section: 'tools',
+    description: 'Post-trade surveillance',
+    keywords: ['surveillance']
+  },
+  {
+    id: 'attribution',
+    label: 'Attribution',
+    icon: '📊',
+    path: '/ui2/attribution',
+    section: 'tools',
+    description: 'Portfolio attribution engine',
+    keywords: ['attribution']
+  },
+  {
+    id: 'factor-model',
+    label: 'Factor Model',
+    icon: '🧮',
+    path: '/ui2/factor-model',
+    section: 'tools',
+    description: 'Multi-factor risk model',
+    keywords: ['factor', 'model']
+  },
+  {
+    id: 'stress-scenarios',
+    label: 'Stress Scenarios',
+    icon: '🌪️',
+    path: '/ui2/stress-scenarios',
+    section: 'tools',
+    description: 'Stress scenario composer',
+    keywords: ['stress', 'scenarios']
+  },
+  {
+    id: 'pnl-explain',
+    label: 'PnL Explainer',
+    icon: '💰',
+    path: '/ui2/pnl-explain',
+    section: 'tools',
+    description: 'PnL explainability service',
+    keywords: ['pnl', 'explain']
+  },
+  {
+    id: 'reconciliation',
+    label: 'Reconciliation',
+    icon: '🔄',
+    path: '/ui2/reconciliation',
+    section: 'system',
+    description: 'Trade reconciliation automation',
+    keywords: ['reconciliation']
+  },
+  {
+    id: 'smart-routing',
+    label: 'Smart Routing',
+    icon: '🛤️',
+    path: '/ui2/smart-routing',
+    section: 'tools',
+    description: 'Smart order routing',
+    keywords: ['smart', 'routing']
+  },
+  {
+    id: 'broker-scoring',
+    label: 'Broker Scoring',
+    icon: '⭐',
+    path: '/ui2/broker-scoring',
+    section: 'tools',
+    description: 'Broker quality scoring',
+    keywords: ['broker', 'scoring']
+  },
+  {
+    id: 'cross-account',
+    label: 'Cross-Account',
+    icon: '🔐',
+    path: '/ui2/cross-account',
+    section: 'system',
+    description: 'Cross-account controls',
+    keywords: ['cross', 'account']
+  },
+  {
+    id: 'risk-governance',
+    label: 'Risk Governance',
+    icon: '🏛️',
+    path: '/ui2/risk-governance',
+    section: 'system',
+    description: 'Risk governance framework',
+    keywords: ['risk', 'governance']
+  },
+  {
+    id: 'agent-registry',
+    label: 'Agent Registry',
+    icon: '🤖',
+    path: '/ui2/agent-registry',
+    section: 'tools',
+    description: 'AI agent registry',
+    keywords: ['agent', 'registry']
+  },
+  {
+    id: 'autopilot-playbook',
+    label: 'Playbook',
+    icon: '📖',
+    path: '/ui2/autopilot-playbook',
+    section: 'tools',
+    description: 'Autopilot playbook engine',
+    keywords: ['autopilot', 'playbook']
+  },
+  {
+    id: 'prompt-firewall',
+    label: 'Prompt Firewall',
+    icon: '🔥',
+    path: '/ui2/prompt-firewall',
+    section: 'system',
+    description: 'Prompt policy firewall',
+    keywords: ['prompt', 'firewall']
+  },
+  {
+    id: 'model-router',
+    label: 'Model Router',
+    icon: '🔀',
+    path: '/ui2/model-router',
+    section: 'system',
+    description: 'AI model router',
+    keywords: ['model', 'router']
+  },
+  {
+    id: 'eval-harness',
+    label: 'Eval Harness',
+    icon: '🧪',
+    path: '/ui2/eval-harness',
+    section: 'tools',
+    description: 'Model evaluation harness',
+    keywords: ['eval', 'harness']
+  },
+  {
+    id: 'approval-queue',
+    label: 'Approval Queue',
+    icon: '✅',
+    path: '/ui2/approval-queue',
+    section: 'system',
+    description: 'Human approval queue',
+    keywords: ['approval', 'queue']
+  },
+  {
+    id: 'strategy-sim',
+    label: 'Strategy Sim',
+    icon: '🎲',
+    path: '/ui2/strategy-sim',
+    section: 'tools',
+    description: 'Strategy simulation',
+    keywords: ['strategy', 'sim']
+  },
+  {
+    id: 'signal-provenance',
+    label: 'Signal Provenance',
+    icon: '📜',
+    path: '/ui2/signal-provenance',
+    section: 'tools',
+    description: 'Signal provenance ledger',
+    keywords: ['signal', 'provenance']
+  },
+  {
+    id: 'incident-ai',
+    label: 'Incident AI',
+    icon: '🚨',
+    path: '/ui2/incident-ai',
+    section: 'system',
+    description: 'Incident-aware AI fallback',
+    keywords: ['incident', 'ai']
+  },
+  {
+    id: 'drift-detection',
+    label: 'Drift Detection',
+    icon: '📐',
+    path: '/ui2/drift-detection',
+    section: 'tools',
+    description: 'Drift detection pipeline',
+    keywords: ['drift', 'detection']
+  },
+  {
+    id: 'control-tower',
+    label: 'Control Tower',
+    icon: '🗼',
+    path: '/ui2/control-tower',
+    section: 'main',
+    description: 'Autopilot control tower',
+    keywords: ['control', 'tower']
+  },
+  {
+    id: 'policy-attestation',
+    label: 'Policy Attest',
+    icon: '📝',
+    path: '/ui2/policy-attestation',
+    section: 'system',
+    description: 'Policy attestation packs',
+    keywords: ['policy', 'attestation']
+  },
+  {
+    id: 'ai-governance',
+    label: 'AI Governance',
+    icon: '🏗️',
+    path: '/ui2/ai-governance',
+    section: 'system',
+    description: 'AI release governance',
+    keywords: ['ai', 'governance']
+  },
+  {
+    id: 'options-matrix',
+    label: 'Options Matrix',
+    icon: '📐',
+    path: '/ui2/options-matrix',
+    section: 'tools',
+    description: 'Options chain matrix',
+    keywords: ['options', 'matrix']
+  },
+  {
+    id: 'greeks-service',
+    label: 'Greeks',
+    icon: 'Δ',
+    path: '/ui2/greeks-service',
+    section: 'tools',
+    description: 'Greeks computation service',
+    keywords: ['greeks', 'service']
+  },
+  {
+    id: 'vol-surface',
+    label: 'Vol Surface',
+    icon: '📈',
+    path: '/ui2/vol-surface',
+    section: 'tools',
+    description: 'Volatility surface analytics',
+    keywords: ['vol', 'surface']
+  },
+  {
+    id: 'payoff-lab',
+    label: 'Payoff Lab',
+    icon: '🔬',
+    path: '/ui2/payoff-lab',
+    section: 'tools',
+    description: 'Strategy payoff lab',
+    keywords: ['payoff', 'lab']
+  },
+  {
+    id: 'spread-tools',
+    label: 'Spread Tools',
+    icon: '🔧',
+    path: '/ui2/spread-tools',
+    section: 'tools',
+    description: 'Options spread execution',
+    keywords: ['spread', 'tools']
+  },
+  {
+    id: 'futures-curve',
+    label: 'Futures Curve',
+    icon: '📉',
+    path: '/ui2/futures-curve',
+    section: 'tools',
+    description: 'Futures curve analytics',
+    keywords: ['futures', 'curve']
+  },
+  {
+    id: 'rates-monitor',
+    label: 'Rates Monitor',
+    icon: '💵',
+    path: '/ui2/rates-monitor',
+    section: 'tools',
+    description: 'Interest rates monitor',
+    keywords: ['rates', 'monitor']
+  },
+  {
+    id: 'cross-margin',
+    label: 'Cross-Margin',
+    icon: '💼',
+    path: '/ui2/cross-margin',
+    section: 'system',
+    description: 'Cross-margin controls',
+    keywords: ['cross', 'margin']
+  },
+  {
+    id: 'derivatives-oms',
+    label: 'Derivatives OMS',
+    icon: '🏢',
+    path: '/ui2/derivatives-oms',
+    section: 'main',
+    description: 'Derivatives order management',
+    keywords: ['derivatives', 'oms']
+  },
+  {
+    id: 'vol-scanner',
+    label: 'Vol Scanner',
+    icon: '🔎',
+    path: '/ui2/vol-scanner',
+    section: 'tools',
+    description: 'Volatility scanner',
+    keywords: ['vol', 'scanner']
+  },
+  {
+    id: 'hedge-engine',
+    label: 'Hedge Engine',
+    icon: '🛡️',
+    path: '/ui2/hedge-engine',
+    section: 'tools',
+    description: 'Hedge recommendation engine',
+    keywords: ['hedge', 'engine']
+  },
+  {
+    id: 'risk-adj-exec',
+    label: 'Risk-Adj Exec',
+    icon: '⚡',
+    path: '/ui2/risk-adj-exec',
+    section: 'tools',
+    description: 'Risk-adjusted execution',
+    keywords: ['risk', 'adj', 'exec']
+  },
+  {
+    id: 'derivatives-gov',
+    label: 'Deriv Gov',
+    icon: '🏛️',
+    path: '/ui2/derivatives-gov',
+    section: 'system',
+    description: 'Derivatives governance',
+    keywords: ['derivatives', 'gov']
+  },
+  {
+    id: 'policy-code',
+    label: 'Policy Code',
+    icon: '📜',
+    path: '/ui2/policy-code',
+    section: 'system',
+    description: 'Policy-as-code engine',
+    keywords: ['policy', 'code']
+  },
+  {
+    id: 'entitlements',
+    label: 'Entitlements',
+    icon: '🔑',
+    path: '/ui2/entitlements',
+    section: 'system',
+    description: 'Entitlements matrix',
+    keywords: ['entitlements']
+  },
+  {
+    id: 'approval-chain',
+    label: 'Approval Chain',
+    icon: '🔗',
+    path: '/ui2/approval-chain',
+    section: 'system',
+    description: 'Approval chain engine',
+    keywords: ['approval', 'chain']
+  },
+  {
+    id: 'evidence-vault',
+    label: 'Evidence Vault',
+    icon: '🔒',
+    path: '/ui2/evidence-vault',
+    section: 'system',
+    description: 'Regulatory evidence vault',
+    keywords: ['evidence', 'vault']
+  },
+  {
+    id: 'retention-policy',
+    label: 'Retention Policy',
+    icon: '🗑️',
+    path: '/ui2/retention-policy',
+    section: 'system',
+    description: 'Data retention automation',
+    keywords: ['retention', 'policy']
+  },
+  {
+    id: 'audit-replay',
+    label: 'Audit Replay',
+    icon: '⏪',
+    path: '/ui2/audit-replay',
+    section: 'system',
+    description: 'Audit event replay',
+    keywords: ['audit', 'replay']
+  },
+  {
+    id: 'incident-compliance',
+    label: 'Incident Compl',
+    icon: '🔔',
+    path: '/ui2/incident-compliance',
+    section: 'system',
+    description: 'Incident compliance bridge',
+    keywords: ['incident', 'compliance']
+  },
+  {
+    id: 'supervisory',
+    label: 'Supervisory',
+    icon: '👔',
+    path: '/ui2/supervisory',
+    section: 'system',
+    description: 'Supervisory dashboards',
+    keywords: ['supervisory']
+  },
+  {
+    id: 'kri-scoring',
+    label: 'KRI Scoring',
+    icon: '📏',
+    path: '/ui2/kri-scoring',
+    section: 'system',
+    description: 'Key Risk Indicator scoring',
+    keywords: ['kri', 'scoring']
+  },
+  {
+    id: 'third-party-risk',
+    label: '3rd Party Risk',
+    icon: '🌐',
+    path: '/ui2/third-party-risk',
+    section: 'system',
+    description: 'Third-party risk connectors',
+    keywords: ['third', 'party', 'risk']
+  },
+  {
+    id: 'sso-hardening',
+    label: 'SSO Hardening',
+    icon: '🔐',
+    path: '/ui2/sso-hardening',
+    section: 'system',
+    description: 'Enterprise SSO hardening',
+    keywords: ['sso', 'hardening']
+  },
+  {
+    id: 'jurisdiction',
+    label: 'Jurisdiction',
+    icon: '🌍',
+    path: '/ui2/jurisdiction',
+    section: 'system',
+    description: 'Jurisdiction rulesets',
+    keywords: ['jurisdiction']
+  },
+  {
+    id: 'control-framework',
+    label: 'Control FW',
+    icon: '✔️',
+    path: '/ui2/control-framework',
+    section: 'system',
+    description: 'Control framework signoff',
+    keywords: ['control', 'framework']
+  },
+  {
+    id: 'plugin-runtime',
+    label: 'Plugins',
+    icon: '🧩',
+    path: '/ui2/plugin-runtime',
+    section: 'system',
+    description: 'Plugin sandbox runtime',
+    keywords: ['plugin', 'runtime']
+  },
+  {
+    id: 'sdk-api',
+    label: 'SDK Standard',
+    icon: '📘',
+    path: '/ui2/sdk-api',
+    section: 'system',
+    description: 'SDK API standard',
+    keywords: ['sdk', 'api']
+  },
+  {
+    id: 'app-sandbox',
+    label: 'App Sandbox',
+    icon: '📦',
+    path: '/ui2/app-sandbox',
+    section: 'system',
+    description: 'App sandbox controls',
+    keywords: ['app', 'sandbox']
+  },
+  {
+    id: 'marketplace',
+    label: 'Marketplace',
+    icon: '🏪',
+    path: '/ui2/marketplace',
+    section: 'tools',
+    description: 'Extension marketplace',
+    keywords: ['marketplace']
+  },
+  {
+    id: 'partner-ci',
+    label: 'Partner CI',
+    icon: '🤝',
+    path: '/ui2/partner-ci',
+    section: 'system',
+    description: 'Partner CI certification',
+    keywords: ['partner', 'ci']
+  },
+  {
+    id: 'usage-metering',
+    label: 'Usage Metering',
+    icon: '📊',
+    path: '/ui2/usage-metering',
+    section: 'system',
+    description: 'Usage metering pipeline',
+    keywords: ['usage', 'metering']
+  },
+  {
+    id: 'billing-events',
+    label: 'Billing',
+    icon: '💳',
+    path: '/ui2/billing-events',
+    section: 'system',
+    description: 'Billing event processing',
+    keywords: ['billing', 'events']
+  },
+  {
+    id: 'ext-observability',
+    label: 'Ext Observ',
+    icon: '🔭',
+    path: '/ui2/ext-observability',
+    section: 'system',
+    description: 'Extension observability',
+    keywords: ['ext', 'observability']
+  },
+  {
+    id: 'tenant-quota',
+    label: 'Tenant Quota',
+    icon: '📐',
+    path: '/ui2/tenant-quota',
+    section: 'system',
+    description: 'Tenant quota controls',
+    keywords: ['tenant', 'quota']
+  },
+  {
+    id: 'compat-matrix',
+    label: 'Compat Matrix',
+    icon: '🔢',
+    path: '/ui2/compat-matrix',
+    section: 'system',
+    description: 'Compatibility matrix',
+    keywords: ['compat', 'matrix']
+  },
+  {
+    id: 'dev-portal',
+    label: 'Dev Portal',
+    icon: '🌐',
+    path: '/ui2/dev-portal',
+    section: 'tools',
+    description: 'Developer portal',
+    keywords: ['dev', 'portal']
+  },
+  {
+    id: 'support-sla',
+    label: 'Support SLA',
+    icon: '🎫',
+    path: '/ui2/support-sla',
+    section: 'system',
+    description: 'Support SLA management',
+    keywords: ['support', 'sla']
+  },
+  {
+    id: 'marketplace-trust',
+    label: 'Mktplace Trust',
+    icon: '🔒',
+    path: '/ui2/marketplace-trust',
+    section: 'system',
+    description: 'Marketplace trust security',
+    keywords: ['marketplace', 'trust']
+  },
+  {
+    id: 'multi-region',
+    label: 'Multi-Region',
+    icon: '🌏',
+    path: '/ui2/multi-region',
+    section: 'system',
+    description: 'Multi-region traffic steering',
+    keywords: ['multi', 'region']
+  },
+  {
+    id: 'latency-budget',
+    label: 'Latency Budget',
+    icon: '⏱️',
+    path: '/ui2/latency-budget',
+    section: 'system',
+    description: 'Latency budget engine',
+    keywords: ['latency', 'budget']
+  },
+  {
+    id: 'cost-profiler',
+    label: 'Cost Profiler',
+    icon: '💲',
+    path: '/ui2/cost-profiler',
+    section: 'system',
+    description: 'Infrastructure cost profiler',
+    keywords: ['cost', 'profiler']
+  },
+  {
+    id: 'reliability-econ',
+    label: 'Reliability Econ',
+    icon: '📊',
+    path: '/ui2/reliability-econ',
+    section: 'system',
+    description: 'Reliability economics dashboard',
+    keywords: ['reliability', 'econ']
+  },
+  {
+    id: 'regional-failover',
+    label: 'Failover Drills',
+    icon: '🔄',
+    path: '/ui2/regional-failover',
+    section: 'system',
+    description: 'Regional failover drills',
+    keywords: ['regional', 'failover']
+  },
+  {
+    id: 'data-residency',
+    label: 'Data Residency',
+    icon: '📍',
+    path: '/ui2/data-residency',
+    section: 'system',
+    description: 'Data residency controls',
+    keywords: ['data', 'residency']
+  },
+  {
+    id: 'ops-automation-ai',
+    label: 'Ops AI',
+    icon: '🤖',
+    path: '/ui2/ops-automation-ai',
+    section: 'system',
+    description: 'AI ops automation',
+    keywords: ['ops', 'automation', 'ai']
+  },
+  {
+    id: 'hot-path',
+    label: 'Hot Path',
+    icon: '🔥',
+    path: '/ui2/hot-path',
+    section: 'system',
+    description: 'Hot path profiling',
+    keywords: ['hot', 'path']
+  },
+  {
+    id: 'release-quality',
+    label: 'Release Quality',
+    icon: '🎯',
+    path: '/ui2/release-quality',
+    section: 'system',
+    description: 'Release quality predictor',
+    keywords: ['release', 'quality']
+  },
+  {
+    id: 'capacity-plan',
+    label: 'Capacity Plan',
+    icon: '📐',
+    path: '/ui2/capacity-plan',
+    section: 'system',
+    description: 'Capacity planning model',
+    keywords: ['capacity', 'plan']
+  },
+  {
+    id: 'platform-debt',
+    label: 'Platform Debt',
+    icon: '🧹',
+    path: '/ui2/platform-debt',
+    section: 'system',
+    description: 'Technical debt retirement',
+    keywords: ['platform', 'debt']
+  },
+  {
+    id: 'operator-enable',
+    label: 'Operator Enable',
+    icon: '📚',
+    path: '/ui2/operator-enable',
+    section: 'system',
+    description: 'Operator enablement',
+    keywords: ['operator', 'enable']
+  },
+  {
+    id: 'global-readiness',
+    label: 'Global Ready',
+    icon: '🌟',
+    path: '/ui2/global-readiness',
+    section: 'system',
+    description: 'Global readiness certification',
+    keywords: ['global', 'readiness']
+  },
 ];
 
 // Core Correctness Track — Autopilot, Strategies/Backtester, Workflows/Agents, Search, Ops/Settings
 // All other workspaces are still routable but hidden from the left rail.
-const CORE_NAV_IDS = new Set(['autopilot', 'search', 'workflow-builder', 'backtester-v3', 'broker-v2', 'runs', 'settings', 'observability-v2', 'productization']);
+const CORE_NAV_IDS = new Set(['autopilot', 'search', 'workflow-builder', 'backtester-v3', 'broker-v2', 'runs', 'settings', 'observability-v2', 'productization', 'dataset-snapshots', 'execution-cockpit', 'control-tower', 'options-matrix', 'derivatives-oms', 'marketplace', 'global-readiness']);
 const VISIBLE_WORKSPACES = WORKSPACES.filter(w => CORE_NAV_IDS.has(w.id));
 
 export function AppShellUI2() {

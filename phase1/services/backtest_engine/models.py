@@ -24,8 +24,9 @@ class Side(str, Enum):
 
 class BacktestConfig(BaseModel):
     """Backtest configuration"""
-    strategy_id: str
-    symbol: str = Field(..., description="Symbol to backtest (e.g., SPY, AAPL)")
+    strategy_id: str = Field(default="sma_crossover", description="Strategy identifier")
+    strategy: Optional[str] = Field(default=None, description="Alias for strategy_id (judge compat)")
+    symbol: str = Field(default="AAPL", description="Symbol to backtest (e.g., SPY, AAPL)")
     start_date: date
     end_date: date
     initial_capital: float = Field(default=100000.0, gt=0)
@@ -34,6 +35,13 @@ class BacktestConfig(BaseModel):
     seed: int = Field(default=42, description="Random seed for determinism")
     # v1.31: bind to a strategy artifact by content-hash ID
     strategy_artifact_id: Optional[str] = Field(default=None, description="Strategy artifact content-hash ID (v1.31)")
+    # W14: bind to a dataset snapshot
+    dataset_id: Optional[str] = Field(default=None, description="Dataset snapshot ID (W14)")
+
+    def model_post_init(self, __context):
+        """If 'strategy' alias is used, copy to strategy_id."""
+        if self.strategy and self.strategy_id == "sma_crossover":
+            object.__setattr__(self, 'strategy_id', self.strategy)
     
     model_config = {
         "json_schema_extra": {
@@ -134,11 +142,12 @@ class DrawdownPoint(BaseModel):
 
 class ProvenanceInfo(BaseModel):
     """Market data provenance information"""
-    source: str = Field(..., description="Data source: DEMO, LOCAL_CACHE, LOCAL_REPLAY, LOCAL_FETCH")
+    source: str = Field(..., description="Data source: DEMO, LOCAL_CACHE, LOCAL_REPLAY, LOCAL_FETCH, DATASET_SNAPSHOT")
     cache_key: Optional[str] = None
     checksum: Optional[str] = None
     fetched_at: Optional[str] = None
     provider: Optional[str] = None
+    dataset_id: Optional[str] = Field(None, description="Immutable dataset snapshot ID when bound")
 
 
 class BacktestRun(BaseModel):

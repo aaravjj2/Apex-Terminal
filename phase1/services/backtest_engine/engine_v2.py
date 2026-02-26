@@ -29,6 +29,7 @@ from .models import (
     BacktestMetrics, EquityPoint, DrawdownPoint, ProvenanceInfo,
 )
 from .data_pipeline import load_bars, fetch_daily, store_bars
+from .dataset_snapshot import get_dataset_store, load_snapshot_bars, BtDataMissing, BtInvariantFail
 from ..strategy_lab.models import StrategyDefinition
 from ..strategy_lab.storage import get_storage as get_strategy_storage
 from ..market_data.models import BarDaily, compute_bars_sha256
@@ -313,14 +314,28 @@ class BacktestEngineV2:
                     f"Available: {', '.join(list(_BUILTIN_STRATEGIES.keys()))}"
                 )
 
-            # 2. Load bars from pipeline (must be primed)
-            bars, batch = load_bars(config.symbol, config.start_date, config.end_date)
-            if not bars:
-                raise ValueError(
-                    f"No market data for {config.symbol} "
-                    f"({config.start_date} – {config.end_date}). "
-                    f"Run: python scripts/prime_backtest_history.py {config.symbol}"
-                )
+            # 2. Load bars — prefer immutable dataset snapshot when dataset_id given
+            dataset_id_used = getattr(config, "dataset_id", None)
+            if dataset_id_used:
+                try:
+                    bars = load_snapshot_bars(dataset_id_used)
+                except Exception as snap_err:
+                    raise ValueError(
+                        f"Cannot load dataset snapshot '{dataset_id_used}': {snap_err}"
+                    ) from snap_err
+                if not bars:
+                    raise ValueError(
+                        f"Dataset snapshot '{dataset_id_used}' contains no bars"
+                    )
+                batch = None  # no BatchRecord for snapshot path
+            else:
+                bars, batch = load_bars(config.symbol, config.start_date, config.end_date)
+                if not bars:
+                    raise ValueError(
+                        f"No market data for {config.symbol} "
+                        f"({config.start_date} – {config.end_date}). "
+                        f"Run: python scripts/prime_backtest_history.py {config.symbol}"
+                    )
 
             checksum = compute_bars_sha256(bars)
 
@@ -354,11 +369,16 @@ class BacktestEngineV2:
             run.drawdown_series = drawdown_series
             run.metrics = metrics
             run.provenance = ProvenanceInfo(
-                source="LOCAL_CACHE",
+                source="DATASET_SNAPSHOT" if dataset_id_used else "LOCAL_CACHE",
                 provider=batch.provider if batch else "yfinance",
-                cache_key=f"{config.symbol}:{config.start_date}:{config.end_date}",
+                cache_key=(
+                    f"dataset:{dataset_id_used}"
+                    if dataset_id_used
+                    else f"{config.symbol}:{config.start_date}:{config.end_date}"
+                ),
                 checksum=checksum,
                 fetched_at=batch.fetched_at.isoformat() if batch else None,
+                dataset_id=dataset_id_used,
             )
             run.status = BacktestStatus.COMPLETED
             run.completed_at = datetime.utcnow()

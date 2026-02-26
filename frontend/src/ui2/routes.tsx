@@ -99,11 +99,106 @@ import {
   SafeActionsUI2,
   ExportBundleUI2,
   AutopilotOptionsUI2,
+  AutopilotCommandCenterUI2,
   ElastiHackUI2,
   QueryStudioUI2,
   DlqOpsUI2,
   MonitorUI2,
+  DatasetSnapshotUI2,
+
+  // Masterplan W15-W104
+  CrossAssetQuoteUI2,
+  CorporateActionsUI2,
+  EconomicCalendarUI2,
+  NewsEnrichmentUI2,
+  EntityResolutionUI2,
+  ThemeClusteringUI2,
+  ResearchNotebookUI2,
+  BqlQueryUI2,
+  SearchExplainUI2,
+  ScreenersUI2,
+  CollaborationUI2,
+  ResearchGovernanceUI2,
+  ExecutionCockpitUI2,
+  BlotterUI2,
+  PreTradeRiskUI2,
+  SurveillanceUI2,
+  AttributionUI2,
+  FactorModelUI2,
+  StressScenariosUI2,
+  PnlExplainUI2,
+  ReconciliationUI2,
+  SmartRoutingUI2,
+  BrokerScoringUI2,
+  CrossAccountUI2,
+  RiskGovernanceUI2,
+  AgentRegistryUI2,
+  AutopilotPlaybookUI2,
+  PromptFirewallUI2,
+  ModelRouterUI2,
+  EvalHarnessUI2,
+  ApprovalQueueUI2,
+  StrategySimUI2,
+  SignalProvenanceUI2,
+  IncidentAiUI2,
+  DriftDetectionUI2,
+  ControlTowerUI2,
+  PolicyAttestationUI2,
+  AiGovernanceUI2,
+  OptionsMatrixUI2,
+  GreeksServiceUI2,
+  VolSurfaceUI2,
+  PayoffLabUI2,
+  SpreadToolsUI2,
+  FuturesCurveUI2,
+  RatesMonitorUI2,
+  CrossMarginUI2,
+  DerivativesOmsUI2,
+  VolScannerUI2,
+  HedgeEngineUI2,
+  RiskAdjExecUI2,
+  DerivativesGovUI2,
+  PolicyCodeUI2,
+  EntitlementsUI2,
+  ApprovalChainUI2,
+  EvidenceVaultUI2,
+  RetentionPolicyUI2,
+  AuditReplayUI2,
+  IncidentComplianceUI2,
+  SupervisoryUI2,
+  KriScoringUI2,
+  ThirdPartyRiskUI2,
+  SsoHardeningUI2,
+  JurisdictionUI2,
+  ControlFrameworkUI2,
+  PluginRuntimeUI2,
+  SdkApiUI2,
+  AppSandboxUI2,
+  MarketplaceUI2,
+  PartnerCiUI2,
+  UsageMeteringUI2,
+  BillingEventsUI2,
+  ExtObservabilityUI2,
+  TenantQuotaUI2,
+  CompatMatrixUI2,
+  DevPortalUI2,
+  SupportSlaUI2,
+  MarketplaceTrustUI2,
+  MultiRegionUI2,
+  LatencyBudgetUI2,
+  CostProfilerUI2,
+  ReliabilityEconUI2,
+  RegionalFailoverUI2,
+  DataResidencyUI2,
+  OpsAutomationAiUI2,
+  HotPathUI2,
+  ReleaseQualityUI2,
+  CapacityPlanUI2,
+  PlatformDebtUI2,
+  OperatorEnableUI2,
+  GlobalReadinessUI2,
 } from './pages';
+import TerraCodeJudge from './pages/TerraCodeJudge';
 
 export function UI2Routes() {
   return (
@@ -233,12 +328,110 @@ export function UI2Routes() {
         <Route path="export-bundle" element={<ExportBundleUI2 />} />
         {/* Autopilot Options — Real options autopilot */}
         <Route path="autopilot-options" element={<AutopilotOptionsUI2 />} />
+        {/* Autopilot Command Center — Revolution cockpit */}
+        <Route path="autopilot-command-center" element={<AutopilotCommandCenterUI2 />} />
         {/* ElastiHack — Hackathon Pages */}
         <Route path="elastihack" element={<ElastiHackUI2 />} />
         <Route path="query-studio" element={<QueryStudioUI2 />} />
         <Route path="dlq-ops" element={<DlqOpsUI2 />} />
         {/* W01 — Monitor Grid */}
         <Route path="monitor" element={<MonitorUI2 />} />
+        {/* W14 — Dataset Snapshot Management */}
+        <Route path="dataset-snapshots" element={<DatasetSnapshotUI2 />} />
+
+        {/* ── Masterplan W15-W104: 2-Year Feature Set ── */}
+        <Route path="cross-asset-quote" element={<CrossAssetQuoteUI2 />} />
+        <Route path="corporate-actions" element={<CorporateActionsUI2 />} />
+        <Route path="economic-calendar" element={<EconomicCalendarUI2 />} />
+        <Route path="news-enrichment" element={<NewsEnrichmentUI2 />} />
+        <Route path="entity-resolution" element={<EntityResolutionUI2 />} />
+        <Route path="theme-clustering" element={<ThemeClusteringUI2 />} />
+        <Route path="research-notebook" element={<ResearchNotebookUI2 />} />
+        <Route path="bql-query" element={<BqlQueryUI2 />} />
+        <Route path="search-explain" element={<SearchExplainUI2 />} />
+        <Route path="screeners" element={<ScreenersUI2 />} />
+        <Route path="collaboration" element={<CollaborationUI2 />} />
+        <Route path="research-governance" element={<ResearchGovernanceUI2 />} />
+        <Route path="execution-cockpit" element={<ExecutionCockpitUI2 />} />
+        <Route path="blotter" element={<BlotterUI2 />} />
+        <Route path="pre-trade-risk" element={<PreTradeRiskUI2 />} />
+        <Route path="surveillance" element={<SurveillanceUI2 />} />
+        <Route path="attribution" element={<AttributionUI2 />} />
+        <Route path="factor-model" element={<FactorModelUI2 />} />
+        <Route path="stress-scenarios" element={<StressScenariosUI2 />} />
+        <Route path="pnl-explain" element={<PnlExplainUI2 />} />
+        <Route path="reconciliation" element={<ReconciliationUI2 />} />
+        <Route path="smart-routing" element={<SmartRoutingUI2 />} />
+        <Route path="broker-scoring" element={<BrokerScoringUI2 />} />
+        <Route path="cross-account" element={<CrossAccountUI2 />} />
+        <Route path="risk-governance" element={<RiskGovernanceUI2 />} />
+        <Route path="agent-registry" element={<AgentRegistryUI2 />} />
+        <Route path="autopilot-playbook" element={<AutopilotPlaybookUI2 />} />
+        <Route path="prompt-firewall" element={<PromptFirewallUI2 />} />
+        <Route path="model-router" element={<ModelRouterUI2 />} />
+        <Route path="eval-harness" element={<EvalHarnessUI2 />} />
+        <Route path="approval-queue" element={<ApprovalQueueUI2 />} />
+        <Route path="strategy-sim" element={<StrategySimUI2 />} />
+        <Route path="signal-provenance" element={<SignalProvenanceUI2 />} />
+        <Route path="incident-ai" element={<IncidentAiUI2 />} />
+        <Route path="drift-detection" element={<DriftDetectionUI2 />} />
+        <Route path="control-tower" element={<ControlTowerUI2 />} />
+        <Route path="policy-attestation" element={<PolicyAttestationUI2 />} />
+        <Route path="ai-governance" element={<AiGovernanceUI2 />} />
+        <Route path="options-matrix" element={<OptionsMatrixUI2 />} />
+        <Route path="greeks-service" element={<GreeksServiceUI2 />} />
+        <Route path="vol-surface" element={<VolSurfaceUI2 />} />
+        <Route path="payoff-lab" element={<PayoffLabUI2 />} />
+        <Route path="spread-tools" element={<SpreadToolsUI2 />} />
+        <Route path="futures-curve" element={<FuturesCurveUI2 />} />
+        <Route path="rates-monitor" element={<RatesMonitorUI2 />} />
+        <Route path="cross-margin" element={<CrossMarginUI2 />} />
+        <Route path="derivatives-oms" element={<DerivativesOmsUI2 />} />
+        <Route path="vol-scanner" element={<VolScannerUI2 />} />
+        <Route path="hedge-engine" element={<HedgeEngineUI2 />} />
+        <Route path="risk-adj-exec" element={<RiskAdjExecUI2 />} />
+        <Route path="derivatives-gov" element={<DerivativesGovUI2 />} />
+        <Route path="policy-code" element={<PolicyCodeUI2 />} />
+        <Route path="entitlements" element={<EntitlementsUI2 />} />
+        <Route path="approval-chain" element={<ApprovalChainUI2 />} />
+        <Route path="evidence-vault" element={<EvidenceVaultUI2 />} />
+        <Route path="retention-policy" element={<RetentionPolicyUI2 />} />
+        <Route path="audit-replay" element={<AuditReplayUI2 />} />
+        <Route path="incident-compliance" element={<IncidentComplianceUI2 />} />
+        <Route path="supervisory" element={<SupervisoryUI2 />} />
+        <Route path="kri-scoring" element={<KriScoringUI2 />} />
+        <Route path="third-party-risk" element={<ThirdPartyRiskUI2 />} />
+        <Route path="sso-hardening" element={<SsoHardeningUI2 />} />
+        <Route path="jurisdiction" element={<JurisdictionUI2 />} />
+        <Route path="control-framework" element={<ControlFrameworkUI2 />} />
+        <Route path="plugin-runtime" element={<PluginRuntimeUI2 />} />
+        <Route path="sdk-api" element={<SdkApiUI2 />} />
+        <Route path="app-sandbox" element={<AppSandboxUI2 />} />
+        <Route path="marketplace" element={<MarketplaceUI2 />} />
+        <Route path="partner-ci" element={<PartnerCiUI2 />} />
+        <Route path="usage-metering" element={<UsageMeteringUI2 />} />
+        <Route path="billing-events" element={<BillingEventsUI2 />} />
+        <Route path="ext-observability" element={<ExtObservabilityUI2 />} />
+        <Route path="tenant-quota" element={<TenantQuotaUI2 />} />
+        <Route path="compat-matrix" element={<CompatMatrixUI2 />} />
+        <Route path="dev-portal" element={<DevPortalUI2 />} />
+        <Route path="support-sla" element={<SupportSlaUI2 />} />
+        <Route path="marketplace-trust" element={<MarketplaceTrustUI2 />} />
+        <Route path="multi-region" element={<MultiRegionUI2 />} />
+        <Route path="latency-budget" element={<LatencyBudgetUI2 />} />
+        <Route path="cost-profiler" element={<CostProfilerUI2 />} />
+        <Route path="reliability-econ" element={<ReliabilityEconUI2 />} />
+        <Route path="regional-failover" element={<RegionalFailoverUI2 />} />
+        <Route path="data-residency" element={<DataResidencyUI2 />} />
+        <Route path="ops-automation-ai" element={<OpsAutomationAiUI2 />} />
+        <Route path="hot-path" element={<HotPathUI2 />} />
+        <Route path="release-quality" element={<ReleaseQualityUI2 />} />
+        <Route path="capacity-plan" element={<CapacityPlanUI2 />} />
+        <Route path="platform-debt" element={<PlatformDebtUI2 />} />
+        <Route path="operator-enable" element={<OperatorEnableUI2 />} />
+        <Route path="global-readiness" element={<GlobalReadinessUI2 />} />
+        <Route path="judge" element={<TerraCodeJudge />} />
+
       </Route>
     </Routes>
   );

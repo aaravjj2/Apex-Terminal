@@ -395,3 +395,277 @@ class RegimeClassifier:
     def clear_cache(self):
         """Clear regime cache."""
         self._cache.clear()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MARKET REGIME CLASSIFIER  (Phase 1B: live VIX + SPY)
+# ─────────────────────────────────────────────────────────────────────────────
+
+import asyncio
+import time
+
+# VIX thresholds
+_VIX_CALM = 15.0
+_VIX_NORMAL = 20.0
+_VIX_ELEVATED = 25.0
+_VIX_STRESSED = 35.0
+_VIX_CRISIS = 40.0
+
+# SMA thresholds
+_BULL_SMA_MARGIN = 0.02
+_BEAR_SMA_MARGIN = -0.03
+
+# Cache TTL
+_MARKET_REGIME_TTL = 300  # 5 minutes
+
+
+class LiveMarketRegime:
+    """
+    Represents the current live market-wide regime.
+
+    This is derived from VIX (fear gauge) + SPY (trend proxy).
+    Used by the unified engine instead of the hardcoded "neutral".
+    """
+
+    BULL = "bull"
+    BEAR = "bear"
+    NEUTRAL = "neutral"
+    VOLATILE = "volatile"
+    CHAOS = "chaos"
+    UNKNOWN = "unknown"
+
+    # Which regimes allow new entries
+    ENTRY_ALLOWED = {BULL, BEAR, NEUTRAL}
+
+    def __init__(
+        self,
+        label: str,
+        confidence: float,
+        vix_level: Optional[float],
+        spy_price: Optional[float],
+        spy_vs_sma200: Optional[float],
+        spy_return_21d: Optional[float],
+        realized_vol: Optional[float],
+        reasons: List[str],
+        from_cache: bool = False,
+    ):
+        self.label = label
+        self.confidence = confidence
+        self.vix_level = vix_level
+        self.spy_price = spy_price
+        self.spy_vs_sma200 = spy_vs_sma200
+        self.spy_return_21d = spy_return_21d
+        self.realized_vol = realized_vol
+        self.reasons = reasons
+        self.from_cache = from_cache
+        self.timestamp = datetime.utcnow()
+
+    @property
+    def allows_entries(self) -> bool:
+        return self.label in self.ENTRY_ALLOWED
+
+    @property
+    def sizing_multiplier(self) -> float:
+        return {
+            self.BULL: 1.0,
+            self.NEUTRAL: 0.8,
+            self.BEAR: 0.6,
+            self.VOLATILE: 0.4,
+            self.CHAOS: 0.0,
+            self.UNKNOWN: 0.5,
+        }.get(self.label, 0.5)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "regime": self.label,
+            "confidence": round(self.confidence, 3),
+            "allows_entries": self.allows_entries,
+            "sizing_multiplier": self.sizing_multiplier,
+            "vix_level": round(self.vix_level, 2) if self.vix_level else None,
+            "spy_price": round(self.spy_price, 2) if self.spy_price else None,
+            "spy_vs_sma200_pct": round(self.spy_vs_sma200 * 100, 2) if self.spy_vs_sma200 else None,
+            "spy_return_21d_pct": round(self.spy_return_21d * 100, 2) if self.spy_return_21d else None,
+            "realized_vol_pct": round(self.realized_vol * 100, 2) if self.realized_vol else None,
+            "reasons": self.reasons,
+            "from_cache": self.from_cache,
+            "timestamp": self.timestamp.isoformat(),
+        }
+
+
+class LiveMarketRegimeClassifier:
+    """
+    Classifies market-wide regime from live VIX + SPY data.
+
+    Replaces the `regime: "neutral"  # TODO` in unified_engine._refresh_market_data().
+    """
+
+    def __init__(self):
+        self._cache: Optional[tuple] = None  # (monotonic_ts, LiveMarketRegime)
+
+    def _is_cache_valid(self) -> bool:
+        if not self._cache:
+            return False
+        ts, _ = self._cache
+        return (time.monotonic() - ts) < _MARKET_REGIME_TTL
+
+    def _sma(self, prices: List[float], n: int) -> Optional[float]:
+        if len(prices) < n:
+            return None
+        return sum(prices[-n:]) / n
+
+    def _rvol(self, prices: List[float], n: int = 20) -> Optional[float]:
+        if len(prices) < n + 1:
+            return None
+        import math
+        rets = []
+        for i in range(-n, 0):
+            p, c = prices[i - 1], prices[i]
+            if p > 0:
+                rets.append(math.log(c / p))
+        if not rets:
+            return None
+        mean = sum(rets) / len(rets)
+        var = sum((r - mean) ** 2 for r in rets) / len(rets)
+        return math.sqrt(var) * math.sqrt(252)
+
+    def classify_sync(self) -> LiveMarketRegime:
+        """Synchronous classification. Blocks on yFinance calls."""
+        if self._is_cache_valid():
+            _, cached = self._cache
+            cached.from_cache = True
+            return cached
+
+        try:
+            import yfinance as yf
+
+            # Fetch SPY 1-year + VIX current
+            spy_t = yf.Ticker("SPY")
+            vix_t = yf.Ticker("^VIX")
+
+            spy_hist = spy_t.history(period="1y")
+            vix_info = vix_t.fast_info
+            vix_hist = vix_t.history(period="2mo")
+
+            if spy_hist.empty or len(spy_hist) < 21:
+                raise ValueError("Insufficient SPY history")
+
+            closes = spy_hist["Close"].tolist()
+            spy_price = closes[-1]
+
+            # VIX
+            vix_level = None
+            try:
+                vix_level = float(
+                    getattr(vix_info, "last_price", None) or
+                    getattr(vix_info, "regularMarketPrice", None) or
+                    (vix_hist["Close"].iloc[-1] if not vix_hist.empty else 20.0)
+                )
+            except Exception:
+                vix_level = 20.0
+
+            # Signals
+            sma200 = self._sma(closes, 200)
+            rvol = self._rvol(closes, 20)
+
+            spy_vs_sma = ((spy_price - sma200) / sma200) if sma200 else 0.0
+            ret_1d = ((closes[-1] - closes[-2]) / closes[-2]) if len(closes) >= 2 else 0.0
+            ret_21d = ((closes[-1] - closes[-22]) / closes[-22]) if len(closes) >= 22 else 0.0
+
+            # Classification
+            reasons: List[str] = []
+            regime = LiveMarketRegime.NEUTRAL
+            confidence = 0.5
+
+            # CHAOS
+            if (vix_level and vix_level > _VIX_CRISIS) or ret_1d < -0.08:
+                reasons.append(
+                    f"VIX={vix_level:.1f} CRISIS" if vix_level and vix_level > _VIX_CRISIS
+                    else f"SPY crashed {ret_1d*100:.1f}%"
+                )
+                regime = LiveMarketRegime.CHAOS
+                confidence = 0.9
+            # VOLATILE
+            elif (vix_level and vix_level > _VIX_STRESSED) or (rvol and rvol > 0.28):
+                reasons.append(f"VIX={vix_level:.1f} stressed" if vix_level else f"RVol={rvol*100:.0f}%")
+                regime = LiveMarketRegime.VOLATILE
+                confidence = 0.75
+            # BULL
+            elif spy_vs_sma > _BULL_SMA_MARGIN and (not vix_level or vix_level < _VIX_NORMAL) and ret_21d > 0.03:
+                reasons.append(f"SPY {spy_vs_sma*100:.1f}% above SMA200, VIX={vix_level:.1f}, +{ret_21d*100:.1f}% 21d")
+                regime = LiveMarketRegime.BULL
+                confidence = 0.75
+            # BEAR
+            elif spy_vs_sma < _BEAR_SMA_MARGIN and ret_21d < -0.03:
+                reasons.append(f"SPY {spy_vs_sma*100:.1f}% below SMA200, {ret_21d*100:.1f}% 21d")
+                regime = LiveMarketRegime.BEAR
+                confidence = 0.70
+            # NEUTRAL
+            else:
+                reasons.append(
+                    f"SPY {spy_vs_sma*100:.1f}% vs SMA200, VIX={vix_level:.1f}, 21d={ret_21d*100:.1f}%"
+                )
+                regime = LiveMarketRegime.NEUTRAL
+                confidence = 0.60
+
+            result = LiveMarketRegime(
+                label=regime,
+                confidence=confidence,
+                vix_level=vix_level,
+                spy_price=spy_price,
+                spy_vs_sma200=spy_vs_sma,
+                spy_return_21d=ret_21d,
+                realized_vol=rvol,
+                reasons=reasons,
+            )
+            self._cache = (time.monotonic(), result)
+            logger.info(
+                f"LiveMarketRegimeClassifier: regime={regime} "
+                f"confidence={confidence:.2f} VIX={vix_level} SPY={spy_price:.2f} "
+                f"vs_sma200={spy_vs_sma*100:.1f}%"
+            )
+            return result
+
+        except Exception as exc:
+            logger.error(f"LiveMarketRegimeClassifier failed: {exc}")
+            fallback = LiveMarketRegime(
+                label=LiveMarketRegime.NEUTRAL,
+                confidence=0.2,
+                vix_level=None,
+                spy_price=None,
+                spy_vs_sma200=None,
+                spy_return_21d=None,
+                realized_vol=None,
+                reasons=[f"Data error: {exc}"],
+            )
+            return fallback
+
+    async def classify_async(self) -> LiveMarketRegime:
+        """Async wrapper — runs in thread pool."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.classify_sync)
+
+    def get_cached(self) -> Optional[LiveMarketRegime]:
+        if self._is_cache_valid():
+            _, r = self._cache
+            return r
+        return None
+
+    def invalidate(self) -> None:
+        self._cache = None
+
+
+# Singleton
+_live_market_classifier: Optional[LiveMarketRegimeClassifier] = None
+
+
+def get_live_regime_classifier() -> LiveMarketRegimeClassifier:
+    global _live_market_classifier
+    if _live_market_classifier is None:
+        _live_market_classifier = LiveMarketRegimeClassifier()
+    return _live_market_classifier
+
+
+async def classify_live_market() -> LiveMarketRegime:
+    """Convenience shortcut — get the current live market regime."""
+    clf = get_live_regime_classifier()
+    return await clf.classify_async()

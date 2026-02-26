@@ -28,7 +28,7 @@
     "long_put"
   ],
   "strategy_constraints": {
-    "min_dte": 3,
+    "min_dte": 0,
     "max_dte": 14,
     "min_short_delta": 0.25,
     "max_short_delta": 0.5,

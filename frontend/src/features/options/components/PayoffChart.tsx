@@ -1,10 +1,172 @@
-/**
- * Strategy Payoff Chart
- * Visualizes P/L at different underlying prices
+﻿/**
+ * Strategy Payoff Chart â€” Bloomberg Terminal Edition
  */
+// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
 
 import React, { useMemo, useRef, useEffect } from 'react';
 import type { StrategyAnalysis } from '../types';
+
+interface PayoffChartProps {
+  strategy: StrategyAnalysis;
+  width?: number;
+  height?: number;
+  showTheoretical?: boolean;
+}
+
+function drawChart(
+  canvas: HTMLCanvasElement,
+  strategy: StrategyAnalysis,
+  width: number,
+  height: number,
+  showTheoretical: boolean
+) {
+  const ctx = canvas.getContext('2d'); if(!ctx) return;
+  const dpr = window.devicePixelRatio||1;
+  canvas.width = width*dpr; canvas.height = height*dpr;
+  canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
+  ctx.scale(dpr, dpr);
+
+  const mg = {top:10, right:10, bottom:28, left:56};
+  const cw = width-mg.left-mg.right, ch = height-mg.top-mg.bottom;
+
+  const prices = strategy.priceRange;
+  const expPayoff = strategy.expirationPayoff;
+  const theoPayoff = strategy.theoreticalPayoff;
+  const allVals = [...expPayoff, ...theoPayoff, 0];
+  const mn = Math.min(...prices), mx = Math.max(...prices);
+  const mnP = Math.min(...allVals)-Math.abs(Math.min(...allVals))*0.1;
+  const mxP = Math.max(...allVals)+Math.abs(Math.max(...allVals))*0.1||10;
+
+  const sx = (p:number) => mg.left + ((p-mn)/(mx-mn||1))*cw;
+  const sy = (v:number) => mg.top + ch - ((v-mnP)/(mxP-mnP||1))*ch;
+
+  // Background
+  ctx.fillStyle = BG; ctx.fillRect(0,0,width,height);
+
+  // Grid lines (horizontal)
+  ctx.strokeStyle = BORDER; ctx.lineWidth = 0.5;
+  for(let i=0;i<=4;i++){
+    const y = mg.top + (ch/4)*i;
+    ctx.beginPath(); ctx.moveTo(mg.left,y); ctx.lineTo(width-mg.right,y); ctx.stroke();
+  }
+
+  // Zero line
+  const z = sy(0);
+  ctx.strokeStyle = SUBTLE; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(mg.left,z); ctx.lineTo(width-mg.right,z); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Current price vertical line
+  const curX = sx(strategy.underlyingPrice);
+  ctx.strokeStyle = `${BLUE}66`; ctx.lineWidth = 1; ctx.setLineDash([2,2]);
+  ctx.beginPath(); ctx.moveTo(curX,mg.top); ctx.lineTo(curX,height-mg.bottom); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Breakeven lines
+  ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+  strategy.breakevens.forEach(be=>{
+    const bx = sx(be);
+    ctx.beginPath(); ctx.moveTo(bx,mg.top); ctx.lineTo(bx,height-mg.bottom); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // Fill profit area (green)
+  ctx.beginPath();
+  let inP=false;
+  prices.forEach((price,i)=>{
+    const v=expPayoff[i]; const x=sx(price); const y=sy(v);
+    if(v>0){if(!inP){ctx.moveTo(x,z);inP=true;} ctx.lineTo(x,y);}
+    else if(inP){ctx.lineTo(x,z);ctx.closePath();ctx.fillStyle=`${GREEN}22`;ctx.fill();ctx.beginPath();inP=false;}
+  });
+  if(inP){ctx.lineTo(sx(mx),z);ctx.closePath();ctx.fillStyle=`${GREEN}22`;ctx.fill();}
+
+  // Fill loss area (red)
+  ctx.beginPath(); let inL=false;
+  prices.forEach((price,i)=>{
+    const v=expPayoff[i]; const x=sx(price); const y=sy(v);
+    if(v<0){if(!inL){ctx.moveTo(x,z);inL=true;} ctx.lineTo(x,y);}
+    else if(inL){ctx.lineTo(x,z);ctx.closePath();ctx.fillStyle=`${RED}22`;ctx.fill();ctx.beginPath();inL=false;}
+  });
+  if(inL){ctx.lineTo(sx(mx),z);ctx.closePath();ctx.fillStyle=`${RED}22`;ctx.fill();}
+
+  // Theoretical payoff line
+  if(showTheoretical&&theoPayoff.length>0){
+    ctx.strokeStyle=BLUE; ctx.lineWidth=1; ctx.beginPath();
+    prices.forEach((p,i)=>{const x=sx(p),y=sy(theoPayoff[i]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.stroke();
+  }
+
+  // Expiration payoff line (main)
+  ctx.strokeStyle=GREEN; ctx.lineWidth=2; ctx.beginPath();
+  prices.forEach((p,i)=>{const x=sx(p),y=sy(expPayoff[i]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.stroke();
+
+  // X-axis labels
+  ctx.fillStyle=SUBTLE; ctx.font=`10px ${MONO}`; ctx.textAlign='center' as CanvasTextAlign;
+  [mn, strategy.underlyingPrice, mx].forEach(p=>{
+    ctx.fillText(`$${p.toFixed(0)}`,sx(p),height-6);
+  });
+
+  // Y-axis labels
+  ctx.textAlign='right' as CanvasTextAlign;
+  [mnP,0,mxP].forEach(v=>{
+    const y=sy(v); if(y>mg.top&&y<height-mg.bottom){
+      ctx.fillStyle=v>0?GREEN:v<0?RED:SUBTLE;
+      ctx.fillText(`$${v.toFixed(0)}`,mg.left-5,y+3);
+    }
+  });
+
+  // Legend
+  ctx.font=`9px ${MONO}`; ctx.textAlign='left' as CanvasTextAlign;
+  ctx.fillStyle=GREEN; ctx.fillText('â–¬ EXPIRY',mg.left,mg.top+8);
+  if(showTheoretical){ctx.fillStyle=BLUE; ctx.fillText('â–¬ THEO',mg.left+70,mg.top+8);}
+  ctx.fillStyle=AMBER; ctx.fillText('â•Œ B/E',mg.left+showTheoretical?140:70,mg.top+8);
+}
+
+export const PayoffChart: React.FC<PayoffChartProps> = ({
+  strategy, width=500, height=220, showTheoretical=true
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(()=>{
+    if(canvasRef.current) drawChart(canvasRef.current,strategy,width,height,showTheoretical);
+  },[strategy,width,height,showTheoretical]);
+  return (
+    <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:2,padding:4}}>
+      <canvas ref={canvasRef} style={{display:'block'}}/>
+    </div>
+  );
+};
+
+// â”€â”€â”€ StrategyMetrics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+interface StrategyMetricsProps { strategy: StrategyAnalysis; }
+
+export const StrategyMetrics: React.FC<StrategyMetricsProps> = ({ strategy }) => {
+  const fmt=(v:number):string=>{
+    if(v===999999999||v===Infinity||v===-999999999||v===-Infinity) return 'UNLIMITED';
+    return `$${v.toFixed(0)}`;
+  };
+  const card=(label:string,val:string,color?:string):React.ReactNode=>(
+    <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 12px'}}>
+      <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:3}}>{label}</div>
+      <div style={{fontSize:14,fontFamily:MONO,fontWeight:700,color:color||TEXT}}>{val}</div>
+    </div>
+  );
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,fontFamily:MONO}}>
+      {card('MAX PROFIT',fmt(strategy.maxProfit),GREEN)}
+      {card('MAX LOSS',fmt(Math.abs(strategy.maxLoss)),RED)}
+      {card('BREAKEVENS',strategy.breakevens.length>0
+        ?strategy.breakevens.map(b=>`$${b.toFixed(2)}`).join(' / '):'NONE',AMBER)}
+      {card('CURRENT PRICE',`$${strategy.underlyingPrice.toFixed(2)}`,BLUE)}
+    </div>
+  );
+};
+
+export default PayoffChart;
 
 interface PayoffChartProps {
   strategy: StrategyAnalysis;
@@ -14,268 +176,3 @@ interface PayoffChartProps {
   showTheoretical?: boolean;
 }
 
-export const PayoffChart: React.FC<PayoffChartProps> = ({
-  strategy,
-  width = 400,
-  height = 200,
-  className = '',
-  showTheoretical = true,
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Chart metrics
-  const metrics = useMemo(() => {
-    const prices = strategy.priceRange;
-    const expPayoff = strategy.expirationPayoff;
-    const theoPayoff = strategy.theoreticalPayoff;
-    
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    
-    const allPayoffs = [...expPayoff, ...theoPayoff];
-    const minPayoff = Math.min(...allPayoffs, 0);
-    const maxPayoff = Math.max(...allPayoffs, 0);
-    
-    // Add padding to payoff range
-    const payoffPadding = (maxPayoff - minPayoff) * 0.1;
-    
-    return {
-      minPrice,
-      maxPrice,
-      minPayoff: minPayoff - payoffPadding,
-      maxPayoff: maxPayoff + payoffPadding,
-      prices,
-      expPayoff,
-      theoPayoff,
-    };
-  }, [strategy]);
-
-  // Draw chart
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const w = width;
-    const h = height;
-    
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
-    ctx.scale(dpr, dpr);
-
-    // Margins
-    const margin = { top: 10, right: 10, bottom: 25, left: 50 };
-    const chartW = w - margin.left - margin.right;
-    const chartH = h - margin.top - margin.bottom;
-
-    // Scale functions
-    const scaleX = (price: number) => 
-      margin.left + ((price - metrics.minPrice) / (metrics.maxPrice - metrics.minPrice)) * chartW;
-    const scaleY = (payoff: number) => 
-      margin.top + chartH - ((payoff - metrics.minPayoff) / (metrics.maxPayoff - metrics.minPayoff)) * chartH;
-
-    // Clear
-    ctx.fillStyle = '#1f2937';
-    ctx.fillRect(0, 0, w, h);
-
-    // Zero line
-    const zeroY = scaleY(0);
-    ctx.strokeStyle = '#4b5563';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(margin.left, zeroY);
-    ctx.lineTo(w - margin.right, zeroY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Current price line
-    const currentX = scaleX(strategy.underlyingPrice);
-    ctx.strokeStyle = '#6b7280';
-    ctx.setLineDash([2, 2]);
-    ctx.beginPath();
-    ctx.moveTo(currentX, margin.top);
-    ctx.lineTo(currentX, h - margin.bottom);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Breakeven lines
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 1;
-    strategy.breakevens.forEach(be => {
-      const beX = scaleX(be);
-      ctx.beginPath();
-      ctx.moveTo(beX, margin.top);
-      ctx.lineTo(beX, h - margin.bottom);
-      ctx.stroke();
-    });
-
-    // Theoretical payoff (if showing)
-    if (showTheoretical) {
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      metrics.prices.forEach((price, i) => {
-        const x = scaleX(price);
-        const y = scaleY(metrics.theoPayoff[i]);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-    }
-
-    // Expiration payoff
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    metrics.prices.forEach((price, i) => {
-      const x = scaleX(price);
-      const y = scaleY(metrics.expPayoff[i]);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // Fill profit area
-    ctx.beginPath();
-    let startedProfit = false;
-    metrics.prices.forEach((price, i) => {
-      const x = scaleX(price);
-      const payoff = metrics.expPayoff[i];
-      const y = scaleY(payoff);
-      
-      if (payoff > 0) {
-        if (!startedProfit) {
-          ctx.moveTo(x, zeroY);
-          startedProfit = true;
-        }
-        ctx.lineTo(x, y);
-      } else if (startedProfit) {
-        ctx.lineTo(x, zeroY);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.1)';
-        ctx.fill();
-        ctx.beginPath();
-        startedProfit = false;
-      }
-    });
-    if (startedProfit) {
-      ctx.lineTo(scaleX(metrics.maxPrice), zeroY);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.1)';
-      ctx.fill();
-    }
-
-    // Fill loss area
-    ctx.beginPath();
-    let startedLoss = false;
-    metrics.prices.forEach((price, i) => {
-      const x = scaleX(price);
-      const payoff = metrics.expPayoff[i];
-      const y = scaleY(payoff);
-      
-      if (payoff < 0) {
-        if (!startedLoss) {
-          ctx.moveTo(x, zeroY);
-          startedLoss = true;
-        }
-        ctx.lineTo(x, y);
-      } else if (startedLoss) {
-        ctx.lineTo(x, zeroY);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
-        ctx.fill();
-        ctx.beginPath();
-        startedLoss = false;
-      }
-    });
-    if (startedLoss) {
-      ctx.lineTo(scaleX(metrics.maxPrice), zeroY);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
-      ctx.fill();
-    }
-
-    // X-axis labels
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
-    
-    const xLabels = [metrics.minPrice, strategy.underlyingPrice, metrics.maxPrice];
-    xLabels.forEach(price => {
-      ctx.fillText(`$${price.toFixed(0)}`, scaleX(price), h - 5);
-    });
-
-    // Y-axis labels
-    ctx.textAlign = 'right';
-    const yLabels = [metrics.minPayoff, 0, metrics.maxPayoff];
-    yLabels.forEach(payoff => {
-      const y = scaleY(payoff);
-      if (y > margin.top && y < h - margin.bottom) {
-        ctx.fillText(`$${payoff.toFixed(0)}`, margin.left - 5, y + 3);
-      }
-    });
-
-  }, [metrics, width, height, strategy, showTheoretical]);
-
-  return (
-    <div ref={containerRef} className={className}>
-      <canvas ref={canvasRef} />
-    </div>
-  );
-};
-
-interface StrategyMetricsProps {
-  strategy: StrategyAnalysis;
-  className?: string;
-}
-
-export const StrategyMetrics: React.FC<StrategyMetricsProps> = ({ strategy, className = '' }) => {
-  const formatProfit = (value: number): string => {
-    if (value === 999999999 || value === Infinity) return 'Unlimited';
-    if (value === -999999999 || value === -Infinity) return 'Unlimited';
-    return `$${value.toFixed(0)}`;
-  };
-
-  return (
-    <div className={`grid grid-cols-2 gap-3 ${className}`}>
-      <div className="bg-gray-700 rounded p-2">
-        <div className="text-xs text-gray-400">Max Profit</div>
-        <div className="text-sm font-semibold text-green-400">
-          {formatProfit(strategy.maxProfit)}
-        </div>
-      </div>
-      
-      <div className="bg-gray-700 rounded p-2">
-        <div className="text-xs text-gray-400">Max Loss</div>
-        <div className="text-sm font-semibold text-red-400">
-          {formatProfit(Math.abs(strategy.maxLoss))}
-        </div>
-      </div>
-      
-      <div className="bg-gray-700 rounded p-2">
-        <div className="text-xs text-gray-400">Breakevens</div>
-        <div className="text-sm font-semibold text-yellow-400">
-          {strategy.breakevens.length > 0 
-            ? strategy.breakevens.map(b => `$${b.toFixed(2)}`).join(', ')
-            : 'None'}
-        </div>
-      </div>
-      
-      <div className="bg-gray-700 rounded p-2">
-        <div className="text-xs text-gray-400">Current Price</div>
-        <div className="text-sm font-semibold text-gray-200">
-          ${strategy.underlyingPrice.toFixed(2)}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default PayoffChart;

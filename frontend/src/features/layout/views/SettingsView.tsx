@@ -1,206 +1,249 @@
-import { useState } from 'react';
-import {
-    Key, RefreshCw, Eye, EyeOff,
-    Palette, Keyboard, Settings2
-} from 'lucide-react';
-import { Button } from '../../../ui/Button';
-import { StatusIndicator, type ConnectionStatus } from '../../../ui/StatusIndicator';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
-import { PageHeader } from '../../../ui/PageHeader';
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',ORANGE='#ff8a65',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
 
-function ApiKeysSection() {
-    const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+const INPUT_S:React.CSSProperties={width:'100%',background:BG,border:`1px solid ${BORDER}`,color:TEXT,
+  fontFamily:MONO,fontSize:11,padding:'6px 8px',borderRadius:2,outline:'none',boxSizing:'border-box' as const}
+const LABEL_S:React.CSSProperties={fontSize:9,color:SUBTLE,fontFamily:MONO,textTransform:'uppercase' as const,
+  letterSpacing:'0.08em',marginBottom:4,display:'block'}
 
-    const providers = [
-        { id: 'finnhub', name: 'Finnhub', status: 'connected' as ConnectionStatus, hasKey: true },
-        { id: 'alpaca', name: 'Alpaca', status: 'disconnected' as ConnectionStatus, hasKey: false },
-        { id: 'yahoo', name: 'Yahoo Finance', status: 'connected' as ConnectionStatus, hasKey: true },
-        { id: 'tiingo', name: 'Tiingo', status: 'disconnected' as ConnectionStatus, hasKey: false },
-    ];
-
-    return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-text">API Keys</h2>
-                <Button size="sm" variant="secondary" className="gap-1">
-                    <Key size={14} /> Add Key
-                </Button>
-            </div>
-
-            <div className="space-y-3">
-                {providers.map(provider => (
-                    <div
-                        key={provider.id}
-                        className="p-4 bg-element-bg rounded border border-border"
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                                <span className="text-sm font-medium text-text">{provider.name}</span>
-                                <StatusIndicator status={provider.status} size="sm" />
-                            </div>
-                            <Button size="sm" variant="ghost" className="gap-1">
-                                <RefreshCw size={12} /> Test
-                            </Button>
-                        </div>
-
-                        {provider.hasKey ? (
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type={showKeys[provider.id] ? 'text' : 'password'}
-                                    value="sk_live_xxxxxxxxxxxxxxxxxxxx"
-                                    readOnly
-                                    className="flex-1 bg-background border border-border rounded px-3 py-2 text-sm font-mono text-text-secondary"
-                                />
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => setShowKeys(prev => ({ ...prev, [provider.id]: !prev[provider.id] }))}
-                                >
-                                    {showKeys[provider.id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="text-xs text-text-secondary">
-                                No API key configured. <button className="text-brand hover:underline">Add key</button>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+function SectionHeader({title,color}:{title:string,color?:string}){
+  return (
+    <div style={{fontSize:10,color:color||TEXT,fontFamily:MONO,fontWeight:700,textTransform:'uppercase' as const,
+      letterSpacing:'0.1em',borderBottom:`1px solid ${BORDER}`,padding:'4px 0',marginBottom:12}}>{title}</div>
+  )
+}
+function Row({label,children}:{label:string,children:React.ReactNode}){
+  return (
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',
+      borderBottom:`1px solid ${BORDER}`}}>
+      <div style={{fontSize:11,color:TEXT,fontFamily:MONO}}>{label}</div>
+      <div>{children}</div>
+    </div>
+  )
+}
+function Toggle({value,onChange}:{value:boolean,onChange:(v:boolean)=>void}){
+  return (
+    <button onClick={()=>onChange(!value)}
+      style={{width:40,height:20,borderRadius:10,background:value?GREEN:BORDER,border:'none',cursor:'pointer',
+        position:'relative' as const,transition:'background 0.2s'}}>
+      <div style={{position:'absolute',top:2,left:value?20:2,width:16,height:16,borderRadius:'50%',
+        background:TEXT,transition:'left 0.2s'}}/>
+    </button>
+  )
 }
 
-function UiPreferencesSection() {
-    const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>('normal');
-    const [animations, setAnimations] = useState(true);
-    const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+import React, { useState, useEffect } from 'react';
 
-    return (
-        <div className="space-y-6">
-            <h2 className="text-sm font-semibold text-text">UI Preferences</h2>
+type SVTab='API KEYS'|'PREFERENCES'|'SHORTCUTS'|'SYSTEM'
 
-            <div className="space-y-4">
-                {/* Theme */}
-                <div>
-                    <label className="text-xs text-text-secondary uppercase tracking-wider block mb-2">Theme</label>
-                    <div className="flex gap-2">
-                        {(['dark', 'light'] as const).map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setTheme(t)}
-                                className={`px-4 py-2 text-sm rounded border transition-colors ${theme === t
-                                    ? 'bg-brand/10 border-brand text-brand'
-                                    : 'bg-element-bg border-border text-text-secondary hover:text-text'
-                                    }`}
-                            >
-                                {t.charAt(0).toUpperCase() + t.slice(1)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Density */}
-                <div>
-                    <label className="text-xs text-text-secondary uppercase tracking-wider block mb-2">Density</label>
-                    <div className="flex gap-2">
-                        {(['compact', 'normal', 'comfortable'] as const).map(d => (
-                            <button
-                                key={d}
-                                onClick={() => setDensity(d)}
-                                className={`px-4 py-2 text-sm rounded border transition-colors ${density === d
-                                    ? 'bg-brand/10 border-brand text-brand'
-                                    : 'bg-element-bg border-border text-text-secondary hover:text-text'
-                                    }`}
-                            >
-                                {d.charAt(0).toUpperCase() + d.slice(1)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Animations */}
-                <div className="flex items-center justify-between p-4 bg-element-bg rounded">
-                    <div>
-                        <div className="text-sm text-text">Animations</div>
-                        <div className="text-xs text-text-secondary">Enable UI animations and transitions</div>
-                    </div>
-                    <button
-                        onClick={() => setAnimations(!animations)}
-                        className={`w-12 h-6 rounded-full transition-colors ${animations ? 'bg-brand' : 'bg-border'
-                            }`}
-                    >
-                        <div className={`w-5 h-5 bg-white rounded-full transition-transform ${animations ? 'translate-x-6' : 'translate-x-0.5'
-                            }`} />
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+interface ApiProvider {
+  id: string; name: string; connected: boolean; hasKey: boolean;
 }
 
-function ShortcutsSection() {
-    const shortcuts = [
-        { key: '⌘ K', action: 'Command Palette' },
-        { key: '⌘ 1-5', action: 'Switch Views' },
-        { key: 'Space', action: 'Play/Pause Replay' },
-        { key: '← / →', action: 'Step Bar' },
-        { key: 'Esc', action: 'Close Overlays' },
-        { key: '⌘ Z', action: 'Undo Drawing' },
-    ];
-
-    return (
-        <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-text">Keyboard Shortcuts</h2>
-
-            <div className="space-y-2">
-                {shortcuts.map((s, i) => (
-                    <div
-                        key={i}
-                        className="flex items-center justify-between p-3 bg-element-bg rounded"
-                    >
-                        <span className="text-sm text-text">{s.action}</span>
-                        <kbd className="px-2 py-1 bg-background border border-border rounded text-xs font-mono text-text-secondary">
-                            {s.key}
-                        </kbd>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
+const SHORTCUTS=[
+  {key:'âŒ˜ K',action:'Command Palette'},
+  {key:'âŒ˜ 1â€“5',action:'Switch Views'},
+  {key:'Space',action:'Play/Pause Replay'},
+  {key:'â† / â†’',action:'Step Bar'},
+  {key:'Esc',action:'Close Overlays'},
+  {key:'âŒ˜ Z',action:'Undo Drawing'},
+  {key:'âŒ˜ /',action:'Toggle Help'},
+  {key:'F',action:'Focus Symbol Search'},
+  {key:'T',action:'Cycle Timeframe'},
+  {key:'D',action:'Toggle Dark/Terminal Mode'},
+]
 
 export function SettingsView() {
-    return (
-        <div className="h-full bg-background overflow-auto" data-testid="settings-view">
-            <div className="max-w-3xl mx-auto p-6 pb-12">
-                <PageHeader
-                    title="Settings"
-                    subtitle="Configure API keys, UI preferences, and shortcuts"
-                    icon={<Settings2 size={20} />}
-                    data-testid="settings-header"
-                />
+  const [tab, setTab] = useState<SVTab>('API KEYS');
+  const [showKeys, setShowKeys] = useState<Record<string,boolean>>({});
+  const [providers, setProviders] = useState<ApiProvider[]>([
+    {id:'finnhub',name:'Finnhub',connected:false,hasKey:false},
+    {id:'alpaca',name:'Alpaca',connected:false,hasKey:false},
+    {id:'yahoo',name:'Yahoo Finance',connected:true,hasKey:true},
+    {id:'polygon',name:'Polygon.io',connected:false,hasKey:false},
+  ]);
+  const [keyInputs, setKeyInputs] = useState<Record<string,string>>({});
+  const [keyMsg, setKeyMsg] = useState('');
 
-                <Tabs defaultValue="keys" className="space-y-6 mt-5">
-                    <TabsList>
-                        <TabsTrigger value="keys" icon={<Key size={14} />}>API Keys</TabsTrigger>
-                        <TabsTrigger value="ui" icon={<Palette size={14} />}>UI Preferences</TabsTrigger>
-                        <TabsTrigger value="shortcuts" icon={<Keyboard size={14} />}>Shortcuts</TabsTrigger>
-                    </TabsList>
+  // Preferences
+  const [density, setDensity] = useState<'compact'|'normal'|'comfortable'>('normal');
+  const [animations, setAnimations] = useState(true);
+  const [polling, setPolling] = useState(5000);
+  const [timezone, setTimezone] = useState('America/New_York');
 
-                    <TabsContent value="keys">
-                        <ApiKeysSection />
-                    </TabsContent>
+  // System info
+  const [sysInfo, setSysInfo] = useState<Record<string,string>>({});
 
-                    <TabsContent value="ui">
-                        <UiPreferencesSection />
-                    </TabsContent>
+  useEffect(() => {
+    // Fetch system info
+    fetch('/api/v1/health').then(r=>r.json()).then(d=>{
+      setSysInfo({status:d.status||'ok',version:d.version||'â€”',uptime:d.uptime||'â€”'});
+    }).catch(()=>setSysInfo({status:'unknown',version:'â€”',uptime:'â€”'}));
+  },[]);
 
-                    <TabsContent value="shortcuts">
-                        <ShortcutsSection />
-                    </TabsContent>
-                </Tabs>
-            </div>
+  const saveKey = async (id: string) => {
+    const k = keyInputs[id]; if (!k) return;
+    setKeyMsg('');
+    try {
+      const res = await fetch(`/api/v1/settings/keys/${id}`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key:k})
+      });
+      if (res.ok) {
+        setProviders(prev=>prev.map(p=>p.id===id?{...p,hasKey:true}:p));
+        setKeyMsg(`Saved ${id} key`);
+        setKeyInputs(prev=>({...prev,[id]:''}));
+      } else { setKeyMsg(`Error saving ${id} key`); }
+    } catch (e) { setKeyMsg('API error: '+String(e)); }
+  };
+
+  const testConnection = async (id: string) => {
+    try {
+      const res = await fetch(`/api/v1/settings/keys/${id}/test`, {method:'POST'});
+      const d = await res.json().catch(()=>({ok:false}));
+      setProviders(prev=>prev.map(p=>p.id===id?{...p,connected:d.ok||res.ok}:p));
+    } catch (e) { console.error('test failed',e); }
+  };
+
+  const S:React.CSSProperties={height:'100%',display:'flex',flexDirection:'column' as const,background:BG,fontFamily:MONO}
+  const HDR:React.CSSProperties={display:'flex',alignItems:'center',gap:8,padding:'8px 14px',
+      borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}
+  const TABBAR:React.CSSProperties={display:'flex',gap:2,padding:'0 14px',borderBottom:`1px solid ${BORDER}`,
+      background:PANEL,flexShrink:0}
+  const tbtn=(a:boolean):React.CSSProperties=>({padding:'7px 12px',fontSize:10,fontFamily:MONO,letterSpacing:'0.08em',
+      cursor:'pointer',background:'none',border:'none',borderBottom:a?`2px solid ${AMBER}`:'2px solid transparent',
+      color:a?AMBER:SUBTLE,textTransform:'uppercase' as const})
+  const CONTENT:React.CSSProperties={flex:1,overflowY:'auto' as const,padding:16,maxWidth:560}
+
+  return (
+    <div style={S} data-testid="settings-view">
+      <div style={HDR}>
+        <span style={{fontSize:11,color:BLUE,letterSpacing:'0.1em'}}>ST</span>
+        <span style={{fontSize:13,color:TEXT,fontWeight:700}}>SETTINGS</span>
+        <span style={{fontSize:10,color:SUBTLE}}>APEX TERMINAL CONFIGURATION</span>
+      </div>
+
+      <div style={TABBAR}>
+        {(['API KEYS','PREFERENCES','SHORTCUTS','SYSTEM'] as SVTab[]).map(t=>(
+          <button key={t} style={tbtn(tab===t)} onClick={()=>setTab(t)}>{t}</button>
+        ))}
+      </div>
+
+      {/* API KEYS */}
+      {tab==='API KEYS'&&(
+        <div style={CONTENT} data-testid="settings-header">
+          <SectionHeader title="API Key Configuration" color={BLUE}/>
+          {keyMsg&&<div style={{fontSize:11,color:GREEN,fontFamily:MONO,marginBottom:10}}>{keyMsg}</div>}
+          <div style={{display:'flex',flexDirection:'column' as const,gap:16}}>
+            {providers.map(p=>(
+              <div key={p.id} style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'12px 14px'}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                  <span style={{fontSize:11,color:TEXT,fontWeight:700}}>{p.name}</span>
+                  <span style={{fontSize:9,fontFamily:MONO,color:p.connected?GREEN:RED,border:`1px solid ${p.connected?GREEN:RED}`,
+                    padding:'1px 5px',borderRadius:2}}>{p.connected?'CONNECTED':'DISCONNECTED'}</span>
+                  {p.hasKey&&<span style={{fontSize:9,fontFamily:MONO,color:PURPLE,border:`1px solid ${PURPLE}`,
+                    padding:'1px 5px',borderRadius:2}}>KEY SET</span>}
+                  <div style={{flex:1}}/>
+                  <button onClick={()=>testConnection(p.id)}
+                    style={{fontSize:9,fontFamily:MONO,background:PANEL,border:`1px solid ${BORDER}`,
+                      color:SUBTLE,padding:'2px 8px',cursor:'pointer',borderRadius:2}}>TEST</button>
+                </div>
+                <div style={{display:'flex',gap:6}}>
+                  <input type={showKeys[p.id]?'text':'password'}
+                    value={p.hasKey&&!keyInputs[p.id]?'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢':keyInputs[p.id]||''}
+                    onChange={e=>setKeyInputs(prev=>({...prev,[p.id]:e.target.value}))}
+                    placeholder={`Enter ${p.name} API key...`}
+                    style={{...INPUT_S,flex:1,letterSpacing:p.hasKey&&!keyInputs[p.id]?'0.1em':'normal'}}/>
+                  <button onClick={()=>setShowKeys(prev=>({...prev,[p.id]:!prev[p.id]}))}
+                    style={{background:PANEL,border:`1px solid ${BORDER}`,color:SUBTLE,cursor:'pointer',
+                      padding:'4px 8px',borderRadius:2,fontSize:11,fontFamily:MONO}}>
+                    {showKeys[p.id]?'HIDE':'SHOW'}
+                  </button>
+                  <button onClick={()=>saveKey(p.id)}
+                    style={{fontSize:9,fontFamily:MONO,background:AMBER,border:'none',color:BG,
+                      padding:'4px 10px',cursor:'pointer',borderRadius:2,fontWeight:700}}>SAVE</button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-    );
+      )}
+
+      {/* PREFERENCES */}
+      {tab==='PREFERENCES'&&(
+        <div style={CONTENT}>
+          <SectionHeader title="UI Preferences" color={ORANGE}/>
+          <Row label="Density">
+            <div style={{display:'flex',gap:4}}>
+              {(['compact','normal','comfortable'] as const).map(d=>(
+                <button key={d} onClick={()=>setDensity(d)}
+                  style={{fontSize:9,fontFamily:MONO,padding:'2px 8px',borderRadius:2,cursor:'pointer',
+                    border:`1px solid ${density===d?AMBER:BORDER}`,background:density===d?`${AMBER}22`:PANEL,
+                    color:density===d?AMBER:SUBTLE,textTransform:'capitalize' as const}}>{d}</button>
+              ))}
+            </div>
+          </Row>
+          <Row label="Animations"><Toggle value={animations} onChange={setAnimations}/></Row>
+          <Row label="Poll Interval (ms)">
+            <select value={polling} onChange={e=>setPolling(Number(e.target.value))}
+              style={{background:BG,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,fontSize:10,
+                padding:'3px 6px',borderRadius:2,outline:'none'}}>
+              {[1000,2000,5000,10000,30000].map(v=><option key={v} value={v}>{v/1000}s</option>)}
+            </select>
+          </Row>
+          <Row label="Timezone">
+            <select value={timezone} onChange={e=>setTimezone(e.target.value)}
+              style={{background:BG,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,fontSize:10,
+                padding:'3px 6px',borderRadius:2,outline:'none'}}>
+              {['America/New_York','America/Chicago','America/Los_Angeles','Europe/London','Asia/Tokyo','UTC'].map(tz=>(
+                <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
+          </Row>
+        </div>
+      )}
+
+      {/* SHORTCUTS */}
+      {tab==='SHORTCUTS'&&(
+        <div style={CONTENT}>
+          <SectionHeader title="Keyboard Shortcuts" color={GREEN}/>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:0}}>
+            {SHORTCUTS.map((s,i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+                padding:'8px 0',borderBottom:`1px solid ${BORDER}`}}>
+                <span style={{fontSize:11,color:TEXT,fontFamily:MONO}}>{s.action}</span>
+                <kbd style={{fontSize:10,fontFamily:MONO,color:AMBER,background:BG,
+                  border:`1px solid ${AMBER}`,padding:'2px 8px',borderRadius:2}}>{s.key}</kbd>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SYSTEM */}
+      {tab==='SYSTEM'&&(
+        <div style={CONTENT}>
+          <SectionHeader title="System Information" color={PURPLE}/>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:0}}>
+            {[
+              ['API Status', sysInfo.status, sysInfo.status==='ok'?GREEN:RED],
+              ['Backend Version', sysInfo.version, BLUE],
+              ['Uptime', sysInfo.uptime, TEXT],
+              ['Frontend Build', 'Vite + React 19', SUBTLE],
+              ['UI Framework', 'Bloomberg Terminal Style', AMBER],
+            ].map(([label,value,color])=>(
+              <div key={String(label)} style={{display:'flex',justifyContent:'space-between',
+                padding:'8px 0',borderBottom:`1px solid ${BORDER}`}}>
+                <span style={{fontSize:11,color:SUBTLE,fontFamily:MONO}}>{label}</span>
+                <span style={{fontSize:11,fontFamily:MONO,color:color as string}}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
+

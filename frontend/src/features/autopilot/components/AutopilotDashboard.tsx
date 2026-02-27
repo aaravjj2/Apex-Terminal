@@ -1,7 +1,7 @@
-/**
- * Autopilot Dashboard Component
- * Main dashboard showing status, portfolio, and controls
- */
+﻿const BG='#0a0a0a'; const PANEL='#111111'; const BORDER='#1e1e1e';
+const AMBER='#f5a623'; const GREEN='#26a69a'; const RED='#ef5350';
+const BLUE='#42a5f5'; const PURPLE='#ab47bc'; const SUBTLE='#555';
+const TEXT='#d1d4dc'; const MONO='"Roboto Mono","Courier New",monospace';
 
 import React, { useEffect, useCallback, useState } from 'react';
 import { useAutopilotStore } from '../store';
@@ -13,81 +13,34 @@ import { RunHistory } from './RunHistory';
 import { AutopilotAgents } from './AutopilotAgents';
 import { AutopilotProposals } from './AutopilotProposals';
 
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(value);
-};
+const fmtCur = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
+const fmtPct = (v: number) => `${(v * 100).toFixed(2)}%`;
 
-const formatPercent = (value: number): string => {
-  return `${(value * 100).toFixed(2)}%`;
-};
+const STATE_COLOR: Record<string, string> = { idle: SUBTLE, running: GREEN, paused: AMBER, error: RED };
 
-interface StatusBadgeProps {
-  state: string;
-  killSwitch: boolean;
+function StatCard({ label, value, color, testId }: { label: string; value: React.ReactNode; color?: string; testId?: string }) {
+  return (
+    <div data-testid={testId} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '10px 14px' }}>
+      <div style={{ fontSize: 10, color: SUBTLE, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 14, fontFamily: MONO, fontWeight: 700, color: color || TEXT }}>{value}</div>
+    </div>
+  );
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ state, killSwitch }) => {
-  if (killSwitch) {
-    return (
-      <span className="px-3 py-1 text-sm font-bold bg-red-600 text-white rounded-full animate-pulse" data-testid="autopilot-status-badge">
-        🛑 KILL SWITCH ACTIVE
-      </span>
-    );
-  }
-
-  const colors: Record<string, string> = {
-    idle: 'bg-gray-500',
-    running: 'bg-green-500',
-    paused: 'bg-yellow-500',
-    error: 'bg-red-500',
-  };
-
-  const safeState = state || 'idle';
-
+function Btn({ onClick, disabled, color = BLUE, children, testId }: { onClick: () => void; disabled?: boolean; color?: string; children: React.ReactNode; testId?: string }) {
   return (
-    <span className={`px-3 py-1 text-sm font-semibold text-white rounded-full ${colors[safeState] || colors.idle}`} data-testid="autopilot-status-badge">
-      {safeState.toUpperCase()}
-    </span>
+    <button data-testid={testId} onClick={onClick} disabled={disabled}
+      style={{ padding: '6px 14px', background: disabled ? BORDER : color, color: disabled ? SUBTLE : '#000', border: 'none', borderRadius: 2, fontFamily: MONO, fontSize: 11, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+      {children}
+    </button>
   );
-};
-
-const PaperModeBanner: React.FC = () => (
-  <div
-    className="w-full bg-amber-500 text-black text-center py-2 font-bold text-lg"
-    data-testid="paper-mode-banner"
-  >
-    📄 PAPER TRADING MODE - NO REAL MONEY AT RISK
-  </div>
-);
+}
 
 export const AutopilotDashboard: React.FC = () => {
-  const {
-    config,
-    status,
-    portfolio,
-    isLoading,
-    error,
-    killSwitchPending,
-    fetchConfig,
-    fetchStatus,
-    fetchPositions,
-    triggerRun,
-    startLoop,
-    stopLoop,
-    activateKillSwitch,
-    deactivateKillSwitch,
-    pause,
-    resume,
-    clearError,
-    connect,
-    disconnect,
-    connectionStatus,
-  } = useAutopilotStore();
-
+  const { config, status, portfolio, isLoading, error, killSwitchPending, fetchConfig, fetchStatus, fetchPositions, triggerRun, startLoop, stopLoop, activateKillSwitch, deactivateKillSwitch, pause, resume, clearError, connect, disconnect, connectionStatus } = useAutopilotStore();
   const [showUniverse, setShowUniverse] = useState(false);
+  const [spinAngle, setSpinAngle] = useState(0);
+  useEffect(() => { if (isLoading) { const t = setInterval(() => setSpinAngle(a => (a + 20) % 360), 50); return () => clearInterval(t); } }, [isLoading]);
 
   useEffect(() => {
     connect();
@@ -95,246 +48,111 @@ export const AutopilotDashboard: React.FC = () => {
   }, [connect, disconnect]);
 
   useEffect(() => {
-    fetchConfig();
-    fetchStatus();
-    fetchPositions('open');
-
-    // Poll status and positions continuously every 15 seconds
-    const statusInterval = setInterval(() => {
-      fetchStatus();
-    }, 15000);
-
-    const positionsInterval = setInterval(() => {
-      fetchPositions('open');
-    }, 15000);
-
-    return () => {
-      clearInterval(statusInterval);
-      clearInterval(positionsInterval);
-    };
+    fetchConfig(); fetchStatus(); fetchPositions('open');
+    const si = setInterval(() => fetchStatus(), 15000);
+    const pi = setInterval(() => fetchPositions('open'), 15000);
+    return () => { clearInterval(si); clearInterval(pi); };
   }, [fetchConfig, fetchStatus, fetchPositions]);
 
-  const handleRunCycle = useCallback(async () => {
-    await triggerRun(true);
-    await fetchPositions('open');
-  }, [triggerRun, fetchPositions]);
-
-  const handleStartStopLoop = useCallback(async () => {
-    if (status?.state === 'running') {
-      await stopLoop();
-    } else {
-      await startLoop();
-    }
-  }, [status, startLoop, stopLoop]);
-
-  const handleKillSwitch = useCallback(async () => {
-    if (status?.kill_switch) {
-      await deactivateKillSwitch();
-    } else {
-      await activateKillSwitch(true);
-    }
-  }, [status, activateKillSwitch, deactivateKillSwitch]);
-
-  const handlePauseResume = useCallback(async () => {
-    if (status?.state === 'paused') {
-      await resume();
-    } else {
-      await pause();
-    }
-  }, [status, pause, resume]);
+  const handleRunCycle = useCallback(async () => { await triggerRun(true); await fetchPositions('open'); }, [triggerRun, fetchPositions]);
+  const handleStartStopLoop = useCallback(async () => { status?.state === 'running' ? await stopLoop() : await startLoop(); }, [status, startLoop, stopLoop]);
+  const handleKillSwitch = useCallback(async () => { status?.kill_switch ? await deactivateKillSwitch() : await activateKillSwitch(true); }, [status, activateKillSwitch, deactivateKillSwitch]);
+  const handlePauseResume = useCallback(async () => { status?.state === 'paused' ? await resume() : await pause(); }, [status, pause, resume]);
 
   const pnl = portfolio?.total_pnl ?? 0;
   const equity = (config?.paper_equity ?? 1000) + pnl;
+  const stateColor = STATE_COLOR[status?.state ?? 'idle'] || SUBTLE;
+
+  const wsColor = connectionStatus === 'CONNECTED' ? GREEN : connectionStatus === 'CONNECTING' ? AMBER : RED;
+  const sentimentScore = status?.sentiment?.sentiment_scores?.MARKET ?? 0;
+  const sentimentLabel = sentimentScore > 0.4 ? ' BULLISH' : sentimentScore < -0.4 ? ' BEARISH' : ' NEUTRAL';
+  const sentimentColor = sentimentScore > 0.4 ? GREEN : sentimentScore < -0.4 ? RED : TEXT;
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-white" data-testid="autopilot-dashboard">
-      <PaperModeBanner />
+    <div data-testid="autopilot-dashboard" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: BG, color: TEXT, fontFamily: MONO }}>
+      {/* Paper Banner */}
+      <div data-testid="paper-mode-banner" style={{ textAlign: 'center', padding: '5px 0', background: AMBER, color: '#000', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+         PAPER TRADING MODE  NO REAL MONEY AT RISK
+      </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold" data-testid="autopilot-heading">🤖 AI Options Autopilot</h1>
-          {status && <StatusBadge state={status.state} killSwitch={status.kill_switch} />}
-          <div className={`px-2 py-1 rounded-full text-xs font-bold ${connectionStatus === 'CONNECTED' ? 'bg-green-900 text-green-200 border border-green-700' :
-            connectionStatus === 'CONNECTING' ? 'bg-yellow-900 text-yellow-200 border border-yellow-700 animate-pulse' :
-              'bg-red-900 text-red-200 border border-red-700'
-            }`}>
-            WS: {connectionStatus}
-          </div>
-
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0, background: PANEL }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span data-testid="autopilot-heading" style={{ fontSize: 14, fontWeight: 700 }}> AI OPTIONS AUTOPILOT</span>
+          {status && (
+            <span data-testid="autopilot-status-badge" style={{ fontSize: 10, fontWeight: 700, color: stateColor, border: `1px solid ${stateColor}44`, borderRadius: 2, padding: '2px 8px' }}>
+              {status.kill_switch ? ' KILL SWITCH' : (status.state ?? 'idle').toUpperCase()}
+            </span>
+          )}
+          <span style={{ fontSize: 10, color: wsColor, border: `1px solid ${wsColor}44`, borderRadius: 2, padding: '2px 6px' }}>WS:{connectionStatus}</span>
           {status?.sentiment && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-gray-700 rounded-full border border-gray-600" title={`Score: ${status.sentiment.sentiment_scores?.MARKET?.toFixed(2) ?? 'N/A'}`}>
-              <span className="text-xs text-gray-400" data-testid="sentiment-market-label">MARKET:</span>
-              <span data-testid="sentiment-badge" className={`text-xs font-bold ${(status.sentiment.sentiment_scores?.MARKET ?? 0) > 0.4 ? 'text-green-400' :
-                (status.sentiment.sentiment_scores?.MARKET ?? 0) < -0.4 ? 'text-red-400' :
-                  'text-gray-200'
-                }`}>
-                {(status.sentiment.sentiment_scores?.MARKET ?? 0) > 0.4 ? '🐂 BULLISH' :
-                  (status.sentiment.sentiment_scores?.MARKET ?? 0) < -0.4 ? '🐻 BEARISH' :
-                    '⚖️ NEUTRAL'}
-              </span>
-              <span className="text-xs text-gray-500 border-l border-gray-600 pl-2 ml-1">
-                {status.sentiment.news_velocity.toUpperCase()}
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10 }}>
+              <span style={{ color: SUBTLE }}>MARKET:</span>
+              <span data-testid="sentiment-badge" style={{ color: sentimentColor, fontWeight: 700 }}>{sentimentLabel}</span>
+              <span style={{ color: SUBTLE }}>{status.sentiment.news_velocity?.toUpperCase()}</span>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-gray-400 mr-4">
-            Equity: <span className="text-white font-mono">{formatCurrency(equity)}</span>
-            <span className={`ml-2 font-mono ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              ({pnl >= 0 ? '+' : ''}{formatCurrency(pnl)})
-            </span>
-          </div>
-
-          <button
-            onClick={() => setShowUniverse(!showUniverse)}
-            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded font-medium transition-colors text-sm"
-            data-testid="toggle-universe-btn"
-          >
-            🌎 Universe
-          </button>
-
-          <button
-            onClick={handlePauseResume}
-            disabled={isLoading || status?.kill_switch}
-            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 rounded font-medium transition-colors"
-            data-testid="pause-resume-btn"
-          >
-            {status?.state === 'paused' ? '▶️ Resume' : '⏸️ Pause'}
-          </button>
-
-          <button
-            onClick={handleStartStopLoop}
-            disabled={isLoading || status?.kill_switch}
-            className={`px-4 py-2 rounded font-medium transition-colors ${
-              status?.state === 'running'
-                ? 'bg-red-700 hover:bg-red-800'
-                : 'bg-green-700 hover:bg-green-800'
-            } disabled:bg-gray-600`}
-            data-testid="start-stop-loop-btn"
-          >
-            {isLoading ? '⏳ Working...' : status?.state === 'running' ? '⏹️ Stop Loop' : '▶️ Start Loop'}
-          </button>
-
-          <button
-            onClick={handleRunCycle}
-            disabled={isLoading || status?.kill_switch}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded font-medium transition-colors"
-            data-testid="run-cycle-btn"
-          >
-            {isLoading ? '⏳ Running...' : '🔄 Run Cycle'}
-          </button>
-
-          <button
-            onClick={handleKillSwitch}
-            disabled={killSwitchPending}
-            className={`px-4 py-2 rounded font-medium transition-colors ${status?.kill_switch
-              ? 'bg-green-600 hover:bg-green-700'
-              : 'bg-red-600 hover:bg-red-700'
-              }`}
-            data-testid="kill-switch-btn"
-          >
-            {status?.kill_switch ? '✅ Deactivate Kill Switch' : '🛑 Kill Switch'}
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, color: SUBTLE }}>EQ: <span style={{ color: TEXT }}>{fmtCur(equity)}</span> <span style={{ color: pnl >= 0 ? GREEN : RED }}>({pnl >= 0 ? '+' : ''}{fmtCur(pnl)})</span></span>
+          <button onClick={() => setShowUniverse(!showUniverse)} data-testid="toggle-universe-btn" style={{ padding: '5px 10px', background: PANEL, color: TEXT, border: `1px solid ${BORDER}`, borderRadius: 2, fontSize: 10, cursor: 'pointer', fontFamily: MONO }}> UNIVERSE</button>
+          <Btn onClick={handlePauseResume} disabled={isLoading || !!status?.kill_switch} color={AMBER} testId="pause-resume-btn">{status?.state === 'paused' ? ' RESUME' : ' PAUSE'}</Btn>
+          <Btn onClick={handleStartStopLoop} disabled={isLoading || !!status?.kill_switch} color={status?.state === 'running' ? RED : GREEN} testId="start-stop-loop-btn">{isLoading ? <span style={{ display: 'inline-block', transform: `rotate(${spinAngle}deg)` }}></span> : null} {status?.state === 'running' ? ' STOP LOOP' : ' START LOOP'}</Btn>
+          <Btn onClick={handleRunCycle} disabled={isLoading || !!status?.kill_switch} color={BLUE} testId="run-cycle-btn">{isLoading ? '' : ''} RUN CYCLE</Btn>
+          <Btn onClick={handleKillSwitch} disabled={killSwitchPending} color={status?.kill_switch ? GREEN : RED} testId="kill-switch-btn">{status?.kill_switch ? ' DEACTIVATE KS' : ' KILL SWITCH'}</Btn>
         </div>
       </div>
 
-      {/* Universe Editor Modal/Drawer */}
       {showUniverse && (
-        <div className="absolute top-16 right-4 z-50 w-96 shadow-2xl">
+        <div style={{ position: 'absolute', top: 80, right: 16, zIndex: 50, width: 380, boxShadow: '0 8px 32px #000a' }}>
           <UniverseEditor onClose={() => setShowUniverse(false)} />
         </div>
       )}
 
-      {/* Error Banner */}
       {error && (
-        <div className="bg-red-900 text-red-200 p-3 flex items-center justify-between" data-testid="error-banner">
-          <span>⚠️ {error}</span>
-          <button onClick={clearError} className="text-red-400 hover:text-white">✕</button>
+        <div data-testid="error-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 16px', background: RED + '22', color: RED, fontSize: 11, flexShrink: 0 }}>
+          <span> {error}</span>
+          <button onClick={clearError} style={{ background: 'none', border: 'none', color: RED, cursor: 'pointer', fontSize: 14 }}></button>
         </div>
       )}
 
-      {/* Incidents Panel */}
-      <div className="px-4 pt-4">
-        <IncidentsPanel />
+      <div style={{ padding: '8px 16px 0', flexShrink: 0 }}><IncidentsPanel /></div>
+
+      {/* Chart Placeholder */}
+      <div data-testid="chart-canvas" style={{ padding: '8px 16px', flexShrink: 0 }}>
+        <div style={{ height: 80, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUBTLE, fontSize: 11 }}> MARKET OVERVIEW  REAL-TIME FEED</div>
       </div>
 
-      {/* Mini Chart Area */}
-      <div className="px-4 pt-2" data-testid="chart-canvas">
-        <div className="h-32 bg-gray-800 rounded border border-gray-700 flex items-center justify-center text-gray-500 text-sm">
-          📈 Market Overview
-        </div>
+      {/* Stats */}
+      <div data-testid="autopilot-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, padding: '8px 16px', flexShrink: 0 }}>
+        <StatCard label="PAPER EQUITY" value={fmtCur(equity)} testId="portfolio-card-paper-equity" />
+        <StatCard label="TOTAL P&L" value={<>{pnl >= 0 ? '+' : ''}{fmtCur(pnl)}</>} color={pnl >= 0 ? GREEN : RED} testId="portfolio-card-total-p&l" />
+        <StatCard label="OPEN POSITIONS" value={`${portfolio?.open_positions ?? 0} / ${config?.risk_limits?.max_open_positions ?? 10}`} testId="stat-positions" />
+        <StatCard label="WIN RATE" value={fmtPct(status?.win_rate ?? 0)} color={(status?.win_rate ?? 0) >= 0.5 ? GREEN : RED} testId="stat-win-rate" />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 16px 8px', flexShrink: 0 }}>
+        <StatCard label="NET DELTA" value={(portfolio?.net_delta ?? 0).toFixed(2)} testId="stat-net-delta" />
+        <StatCard label="NET THETA" value={(portfolio?.net_theta ?? 0).toFixed(2)} testId="stat-net-theta" />
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Column: Positions & Stats (65%) */}
-        <div className="flex-1 flex flex-col min-w-0 border-r border-gray-700">
-          {/* Quick Stats Grid */}
-          <div className="grid grid-cols-4 gap-4 p-4 border-b border-gray-700 bg-gray-850" data-testid="autopilot-stats-grid">
-            <div className="bg-gray-800 p-3 rounded" data-testid="portfolio-card-paper-equity">
-              <span className="text-gray-400 text-xs">Paper Equity</span>
-              <p className="font-bold font-mono">{formatCurrency(equity)}</p>
-            </div>
-            <div className="bg-gray-800 p-3 rounded" data-testid="portfolio-card-total-p&l">
-              <span className="text-gray-400 text-xs">Total P&amp;L</span>
-              <p className={`font-bold font-mono ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {pnl >= 0 ? '+' : ''}{formatCurrency(pnl)}
-              </p>
-            </div>
-            <div className="bg-gray-800 p-3 rounded" data-testid="stat-positions">
-              <span className="text-gray-400 text-xs">Open Positions</span>
-              <p className="font-bold">{portfolio?.open_positions ?? 0} / {config?.risk_limits?.max_open_positions ?? 10}</p>
-            </div>
-            <div className="bg-gray-800 p-3 rounded" data-testid="stat-win-rate">
-              <span className="text-gray-400 text-xs">Win Rate</span>
-              <p className={`font-bold ${(status?.win_rate ?? 0) >= 0.5 ? 'text-green-400' : 'text-red-400'}`}>
-                {formatPercent(status?.win_rate ?? 0)}
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 px-4 py-2 border-b border-gray-700 bg-gray-850">
-            <div className="bg-gray-800 p-3 rounded" data-testid="stat-net-delta">
-              <span className="text-gray-400 text-xs">Net Delta</span>
-              <p className="font-bold font-mono">{portfolio?.net_delta?.toFixed(2) ?? '0.00'}</p>
-            </div>
-            <div className="bg-gray-800 p-3 rounded" data-testid="stat-net-theta">
-              <span className="text-gray-400 text-xs">Net Theta</span>
-              <p className="font-bold font-mono">{portfolio?.net_theta?.toFixed(2) ?? '0.00'}</p>
-            </div>
-          </div>
-
-          {/* Positions Table */}
-          <div className="flex-1 overflow-auto flex flex-col min-h-0">
-            <div className="min-h-[200px] border-b border-gray-700">
-              <AutopilotPositions />
-            </div>
-            <div className="min-h-[100px] p-4 bg-gray-900/50">
-              <AutopilotProposals />
-            </div>
-          </div>
+      {/* Main Content Split */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* Left: Positions + Proposals */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: `1px solid ${BORDER}` }}>
+          <div style={{ flex: 1, overflow: 'auto', borderBottom: `1px solid ${BORDER}`, minHeight: 200 }}><AutopilotPositions /></div>
+          <div style={{ minHeight: 100, padding: 8 }}><AutopilotProposals /></div>
         </div>
 
-        {/* Right Column: Activity & Logs (35%) */}
-        <div className="w-[400px] flex flex-col bg-gray-850">
-          {/* Run History (Top Half) */}
-          <div className="h-1/2 border-b border-gray-700 flex flex-col">
-            <div className="p-4 pb-0">
-              <AutopilotAgents />
-            </div>
+        {/* Right: Agents + RunHistory + ThinkLog */}
+        <div style={{ width: 400, display: 'flex', flexDirection: 'column', background: PANEL }}>
+          <div style={{ flex: '0 0 50%', borderBottom: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px 0' }}><AutopilotAgents /></div>
             <RunHistory />
           </div>
-
-          {/* Think Log (Bottom Half) */}
-          <div className="h-1/2 flex flex-col">
-            <h3 className="text-sm font-semibold text-gray-300 px-3 py-2 bg-gray-800 border-b border-gray-700">
-              🧠 Think Engine
-            </h3>
-            <div className="flex-1 overflow-hidden">
-              <AutopilotThinkLog />
-            </div>
+          <div style={{ flex: '0 0 50%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, padding: '6px 12px', background: PANEL, borderBottom: `1px solid ${BORDER}` }}> THINK ENGINE</div>
+            <div style={{ flex: 1, overflow: 'hidden' }}><AutopilotThinkLog /></div>
           </div>
         </div>
       </div>

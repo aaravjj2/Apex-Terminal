@@ -1,99 +1,112 @@
-/**
- * TickerDisambiguationDialog
- * ==========================
- * Modal dialog shown when a user enters an ambiguous ticker symbol.
- * Offers two choices: confirm it's a stock ticker, or cancel.
- */
+// Bloomberg TDD — Ticker Disambiguation Dialog
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
 
 import React from 'react';
 import type { AmbiguousEntry } from './disambiguator';
 
 export interface TickerDisambiguationDialogProps {
-  /** Whether the dialog is visible */
   open: boolean;
-  /** The ambiguous symbol */
   symbol: string;
-  /** The ambiguity metadata */
   entry: AmbiguousEntry;
-  /** Called when user confirms "yes, I mean the ticker" */
   onConfirm: (symbol: string) => void;
-  /** Called when user cancels / dismisses */
   onCancel: () => void;
 }
 
 export const TickerDisambiguationDialog: React.FC<TickerDisambiguationDialogProps> = ({
-  open,
-  symbol,
-  entry,
-  onConfirm,
-  onCancel,
+  open, symbol, entry, onConfirm, onCancel,
 }) => {
   if (!open) return null;
 
   return (
     <div
       data-testid="ticker-disambiguation-dialog"
-      className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
       aria-label="Ticker disambiguation"
-    >
+      style={{
+        position:'fixed', inset:0, zIndex:9000,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontFamily:MONO,
+      }}>
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onCancel}
         data-testid="disambiguation-backdrop"
+        onClick={onCancel}
+        style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.75)' }}
       />
 
-      {/* Dialog */}
-      <div className="relative bg-panel-bg border border-border rounded-lg shadow-xl p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-yellow-500/15 flex items-center justify-center">
-            <span className="text-yellow-500 text-lg font-bold">?</span>
-          </div>
+      {/* Dialog box */}
+      <div style={{
+        position:'relative', background:PANEL, border:`1px solid ${BORDER}`,
+        borderRadius:2, width:420, maxWidth:'90vw', boxShadow:'0 8px 32px rgba(0,0,0,0.6)',
+        overflow:'hidden',
+      }}>
+        {/* Title bar */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 12px', background:BG, borderBottom:`1px solid ${BORDER}` }}>
+          <span style={{ color:AMBER, fontWeight:700, fontSize:10, letterSpacing:1 }}>TICKER DISAMBIGUATION</span>
+          <button onClick={onCancel} style={{ background:'none', border:'none', color:SUBTLE, cursor:'pointer', fontSize:12, padding:'0 2px' }}>✕</button>
+        </div>
+
+        {/* Warning strip */}
+        <div style={{ background: AMBER + '11', borderBottom:`1px solid ${AMBER}33`, padding:'6px 12px', display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ color:AMBER, fontSize:14, fontWeight:700 }}>⚠</span>
           <div>
-            <h3 className="text-base font-semibold text-text-primary">
-              Did you mean the ticker?
-            </h3>
-            <p className="text-xs text-text-secondary">Ambiguous symbol detected</p>
+            <div style={{ color:AMBER, fontSize:10, fontWeight:700 }}>AMBIGUOUS SYMBOL DETECTED</div>
+            <div style={{ color:SUBTLE, fontSize:9 }}>Please confirm your intent</div>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="bg-element-bg rounded-md p-4 mb-5 border border-border/50">
-          <div className="flex items-baseline gap-2 mb-2">
+        {/* Symbol info */}
+        <div style={{ padding:12, borderBottom:`1px solid ${BORDER}` }}>
+          <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:8 }}>
             <span
-              className="text-xl font-mono font-bold text-brand"
               data-testid="disambiguation-symbol"
-            >
-              {symbol}
-            </span>
-            <span className="text-sm text-text-secondary">— {entry.company}</span>
+              style={{ color:BLUE, fontSize:20, fontWeight:700, fontFamily:MONO }}
+            >{symbol}</span>
+            <span style={{ color:SUBTLE, fontSize:11 }}>— {entry.company}</span>
           </div>
-          <p className="text-sm text-text-secondary">
-            <strong>Note:</strong> {entry.confusion}
-          </p>
-          <p className="text-xs text-text-tertiary mt-2">
-            Tip: prefix with <code className="bg-background px-1 rounded font-mono">$</code> to skip this prompt (e.g., <code className="bg-background px-1 rounded font-mono">${symbol}</code>)
-          </p>
+          <div style={{ background:BG, border:`1px solid ${BORDER}`, borderRadius:2, padding:'6px 10px' }}>
+            <div style={{ color:TEXT, fontSize:10, lineHeight:1.5 }}>
+              <strong style={{ color:AMBER }}>NOTE:</strong>{' '}{entry.confusion}
+            </div>
+            <div style={{ color:SUBTLE, fontSize:9, marginTop:4 }}>
+              TIP: Prefix with <code style={{ color:GREEN, background:'#0a0a0a', padding:'0 3px' }}>${'$'}</code> to skip this prompt (e.g., <code style={{ color:GREEN }}>${'$'}{symbol}</code>)
+            </div>
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div style={{ display:'flex', gap:8, padding:12 }}>
           <button
             data-testid="disambiguation-confirm"
             onClick={() => onConfirm(symbol)}
-            className="flex-1 px-4 py-2 rounded-md bg-brand text-white text-sm font-medium hover:bg-brand/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-panel-bg"
-          >
-            Yes, use ticker {symbol}
+            style={{
+              flex:1, padding:'7px 0', background: GREEN + '22',
+              border:`1px solid ${GREEN}`, color:GREEN,
+              fontFamily:MONO, fontSize:10, fontWeight:700,
+              letterSpacing:0.5, cursor:'pointer', borderRadius:2,
+            }}>
+            YES — USE TICKER {symbol}
           </button>
           <button
             data-testid="disambiguation-cancel"
             onClick={onCancel}
-            className="flex-1 px-4 py-2 rounded-md bg-element-bg text-text-secondary text-sm font-medium border border-border hover:bg-element-bg/80 transition-colors focus:outline-none focus:ring-2 focus:ring-border"
-          >
-            Cancel
+            style={{
+              flex:1, padding:'7px 0', background:BG,
+              border:`1px solid ${BORDER}`, color:SUBTLE,
+              fontFamily:MONO, fontSize:10, fontWeight:700,
+              letterSpacing:0.5, cursor:'pointer', borderRadius:2,
+            }}>
+            CANCEL
           </button>
         </div>
       </div>

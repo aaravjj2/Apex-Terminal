@@ -1,10 +1,21 @@
+﻿// Bloomberg Palette
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
+import React from 'react';
+
 /**
- * Finance Lexicon Disambiguation Modal (Objective H, v1.12)
- * 
- * Shows when user enters an ambiguous token (e.g., A, I, ON, IT, ARE) that could be
- * either a ticker symbol or an English word.
- * 
- * Persists choice in session storage (not cross-run).
+ * Bloomberg-grade Finance Lexicon Disambiguation Modal
+ * Shows when user enters an ambiguous token (e.g., A, I, ON, IT, ARE)
+ * that could be either a ticker symbol or an English word.
  */
 
 interface DisambiguationModalProps {
@@ -27,98 +38,79 @@ export function DisambiguationModal({
   return (
     <div
       data-testid="disambiguation-modal"
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={(e) => {
-        // Close on backdrop click
-        if (e.target === e.currentTarget) {
-          onCancel();
-        }
-      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, fontFamily: MONO }}
     >
       <div
         data-testid="disambiguation-dialog"
-        className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '24px 28px', maxWidth: 480, width: '100%', margin: '0 16px', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2
-            data-testid="disambiguation-title"
-            className="text-lg font-semibold text-white"
-          >
-            Ambiguous Input: &quot;{token}&quot;
-          </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: AMBER, letterSpacing: '0.1em' }}>DX</span>
+            <span style={{ color: SUBTLE, fontSize: 10 }}>|</span>
+            <h2
+              data-testid="disambiguation-title"
+              style={{ fontSize: 12, fontWeight: 700, color: TEXT, letterSpacing: '0.06em', margin: 0 }}
+            >
+              AMBIGUOUS INPUT: &quot;{token.toUpperCase()}&quot;
+            </h2>
+          </div>
           <button
             data-testid="disambiguation-close"
             onClick={onCancel}
-            className="text-gray-400 hover:text-white transition-colors"
+            onMouseEnter={e => (e.currentTarget.style.color = RED)}
+            onMouseLeave={e => (e.currentTarget.style.color = SUBTLE)}
+            style={{ background: 'none', border: 'none', color: SUBTLE, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}
             aria-label="Close"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          >âœ•</button>
         </div>
+
+        {/* Terminal separator */}
+        <div style={{ height: 1, background: BORDER, margin: '12px 0 16px' }} />
 
         {/* Explanation */}
         <p
           data-testid="disambiguation-explanation"
-          className="text-sm text-gray-300 mb-6"
+          style={{ fontSize: 11, color: SUBTLE, marginBottom: 20, lineHeight: 1.6 }}
         >
-          &quot;{token}&quot; can be interpreted as either a ticker symbol or an English word.
-          Please choose how you want to proceed:
+          The token &quot;<span style={{ color: AMBER, fontWeight: 700 }}>{token}</span>&quot; matches both a stock ticker symbol and an English word.
+          Select how you want to interpret this input:
         </p>
 
         {/* Options */}
-        <div className="space-y-3 mb-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {/* Ticker Option */}
           <button
             data-testid="disambiguation-option-ticker"
             onClick={onChooseTicker}
-            className="w-full p-4 border border-blue-600 bg-blue-600/10 hover:bg-blue-600/20 rounded-lg text-left transition-colors"
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = BLUE + '22'; (e.currentTarget as HTMLButtonElement).style.borderColor = BLUE; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = BG; (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; }}
+            style={{ padding: '14px 16px', border: `1px solid ${BORDER}`, background: BG, borderRadius: 3, textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 14 }}
           >
-            <div className="flex items-start">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center mr-3">
-                <svg
-                  className="w-4 h-4 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: BLUE + '22', border: `1px solid ${BLUE}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 14, color: BLUE }}>â—ˆ</span>
+            </div>
+            <div>
+              <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
+                TICKER SYMBOL: <span style={{ color: BLUE }}>{ticker}</span>
+              </div>
+              {company && (
+                <div
+                  data-testid="disambiguation-ticker-company"
+                  style={{ fontFamily: MONO, fontSize: 10, color: SUBTLE, marginBottom: 3 }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <div className="font-medium text-white mb-1">
-                  Ticker Symbol: {ticker}
+                  {company}
                 </div>
-                {company && (
-                  <div
-                    data-testid="disambiguation-ticker-company"
-                    className="text-sm text-gray-400"
-                  >
-                    {company}
-                  </div>
-                )}
-                <div className="text-xs text-gray-500 mt-1">
-                  Load market data for this stock symbol
-                </div>
+              )}
+              <div style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE }}>
+                Load market data, chart, and fundamentals for this symbol
               </div>
+            </div>
+            <div style={{ marginLeft: 'auto', flexShrink: 0, alignSelf: 'center' }}>
+              <span style={{ fontSize: 9, padding: '2px 8px', background: BLUE + '22', border: `1px solid ${BLUE}44`, color: BLUE, borderRadius: 2, fontFamily: MONO, fontWeight: 700 }}>MARKET</span>
             </div>
           </button>
 
@@ -126,45 +118,52 @@ export function DisambiguationModal({
           <button
             data-testid="disambiguation-option-word"
             onClick={onChooseWord}
-            className="w-full p-4 border border-gray-600 bg-gray-800/50 hover:bg-gray-800 rounded-lg text-left transition-colors"
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = AMBER + '22'; (e.currentTarget as HTMLButtonElement).style.borderColor = AMBER; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = BG; (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; }}
+            style={{ padding: '14px 16px', border: `1px solid ${BORDER}`, background: BG, borderRadius: 3, textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 14 }}
           >
-            <div className="flex items-start">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center mr-3">
-                <svg
-                  className="w-4 h-4 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: AMBER + '22', border: `1px solid ${AMBER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 14, color: AMBER }}>âœ¦</span>
+            </div>
+            <div>
+              <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
+                ENGLISH WORD: <span style={{ color: AMBER }}>&quot;{token}&quot;</span>
               </div>
-              <div>
-                <div className="font-medium text-white mb-1">
-                  English Word: &quot;{token}&quot;
-                </div>
-                <div className="text-xs text-gray-500">
-                  Ignore as a ticker symbol
-                </div>
+              <div style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE }}>
+                Treat as plain text, ignore as a ticker symbol
               </div>
+            </div>
+            <div style={{ marginLeft: 'auto', flexShrink: 0, alignSelf: 'center' }}>
+              <span style={{ fontSize: 9, padding: '2px 8px', background: AMBER + '22', border: `1px solid ${AMBER}44`, color: AMBER, borderRadius: 2, fontFamily: MONO, fontWeight: 700 }}>TEXT</span>
             </div>
           </button>
         </div>
 
+        {/* Separator */}
+        <div style={{ height: 1, background: BORDER, marginBottom: 16 }} />
+
         {/* Cancel */}
-        <button
-          data-testid="disambiguation-cancel"
-          onClick={onCancel}
-          className="w-full py-2 px-4 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded transition-colors"
-        >
-          Cancel
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 9, color: SUBTLE }}>ESC to dismiss</span>
+          <button
+            data-testid="disambiguation-cancel"
+            onClick={onCancel}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = RED; (e.currentTarget as HTMLButtonElement).style.color = RED; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = SUBTLE; }}
+            style={{ padding: '6px 20px', border: `1px solid ${BORDER}`, background: 'transparent', color: SUBTLE, borderRadius: 3, cursor: 'pointer', fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}
+          >
+            CANCEL
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+  token: string;
+  ticker: string;
+  company?: string | null;
+  onChooseTicker: () => void;
+  onChooseWord: () => void;
+  onCancel: () => void;
+}
+

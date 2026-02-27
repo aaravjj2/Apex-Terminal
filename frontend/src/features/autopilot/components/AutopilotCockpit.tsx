@@ -1,39 +1,9 @@
-/**
- * AutopilotCockpit — Phase 2 live cockpit UI
- *
- * Tabs: Overview · Health · Cycle Log · Positions · Orders · Universe
- * All data pulled from /api/ops/autopilot/* (Phase 0 endpoints).
- * Zero mocks — all state is real Alpaca paper data.
- */
+﻿const BG='#0a0a0a'; const PANEL='#111111'; const BORDER='#1e1e1e';
+const AMBER='#f5a623'; const GREEN='#26a69a'; const RED='#ef5350';
+const BLUE='#42a5f5'; const PURPLE='#ab47bc'; const SUBTLE='#555';
+const TEXT='#d1d4dc'; const MONO='"Roboto Mono","Courier New",monospace';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Activity,
-  AlertTriangle,
-  Bot,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  CircleDot,
-  Clock,
-  DollarSign,
-  Flame,
-  Globe,
-  Heart,
-  Layers,
-  ListOrdered,
-  Loader2,
-  Pause,
-  Play,
-  RefreshCw,
-  ShieldAlert,
-  Sigma,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-  XCircle,
-  Zap,
-} from 'lucide-react';
 import {
   opsApi,
   type OpsHealthCheck,
@@ -44,89 +14,64 @@ import {
   type OpsRunSummary,
   type OpsUniverseSymbol,
 } from '../ops-api';
-import { cn } from '../../../ui/utils';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+//  Helpers 
 
 const fmt$ = (v: number | string | null | undefined) => {
-  if (v == null || v === '') return '—';
+  if (v == null || v === '') return '';
   const n = Number(v);
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
 };
-
 const fmtPct = (v: number | string | null | undefined, multiply = false) => {
-  if (v == null || v === '') return '—';
+  if (v == null || v === '') return '';
   const n = Number(v) * (multiply ? 100 : 1);
   return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 };
-
 const fmtMs = (ms: number | null | undefined) => {
-  if (ms == null) return '—';
+  if (ms == null) return '';
   if (ms < 1000) return `${ms.toFixed(0)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
 };
-
 const fmtAge = (iso: string | null | undefined) => {
-  if (!iso) return '—';
+  if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();
   if (diff < 60_000) return `${Math.round(diff / 1000)}s ago`;
   if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
   return `${Math.round(diff / 3_600_000)}h ago`;
 };
-
 const fmtTime = (iso: string | null | undefined) => {
-  if (!iso) return '—';
+  if (!iso) return '';
   return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
-
 const regimeColor = (regime: string | null | undefined) => {
   switch ((regime ?? '').toLowerCase()) {
-    case 'bull': return 'text-emerald-400';
-    case 'bear': return 'text-red-400';
-    case 'volatile': return 'text-orange-400';
-    case 'chaos': return 'text-red-600 font-bold animate-pulse';
-    case 'neutral': return 'text-sky-400';
-    default: return 'text-slate-400';
+    case 'bull': return GREEN;
+    case 'bear': return RED;
+    case 'volatile': return AMBER;
+    case 'chaos': return '#ff1744';
+    case 'neutral': return BLUE;
+    default: return SUBTLE;
   }
 };
-
-const regimeIcon = (regime: string | null | undefined) => {
+const regimeChar = (regime: string | null | undefined) => {
   switch ((regime ?? '').toLowerCase()) {
-    case 'bull': return <TrendingUp size={14} className="text-emerald-400" />;
-    case 'bear': return <TrendingDown size={14} className="text-red-400" />;
-    case 'volatile': return <Flame size={14} className="text-orange-400" />;
-    case 'chaos': return <ShieldAlert size={14} className="text-red-600" />;
-    default: return <Sigma size={14} className="text-sky-400" />;
+    case 'bull': return '';
+    case 'bear': return '';
+    case 'volatile': return '~';
+    case 'chaos': return '!';
+    default: return '';
   }
 };
 
-const statusDot = (ok: boolean, pulsing = false) => (
-  <span
-    className={cn(
-      'inline-block h-2.5 w-2.5 rounded-full',
-      ok ? 'bg-emerald-400' : 'bg-red-500',
-      pulsing && ok && 'animate-pulse',
-    )}
-  />
-);
+//  Shared sub-components 
 
-// ─── Shared sub-components ─────────────────────────────────────────────────────
-
-const Card: React.FC<{ title?: string; icon?: React.ReactNode; children: React.ReactNode; className?: string; 'data-testid'?: string }> = ({
-  title,
-  icon,
-  children,
-  className,
-  'data-testid': testId,
+const Card: React.FC<{ title?: string; children: React.ReactNode; 'data-testid'?: string }> = ({
+  title, children, 'data-testid': testId,
 }) => (
-  <div
-    className={cn('rounded-xl border border-border/50 bg-panel-bg/60 backdrop-blur-sm overflow-hidden', className)}
-    data-testid={testId}
-  >
+  <div style={{ border: `1px solid ${BORDER}`, background: PANEL, borderRadius: 4, overflow: 'hidden' }} data-testid={testId}>
     {title && (
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-black/20">
-        {icon}
-        <span className="text-sm font-semibold text-foreground/80 tracking-wide uppercase">{title}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.3)' }}>
+        <span style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600 }}>{title}</span>
       </div>
     )}
     {children}
@@ -134,38 +79,47 @@ const Card: React.FC<{ title?: string; icon?: React.ReactNode; children: React.R
 );
 
 const Pill: React.FC<{ label: string; variant?: 'ok' | 'warn' | 'err' | 'info' | 'neutral' }> = ({ label, variant = 'neutral' }) => {
-  const colors = {
-    ok: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-    warn: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
-    err: 'bg-red-500/20 text-red-300 border-red-500/40',
-    info: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
-    neutral: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+  const colors: Record<string, [string, string]> = {
+    ok: [GREEN, 'rgba(38,166,154,0.15)'],
+    warn: [AMBER, 'rgba(245,166,35,0.15)'],
+    err: [RED, 'rgba(239,83,80,0.15)'],
+    info: [BLUE, 'rgba(66,165,245,0.15)'],
+    neutral: [SUBTLE, 'rgba(85,85,85,0.2)'],
   };
+  const [color, bg] = colors[variant] ?? colors.neutral;
   return (
-    <span className={cn('inline-block rounded px-1.5 py-0.5 text-xs font-mono font-semibold border', colors[variant])}>
+    <span style={{ fontSize: 9, fontFamily: MONO, fontWeight: 700, padding: '2px 5px', borderRadius: 2, color, background: bg, border: `1px solid ${color}44`, letterSpacing: '0.05em' }}>
       {label}
     </span>
   );
 };
 
-const Spinner: React.FC<{ className?: string }> = ({ className }) => (
-  <Loader2 size={18} className={cn('animate-spin text-sky-400', className)} />
+const Spinner: React.FC = () => (
+  <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${BORDER}`, borderTopColor: BLUE, animation: 'spin 0.8s linear infinite' }} />
 );
 
-// ─── Cockpit Tabs ─────────────────────────────────────────────────────────────
+const StatusDot: React.FC<{ ok: boolean; pulse?: boolean }> = ({ ok, pulse }) => (
+  <span style={{
+    display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+    background: ok ? GREEN : RED,
+    ...(pulse && ok ? { animation: 'pulse 1.5s ease-in-out infinite' } : {}),
+  }} />
+);
+
+//  Cockpit Tabs 
 
 type CockpitTab = 'overview' | 'health' | 'cycle-log' | 'positions' | 'orders' | 'universe';
 
-const COCKPIT_TABS: { id: CockpitTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'overview', label: 'Overview', icon: <Bot size={14} /> },
-  { id: 'health', label: 'Health', icon: <Heart size={14} /> },
-  { id: 'cycle-log', label: 'Cycle Log', icon: <Activity size={14} /> },
-  { id: 'positions', label: 'Positions', icon: <Layers size={14} /> },
-  { id: 'orders', label: 'Orders', icon: <ListOrdered size={14} /> },
-  { id: 'universe', label: 'Universe', icon: <Globe size={14} /> },
+const COCKPIT_TABS: { id: CockpitTab; label: string; icon: string }[] = [
+  { id: 'overview', label: 'Overview', icon: '' },
+  { id: 'health', label: 'Health', icon: '' },
+  { id: 'cycle-log', label: 'Cycle Log', icon: '' },
+  { id: 'positions', label: 'Positions', icon: '' },
+  { id: 'orders', label: 'Orders', icon: '' },
+  { id: 'universe', label: 'Universe', icon: '' },
 ];
 
-// ─── Overview Tab ─────────────────────────────────────────────────────────────
+//  Overview Tab 
 
 interface OverviewTabProps {
   health: OpsHealthResponse | null;
@@ -177,183 +131,90 @@ interface OverviewTabProps {
   actionLoading: string | null;
 }
 
-const OverviewTab: React.FC<OverviewTabProps> = ({
-  health,
-  lastCycle,
-  loading,
-  onArm,
-  onDisarm,
-  onRunNow,
-  actionLoading,
-}) => {
+const OverviewTab: React.FC<OverviewTabProps> = ({ health, lastCycle, loading, onArm, onDisarm, onRunNow, actionLoading }) => {
   const state = health?.autopilot_state;
   const session = health?.market_session;
   const market = lastCycle?.market;
-
+  const row = (label: string, value: React.ReactNode) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: `1px solid ${BORDER}` }}>
+      <span style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO }}>{label}</span>
+      <span style={{ fontSize: 11, fontFamily: MONO, color: TEXT }}>{value}</span>
+    </div>
+  );
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4" data-testid="cockpit-overview-tab">
-      {/* Engine State Card */}
-      <Card title="Engine State" icon={<Bot size={14} className="text-sky-400" />} data-testid="cockpit-engine-card">
-        <div className="p-4 space-y-3">
-          {loading ? (
-            <Spinner />
-          ) : (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, padding: 14 }} data-testid="cockpit-overview-tab">
+      {/* Engine State */}
+      <Card title="ENGINE STATE" data-testid="cockpit-engine-card">
+        <div style={{ padding: 14 }}>
+          {loading ? <Spinner /> : (
             <>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Status</span>
-                <div className="flex items-center gap-2">
-                  {statusDot(state?.is_running ?? false, true)}
-                  <span
-                    className={cn(
-                      'text-sm font-semibold uppercase',
-                      state?.is_running ? 'text-emerald-400' : 'text-slate-400',
-                    )}
-                    data-testid="engine-running-status"
-                  >
+              {row('Status',
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <StatusDot ok={state?.is_running ?? false} pulse />
+                  <span style={{ color: state?.is_running ? GREEN : SUBTLE, fontSize: 11, fontWeight: 700 }} data-testid="engine-running-status">
                     {state?.is_running ? 'RUNNING' : state?.current_phase ?? 'IDLE'}
                   </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Phase</span>
-                <Pill label={state?.current_phase ?? '—'} variant="info" />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Cycles Run</span>
-                <span className="text-sm font-mono font-semibold text-foreground" data-testid="cycle-count">
-                  {state?.cycle_count ?? 0}
                 </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Paper Verified</span>
-                {state?.paper_verified ? (
-                  <span className="flex items-center gap-1 text-xs text-emerald-400">
-                    <CheckCircle2 size={12} /> YES
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-xs text-red-400">
-                    <XCircle size={12} /> NO
-                  </span>
-                )}
-              </div>
-
+              )}
+              {row('Phase', <Pill label={state?.current_phase ?? ''} variant="info" />)}
+              {row('Cycles Run', <span data-testid="cycle-count">{state?.cycle_count ?? 0}</span>)}
+              {row('Paper Verified', <span style={{ color: state?.paper_verified ? GREEN : RED }}>{state?.paper_verified ? ' YES' : ' NO'}</span>)}
               {state?.kill_switch && (
-                <div className="flex items-center gap-2 rounded-lg bg-red-500/20 border border-red-500/50 px-3 py-2">
-                  <ShieldAlert size={14} className="text-red-400" />
-                  <span className="text-xs font-bold text-red-300 uppercase">Kill Switch Active</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', marginTop: 8, background: 'rgba(239,83,80,0.15)', border: `1px solid ${RED}44`, borderRadius: 3 }}>
+                  <span style={{ color: RED, fontSize: 10, fontFamily: MONO, fontWeight: 700 }}> KILL SWITCH ACTIVE</span>
                 </div>
               )}
-
               {state?.circuit_breaker_active && (
-                <div className="flex items-center gap-2 rounded-lg bg-orange-500/20 border border-orange-500/50 px-3 py-2">
-                  <AlertTriangle size={14} className="text-orange-400" />
-                  <span className="text-xs font-bold text-orange-300 uppercase">Circuit Breaker ON</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', marginTop: 6, background: 'rgba(245,166,35,0.15)', border: `1px solid ${AMBER}44`, borderRadius: 3 }}>
+                  <span style={{ color: AMBER, fontSize: 10, fontFamily: MONO, fontWeight: 700 }}> CIRCUIT BREAKER ON</span>
                 </div>
               )}
             </>
           )}
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2 px-4 pb-4">
-          <button
-            data-testid="cockpit-arm-btn"
-            onClick={onArm}
-            disabled={!!actionLoading}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-semibold py-2 px-3 transition disabled:opacity-50"
-          >
-            {actionLoading === 'arm' ? <Spinner className="w-3 h-3" /> : <Play size={12} />}
-            ARM
-          </button>
-          <button
-            data-testid="cockpit-disarm-btn"
-            onClick={onDisarm}
-            disabled={!!actionLoading}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-slate-600/80 hover:bg-slate-600 text-white text-xs font-semibold py-2 px-3 transition disabled:opacity-50"
-          >
-            {actionLoading === 'disarm' ? <Spinner className="w-3 h-3" /> : <Pause size={12} />}
-            DISARM
-          </button>
-          <button
-            data-testid="cockpit-run-now-btn"
-            onClick={onRunNow}
-            disabled={!!actionLoading}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-sky-600/80 hover:bg-sky-600 text-white text-xs font-semibold py-2 px-3 transition disabled:opacity-50"
-          >
-            {actionLoading === 'run-now' ? <Spinner className="w-3 h-3" /> : <Zap size={12} />}
-            RUN NOW
-          </button>
+        <div style={{ display: 'flex', gap: 6, padding: '0 14px 14px' }}>
+          {[
+            { id: 'arm', label: ' ARM', fn: onArm, color: GREEN },
+            { id: 'disarm', label: ' DISARM', fn: onDisarm, color: SUBTLE },
+            { id: 'run-now', label: ' RUN NOW', fn: onRunNow, color: BLUE },
+          ].map(({ id, label, fn, color }) => (
+            <button key={id} data-testid={`cockpit-${id}-btn`} onClick={fn} disabled={!!actionLoading}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '6px 4px', fontSize: 9, fontFamily: MONO, fontWeight: 700, letterSpacing: '0.05em', color, background: `${color}18`, border: `1px solid ${color}44`, borderRadius: 3, cursor: 'pointer', opacity: actionLoading ? 0.5 : 1 }}>
+              {actionLoading === id ? '' : label}
+            </button>
+          ))}
         </div>
       </Card>
 
-      {/* Market Regime Card */}
-      <Card title="Market Regime" icon={<Globe size={14} className="text-sky-400" />} data-testid="cockpit-regime-card">
-        <div className="p-4 space-y-3">
-          {loading ? (
-            <Spinner />
-          ) : (
+      {/* Market Regime */}
+      <Card title="MARKET REGIME" data-testid="cockpit-regime-card">
+        <div style={{ padding: 14 }}>
+          {loading ? <Spinner /> : (
             <>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Session</span>
-                <div className="flex items-center gap-2">
-                  {statusDot(session?.allow_trading ?? false, session?.allow_trading)}
-                  <span
-                    className={cn(
-                      'text-xs font-semibold uppercase',
-                      session?.allow_trading ? 'text-emerald-400' : 'text-slate-400',
-                    )}
-                    data-testid="market-session-state"
-                  >
-                    {session?.state ?? '—'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Regime</span>
-                <div className="flex items-center gap-1.5">
-                  {regimeIcon(market?.regime)}
-                  <span
-                    className={cn('text-sm font-semibold uppercase', regimeColor(market?.regime))}
-                    data-testid="market-regime"
-                  >
-                    {market?.regime ?? '—'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">VIX</span>
-                <span
-                  className={cn(
-                    'text-sm font-mono font-semibold',
-                    (market?.vix_level ?? 0) > 30 ? 'text-orange-400' : (market?.vix_level ?? 0) > 20 ? 'text-yellow-400' : 'text-emerald-400',
-                  )}
-                  data-testid="vix-level"
-                >
-                  {market?.vix_level != null ? market.vix_level.toFixed(2) : '—'}
+              {row('Session',
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <StatusDot ok={session?.allow_trading ?? false} pulse={session?.allow_trading} />
+                  <span style={{ color: session?.allow_trading ? GREEN : SUBTLE, fontSize: 11 }} data-testid="market-session-state">{session?.state ?? ''}</span>
                 </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">SPY 21d</span>
-                <span
-                  className={cn(
-                    'text-sm font-mono font-semibold',
-                    (market?.spy_change_pct ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400',
-                  )}
-                  data-testid="spy-change"
-                >
-                  {market?.spy_change_pct != null ? fmtPct(market.spy_change_pct * 100) : '—'}
+              )}
+              {row('Regime',
+                <span style={{ color: regimeColor(market?.regime), fontWeight: 700 }} data-testid="market-regime">
+                  {regimeChar(market?.regime)} {market?.regime ?? ''}
                 </span>
-              </div>
-
+              )}
+              {row('VIX',
+                <span style={{ color: (market?.vix_level ?? 0) > 30 ? AMBER : (market?.vix_level ?? 0) > 20 ? AMBER : GREEN }} data-testid="vix-level">
+                  {market?.vix_level != null ? market.vix_level.toFixed(2) : ''}
+                </span>
+              )}
+              {row('SPY 21d',
+                <span style={{ color: (market?.spy_change_pct ?? 0) >= 0 ? GREEN : RED }} data-testid="spy-change">
+                  {market?.spy_change_pct != null ? fmtPct(market.spy_change_pct * 100) : ''}
+                </span>
+              )}
               {session?.reason && (
-                <div className="rounded-lg bg-black/30 px-3 py-2">
-                  <p className="text-xs text-muted-fg/70 leading-relaxed">{session.reason}</p>
+                <div style={{ padding: '6px 8px', marginTop: 8, background: 'rgba(0,0,0,0.3)', borderRadius: 3 }}>
+                  <p style={{ fontSize: 10, color: SUBTLE, fontFamily: MONO, lineHeight: 1.5 }}>{session.reason}</p>
                 </div>
               )}
             </>
@@ -361,80 +222,37 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
       </Card>
 
-      {/* Last Cycle Card */}
-      <Card title="Last Cycle" icon={<Clock size={14} className="text-sky-400" />} data-testid="cockpit-last-cycle-card">
-        <div className="p-4 space-y-3">
-          {loading ? (
-            <Spinner />
-          ) : lastCycle ? (
-            <>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Run ID</span>
-                <span className="text-xs font-mono text-foreground/70 truncate max-w-[120px]" data-testid="last-run-id">
-                  {lastCycle.run_id}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Status</span>
-                {lastCycle.success ? (
-                  <span className="flex items-center gap-1 text-xs text-emerald-400 font-semibold">
-                    <CheckCircle2 size={12} /> SUCCESS
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-xs text-red-400 font-semibold">
-                    <XCircle size={12} /> FAILED
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Duration</span>
-                <span className="text-sm font-mono text-foreground" data-testid="last-cycle-duration">
-                  {fmtMs(lastCycle.duration_ms)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Candidates</span>
-                <span className="text-sm font-mono text-foreground">
-                  {lastCycle.candidates_generated} gen / {lastCycle.candidates_selected} sel
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-fg">Orders</span>
-                <span className="text-sm font-mono text-foreground">
-                  {lastCycle.orders_placed} placed / {lastCycle.orders_filled} filled
-                </span>
-              </div>
-
-              {lastCycle.gates_triggered.length > 0 && (
-                <div className="space-y-1">
-                  <span className="text-xs text-muted-fg/70">Gates triggered:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {lastCycle.gates_triggered.map((g) => (
-                      <Pill key={g} label={g} variant="warn" />
-                    ))}
-                  </div>
+      {/* Last Cycle */}
+      <Card title="LAST CYCLE" data-testid="cockpit-last-cycle-card">
+        <div style={{ padding: 14 }}>
+          {loading ? <Spinner /> : lastCycle ? (<>
+            {row('Run ID', <span style={{ fontSize: 10, color: SUBTLE, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-testid="last-run-id">{lastCycle.run_id}</span>)}
+            {row('Status', lastCycle.success
+              ? <span style={{ color: GREEN, fontWeight: 700 }}> SUCCESS</span>
+              : <span style={{ color: RED, fontWeight: 700 }}> FAILED</span>
+            )}
+            {row('Duration', <span data-testid="last-cycle-duration">{fmtMs(lastCycle.duration_ms)}</span>)}
+            {row('Candidates', `${lastCycle.candidates_generated} gen / ${lastCycle.candidates_selected} sel`)}
+            {row('Orders', `${lastCycle.orders_placed} placed / ${lastCycle.orders_filled} filled`)}
+            {lastCycle.gates_triggered.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 4, fontFamily: MONO }}>GATES TRIGGERED</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {lastCycle.gates_triggered.map(g => <Pill key={g} label={g} variant="warn" />)}
                 </div>
-              )}
-
-              {lastCycle.no_action_reasons.length > 0 && (
-                <div className="space-y-1">
-                  <span className="text-xs text-muted-fg/70">No-action:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {lastCycle.no_action_reasons.map((r, i) => (
-                      <Pill key={i} label={r} variant="neutral" />
-                    ))}
-                  </div>
+              </div>
+            )}
+            {lastCycle.no_action_reasons.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 4, fontFamily: MONO }}>NO-ACTION</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {lastCycle.no_action_reasons.map((r, i) => <Pill key={i} label={r} variant="neutral" />)}
                 </div>
-              )}
-
-              <div className="text-xs text-muted-fg/50 text-right">{fmtAge(lastCycle.timestamp)}</div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-fg/60 italic text-center py-4">No cycles yet this session</p>
+              </div>
+            )}
+            <div style={{ fontSize: 9, color: SUBTLE, textAlign: 'right', marginTop: 8, fontFamily: MONO }}>{fmtAge(lastCycle.timestamp)}</div>
+          </>) : (
+            <p style={{ fontSize: 11, color: SUBTLE, textAlign: 'center', padding: '16px 0', fontFamily: MONO }}>No cycles yet this session</p>
           )}
         </div>
       </Card>
@@ -442,7 +260,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   );
 };
 
-// ─── Health Tab ────────────────────────────────────────────────────────────────
+//  Health Tab 
 
 interface HealthTabProps {
   health: OpsHealthResponse | null;
@@ -453,85 +271,67 @@ interface HealthTabProps {
 const HealthCheckRow: React.FC<{ check: OpsHealthCheck }> = ({ check }) => {
   const isOk = check.status === 'ok';
   const isDegraded = check.status === 'degraded';
+  const [hov, setHov] = useState(false);
   return (
     <div
-      className="flex items-center justify-between px-4 py-3 border-b border-border/30 last:border-0 hover:bg-white/3 transition"
       data-testid={`health-check-${check.name}`}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 14px', borderBottom: `1px solid ${BORDER}`,
+        background: hov ? 'rgba(255,255,255,0.02)' : 'transparent',
+        transition: 'background 0.1s',
+      }}
     >
-      <div className="flex items-center gap-3">
-        {isOk ? (
-          <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-        ) : isDegraded ? (
-          <AlertTriangle size={15} className="text-yellow-400 shrink-0" />
-        ) : (
-          <XCircle size={15} className="text-red-400 shrink-0" />
-        )}
-        <span className="text-sm font-semibold text-foreground/90 capitalize">{check.name}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 12, color: isOk ? GREEN : isDegraded ? AMBER : RED }}>
+          {isOk ? '' : isDegraded ? '' : ''}
+        </span>
+        <span style={{ fontSize: 12, fontFamily: MONO, color: TEXT, textTransform: 'capitalize' }}>{check.name}</span>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-fg/60 font-mono">{check.detail}</span>
-        <span
-          className={cn(
-            'text-xs font-mono',
-            check.latency_ms < 100 ? 'text-emerald-400' : check.latency_ms < 500 ? 'text-yellow-400' : 'text-red-400',
-          )}
-        >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 10, color: SUBTLE, fontFamily: MONO }}>{check.detail}</span>
+        <span style={{ fontSize: 10, fontFamily: MONO, color: check.latency_ms < 100 ? GREEN : check.latency_ms < 500 ? AMBER : RED }}>
           {fmtMs(check.latency_ms)}
         </span>
-        <Pill
-          label={check.status.toUpperCase()}
-          variant={isOk ? 'ok' : isDegraded ? 'warn' : 'err'}
-        />
+        <Pill label={check.status.toUpperCase()} variant={isOk ? 'ok' : isDegraded ? 'warn' : 'err'} />
       </div>
     </div>
   );
 };
 
 const HealthTab: React.FC<HealthTabProps> = ({ health, loading, onRefresh }) => (
-  <div className="p-4 space-y-4" data-testid="cockpit-health-tab">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
+  <div style={{ padding: 14 }} data-testid="cockpit-health-tab">
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {health && (
           <>
-            {statusDot(health.overall_status === 'ok')}
-            <span
-              className={cn(
-                'text-sm font-semibold uppercase',
-                health.overall_status === 'ok' ? 'text-emerald-400' : 'text-red-400',
-              )}
-              data-testid="health-overall-status"
-            >
+            <StatusDot ok={health.overall_status === 'ok'} />
+            <span style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: health.overall_status === 'ok' ? GREEN : RED, textTransform: 'uppercase' }} data-testid="health-overall-status">
               {health.overall_status}
             </span>
           </>
         )}
       </div>
-      <button
-        onClick={onRefresh}
-        disabled={loading}
-        className="flex items-center gap-1.5 text-xs text-muted-fg hover:text-foreground transition"
-        data-testid="health-refresh-btn"
-      >
-        <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-        Refresh
+      <button onClick={onRefresh} disabled={loading} data-testid="health-refresh-btn"
+        style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontFamily: MONO, color: SUBTLE, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+        {loading ? '' : ''} Refresh
       </button>
     </div>
-
     <Card data-testid="health-checks-card">
       {loading ? (
-        <div className="p-8 flex justify-center">
-          <Spinner />
-        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spinner /></div>
       ) : health?.checks.length ? (
-        health.checks.map((c) => <HealthCheckRow key={c.name} check={c} />)
+        health.checks.map(c => <HealthCheckRow key={c.name} check={c} />)
       ) : (
-        <p className="text-sm text-muted-fg p-6 text-center">No health data</p>
+        <p style={{ fontSize: 11, color: SUBTLE, padding: 24, textAlign: 'center', fontFamily: MONO }}>No health data</p>
       )}
     </Card>
   </div>
 );
 
-// ─── Cycle Log Tab ─────────────────────────────────────────────────────────────
+//  Cycle Log Tab 
 
 interface CycleLogTabProps {
   runs: OpsRunSummary[];
@@ -543,93 +343,57 @@ const CycleLogTab: React.FC<CycleLogTabProps> = ({ runs, loading, onRefresh }) =
   const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
-    <div className="p-4 space-y-3" data-testid="cockpit-cycle-log-tab">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-fg">{runs.length} runs in session</span>
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-muted-fg hover:text-foreground transition"
-          data-testid="cycle-log-refresh-btn"
-        >
-          <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-          Refresh
+    <div style={{ padding: 14 }} data-testid="cockpit-cycle-log-tab">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO }}>{runs.length} runs in session</span>
+        <button onClick={onRefresh} disabled={loading} data-testid="cycle-log-refresh-btn"
+          style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+          {loading ? '' : ''} Refresh
         </button>
       </div>
 
       {loading ? (
-        <div className="flex justify-center p-8">
-          <Spinner />
-        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spinner /></div>
       ) : runs.length === 0 ? (
-        <div className="rounded-xl border border-border/40 bg-panel-bg/40 p-8 text-center">
-          <CircleDot size={24} className="mx-auto mb-3 text-muted-fg/40" />
-          <p className="text-sm text-muted-fg/60 italic">No cycles recorded yet</p>
+        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 4, padding: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 20, marginBottom: 8 }}></div>
+          <p style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO }}>No cycles recorded yet</p>
         </div>
       ) : (
-        <div className="space-y-1.5" data-testid="cycle-log-list">
-          {runs.map((run) => (
-            <div
-              key={run.run_id}
-              className="rounded-lg border border-border/40 bg-panel-bg/40 overflow-hidden"
-              data-testid={`cycle-row-${run.run_id}`}
-            >
+        <div data-testid="cycle-log-list">
+          {runs.map(run => (
+            <div key={run.run_id} style={{ border: `1px solid ${BORDER}`, borderRadius: 3, marginBottom: 4, overflow: 'hidden' }} data-testid={`cycle-row-${run.run_id}`}>
               <button
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/3 transition text-left"
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                 onClick={() => setExpanded(expanded === run.run_id ? null : run.run_id)}
               >
-                <div className="flex items-center gap-3">
-                  {run.success ? (
-                    <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                  ) : (
-                    <XCircle size={14} className="text-red-400 shrink-0" />
-                  )}
-                  <span className="text-xs font-mono text-foreground/70">{run.run_id}</span>
-                  <div className="flex items-center gap-1">
-                    {regimeIcon(run.regime)}
-                    <span className={cn('text-xs font-semibold uppercase', regimeColor(run.regime))}>
-                      {run.regime}
-                    </span>
-                  </div>
-                  {run.vix_level != null && (
-                    <span className="text-xs font-mono text-muted-fg/60">VIX {run.vix_level.toFixed(1)}</span>
-                  )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ color: run.success ? GREEN : RED, fontSize: 12 }}>{run.success ? '' : ''}</span>
+                  <span style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE }}>{run.run_id}</span>
+                  <span style={{ fontSize: 11, color: regimeColor(run.regime), fontWeight: 700 }}>{regimeChar(run.regime)} {run.regime}</span>
+                  {run.vix_level != null && <span style={{ fontSize: 10, color: SUBTLE, fontFamily: MONO }}>VIX {run.vix_level.toFixed(1)}</span>}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-muted-fg/60">{fmtMs(run.duration_ms)}</span>
-                  <span className="text-xs text-muted-fg/50">{fmtAge(run.timestamp)}</span>
-                  {expanded === run.run_id ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE }}>{fmtMs(run.duration_ms)}</span>
+                  <span style={{ fontSize: 10, color: SUBTLE, fontFamily: MONO }}>{fmtAge(run.timestamp)}</span>
+                  <span style={{ fontSize: 10, color: SUBTLE }}>{expanded === run.run_id ? '' : ''}</span>
                 </div>
               </button>
-
               {expanded === run.run_id && (
-                <div className="px-4 py-3 border-t border-border/30 bg-black/20 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <p className="text-xs text-muted-fg/60 mb-1">Candidates</p>
-                    <p className="text-sm font-mono">
-                      {run.candidates_generated} gen / {run.candidates_selected} sel
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-fg/60 mb-1">Orders Filled</p>
-                    <p className="text-sm font-mono">{run.orders_filled}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-fg/60 mb-1">Market Open</p>
-                    <p className="text-sm font-mono">{run.market_open ? 'YES' : 'NO'}</p>
-                  </div>
+                <div style={{ padding: '10px 14px', borderTop: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.3)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                  <div><p style={{ fontSize: 9, color: SUBTLE, marginBottom: 3, fontFamily: MONO }}>CANDIDATES</p><p style={{ fontSize: 11, fontFamily: MONO, color: TEXT }}>{run.candidates_generated} gen / {run.candidates_selected} sel</p></div>
+                  <div><p style={{ fontSize: 9, color: SUBTLE, marginBottom: 3, fontFamily: MONO }}>ORDERS FILLED</p><p style={{ fontSize: 11, fontFamily: MONO, color: TEXT }}>{run.orders_filled}</p></div>
+                  <div><p style={{ fontSize: 9, color: SUBTLE, marginBottom: 3, fontFamily: MONO }}>MARKET OPEN</p><p style={{ fontSize: 11, fontFamily: MONO, color: TEXT }}>{run.market_open ? 'YES' : 'NO'}</p></div>
                   {run.gates_triggered.length > 0 && (
-                    <div className="sm:col-span-4">
-                      <p className="text-xs text-muted-fg/60 mb-1.5">Gates triggered</p>
-                      <div className="flex flex-wrap gap-1">
-                        {run.gates_triggered.map((g) => (
-                          <Pill key={g} label={g} variant="warn" />
-                        ))}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <p style={{ fontSize: 9, color: SUBTLE, marginBottom: 4, fontFamily: MONO }}>GATES TRIGGERED</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {run.gates_triggered.map(g => <Pill key={g} label={g} variant="warn" />)}
                       </div>
                     </div>
                   )}
-                  <div className="sm:col-span-4">
-                    <p className="text-xs text-muted-fg/40">{new Date(run.timestamp).toLocaleString()}</p>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <p style={{ fontSize: 9, color: SUBTLE, fontFamily: MONO }}>{new Date(run.timestamp).toLocaleString()}</p>
                   </div>
                 </div>
               )}
@@ -641,73 +405,48 @@ const CycleLogTab: React.FC<CycleLogTabProps> = ({ runs, loading, onRefresh }) =
   );
 };
 
-// ─── Positions Tab ─────────────────────────────────────────────────────────────
+//  Positions Tab 
 
-interface PositionsTabProps {
-  positions: OpsPosition[];
-  loading: boolean;
-  onRefresh: () => void;
-}
+interface PositionsTabProps { positions: OpsPosition[]; loading: boolean; onRefresh: () => void; }
 
 const PositionsTab: React.FC<PositionsTabProps> = ({ positions, loading, onRefresh }) => (
-  <div className="p-4 space-y-3" data-testid="cockpit-positions-tab">
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-fg">{positions.length} open position{positions.length !== 1 ? 's' : ''}</span>
-      <button
-        onClick={onRefresh}
-        disabled={loading}
-        className="flex items-center gap-1.5 text-xs text-muted-fg hover:text-foreground transition"
-        data-testid="positions-refresh-btn"
-      >
-        <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-        Refresh
+  <div style={{ padding: 14 }} data-testid="cockpit-positions-tab">
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+      <span style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO }}>{positions.length} open position{positions.length !== 1 ? 's' : ''}</span>
+      <button onClick={onRefresh} disabled={loading} data-testid="positions-refresh-btn"
+        style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+        {loading ? '' : ''} Refresh
       </button>
     </div>
-
     {loading ? (
-      <div className="flex justify-center p-8">
-        <Spinner />
-      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spinner /></div>
     ) : positions.length === 0 ? (
-      <div className="rounded-xl border border-border/40 bg-panel-bg/40 p-8 text-center">
-        <Wallet size={24} className="mx-auto mb-3 text-muted-fg/40" />
-        <p className="text-sm text-muted-fg/60 italic">No open positions (paper account)</p>
+      <div style={{ border: `1px solid ${BORDER}`, borderRadius: 4, padding: 32, textAlign: 'center' }}>
+        <p style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO }}>No open positions (paper account)</p>
       </div>
     ) : (
-      <div className="overflow-x-auto rounded-xl border border-border/40" data-testid="positions-table">
-        <table className="w-full text-sm">
+      <div style={{ overflowX: 'auto' }} data-testid="positions-table">
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: MONO }}>
           <thead>
-            <tr className="border-b border-border/40 bg-black/30 text-xs text-muted-fg/60 uppercase tracking-wider">
-              <th className="text-left px-4 py-3">Symbol</th>
-              <th className="text-right px-4 py-3">Qty</th>
-              <th className="text-right px-4 py-3">Avg Entry</th>
-              <th className="text-right px-4 py-3">Current</th>
-              <th className="text-right px-4 py-3">Mkt Value</th>
-              <th className="text-right px-4 py-3">Unrealised P&L</th>
-              <th className="text-right px-4 py-3">P&L %</th>
+            <tr style={{ borderBottom: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.3)' }}>
+              {['Symbol','Qty','Avg Entry','Current','Mkt Value','Unrealised P&L','P&L %'].map(h => (
+                <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Symbol' ? 'left' : 'right', fontSize: 9, color: SUBTLE, letterSpacing: '0.07em' }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {positions.map((p) => {
+            {positions.map(p => {
               const plNum = Number(p.unrealized_pl ?? 0);
               const plPct = Number(p.unrealized_plpc ?? 0) * 100;
               return (
-                <tr
-                  key={p.symbol}
-                  className="border-b border-border/20 last:border-0 hover:bg-white/3 transition"
-                  data-testid={`position-row-${p.symbol}`}
-                >
-                  <td className="px-4 py-3 font-semibold text-foreground">{p.symbol}</td>
-                  <td className="px-4 py-3 text-right font-mono">{p.qty}</td>
-                  <td className="px-4 py-3 text-right font-mono">{fmt$(p.avg_entry_price)}</td>
-                  <td className="px-4 py-3 text-right font-mono">{fmt$(p.current_price)}</td>
-                  <td className="px-4 py-3 text-right font-mono">{fmt$(p.market_value)}</td>
-                  <td className={cn('px-4 py-3 text-right font-mono font-semibold', plNum >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                    {fmt$(plNum)}
-                  </td>
-                  <td className={cn('px-4 py-3 text-right font-mono', plPct >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                    {fmtPct(plPct)}
-                  </td>
+                <tr key={p.symbol} style={{ borderBottom: `1px solid ${BORDER}` }} data-testid={`position-row-${p.symbol}`}>
+                  <td style={{ padding: '8px 12px', fontWeight: 700, color: TEXT }}>{p.symbol}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>{p.qty}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>{fmt$(p.avg_entry_price)}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>{fmt$(p.current_price)}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>{fmt$(p.market_value)}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', color: plNum >= 0 ? GREEN : RED, fontWeight: 700 }}>{fmt$(plNum)}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', color: plPct >= 0 ? GREEN : RED }}>{fmtPct(plPct)}</td>
                 </tr>
               );
             })}
@@ -718,13 +457,9 @@ const PositionsTab: React.FC<PositionsTabProps> = ({ positions, loading, onRefre
   </div>
 );
 
-// ─── Orders Tab ────────────────────────────────────────────────────────────────
+//  Orders Tab 
 
-interface OrdersTabProps {
-  orders: OpsOrder[];
-  loading: boolean;
-  onRefresh: () => void;
-}
+interface OrdersTabProps { orders: OpsOrder[]; loading: boolean; onRefresh: () => void; }
 
 const statusVariant = (s: string): 'ok' | 'warn' | 'err' | 'info' | 'neutral' => {
   if (s === 'filled') return 'ok';
@@ -734,63 +469,41 @@ const statusVariant = (s: string): 'ok' | 'warn' | 'err' | 'info' | 'neutral' =>
 };
 
 const OrdersTab: React.FC<OrdersTabProps> = ({ orders, loading, onRefresh }) => (
-  <div className="p-4 space-y-3" data-testid="cockpit-orders-tab">
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-fg">{orders.length} recent orders</span>
-      <button
-        onClick={onRefresh}
-        disabled={loading}
-        className="flex items-center gap-1.5 text-xs text-muted-fg hover:text-foreground transition"
-        data-testid="orders-refresh-btn"
-      >
-        <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-        Refresh
+  <div style={{ padding: 14 }} data-testid="cockpit-orders-tab">
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+      <span style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO }}>{orders.length} recent orders</span>
+      <button onClick={onRefresh} disabled={loading} data-testid="orders-refresh-btn"
+        style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+        {loading ? '' : ''} Refresh
       </button>
     </div>
-
     {loading ? (
-      <div className="flex justify-center p-8">
-        <Spinner />
-      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spinner /></div>
     ) : orders.length === 0 ? (
-      <div className="rounded-xl border border-border/40 bg-panel-bg/40 p-8 text-center">
-        <DollarSign size={24} className="mx-auto mb-3 text-muted-fg/40" />
-        <p className="text-sm text-muted-fg/60 italic">No orders in paper account</p>
+      <div style={{ border: `1px solid ${BORDER}`, borderRadius: 4, padding: 32, textAlign: 'center' }}>
+        <p style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO }}>No orders in paper account</p>
       </div>
     ) : (
-      <div className="overflow-x-auto rounded-xl border border-border/40" data-testid="orders-table">
-        <table className="w-full text-sm">
+      <div style={{ overflowX: 'auto' }} data-testid="orders-table">
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: MONO }}>
           <thead>
-            <tr className="border-b border-border/40 bg-black/30 text-xs text-muted-fg/60 uppercase tracking-wider">
-              <th className="text-left px-4 py-3">Symbol</th>
-              <th className="text-left px-4 py-3">Side</th>
-              <th className="text-left px-4 py-3">Type</th>
-              <th className="text-right px-4 py-3">Qty</th>
-              <th className="text-right px-4 py-3">Filled</th>
-              <th className="text-right px-4 py-3">Avg Price</th>
-              <th className="text-left px-4 py-3">Status</th>
-              <th className="text-left px-4 py-3">Created</th>
+            <tr style={{ borderBottom: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.3)' }}>
+              {['Symbol','Side','Type','Qty','Filled','Avg Price','Status','Created'].map(h => (
+                <th key={h} style={{ padding: '8px 12px', textAlign: ['Qty','Filled','Avg Price'].includes(h) ? 'right' : 'left', fontSize: 9, color: SUBTLE, letterSpacing: '0.07em' }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {orders.map((o) => (
-              <tr
-                key={o.id}
-                className="border-b border-border/20 last:border-0 hover:bg-white/3 transition"
-                data-testid={`order-row-${o.id}`}
-              >
-                <td className="px-4 py-3 font-semibold">{o.symbol}</td>
-                <td className={cn('px-4 py-3 font-semibold uppercase text-xs', o.side === 'buy' ? 'text-emerald-400' : 'text-red-400')}>
-                  {o.side}
-                </td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-fg/70">{o.type}</td>
-                <td className="px-4 py-3 text-right font-mono">{o.qty}</td>
-                <td className="px-4 py-3 text-right font-mono">{o.filled_qty}</td>
-                <td className="px-4 py-3 text-right font-mono">{o.filled_avg_price ? fmt$(o.filled_avg_price) : '—'}</td>
-                <td className="px-4 py-3">
-                  <Pill label={o.status.toUpperCase()} variant={statusVariant(o.status)} />
-                </td>
-                <td className="px-4 py-3 text-xs text-muted-fg/60">{fmtTime(o.created_at)}</td>
+            {orders.map(o => (
+              <tr key={o.id} style={{ borderBottom: `1px solid ${BORDER}` }} data-testid={`order-row-${o.id}`}>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: TEXT }}>{o.symbol}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: o.side === 'buy' ? GREEN : RED, textTransform: 'uppercase' }}>{o.side}</td>
+                <td style={{ padding: '8px 12px', color: SUBTLE }}>{o.type}</td>
+                <td style={{ padding: '8px 12px', textAlign: 'right' }}>{o.qty}</td>
+                <td style={{ padding: '8px 12px', textAlign: 'right' }}>{o.filled_qty}</td>
+                <td style={{ padding: '8px 12px', textAlign: 'right' }}>{o.filled_avg_price ? fmt$(o.filled_avg_price) : ''}</td>
+                <td style={{ padding: '8px 12px' }}><Pill label={o.status.toUpperCase()} variant={statusVariant(o.status)} /></td>
+                <td style={{ padding: '8px 12px', color: SUBTLE }}>{fmtTime(o.created_at)}</td>
               </tr>
             ))}
           </tbody>
@@ -800,7 +513,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, loading, onRefresh }) => 
   </div>
 );
 
-// ─── Universe Tab ──────────────────────────────────────────────────────────────
+//  Universe Tab 
 
 interface UniverseTabProps {
   symbols: OpsUniverseSymbol[];
@@ -810,53 +523,41 @@ interface UniverseTabProps {
 }
 
 const UniverseTab: React.FC<UniverseTabProps> = ({ symbols, account, loading, onRefresh }) => (
-  <div className="p-4 space-y-4" data-testid="cockpit-universe-tab">
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-fg">{symbols.length} symbols in trading universe</span>
-      <button
-        onClick={onRefresh}
-        disabled={loading}
-        className="flex items-center gap-1.5 text-xs text-muted-fg hover:text-foreground transition"
-        data-testid="universe-refresh-btn"
-      >
-        <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-        Refresh
+  <div style={{ padding: 14 }} data-testid="cockpit-universe-tab">
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <span style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO }}>{symbols.length} symbols in trading universe</span>
+      <button onClick={onRefresh} disabled={loading} data-testid="universe-refresh-btn"
+        style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+        {loading ? '' : ''} Refresh
       </button>
     </div>
 
     {account && (
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="account-summary">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }} data-testid="account-summary">
         {[
           { label: 'Portfolio Value', value: fmt$(account.portfolio_value) },
           { label: 'Equity', value: fmt$(account.equity) },
           { label: 'Cash', value: fmt$(account.cash) },
           { label: 'Buying Power', value: fmt$(account.buying_power) },
-        ].map((item) => (
-          <Card key={item.label}>
-            <div className="px-4 py-3 text-center">
-              <p className="text-xs text-muted-fg/60 mb-1">{item.label}</p>
-              <p className="text-base font-mono font-semibold text-foreground">{item.value}</p>
-            </div>
-          </Card>
+        ].map(item => (
+          <div key={item.label} style={{ border: `1px solid ${BORDER}`, borderRadius: 3, padding: '10px 12px', textAlign: 'center', background: PANEL }}>
+            <p style={{ fontSize: 9, color: SUBTLE, marginBottom: 4, fontFamily: MONO, letterSpacing: '0.07em' }}>{item.label.toUpperCase()}</p>
+            <p style={{ fontSize: 14, fontFamily: MONO, fontWeight: 700, color: AMBER }}>{item.value}</p>
+          </div>
         ))}
       </div>
     )}
 
     {loading ? (
-      <div className="flex justify-center p-8">
-        <Spinner />
-      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spinner /></div>
     ) : (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2" data-testid="universe-grid">
-        {symbols.map((s) => (
-          <div
-            key={s.symbol}
-            className="rounded-lg border border-border/40 bg-panel-bg/40 px-3 py-2 hover:border-sky-500/50 hover:bg-sky-500/5 transition"
-            data-testid={`universe-symbol-${s.symbol}`}
-          >
-            <p className="text-sm font-bold text-foreground leading-none">{s.symbol}</p>
-            <p className="text-xs text-muted-fg/60 mt-1 truncate">{s.sector}</p>
-            <Pill label={s.liquidity_tier} variant="info" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }} data-testid="universe-grid">
+        {symbols.map(s => (
+          <div key={s.symbol} data-testid={`universe-symbol-${s.symbol}`}
+            style={{ border: `1px solid ${BORDER}`, borderRadius: 3, padding: '8px 10px', background: PANEL, transition: 'border-color 0.1s' }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: TEXT, lineHeight: 1 }}>{s.symbol}</p>
+            <p style={{ fontSize: 9, color: SUBTLE, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: MONO }}>{s.sector}</p>
+            <div style={{ marginTop: 4 }}><Pill label={s.liquidity_tier} variant="info" /></div>
           </div>
         ))}
       </div>
@@ -864,7 +565,7 @@ const UniverseTab: React.FC<UniverseTabProps> = ({ symbols, account, loading, on
   </div>
 );
 
-// ─── Main Cockpit Component ────────────────────────────────────────────────────
+//  Main Cockpit Component 
 
 export const AutopilotCockpit: React.FC = () => {
   const [activeTab, setActiveTab] = useState<CockpitTab>('overview');
@@ -895,47 +596,29 @@ export const AutopilotCockpit: React.FC = () => {
       const [h, c] = await Promise.all([opsApi.getHealth(), opsApi.getLastCycle()]);
       setHealth(h);
       if (c.has_cycle && c.cycle) setLastCycle(c.cycle);
-    } catch (e) {
-      console.error('Failed to load health/cycle', e);
-    } finally {
-      setLoadingHealth(false);
-    }
+    } catch (e) { console.error('Failed to load health/cycle', e); }
+    finally { setLoadingHealth(false); }
   }, []);
 
   const loadRuns = useCallback(async () => {
     setLoadingRuns(true);
-    try {
-      const res = await opsApi.getRuns(30);
-      setRuns(res.runs ?? []);
-    } catch (e) {
-      console.error('Failed to load runs', e);
-    } finally {
-      setLoadingRuns(false);
-    }
+    try { const res = await opsApi.getRuns(30); setRuns(res.runs ?? []); }
+    catch (e) { console.error('Failed to load runs', e); }
+    finally { setLoadingRuns(false); }
   }, []);
 
   const loadPositions = useCallback(async () => {
     setLoadingPositions(true);
-    try {
-      const res = await opsApi.getPositions();
-      setPositions(res.positions ?? []);
-    } catch (e) {
-      console.error('Failed to load positions', e);
-    } finally {
-      setLoadingPositions(false);
-    }
+    try { const res = await opsApi.getPositions(); setPositions(res.positions ?? []); }
+    catch (e) { console.error('Failed to load positions', e); }
+    finally { setLoadingPositions(false); }
   }, []);
 
   const loadOrders = useCallback(async () => {
     setLoadingOrders(true);
-    try {
-      const res = await opsApi.getOrders(25);
-      setOrders(res.orders ?? []);
-    } catch (e) {
-      console.error('Failed to load orders', e);
-    } finally {
-      setLoadingOrders(false);
-    }
+    try { const res = await opsApi.getOrders(25); setOrders(res.orders ?? []); }
+    catch (e) { console.error('Failed to load orders', e); }
+    finally { setLoadingOrders(false); }
   }, []);
 
   const loadUniverse = useCallback(async () => {
@@ -944,31 +627,16 @@ export const AutopilotCockpit: React.FC = () => {
       const [u, a] = await Promise.all([opsApi.getUniverse(), opsApi.getAccount()]);
       setUniverseSymbols(u.symbols ?? []);
       if (a.account) setAccount(a.account as UniverseTabProps['account']);
-    } catch (e) {
-      console.error('Failed to load universe/account', e);
-    } finally {
-      setLoadingUniverse(false);
-    }
+    } catch (e) { console.error('Failed to load universe/account', e); }
+    finally { setLoadingUniverse(false); }
   }, []);
 
-  // Initial load + periodic refresh every 30s
   useEffect(() => {
-    loadHealth();
-    loadRuns();
-    loadPositions();
-    loadOrders();
-    loadUniverse();
-
-    pollRef.current = setInterval(() => {
-      loadHealth();
-    }, 30_000);
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
+    loadHealth(); loadRuns(); loadPositions(); loadOrders(); loadUniverse();
+    pollRef.current = setInterval(() => { loadHealth(); }, 30_000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [loadHealth, loadRuns, loadPositions, loadOrders, loadUniverse]);
 
-  // Reload tab-specific data when switching tabs
   useEffect(() => {
     if (activeTab === 'health') loadHealth();
     if (activeTab === 'cycle-log') loadRuns();
@@ -979,119 +647,82 @@ export const AutopilotCockpit: React.FC = () => {
 
   const handleArm = async () => {
     setActionLoading('arm');
-    try {
-      const res = await opsApi.arm();
-      showToast(res.message, res.ok);
-      await loadHealth();
-    } catch (e: unknown) {
-      showToast(`Arm failed: ${(e as Error).message}`, false);
-    } finally {
-      setActionLoading(null);
-    }
+    try { const res = await opsApi.arm(); showToast(res.message, res.ok); await loadHealth(); }
+    catch (e: unknown) { showToast(`Arm failed: ${(e as Error).message}`, false); }
+    finally { setActionLoading(null); }
   };
 
   const handleDisarm = async () => {
     setActionLoading('disarm');
-    try {
-      const res = await opsApi.disarm();
-      showToast(res.message, res.ok);
-      await loadHealth();
-    } catch (e: unknown) {
-      showToast(`Disarm failed: ${(e as Error).message}`, false);
-    } finally {
-      setActionLoading(null);
-    }
+    try { const res = await opsApi.disarm(); showToast(res.message, res.ok); await loadHealth(); }
+    catch (e: unknown) { showToast(`Disarm failed: ${(e as Error).message}`, false); }
+    finally { setActionLoading(null); }
   };
 
   const handleRunNow = async () => {
     setActionLoading('run-now');
     try {
-      const res = await opsApi.runNow(true);
-      showToast(res.message, res.ok);
-      // Poll for result after 8 seconds
-      setTimeout(async () => {
-        await loadHealth();
-        await loadRuns();
-      }, 8000);
-    } catch (e: unknown) {
-      showToast(`Run failed: ${(e as Error).message}`, false);
-    } finally {
-      setActionLoading(null);
-    }
+      const res = await opsApi.runNow(true); showToast(res.message, res.ok);
+      setTimeout(async () => { await loadHealth(); await loadRuns(); }, 8000);
+    } catch (e: unknown) { showToast(`Run failed: ${(e as Error).message}`, false); }
+    finally { setActionLoading(null); }
   };
 
   return (
-    <div className="h-full flex flex-col" data-testid="autopilot-cockpit">
-      {/* Toast */}
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: BG }} data-testid="autopilot-cockpit">
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
+
       {toast && (
-        <div
-          className={cn(
-            'fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-xl backdrop-blur border transition',
-            toast.ok
-              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-500/20 border-red-500/50 text-red-200',
-          )}
-          data-testid="cockpit-toast"
-        >
-          {toast.ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-          {toast.msg}
+        <div data-testid="cockpit-toast" style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 200,
+          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px',
+          fontSize: 11, fontFamily: MONO, fontWeight: 700,
+          background: toast.ok ? 'rgba(38,166,154,0.2)' : 'rgba(239,83,80,0.2)',
+          border: `1px solid ${toast.ok ? GREEN : RED}44`,
+          borderRadius: 4, color: toast.ok ? GREEN : RED,
+        }}>
+          {toast.ok ? '' : ''} {toast.msg}
         </div>
       )}
 
-      {/* Cockpit Tab Bar */}
-      <div className="flex items-center gap-0.5 px-4 pt-3 pb-0 shrink-0 border-b border-border/40 bg-black/10">
-        {COCKPIT_TABS.map((t) => (
+      {/* Tab Bar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 2, padding: '0 14px',
+        borderBottom: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.2)', flexShrink: 0,
+      }}>
+        {COCKPIT_TABS.map(t => (
           <button
             key={t.id}
             data-testid={`cockpit-tab-${t.id}`}
             onClick={() => setActiveTab(t.id)}
             aria-selected={activeTab === t.id}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold rounded-t-lg border border-transparent transition-all',
-              activeTab === t.id
-                ? 'bg-panel-bg border-border/40 border-b-panel-bg text-foreground -mb-px'
-                : 'text-muted-fg hover:text-foreground hover:bg-white/5',
-            )}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '10px 14px', fontSize: 10, fontFamily: MONO, fontWeight: 600,
+              letterSpacing: '0.07em', textTransform: 'uppercase',
+              background: 'transparent', border: 'none',
+              borderBottom: `2px solid ${activeTab === t.id ? AMBER : 'transparent'}`,
+              color: activeTab === t.id ? AMBER : SUBTLE,
+              cursor: 'pointer', transition: 'color 0.1s, border-color 0.1s',
+              marginBottom: -1,
+            }}
           >
-            {t.icon}
-            {t.label}
+            <span>{t.icon}</span> {t.label}
           </button>
         ))}
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div style={{ flex: 1, overflowY: 'auto' }}>
         {activeTab === 'overview' && (
-          <OverviewTab
-            health={health}
-            lastCycle={lastCycle}
-            loading={loadingHealth}
-            onArm={handleArm}
-            onDisarm={handleDisarm}
-            onRunNow={handleRunNow}
-            actionLoading={actionLoading}
-          />
+          <OverviewTab health={health} lastCycle={lastCycle} loading={loadingHealth}
+            onArm={handleArm} onDisarm={handleDisarm} onRunNow={handleRunNow} actionLoading={actionLoading} />
         )}
-        {activeTab === 'health' && (
-          <HealthTab health={health} loading={loadingHealth} onRefresh={loadHealth} />
-        )}
-        {activeTab === 'cycle-log' && (
-          <CycleLogTab runs={runs} loading={loadingRuns} onRefresh={loadRuns} />
-        )}
-        {activeTab === 'positions' && (
-          <PositionsTab positions={positions} loading={loadingPositions} onRefresh={loadPositions} />
-        )}
-        {activeTab === 'orders' && (
-          <OrdersTab orders={orders} loading={loadingOrders} onRefresh={loadOrders} />
-        )}
-        {activeTab === 'universe' && (
-          <UniverseTab
-            symbols={universeSymbols}
-            account={account}
-            loading={loadingUniverse}
-            onRefresh={loadUniverse}
-          />
-        )}
+        {activeTab === 'health' && <HealthTab health={health} loading={loadingHealth} onRefresh={loadHealth} />}
+        {activeTab === 'cycle-log' && <CycleLogTab runs={runs} loading={loadingRuns} onRefresh={loadRuns} />}
+        {activeTab === 'positions' && <PositionsTab positions={positions} loading={loadingPositions} onRefresh={loadPositions} />}
+        {activeTab === 'orders' && <OrdersTab orders={orders} loading={loadingOrders} onRefresh={loadOrders} />}
+        {activeTab === 'universe' && <UniverseTab symbols={universeSymbols} account={account} loading={loadingUniverse} onRefresh={loadUniverse} />}
       </div>
     </div>
   );

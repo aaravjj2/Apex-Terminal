@@ -1,6 +1,15 @@
-/**
- * Options Feature Main Dashboard Component
- */
+// Bloomberg OD — Options Dashboard
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const PURPLE = '#ab47bc';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
 
 import React, { useEffect, useState } from 'react';
 import { useOptionsStore } from './store';
@@ -22,7 +31,6 @@ interface OptionsDashboardProps {
 
 export const OptionsDashboard: React.FC<OptionsDashboardProps> = ({
   symbol: initialSymbol,
-  className = '',
 }) => {
   const {
     symbol,
@@ -36,19 +44,14 @@ export const OptionsDashboard: React.FC<OptionsDashboardProps> = ({
 
   const [strategy] = useState<StrategyAnalysis | null>(null);
 
-  // Ticker disambiguation
   const tickerInput = useTickerInput({
     initialValue: initialSymbol || '',
     onResolved: (resolvedSymbol) => fetchAll(resolvedSymbol),
     watchlist: [],
   });
 
-  // Load templates on mount
-  useEffect(() => {
-    loadStrategyTemplates();
-  }, [loadStrategyTemplates]);
+  useEffect(() => { loadStrategyTemplates(); }, [loadStrategyTemplates]);
 
-  // Load data when initial symbol provided
   useEffect(() => {
     if (initialSymbol && initialSymbol !== symbol) {
       tickerInput.onChange(initialSymbol);
@@ -62,113 +65,99 @@ export const OptionsDashboard: React.FC<OptionsDashboardProps> = ({
     tickerInput.submit();
   };
 
+  const card = { background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, padding:12 };
+
   return (
-    <div className={`bg-gray-900 text-white p-4 ${className}`}>
+    <div style={{ background:BG, color:TEXT, padding:12, fontFamily:MONO }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold">Options Analytics</h2>
-        <form onSubmit={handleSymbolSubmit} className="flex gap-2">
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, paddingBottom:8, borderBottom:`1px solid ${BORDER}` }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ color:PURPLE, fontSize:16 }}>◈</span>
+          <div>
+            <div style={{ color:AMBER, fontWeight:700, fontSize:12, letterSpacing:1 }}>OPTIONS ANALYTICS</div>
+            {symbol && <div style={{ color:SUBTLE, fontSize:9 }}>UNDERLYING: {symbol}</div>}
+          </div>
+        </div>
+        <form onSubmit={handleSymbolSubmit} style={{ display:'flex', gap:6 }}>
           <input
             type="text"
             value={tickerInput.value}
             onChange={(e) => tickerInput.onChange(e.target.value)}
-            placeholder="Symbol (e.g., AAPL)"
-            className="bg-gray-800 border border-gray-600 rounded px-3 py-1 text-sm w-32"
+            placeholder="SYMBOL (e.g. AAPL)"
             data-testid="analytics-symbol-input"
+            style={{
+              background:'#141414', border:`1px solid ${BORDER}`, color:TEXT,
+              fontFamily:MONO, fontSize:10, padding:'4px 8px', width:130,
+              outline:'none', borderRadius:2,
+            }}
           />
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm"
-          >
-            Load
-          </button>
+          <button type="submit" style={{
+            background: BLUE+'22', border:`1px solid ${BLUE}`, color:BLUE,
+            fontFamily:MONO, fontSize:9, fontWeight:700, padding:'4px 10px',
+            cursor:'pointer', borderRadius:2, letterSpacing:1,
+          }}>LOAD</button>
         </form>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Main grid */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8, marginBottom:8 }}>
         {/* IV Analytics */}
-        <IVAnalyticsPanel />
+        <div style={card}><IVAnalyticsPanel /></div>
 
         {/* Put/Call Ratio */}
-        <PutCallRatioPanel />
+        <div style={card}><PutCallRatioPanel /></div>
 
-        {/* Quick Actions */}
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">Strategy Templates ({strategyTemplates.length})</h3>
-          <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-            {strategyTemplates.map((template) => (
-              <button
-                key={template.name}
-                onClick={() => {
-                  // For now, just log - can be extended to build each strategy
-                  console.log('Selected template:', template.name);
-                }}
+        {/* Strategy Templates */}
+        <div style={card}>
+          <div style={{ color:AMBER, fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:6 }}>
+            STRATEGY TEMPLATES ({strategyTemplates.length})
+          </div>
+          <div style={{ maxHeight:220, overflowY:'auto' }}>
+            {strategyTemplates.map(t => (
+              <button key={t.name}
+                onClick={() => console.log('Selected template:', t.name)}
                 disabled={!chain}
-                className="w-full bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 
-                           px-3 py-2 rounded text-sm transition text-left"
-              >
-                <div className="font-medium">{template.name}</div>
-                <div className="text-xs text-gray-400 truncate">{template.description}</div>
+                style={{
+                  width:'100%', textAlign:'left', background:BG, border:`1px solid ${BORDER}`,
+                  color: chain ? TEXT : SUBTLE, fontFamily:MONO, padding:'5px 8px',
+                  marginBottom:3, cursor: chain ? 'pointer' : 'default', borderRadius:2,
+                }}>
+                <div style={{ fontSize:9, fontWeight:700 }}>{t.name}</div>
+                <div style={{ fontSize:8, color:SUBTLE, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.description}</div>
               </button>
             ))}
             {strategyTemplates.length === 0 && (
-              <div className="text-xs text-gray-500 italic">Loading templates...</div>
+              <div style={{ color:SUBTLE, fontSize:9 }}>LOADING TEMPLATES...</div>
             )}
           </div>
-
           {chain && (
-            <div className="mt-4 pt-3 border-t border-gray-700">
-              <div className="text-xs text-gray-400 space-y-1">
-                <div>Underlying: ${chain.underlyingPrice.toFixed(2)}</div>
-                <div>Contracts: {chain.totalContracts}</div>
-                <div>Expirations: {chain.expirations.length}</div>
-              </div>
+            <div style={{ marginTop:8, paddingTop:6, borderTop:`1px solid ${BORDER}` }}>
+              {[
+                { label:'UNDERLYING', val:`$${chain.underlyingPrice.toFixed(2)}`, color:AMBER },
+                { label:'CONTRACTS',  val:String(chain.totalContracts), color:TEXT },
+                { label:'EXPIRATIONS',val:String(chain.expirations.length), color:TEXT },
+              ].map(m => (
+                <div key={m.label} style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
+                  <span style={{ color:SUBTLE, fontSize:8 }}>{m.label}</span>
+                  <span style={{ color:m.color, fontSize:9, fontWeight:700 }}>{m.val}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Strategy Analysis Section */}
-      {strategy && (
-        <div className="mt-4 bg-gray-800 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">
-            {strategy.name} Analysis
-          </h3>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div>
-              <PayoffChart strategy={strategy} width={400} height={250} />
-              <div className="mt-2 flex gap-4 text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 bg-green-500"></span> Expiration
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 bg-blue-500"></span> Theoretical
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 bg-yellow-500"></span> Breakeven
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <StrategyMetrics strategy={strategy} />
-              <PositionGreeksPanel strategy={strategy} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Expiration Selector */}
+      {/* Expiration selector */}
       {chain && chain.expirations.length > 0 && (
-        <div className="mt-4">
-          <label className="text-xs text-gray-400 block mb-1">Expiration</label>
+        <div style={{ marginBottom:8, display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ color:SUBTLE, fontSize:9 }}>EXPIRATION:</span>
           <select
             value={selectedExpiration || ''}
             onChange={(e) => setSelectedExpiration(e.target.value)}
-            className="bg-gray-800 border border-gray-600 rounded px-3 py-1 text-sm"
-          >
+            style={{
+              background:'#141414', border:`1px solid ${BORDER}`, color:TEXT,
+              fontFamily:MONO, fontSize:9, padding:'3px 8px', borderRadius:2, outline:'none',
+            }}>
             {chain.expirations.map(exp => (
               <option key={exp} value={exp}>{exp}</option>
             ))}
@@ -176,7 +165,32 @@ export const OptionsDashboard: React.FC<OptionsDashboardProps> = ({
         </div>
       )}
 
-      {/* Ticker Disambiguation Dialog */}
+      {/* Strategy analysis */}
+      {strategy && (
+        <div style={card}>
+          <div style={{ color:AMBER, fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:8 }}>
+            {strategy.name.toUpperCase()} ANALYSIS
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div>
+              <PayoffChart strategy={strategy} width={400} height={250} />
+              <div style={{ marginTop:6, display:'flex', gap:12, fontSize:8 }}>
+                {[['—', GREEN, 'EXPIRATION'],['—', BLUE, 'THEORETICAL'],['—', AMBER, 'BREAKEVEN']].map(([dash, color, label]) => (
+                  <span key={label} style={{ display:'flex', alignItems:'center', gap:4 }}>
+                    <span style={{ color, fontSize:12 }}>{dash}</span>
+                    <span style={{ color:SUBTLE }}>{label}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <StrategyMetrics strategy={strategy} />
+              <div style={{ marginTop:8 }}><PositionGreeksPanel strategy={strategy} /></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <TickerDisambiguationDialog {...tickerInput.dialogProps} />
     </div>
   );

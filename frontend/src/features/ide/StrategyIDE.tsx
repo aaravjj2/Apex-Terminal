@@ -1,5 +1,17 @@
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+function RunBadge({status}:{status:'idle'|'running'|'paused'}){
+  const cfg={idle:{c:SUBTLE,t:'IDLE'},running:{c:GREEN,t:'RUNNING'},paused:{c:AMBER,t:'PAUSED'}}
+  const x=cfg[status]
+  return <span style={{fontSize:9,fontFamily:MONO,color:x.c,letterSpacing:'0.1em',border:`1px solid ${x.c}`,
+    padding:'2px 6px',borderRadius:2}}>{x.t}</span>
+}
+
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Save, History, ChevronDown, Settings, Zap, FlaskConical, X } from 'lucide-react';
 
 const API_BASE = '/api/v1';
 
@@ -18,8 +30,7 @@ interface StrategyIDEProps {
     onClose?: () => void;
 }
 
-export function StrategyIDE({ strategyId, onClose }: StrategyIDEProps) {
-    const [code, setCode] = useState<string>(`# SMA Crossover Strategy
+const DEFAULT_CODE=`# SMA Crossover Strategy
 # Define your trading logic here
 
 def on_bar(bar, portfolio, params):
@@ -34,32 +45,26 @@ def on_bar(bar, portfolio, params):
         return {'action': 'sell', 'size': 100}
     
     return None
-`);
+`
+
+const TABS=['EDITOR','VERSIONS','PARAMETERS','CONSOLE'] as const
+type IDETab=typeof TABS[number]
+
+export function StrategyIDE({ strategyId, onClose }: StrategyIDEProps) {
+    const [code, setCode] = useState<string>(DEFAULT_CODE);
     const [strategyName, setStrategyName] = useState('My Strategy');
     const [versions, setVersions] = useState<Version[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
-    const [showVersions, setShowVersions] = useState(false);
     const [saving, setSaving] = useState(false);
     const [runStatus, setRunStatus] = useState<'idle' | 'running' | 'paused'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
-    const [showParams, setShowParams] = useState(true);
-
-    // Parameters
-    const [params, setParams] = useState({
-        sma_fast: 10,
-        sma_slow: 20,
-        stop_loss: 2.0,
-        take_profit: 5.0,
-    });
-
+    const [tab, setTab] = useState<IDETab>('EDITOR');
+    const [params, setParams] = useState({sma_fast:10,sma_slow:20,stop_loss:2.0,take_profit:5.0});
+    const [currentRunId, setCurrentRunId] = useState<string|null>(null);
     const editorRef = useRef<HTMLTextAreaElement>(null);
     const currentStrategyId = strategyId || 'new-strategy';
 
-    useEffect(() => {
-        if (strategyId) {
-            fetchVersions();
-        }
-    }, [strategyId]);
+    useEffect(() => { if (strategyId) fetchVersions(); }, [strategyId]);
 
     const fetchVersions = async () => {
         try {
@@ -68,7 +73,6 @@ def on_bar(bar, portfolio, params):
                 const data = await res.json();
                 setVersions(data);
                 if (data.length > 0 && !selectedVersion) {
-                    // Load latest version
                     const latest = data[0];
                     const fullVersion = await fetch(`${API_BASE}/strategies/${currentStrategyId}/versions/${latest.version}`);
                     if (fullVersion.ok) {
@@ -79,75 +83,63 @@ def on_bar(bar, portfolio, params):
                     }
                 }
             }
-        } catch (e) {
-            console.error('Failed to fetch versions:', e);
-        }
+        } catch (e) { addLog('error', `Fetch versions failed: ${e}`); }
     };
 
     const handleSave = async () => {
         setSaving(true);
         try {
-            const content = {
-                name: strategyName,
-                code: code,
-                params: params,
-                updated_at: new Date().toISOString()
-            };
-
+            const content = {name: strategyName, code, params, updated_at: new Date().toISOString()};
             const res = await fetch(`${API_BASE}/strategies/${currentStrategyId}/versions`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    content: content,
-                    message: `Saved at ${new Date().toLocaleTimeString()}`,
-                    author: 'user'
-                })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({content, message: `Saved at ${new Date().toLocaleTimeString()}`, author: 'user'})
             });
-
             if (res.ok) {
-                const newVersion = await res.json();
-                setVersions(prev => [newVersion, ...prev]);
-                addLog('info', `Saved as version ${newVersion.version}`);
-            }
-        } catch (e) {
-            addLog('error', `Save failed: ${e}`);
-        } finally {
-            setSaving(false);
-        }
+                const nv = await res.json();
+                setVersions(prev => [nv, ...prev]);
+                addLog('info', `Saved as version ${nv.version}`);
+            } else { addLog('error', `Save failed: HTTP ${res.status}`); }
+        } catch (e) { addLog('error', `Save error: ${e}`); }
+        finally { setSaving(false); }
     };
 
     const handleRun = async (mode: 'backtest' | 'paper') => {
         try {
-            // Create run
             const res = await fetch(`${API_BASE}/runs`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    strategy_id: currentStrategyId,
-                    run_type: mode,
-                    config: { ...params, code: code }
-                })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({strategy_id: currentStrategyId, run_type: mode, config: {...params, code}})
             });
-
             if (res.ok) {
-                const { run_id } = await res.json();
-
-                // Start run
-                await fetch(`${API_BASE}/runs/${run_id}/start`, { method: 'POST' });
+                const {run_id} = await res.json();
+                await fetch(`${API_BASE}/runs/${run_id}/start`, {method: 'POST'});
+                setCurrentRunId(run_id);
                 setRunStatus('running');
-                addLog('info', `Started ${mode} run: ${run_id}`);
-            }
-        } catch (e) {
-            addLog('error', `Failed to start run: ${e}`);
+                addLog('info', `Started ${mode.toUpperCase()} run: ${run_id}`);
+                setTab('CONSOLE');
+            } else { addLog('error', `Run failed: HTTP ${res.status}`); }
+        } catch (e) { addLog('error', `Run error: ${e}`); }
+    };
+
+    const handleStop = async () => {
+        if (currentRunId) {
+            try {
+                await fetch(`${API_BASE}/runs/${currentRunId}/stop`, {method: 'POST'});
+                addLog('info', `Stopped run: ${currentRunId}`);
+            } catch(e) { addLog('warn', `Stop error: ${e}`); }
         }
-    };
-
-    const handleStop = () => {
         setRunStatus('idle');
-        addLog('info', 'Run stopped');
+        setCurrentRunId(null);
     };
 
-    const handlePause = () => {
+    const handlePause = async () => {
+        if (currentRunId) {
+            const endpoint = runStatus==='paused'?'resume':'pause';
+            try {
+                await fetch(`${API_BASE}/runs/${currentRunId}/${endpoint}`, {method: 'POST'});
+            } catch(e) { /* ignore */ }
+        }
         setRunStatus(runStatus === 'paused' ? 'running' : 'paused');
         addLog('info', runStatus === 'paused' ? 'Resumed' : 'Paused');
     };
@@ -162,182 +154,158 @@ def on_bar(bar, portfolio, params):
                 setStrategyName(content.name || strategyName);
                 setParams(content.params || params);
                 setSelectedVersion(version);
-                setShowVersions(false);
                 addLog('info', `Loaded version ${version}`);
+                setTab('EDITOR');
             }
-        } catch (e) {
-            addLog('error', `Failed to load version: ${e}`);
-        }
+        } catch (e) { addLog('error', `Version load error: ${e}`); }
     };
 
     const addLog = (level: string, message: string) => {
-        const timestamp = new Date().toLocaleTimeString();
-        setLogs(prev => [...prev.slice(-99), `[${timestamp}] [${level.toUpperCase()}] ${message}`]);
+        const ts = new Date().toLocaleTimeString();
+        setLogs(prev => [...prev.slice(-199), `[${ts}] [${level.toUpperCase().padEnd(5)}] ${message}`]);
     };
 
+    const S:React.CSSProperties={position:'fixed' as const,inset:0,zIndex:50,background:BG,display:'flex',
+        flexDirection:'column' as const,fontFamily:MONO}
+    const HDR:React.CSSProperties={display:'flex',alignItems:'center',gap:8,padding:'8px 14px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}
+    const TABBAR:React.CSSProperties={display:'flex',gap:2,padding:'0 14px',borderBottom:`1px solid ${BORDER}`,
+        background:PANEL,flexShrink:0}
+    const tbtn=(a:boolean):React.CSSProperties=>({padding:'7px 12px',fontSize:10,fontFamily:MONO,
+        letterSpacing:'0.08em',cursor:'pointer',background:'none',border:'none',
+        borderBottom:a?`2px solid ${AMBER}`:'2px solid transparent',
+        color:a?AMBER:SUBTLE,textTransform:'uppercase' as const})
+    const body:React.CSSProperties={flex:1,overflow:'hidden',display:'flex'}
+    const btn=(col:string):React.CSSProperties=>({padding:'4px 12px',fontSize:10,fontFamily:MONO,
+        background:col,border:'none',color:BG,cursor:'pointer',letterSpacing:'0.06em',
+        textTransform:'uppercase' as const,borderRadius:2})
+    const inp:React.CSSProperties={background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,
+        padding:'3px 8px',fontSize:11,fontFamily:MONO,color:TEXT}
+
     return (
-        <div className="fixed inset-0 z-50 bg-[#131722] flex flex-col">
-            {/* Header */}
-            <div className="h-12 border-b border-[#2a2e39] flex items-center px-4 gap-4 bg-[#1e222d]">
-                <input
-                    type="text"
-                    value={strategyName}
-                    onChange={(e) => setStrategyName(e.target.value)}
-                    className="bg-transparent text-lg font-bold text-white border-none focus:outline-none focus:ring-1 focus:ring-[#2962ff] rounded px-2 py-1"
-                />
-
-                <div className="flex items-center gap-2 ml-4">
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2962ff] hover:bg-[#1e53e5] text-white text-xs font-medium rounded transition-colors disabled:opacity-50"
-                    >
-                        <Save size={14} />
-                        {saving ? 'Saving...' : 'Save'}
-                    </button>
-
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowVersions(!showVersions)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2a2e39] hover:bg-[#363a45] text-[#d1d4dc] text-xs rounded transition-colors"
-                        >
-                            <History size={14} />
-                            v{selectedVersion || versions[0]?.version || 1}
-                            <ChevronDown size={12} />
+        <div style={S}>
+            <div style={HDR}>
+                <span style={{fontSize:10,color:PURPLE,letterSpacing:'0.1em'}}>IDE</span>
+                <input value={strategyName} onChange={e=>setStrategyName(e.target.value)}
+                    style={{...inp,fontSize:13,fontWeight:700,minWidth:200,background:'none',border:`1px solid ${BORDER}`}}/>
+                <RunBadge status={runStatus}/>
+                <div style={{flex:1}}/>
+                <button onClick={()=>handleRun('backtest')} disabled={runStatus==='running'}
+                    style={btn(PURPLE)}>BACKTEST</button>
+                <button onClick={()=>handleRun('paper')} disabled={runStatus==='running'}
+                    style={btn(AMBER)}>PAPER</button>
+                {runStatus!=='idle'&&(
+                    <>
+                        <button onClick={handlePause} style={btn(BLUE)}>
+                            {runStatus==='paused'?'RESUME':'PAUSE'}
                         </button>
-
-                        {showVersions && (
-                            <div className="absolute top-full mt-1 left-0 w-64 bg-[#1e222d] border border-[#2a2e39] rounded shadow-xl z-50 max-h-64 overflow-y-auto">
-                                {versions.map(v => (
-                                    <button
-                                        key={v.id}
-                                        onClick={() => loadVersion(v.version)}
-                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-[#2a2e39] ${selectedVersion === v.version ? 'bg-[#2962ff]/20 text-[#2962ff]' : 'text-[#d1d4dc]'}`}
-                                    >
-                                        <div className="flex justify-between">
-                                            <span className="font-medium">v{v.version}</span>
-                                            <span className="text-[#787b86]">{v.author}</span>
-                                        </div>
-                                        <div className="text-[#787b86] truncate">{v.message}</div>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex-1" />
-
-                {/* Run Controls */}
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => handleRun('backtest')}
-                        disabled={runStatus === 'running'}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#089981] hover:bg-[#07836d] text-white text-xs font-medium rounded transition-colors disabled:opacity-50"
-                    >
-                        <FlaskConical size={14} />
-                        Backtest
-                    </button>
-                    <button
-                        onClick={() => handleRun('paper')}
-                        disabled={runStatus === 'running'}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f7931a] hover:bg-[#e5850d] text-white text-xs font-medium rounded transition-colors disabled:opacity-50"
-                    >
-                        <Zap size={14} />
-                        Paper
-                    </button>
-
-                    {runStatus !== 'idle' && (
-                        <>
-                            <button onClick={handlePause} className="p-2 hover:bg-[#2a2e39] rounded">
-                                {runStatus === 'paused' ? <Play size={16} className="text-green-400" /> : <Pause size={16} className="text-yellow-400" />}
-                            </button>
-                            <button onClick={handleStop} className="p-2 hover:bg-[#2a2e39] rounded">
-                                <Square size={16} className="text-red-400" />
-                            </button>
-                        </>
-                    )}
-                </div>
-
-                <div className="w-px h-6 bg-[#2a2e39] mx-2" />
-
-                <button
-                    onClick={() => setShowParams(!showParams)}
-                    className={`p-2 rounded transition-colors ${showParams ? 'bg-[#2962ff]/20 text-[#2962ff]' : 'hover:bg-[#2a2e39] text-[#787b86]'}`}
-                >
-                    <Settings size={16} />
-                </button>
-
-                {onClose && (
-                    <button onClick={onClose} className="p-2 hover:bg-[#2a2e39] rounded text-[#787b86] hover:text-white">
-                        <X size={16} />
-                    </button>
+                        <button onClick={handleStop} style={btn(RED)}>STOP</button>
+                    </>
                 )}
+                <button onClick={handleSave} disabled={saving} style={btn(GREEN)}>
+                    {saving?'SAVING...':'SAVE'}
+                </button>
+                {onClose&&<button onClick={onClose} style={{...inp,cursor:'pointer',color:SUBTLE}}>âœ•</button>}
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Code Editor */}
-                <div className="flex-1 flex flex-col min-w-0">
-                    <textarea
-                        ref={editorRef}
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        spellCheck={false}
-                        className="flex-1 bg-[#131722] text-[#d1d4dc] p-4 font-mono text-sm resize-none focus:outline-none"
-                        style={{ tabSize: 4 }}
-                    />
+            <div style={TABBAR}>
+                {TABS.map(t=><button key={t} style={tbtn(tab===t)} onClick={()=>setTab(t)}>{t}</button>)}
+            </div>
 
-                    {/* Logs Console */}
-                    <div className="h-32 border-t border-[#2a2e39] bg-[#0d1117] overflow-y-auto">
-                        <div className="px-3 py-1 border-b border-[#2a2e39] text-[10px] text-[#787b86] uppercase font-bold sticky top-0 bg-[#0d1117]">
-                            Console
+            <div style={body}>
+                {/* EDITOR */}
+                {tab==='EDITOR'&&(
+                    <div style={{flex:1,display:'flex',flexDirection:'column' as const}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 14px',
+                            borderBottom:`1px solid ${BORDER}`,background:PANEL,fontSize:10,color:SUBTLE}}>
+                            <span>{strategyName}.py</span>
+                            <span style={{color:BORDER}}>|</span>
+                            <span>{code.split('\n').length} lines</span>
+                            {runStatus==='running'&&<span style={{color:GREEN}}>â— RUNNING</span>}
                         </div>
-                        <div className="p-2 font-mono text-xs">
-                            {logs.map((log, i) => (
-                                <div key={i} className={`py-0.5 ${log.includes('[ERROR]') ? 'text-red-400' : log.includes('[WARNING]') ? 'text-yellow-400' : 'text-[#787b86]'}`}>
-                                    {log}
+                        <textarea ref={editorRef} value={code} onChange={e=>setCode(e.target.value)}
+                            spellCheck={false}
+                            style={{flex:1,background:BG,color:TEXT,padding:'12px 16px',fontFamily:MONO,
+                                fontSize:12,resize:'none' as const,border:'none',outline:'none',
+                                lineHeight:1.6,tabSize:4}}/>
+                    </div>
+                )}
+
+                {/* VERSIONS */}
+                {tab==='VERSIONS'&&(
+                    <div style={{flex:1,overflowY:'auto' as const,padding:'12px 16px'}}>
+                        <div style={{fontSize:10,color:SUBTLE,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'0.08em'}}>
+                            VERSION HISTORY â€” {currentStrategyId}
+                        </div>
+                        {versions.length===0&&(
+                            <div style={{fontSize:12,color:SUBTLE}}>NO VERSIONS SAVED YET</div>
+                        )}
+                        {versions.map(v=>(
+                            <div key={v.id} onClick={()=>loadVersion(v.version)}
+                                style={{background:selectedVersion===v.version?`${AMBER}15`:PANEL,
+                                    border:`1px solid ${selectedVersion===v.version?AMBER:BORDER}`,
+                                    borderRadius:2,padding:'8px 12px',marginBottom:6,cursor:'pointer'}}>
+                                <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                                    <span style={{fontSize:12,color:AMBER,fontFamily:MONO}}>v{v.version}</span>
+                                    <span style={{fontSize:10,color:SUBTLE}}>{v.author}</span>
                                 </div>
+                                <div style={{fontSize:11,color:TEXT,fontFamily:MONO,marginBottom:2}}>{v.message}</div>
+                                <div style={{fontSize:10,color:SUBTLE,fontFamily:MONO}}>{v.content_hash.substring(0,16)}</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* PARAMETERS */}
+                {tab==='PARAMETERS'&&(
+                    <div style={{flex:1,overflowY:'auto' as const,padding:'12px 16px',maxWidth:400}}>
+                        <div style={{fontSize:10,color:SUBTLE,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'0.08em'}}>
+                            STRATEGY PARAMETERS
+                        </div>
+                        {[
+                            {k:'sma_fast',label:'SMA Fast Period',min:3,max:50,step:1},
+                            {k:'sma_slow',label:'SMA Slow Period',min:10,max:200,step:1},
+                            {k:'stop_loss',label:'Stop Loss %',min:0.5,max:20,step:0.5},
+                            {k:'take_profit',label:'Take Profit %',min:1,max:50,step:0.5},
+                        ].map(({k,label,min,max,step})=>(
+                            <div key={k} style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,
+                                padding:'10px 12px',marginBottom:8}}>
+                                <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+                                    <span style={{fontSize:11,color:TEXT,fontFamily:MONO}}>{label}</span>
+                                    <span style={{fontSize:12,color:AMBER,fontFamily:MONO}}>{(params as any)[k]}</span>
+                                </div>
+                                <input type="range" min={min} max={max} step={step}
+                                    value={(params as any)[k]}
+                                    onChange={e=>setParams(p=>({...p,[k]:parseFloat(e.target.value)}))}
+                                    style={{width:'100%',accentColor:AMBER}}/>
+                                <div style={{display:'flex',justifyContent:'space-between',marginTop:2}}>
+                                    <span style={{fontSize:9,color:SUBTLE,fontFamily:MONO}}>{min}</span>
+                                    <span style={{fontSize:9,color:SUBTLE,fontFamily:MONO}}>{max}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* CONSOLE */}
+                {tab==='CONSOLE'&&(
+                    <div style={{flex:1,display:'flex',flexDirection:'column' as const}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+                            padding:'4px 14px',borderBottom:`1px solid ${BORDER}`,background:PANEL}}>
+                            <span style={{fontSize:10,color:SUBTLE}}>CONSOLE OUTPUT</span>
+                            <button onClick={()=>setLogs([])} style={{fontSize:9,fontFamily:MONO,
+                                background:'none',border:'none',color:SUBTLE,cursor:'pointer'}}>CLEAR</button>
+                        </div>
+                        <div style={{flex:1,overflowY:'auto' as const,padding:'8px 14px',fontSize:11,fontFamily:MONO,lineHeight:1.5}}>
+                            {logs.length===0&&<span style={{color:SUBTLE}}>No output yet â€” run a strategy to see logs</span>}
+                            {logs.map((log,i)=>(
+                                <div key={i} style={{color:log.includes('[ERROR]')?RED:log.includes('[WARN]')?AMBER:TEXT,
+                                    padding:'1px 0',whiteSpace:'pre' as const}}>{log}</div>
                             ))}
                         </div>
                     </div>
-                </div>
-
-                {/* Parameters Panel */}
-                {showParams && (
-                    <div className="w-72 border-l border-[#2a2e39] bg-[#1e222d] flex flex-col">
-                        <div className="p-3 border-b border-[#2a2e39] text-xs font-bold text-[#787b86] uppercase">
-                            Parameters
-                        </div>
-                        <div className="p-3 space-y-4 overflow-y-auto">
-                            <ParamSlider label="SMA Fast" value={params.sma_fast} min={5} max={50} onChange={(v) => setParams({ ...params, sma_fast: v })} />
-                            <ParamSlider label="SMA Slow" value={params.sma_slow} min={10} max={100} onChange={(v) => setParams({ ...params, sma_slow: v })} />
-                            <ParamSlider label="Stop Loss %" value={params.stop_loss} min={0.5} max={10} step={0.5} onChange={(v) => setParams({ ...params, stop_loss: v })} />
-                            <ParamSlider label="Take Profit %" value={params.take_profit} min={1} max={20} step={0.5} onChange={(v) => setParams({ ...params, take_profit: v })} />
-                        </div>
-                    </div>
                 )}
             </div>
-        </div>
-    );
-}
-
-function ParamSlider({ label, value, min, max, step = 1, onChange }: { label: string, value: number, min: number, max: number, step?: number, onChange: (v: number) => void }) {
-    return (
-        <div>
-            <div className="flex justify-between text-xs mb-1">
-                <span className="text-[#d1d4dc]">{label}</span>
-                <span className="text-[#787b86] font-mono">{value}</span>
-            </div>
-            <input
-                type="range"
-                min={min}
-                max={max}
-                step={step}
-                value={value}
-                onChange={(e) => onChange(parseFloat(e.target.value))}
-                className="w-full h-1 bg-[#2a2e39] rounded appearance-none cursor-pointer accent-[#2962ff]"
-            />
         </div>
     );
 }

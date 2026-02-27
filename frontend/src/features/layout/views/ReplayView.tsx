@@ -1,100 +1,113 @@
-import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import {
-    Calendar, Radio
-} from 'lucide-react';
-import { Badge } from '../../../ui/Badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
+// Bloomberg RV — Replay View
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
+import { useState } from 'react';
+import React from 'react';
 import { ChartCanvas } from '../../chart/ChartCanvas';
 import { ChartHeaderStrip } from '../../chart/ChartHeaderStrip';
-
 import { ReplayControlBar } from '../../replay/ReplayControlBar';
-
 import { useAppStore } from '../../../state/appStore';
 
-// Right dock for replay
 function ReplayRightDock() {
-    const { parityMismatch } = useAppStore();
+  const { parityMismatch } = useAppStore();
+  const [tab, setTab] = useState<'events'|'markers'>('events');
 
-    // Derived events from parity status
-    const events = [
-        { time: 'System', type: 'info', message: 'Replay session active' },
-        ...(parityMismatch ? [{ time: 'Alert', type: 'error', message: 'Determinism mismatch detected' }] : [])
-    ];
+  const events = [
+    { time: 'SYSTEM', type: 'info',  message: 'Replay session active' },
+    ...(parityMismatch ? [{ time: 'ALERT', type: 'error', message: 'Determinism mismatch detected' }] : []),
+  ];
 
-    return (
-        <div className="h-full bg-panel-bg border-l border-border flex flex-col">
-            <Tabs defaultValue="events" className="flex-1">
-                <TabsList className="px-1">
-                    <TabsTrigger value="events" icon={<Radio size={14} />}>Events</TabsTrigger>
-                    <TabsTrigger value="markers" icon={<Calendar size={14} />}>Markers</TabsTrigger>
-                </TabsList>
+  return (
+    <div style={{ height:'100%', background:PANEL, borderLeft:`1px solid ${BORDER}`, display:'flex', flexDirection:'column', fontFamily:MONO }}>
+      {/* Tab bar */}
+      <div style={{ display:'flex', borderBottom:`1px solid ${BORDER}`, background:BG }}>
+        {(['events','markers'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{
+              flex:1, padding:'5px 0', background:'transparent', border:'none',
+              borderBottom: tab===t ? `2px solid ${BLUE}` : '2px solid transparent',
+              color: tab===t ? BLUE : SUBTLE, fontFamily:MONO, fontSize:9, fontWeight:700,
+              cursor:'pointer', letterSpacing:1,
+            }}>
+            {t === 'events' ? '◉ EVENTS' : '◈ MARKERS'}
+          </button>
+        ))}
+      </div>
 
-                <TabsContent value="events">
-                    <div className="p-2 space-y-1">
-                        {events.map((evt, i) => (
-                            <div
-                                key={i}
-                                className="flex items-start gap-2 px-2 py-1.5 rounded bg-element-bg text-xs"
-                            >
-                                <span className="text-text-muted font-mono shrink-0">{evt.time}</span>
-                                <Badge
-                                    size="sm"
-                                    variant={evt.type === 'error' ? 'error' : 'info'}
-                                >
-                                    {evt.type}
-                                </Badge>
-                                <span className="text-text">{evt.message}</span>
-                            </div>
-                        ))}
-                    </div>
-                </TabsContent>
+      {/* Content */}
+      <div style={{ flex:1, overflow:'auto', padding:6 }}>
+        {tab === 'events' && (
+          <div>
+            {events.map((evt, i) => (
+              <div key={i} style={{
+                display:'flex', alignItems:'flex-start', gap:6, padding:'4px 6px',
+                marginBottom:2, background:BG, border:`1px solid ${BORDER}`,
+                borderLeft:`2px solid ${evt.type === 'error' ? RED : BLUE}`, borderRadius:2,
+              }}>
+                <span style={{ color:SUBTLE, fontSize:8, flexShrink:0, paddingTop:1 }}>{evt.time}</span>
+                <span style={{ color: evt.type === 'error' ? RED : BLUE, fontSize:8, flexShrink:0 }}>
+                  [{evt.type.toUpperCase()}]
+                </span>
+                <span style={{ color:TEXT, fontSize:9 }}>{evt.message}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {tab === 'markers' && (
+          <div style={{ color:SUBTLE, fontSize:9, textAlign:'center', paddingTop:16 }}>NO MARKERS SET — CLICK CHART TO ADD</div>
+        )}
+      </div>
 
-                <TabsContent value="markers">
-                    <div className="p-4 text-center text-text-secondary text-xs">
-                        No markers set. Click on chart to add.
-                    </div>
-                </TabsContent>
-            </Tabs>
-
-            {/* Determinism info */}
-            <div className="p-3 border-t border-border">
-                <h4 className="text-xxs text-text-secondary uppercase tracking-wider mb-2">Determinism Proof</h4>
-                <div className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Parity Status</span>
-                        <Badge variant={parityMismatch ? 'error' : 'success'} size="sm">
-                            {parityMismatch ? 'Mismatch' : 'Synced'}
-                        </Badge>
-                    </div>
-                    {/* 
-                      In a real scenario we might display the checksum hash here if available in the store
-                      For now we simply show the status derived from the backend check
-                    */}
-                </div>
-            </div>
+      {/* Determinism proof */}
+      <div style={{ padding:'6px 10px', borderTop:`1px solid ${BORDER}`, background:BG }}>
+        <div style={{ color:SUBTLE, fontSize:8, letterSpacing:1, marginBottom:4 }}>DETERMINISM PROOF</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <span style={{ color:SUBTLE, fontSize:9 }}>PARITY STATUS</span>
+          <span style={{
+            padding:'1px 6px', borderRadius:2, fontSize:8,
+            background: parityMismatch ? RED+'22' : GREEN+'22',
+            border:`1px solid ${parityMismatch ? RED : GREEN}`,
+            color: parityMismatch ? RED : GREEN,
+          }}>{parityMismatch ? 'MISMATCH' : 'SYNCED'}</span>
         </div>
-    );
+      </div>
+    </div>
+  );
 }
 
 export function ReplayView() {
-    return (
-        <div className="h-full flex flex-col bg-background" data-testid="replay-view">
-            <ReplayControlBar />
+  return (
+    <div data-testid="replay-view"
+      style={{ height:'100%', display:'flex', flexDirection:'column', background:BG, fontFamily:MONO }}>
+      <ReplayControlBar />
 
-            <PanelGroup orientation="horizontal" className="flex-1">
-                <Panel defaultSize={75} minSize={40}>
-                    <div className="h-full flex flex-col">
-                        <ChartHeaderStrip />
-                        <div className="flex-1 relative">
-                            <ChartCanvas className="absolute inset-0" />
-                        </div>
-                    </div>
-                </Panel>
-                <PanelResizeHandle className="w-1 bg-border hover:bg-replay transition-colors cursor-col-resize" />
-                <Panel defaultSize={25} minSize={15} maxSize={40}>
-                    <ReplayRightDock />
-                </Panel>
-            </PanelGroup>
+      {/* Main split */}
+      <div style={{ flex:1, display:'flex', overflow:'hidden', minHeight:0 }}>
+        {/* Chart area */}
+        <div style={{ flex:'0 0 75%', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+          <ChartHeaderStrip />
+          <div style={{ flex:1, position:'relative' }}>
+            <ChartCanvas style={{ position:'absolute', inset:0 }} />
+          </div>
         </div>
-    );
+
+        {/* Right dock — resize handle */}
+        <div style={{ width:4, background:BORDER, cursor:'col-resize', flexShrink:0 }} />
+
+        {/* Right dock */}
+        <div style={{ flex:'0 0 25%', minWidth:180, maxWidth:'40%', overflow:'hidden' }}>
+          <ReplayRightDock />
+        </div>
+      </div>
+    </div>
+  );
 }

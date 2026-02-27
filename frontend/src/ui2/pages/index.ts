@@ -231,3 +231,8 @@ export { CapacityPlanUI2 } from './CapacityPlanUI2'; // W101
 export { PlatformDebtUI2 } from './PlatformDebtUI2'; // W102
 export { OperatorEnableUI2 } from './OperatorEnableUI2'; // W103
 export { GlobalReadinessUI2 } from './GlobalReadinessUI2'; // W104
+
+// Husk placeholders (for development / previews)
+export { TradingUI2Husk } from '../husks/TradingUI2Husk';
+export { PortfolioUI2Husk } from '../husks/PortfolioUI2Husk';
+export { DashboardUI2Husk } from '../husks/DashboardUI2Husk';

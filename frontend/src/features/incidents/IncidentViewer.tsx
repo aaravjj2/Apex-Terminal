@@ -1,5 +1,31 @@
-import { useState, useEffect } from 'react';
-import { AlertTriangle, Play, Download, RefreshCw, Clock, Hash } from 'lucide-react';
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',ORANGE='#ff8a65',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+const Th=({c,ch}:{c?:React.CSSProperties,ch:React.ReactNode})=>(
+  <th style={{padding:'6px 10px',fontSize:10,fontFamily:MONO,color:SUBTLE,textTransform:'uppercase' as const,
+    letterSpacing:'0.08em',borderBottom:`1px solid ${BORDER}`,textAlign:'left',...c}}>{ch}</th>
+)
+const Td=({c,ch}:{c?:React.CSSProperties,ch:React.ReactNode})=>(
+  <td style={{padding:'6px 10px',fontSize:11,fontFamily:MONO,borderBottom:`1px solid ${BORDER}`,color:TEXT,...c}}>{ch}</td>
+)
+function StatCard({label,value,color}:{label:string,value:string,color?:string}){
+  return (
+    <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'7px 10px',minWidth:90}}>
+      <div style={{fontSize:9,fontFamily:MONO,color:SUBTLE,textTransform:'uppercase' as const,letterSpacing:'0.08em',marginBottom:3}}>{label}</div>
+      <div style={{fontSize:15,fontFamily:MONO,color:color||AMBER,fontWeight:700}}>{value}</div>
+    </div>
+  )
+}
+function EvtBadge({type}:{type:string}){
+  const c=type==='error'?RED:type==='warn'?AMBER:BLUE
+  return <span style={{fontSize:9,fontFamily:MONO,color:c,border:`1px solid ${c}`,padding:'1px 5px',borderRadius:2,
+    textTransform:'uppercase' as const,letterSpacing:'0.06em'}}>{type}</span>
+}
+
+import React, { useState, useEffect } from 'react';
 
 const API_BASE = '/api/v1';
 
@@ -12,181 +38,236 @@ interface Incident {
     event_count: number;
     content_hash: string;
 }
+interface IncidentDetail extends Incident {
+    events?: Array<{type:string;timestamp:string;payload?:unknown}>
+}
+interface ReplayResult {
+    events_replayed:number;
+    errors:string[];
+    output_hash:string;
+}
+
+const TABS=['INCIDENTS','DETAIL','REPLAY'] as const
+type ITab=typeof TABS[number]
 
 export function IncidentViewer() {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [loading, setLoading] = useState(false);
-    const [selectedIncident, setSelectedIncident] = useState<any>(null);
-    const [replayResult, setReplayResult] = useState<any>(null);
+    const [selected, setSelected] = useState<IncidentDetail|null>(null);
+    const [replay, setReplay] = useState<ReplayResult|null>(null);
+    const [tab, setTab] = useState<ITab>('INCIDENTS');
+    const [replayLoading, setReplayLoading] = useState(false);
 
-    useEffect(() => {
-        fetchIncidents();
-    }, []);
+    useEffect(() => { fetchIncidents(); }, []);
 
     const fetchIncidents = async () => {
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE}/incidents`);
-            if (res.ok) {
-                setIncidents(await res.json());
-            }
-        } catch (e) {
-            console.error('Failed to fetch incidents:', e);
-        } finally {
-            setLoading(false);
-        }
+            if (res.ok) setIncidents(await res.json());
+        } catch (e) { console.error('Failed to fetch incidents:', e); }
+        finally { setLoading(false); }
     };
 
     const viewIncident = async (id: string) => {
         try {
             const res = await fetch(`${API_BASE}/incidents/${id}`);
             if (res.ok) {
-                setSelectedIncident(await res.json());
-                setReplayResult(null);
+                setSelected(await res.json());
+                setReplay(null);
+                setTab('DETAIL');
             }
-        } catch (e) {
-            console.error('Failed to fetch incident:', e);
-        }
+        } catch (e) { console.error('Failed to fetch incident:', e); }
     };
 
     const replayIncident = async (id: string) => {
+        setReplayLoading(true);
         try {
             const res = await fetch(`${API_BASE}/incidents/${id}/replay`, { method: 'POST' });
-            if (res.ok) {
-                setReplayResult(await res.json());
-            }
-        } catch (e) {
-            console.error('Failed to replay incident:', e);
-        }
+            if (res.ok) { setReplay(await res.json()); setTab('REPLAY'); }
+        } catch (e) { console.error('Failed to replay:', e); }
+        finally { setReplayLoading(false); }
     };
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}m ${secs}s`;
+    const fmtDur = (s:number) => {
+        const m=Math.floor(s/60), sec=Math.floor(s%60);
+        return `${m}m ${sec}s`;
     };
+    const fmtTime = (iso:string) => new Date(iso).toLocaleString();
+
+    const S:React.CSSProperties={height:'100%',display:'flex',flexDirection:'column' as const,background:BG,fontFamily:MONO}
+    const HDR:React.CSSProperties={display:'flex',alignItems:'center',gap:8,padding:'8px 14px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}
+    const TABBAR:React.CSSProperties={display:'flex',gap:2,padding:'0 14px',borderBottom:`1px solid ${BORDER}`,
+        background:PANEL,flexShrink:0}
+    const tbtn=(a:boolean):React.CSSProperties=>({padding:'7px 12px',fontSize:10,fontFamily:MONO,letterSpacing:'0.08em',
+        cursor:'pointer',background:'none',border:'none',borderBottom:a?`2px solid ${AMBER}`:'2px solid transparent',
+        color:a?AMBER:SUBTLE,textTransform:'uppercase' as const})
 
     return (
-        <div className="h-full flex flex-col bg-[#131722]">
-            {/* Header */}
-            <div className="h-10 border-b border-[#2a2e39] flex items-center px-4 justify-between bg-[#1e222d]">
-                <div className="flex items-center gap-2">
-                    <AlertTriangle size={16} className="text-orange-400" />
-                    <span className="text-sm font-bold text-[#d1d4dc]">Incident Viewer</span>
-                </div>
-                <button onClick={fetchIncidents} className="p-1 hover:bg-[#2a2e39] rounded">
-                    <RefreshCw size={14} className={`text-[#787b86] ${loading ? 'animate-spin' : ''}`} />
+        <div style={S}>
+            <div style={HDR}>
+                <span style={{fontSize:11,color:RED,letterSpacing:'0.1em'}}>IV</span>
+                <span style={{fontSize:13,color:TEXT,fontWeight:700}}>INCIDENT VIEWER</span>
+                <span style={{fontSize:10,color:SUBTLE}}>APEX REPLAY ENGINE</span>
+                <div style={{flex:1}}/>
+                {loading&&<span style={{fontSize:10,color:AMBER}}>LOADING</span>}
+                <button onClick={fetchIncidents} style={{fontSize:10,fontFamily:MONO,background:PANEL,
+                    border:`1px solid ${BORDER}`,color:BLUE,padding:'3px 8px',cursor:'pointer',borderRadius:2}}>
+                    REFRESH
                 </button>
             </div>
 
-            <div className="flex-1 flex overflow-hidden">
-                {/* Incidents List */}
-                <div className="w-64 border-r border-[#2a2e39] overflow-y-auto">
-                    {incidents.length === 0 ? (
-                        <div className="p-4 text-center text-[#787b86] text-xs">
-                            No incidents captured yet.
+            {/* Stats */}
+            <div style={{display:'flex',gap:8,padding:'8px 14px',borderBottom:`1px solid ${BORDER}`,
+                background:PANEL,flexShrink:0}}>
+                <StatCard label="Total" value={String(incidents.length)} color={TEXT}/>
+                <StatCard label="Avg Events" value={incidents.length?
+                    String(Math.round(incidents.reduce((a,i)=>a+i.event_count,0)/incidents.length)):'â€”'} color={BLUE}/>
+                <StatCard label="Avg Duration" value={incidents.length?
+                    fmtDur(incidents.reduce((a,i)=>a+i.duration_seconds,0)/incidents.length):'â€”'} color={PURPLE}/>
+            </div>
+
+            <div style={TABBAR}>
+                {TABS.map(t=><button key={t} style={tbtn(tab===t)} onClick={()=>setTab(t)}>{t}</button>)}
+            </div>
+
+            {/* INCIDENTS table */}
+            {tab==='INCIDENTS'&&(
+                <div style={{flex:1,overflowY:'auto' as const}}>
+                    {incidents.length===0&&(
+                        <div style={{padding:40,textAlign:'center' as const,fontSize:12,color:SUBTLE}}>
+                            {loading?'LOADING...':'NO INCIDENTS CAPTURED'}
                         </div>
-                    ) : (
-                        incidents.map(inc => (
-                            <button
-                                key={inc.incident_id}
-                                onClick={() => viewIncident(inc.incident_id)}
-                                className={`w-full p-3 text-left border-b border-[#2a2e39] hover:bg-[#1e222d] ${selectedIncident?.incident_id === inc.incident_id ? 'bg-[#2962ff]/10' : ''}`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span className="font-mono text-xs text-[#d1d4dc]">{inc.incident_id}</span>
-                                    <span className="text-[10px] text-[#787b86]">{inc.event_count} events</span>
-                                </div>
-                                <div className="text-[10px] text-[#787b86] mt-1">{inc.strategy_id}</div>
-                                <div className="flex items-center gap-2 mt-1 text-[10px] text-[#787b86]">
-                                    <Clock size={10} /> {formatTime(inc.duration_seconds)}
-                                </div>
-                            </button>
-                        ))
+                    )}
+                    {incidents.length>0&&(
+                        <table style={{width:'100%',borderCollapse:'collapse'}}>
+                            <thead style={{position:'sticky' as const,top:0,background:PANEL}}>
+                                <tr>
+                                    <Th ch="Incident ID"/>
+                                    <Th ch="Strategy"/>
+                                    <Th ch="Run ID"/>
+                                    <Th ch="Captured"/>
+                                    <Th c={{textAlign:'right'}} ch="Events"/>
+                                    <Th c={{textAlign:'right'}} ch="Duration"/>
+                                    <Th ch="Hash"/>
+                                    <Th ch="Actions"/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {incidents.map(inc=>(
+                                    <tr key={inc.incident_id}
+                                        onClick={()=>viewIncident(inc.incident_id)}
+                                        style={{cursor:'pointer',background:selected?.incident_id===inc.incident_id?`${AMBER}11`:'transparent'}}>
+                                        <Td c={{color:BLUE,fontSize:10}} ch={inc.incident_id.substring(0,18)}/>
+                                        <Td c={{color:AMBER,fontSize:10}} ch={inc.strategy_id}/>
+                                        <Td c={{fontSize:10,color:SUBTLE}} ch={inc.run_id.substring(0,14)}/>
+                                        <Td c={{fontSize:10}} ch={fmtTime(inc.captured_at)}/>
+                                        <Td c={{textAlign:'right',color:inc.event_count>100?RED:TEXT}} ch={inc.event_count}/>
+                                        <Td c={{textAlign:'right'}} ch={fmtDur(inc.duration_seconds)}/>
+                                        <Td c={{fontSize:9,color:SUBTLE}} ch={inc.content_hash.substring(0,12)+'â€¦'}/>
+                                        <Td ch={
+                                            <div style={{display:'flex',gap:4}} onClick={e=>e.stopPropagation()}>
+                                                <button onClick={()=>viewIncident(inc.incident_id)}
+                                                    style={{fontSize:9,fontFamily:MONO,background:PANEL,border:`1px solid ${BLUE}`,
+                                                        color:BLUE,padding:'2px 6px',cursor:'pointer',borderRadius:2}}>VIEW</button>
+                                                <button onClick={()=>replayIncident(inc.incident_id)}
+                                                    style={{fontSize:9,fontFamily:MONO,background:PANEL,border:`1px solid ${GREEN}`,
+                                                        color:GREEN,padding:'2px 6px',cursor:'pointer',borderRadius:2}}>â–¶ REPLAY</button>
+                                                <a href={`${API_BASE}/incidents/${inc.incident_id}/export`} target="_blank"
+                                                    style={{fontSize:9,fontFamily:MONO,color:PURPLE,border:`1px solid ${PURPLE}`,
+                                                        padding:'2px 5px',borderRadius:2,textDecoration:'none'}}>â¬‡</a>
+                                            </div>
+                                        }/>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     )}
                 </div>
+            )}
 
-                {/* Incident Detail */}
-                <div className="flex-1 overflow-y-auto p-4">
-                    {selectedIncident ? (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-[#d1d4dc]">
-                                    Incident {selectedIncident.incident_id}
-                                </h3>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => replayIncident(selectedIncident.incident_id)}
-                                        className="flex items-center gap-1 px-3 py-1.5 bg-[#089981] text-white text-xs rounded"
-                                    >
-                                        <Play size={12} /> Replay
-                                    </button>
-                                    <a
-                                        href={`${API_BASE}/incidents/${selectedIncident.incident_id}/export`}
-                                        target="_blank"
-                                        className="flex items-center gap-1 px-3 py-1.5 bg-[#2a2e39] text-[#d1d4dc] text-xs rounded"
-                                    >
-                                        <Download size={12} /> Export
-                                    </a>
-                                </div>
+            {/* DETAIL tab */}
+            {tab==='DETAIL'&&(
+                <div style={{flex:1,overflowY:'auto' as const,padding:14}}>
+                    {!selected&&<div style={{padding:40,textAlign:'center' as const,color:SUBTLE,fontSize:12}}>SELECT INCIDENT FROM TABLE</div>}
+                    {selected&&(
+                        <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
+                            <div style={{display:'flex',alignItems:'center',gap:12}}>
+                                <span style={{fontSize:12,color:TEXT,fontWeight:700}}>INCIDENT {selected.incident_id}</span>
+                                <div style={{flex:1}}/>
+                                <button onClick={()=>replayIncident(selected.incident_id)} disabled={replayLoading}
+                                    style={{fontSize:10,fontFamily:MONO,background:GREEN,border:'none',color:BG,
+                                        padding:'4px 12px',cursor:'pointer',borderRadius:2,fontWeight:700,opacity:replayLoading?0.6:1}}>
+                                    {replayLoading?'REPLAYING...':'â–¶ REPLAY'}
+                                </button>
+                                <a href={`${API_BASE}/incidents/${selected.incident_id}/export`} target="_blank"
+                                    style={{fontSize:10,fontFamily:MONO,color:PURPLE,border:`1px solid ${PURPLE}`,
+                                        padding:'4px 10px',borderRadius:2,textDecoration:'none'}}>EXPORT</a>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 text-xs">
-                                <div className="bg-[#1e222d] p-3 rounded">
-                                    <div className="text-[#787b86]">Strategy</div>
-                                    <div className="text-[#d1d4dc]">{selectedIncident.strategy_id}</div>
-                                </div>
-                                <div className="bg-[#1e222d] p-3 rounded">
-                                    <div className="text-[#787b86]">Duration</div>
-                                    <div className="text-[#d1d4dc]">{formatTime(selectedIncident.duration_seconds)}</div>
-                                </div>
-                                <div className="bg-[#1e222d] p-3 rounded col-span-2">
-                                    <div className="text-[#787b86] flex items-center gap-1"><Hash size={10} /> Content Hash</div>
-                                    <div className="text-[#d1d4dc] font-mono text-[10px] break-all">{selectedIncident.content_hash}</div>
-                                </div>
+                            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                                <StatCard label="Strategy" value={selected.strategy_id} color={AMBER}/>
+                                <StatCard label="Events" value={String(selected.event_count)} color={BLUE}/>
+                                <StatCard label="Duration" value={fmtDur(selected.duration_seconds)} color={PURPLE}/>
                             </div>
 
-                            {/* Events Timeline */}
+                            <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'10px 12px'}}>
+                                <div style={{fontSize:9,color:SUBTLE,textTransform:'uppercase' as const,marginBottom:4}}>Content Hash</div>
+                                <div style={{fontSize:11,fontFamily:MONO,color:SUBTLE,wordBreak:'break-all' as const}}>{selected.content_hash}</div>
+                            </div>
+
                             <div>
-                                <h4 className="text-sm font-bold text-[#787b86] mb-2">Events ({selectedIncident.events?.length || 0})</h4>
-                                <div className="bg-[#0d1117] rounded border border-[#2a2e39] max-h-48 overflow-y-auto">
-                                    {selectedIncident.events?.slice(0, 50).map((evt: any, i: number) => (
-                                        <div key={i} className="px-3 py-1 border-b border-[#2a2e39] text-[10px] flex justify-between">
-                                            <span className={`${evt.type === 'error' ? 'text-red-400' : 'text-[#787b86]'}`}>{evt.type}</span>
-                                            <span className="text-[#787b86]">{evt.timestamp?.split('T')[1]?.slice(0, 8)}</span>
+                                <div style={{fontSize:10,color:SUBTLE,textTransform:'uppercase' as const,marginBottom:6,letterSpacing:'0.08em'}}>
+                                    EVENTS TIMELINE ({selected.events?.length||0})
+                                </div>
+                                <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,maxHeight:280,overflowY:'auto' as const}}>
+                                    {(selected.events||[]).slice(0,100).map((evt,i)=>(
+                                        <div key={i} style={{display:'flex',gap:12,padding:'4px 10px',borderBottom:`1px solid ${BORDER}`,alignItems:'center'}}>
+                                            <span style={{fontSize:9,color:SUBTLE,minWidth:80}}>{evt.timestamp?.split('T')[1]?.slice(0,8)||'â€”'}</span>
+                                            <EvtBadge type={evt.type}/>
+                                            <span style={{fontSize:10,color:SUBTLE,flex:1,overflow:'hidden',textOverflow:'ellipsis' as const,whiteSpace:'nowrap' as const}}>
+                                                {evt.payload?JSON.stringify(evt.payload).substring(0,60):''}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-
-                            {/* Replay Result */}
-                            {replayResult && (
-                                <div className="bg-[#1e222d] p-3 rounded border border-[#2a2e39]">
-                                    <h4 className="text-sm font-bold text-[#787b86] mb-2">Replay Result</h4>
-                                    <div className="text-xs space-y-1">
-                                        <div className="flex justify-between">
-                                            <span className="text-[#787b86]">Events Replayed</span>
-                                            <span className="text-[#d1d4dc]">{replayResult.events_replayed}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-[#787b86]">Errors</span>
-                                            <span className={replayResult.errors?.length ? 'text-red-400' : 'text-[#d1d4dc]'}>{replayResult.errors?.length || 0}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-[#787b86]">Output Hash</span>
-                                            <span className="font-mono text-[10px] text-[#d1d4dc]">{replayResult.output_hash?.slice(0, 16)}...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="h-full flex items-center justify-center text-[#787b86]">
-                            Select an incident to view details
                         </div>
                     )}
                 </div>
-            </div>
+            )}
+
+            {/* REPLAY tab */}
+            {tab==='REPLAY'&&(
+                <div style={{flex:1,overflowY:'auto' as const,padding:14}}>
+                    {!replay&&<div style={{padding:40,textAlign:'center' as const,color:SUBTLE,fontSize:12}}>
+                        {replayLoading?'REPLAYING...':'NO REPLAY RESULT â€” USE â–¶ REPLAY BUTTON'}
+                    </div>}
+                    {replay&&(
+                        <div style={{display:'flex',flexDirection:'column' as const,gap:14,maxWidth:480}}>
+                            <div style={{fontSize:12,color:TEXT,fontWeight:700}}>REPLAY RESULT</div>
+                            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                                <StatCard label="Events Replayed" value={String(replay.events_replayed)} color={GREEN}/>
+                                <StatCard label="Errors" value={String(replay.errors?.length||0)} color={replay.errors?.length?RED:SUBTLE}/>
+                                <StatCard label="Output Hash" value={replay.output_hash?.slice(0,8)+'â€¦'} color={PURPLE}/>
+                            </div>
+                            {replay.errors?.length>0&&(
+                                <div style={{background:PANEL,border:`1px solid ${RED}`,borderRadius:2,padding:'10px 12px'}}>
+                                    <div style={{fontSize:9,color:RED,textTransform:'uppercase' as const,marginBottom:6}}>Replay Errors</div>
+                                    {replay.errors.map((e,i)=>(
+                                        <div key={i} style={{fontSize:11,fontFamily:MONO,color:RED,padding:'2px 0'}}>{e}</div>
+                                    ))}
+                                </div>
+                            )}
+                            <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'10px 12px'}}>
+                                <div style={{fontSize:9,color:SUBTLE,textTransform:'uppercase' as const,marginBottom:4}}>Full Output Hash</div>
+                                <div style={{fontSize:11,fontFamily:MONO,color:SUBTLE,wordBreak:'break-all' as const}}>{replay.output_hash}</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

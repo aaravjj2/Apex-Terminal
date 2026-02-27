@@ -1,704 +1,407 @@
-/**
- * Unified Dashboard View
- * 
- * Complete dashboard as per acceptance checklist:
- * - B1: Page header strip (symbol, timeframe, buttons)
- * - B2: Main grid (Supergraph + AI Panel)
- * - E: Today operational strip
- * - F: Unified Positions widget
- * - G: Unified Orders widget
- * - H: Event log feed
- * - I: Settings mini view
- */
+﻿const BG='#0a0a0a'; const PANEL='#111111'; const BORDER='#1e1e1e';
+const AMBER='#f5a623'; const GREEN='#26a69a'; const RED='#ef5350';
+const BLUE='#42a5f5'; const PURPLE='#ab47bc'; const SUBTLE='#555';
+const TEXT='#d1d4dc'; const MONO='"Roboto Mono","Courier New",monospace';
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-    RefreshCw, Play, Eye, ChevronDown, Activity,
-    TrendingUp, TrendingDown, Wallet, FileText, Settings,
-    Maximize2, Minimize2, Filter
-} from 'lucide-react';
-import { cn } from '../../../ui/utils';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SupergraphModule } from './SupergraphModule';
 import { AIPanel } from './AIPanel';
 import { TradeLifecycleDrawer } from './TradeLifecycleDrawer';
 import { API_BASE } from '../../../config/api';
 
-// Types
 interface DailyStats {
-    realized_pnl: number;
-    unrealized_pnl: number;
-    daily_loss_cap_used: number;
-    daily_loss_cap_remaining: number;
-    total_open_risk: number;
-    max_open_risk: number;
-    trades_opened: number;
-    trades_closed: number;
-    monitoring_passes: number;
+  realized_pnl: number; unrealized_pnl: number;
+  daily_loss_cap_used: number; daily_loss_cap_remaining: number;
+  total_open_risk: number; max_open_risk: number;
+  trades_opened: number; trades_closed: number; monitoring_passes: number;
 }
-
 interface Position {
-    id: string;
-    symbol: string;
-    type: 'equity' | 'option';
-    strategy_tag?: string;
-    size: number;
-    entry_time: string;
-    current_pnl: number;
-    pnl_percent: number;
-    dte?: number;
-    status: 'healthy' | 'near_stop' | 'near_profit' | 'time_stop_soon';
+  id: string; symbol: string; type: 'equity' | 'option';
+  strategy_tag?: string; size: number; entry_time: string;
+  current_pnl: number; pnl_percent: number; dte?: number;
+  status: 'healthy' | 'near_stop' | 'near_profit' | 'time_stop_soon';
 }
-
 interface Order {
-    id: string;
-    client_order_id: string;
-    symbol: string;
-    side: 'buy' | 'sell';
-    status: 'pending' | 'partial' | 'filled' | 'rejected';
-    qty: number;
-    filled_qty: number;
-    avg_fill_price?: number;
-    retry_count: number;
-    run_id?: string;
+  id: string; client_order_id: string; symbol: string;
+  side: 'buy' | 'sell'; status: 'pending' | 'partial' | 'filled' | 'rejected';
+  qty: number; filled_qty: number; avg_fill_price?: number;
+  retry_count: number; run_id?: string;
 }
-
 interface EventLogEntry {
-    id: string;
-    timestamp: string;
-    type: 'monitoring' | 'exit' | 'order' | 'trade_update' | 'provider' | 'error';
-    message: string;
-    severity: 'info' | 'warning' | 'error';
-    link_type?: 'run' | 'order' | 'position';
-    link_id?: string;
+  id: string; timestamp: string;
+  type: 'monitoring' | 'exit' | 'order' | 'trade_update' | 'provider' | 'error';
+  message: string; severity: 'info' | 'warning' | 'error';
+  link_type?: 'run' | 'order' | 'position'; link_id?: string;
 }
-
 interface RiskCaps {
-    max_risk_per_trade: number;
-    max_open_risk: number;
-    max_trades_per_day: number;
-    max_daily_loss: number;
+  max_risk_per_trade: number; max_open_risk: number;
+  max_trades_per_day: number; max_daily_loss: number;
 }
+interface SelectedTrade { id: string; symbol: string; strategy: string; timestamp: number; side: 'entry' | 'exit'; }
 
-interface SelectedTrade {
-    id: string;
-    symbol: string;
-    strategy: string;
-    timestamp: number;
-    side: 'entry' | 'exit';
-}
-
-// Helper functions - defined before component to avoid hoisting issues
 const getPositionStatus = (p: { dte?: number; pnl_percent?: number }): Position['status'] => {
-    if (p.dte && p.dte <= 1) return 'time_stop_soon';
-    if (p.pnl_percent && p.pnl_percent >= 40) return 'near_profit';
-    if (p.pnl_percent && p.pnl_percent <= -30) return 'near_stop';
-    return 'healthy';
+  if (p.dte && p.dte <= 1) return 'time_stop_soon';
+  if (p.pnl_percent && p.pnl_percent >= 40) return 'near_profit';
+  if (p.pnl_percent && p.pnl_percent <= -30) return 'near_stop';
+  return 'healthy';
+};
+const mapEventType = (type: string): EventLogEntry['type'] => {
+  if (type?.includes('monitoring')) return 'monitoring';
+  if (type?.includes('exit')) return 'exit';
+  if (type?.includes('order')) return 'order';
+  if (type?.includes('trade')) return 'trade_update';
+  if (type?.includes('provider') || type?.includes('outage')) return 'provider';
+  return 'error';
+};
+const fmt = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
+
+const statusColors: Record<string, string> = {
+  healthy: GREEN, near_profit: BLUE, near_stop: RED, time_stop_soon: AMBER,
+  filled: GREEN, pending: AMBER, partial: BLUE, rejected: RED,
+  error: RED, warning: AMBER, info: BLUE,
 };
 
-const mapEventType = (type: string): EventLogEntry['type'] => {
-    if (type?.includes('monitoring')) return 'monitoring';
-    if (type?.includes('exit')) return 'exit';
-    if (type?.includes('order')) return 'order';
-    if (type?.includes('trade')) return 'trade_update';
-    if (type?.includes('provider') || type?.includes('outage')) return 'provider';
-    return 'error';
-};
+function Badge({ label }: { label: string }) {
+  const color = statusColors[label] || SUBTLE;
+  return (
+    <span style={{ fontSize: 9, padding: '1px 5px', background: color + '22', color, border: `1px solid ${color}44`, borderRadius: 2, fontFamily: MONO, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+      {label.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+function PanelHeader({ icon, title, count, action }: { icon: string; title: string; count?: number; action?: React.ReactNode }) {
+  return (
+    <div style={{ padding: '5px 10px', borderBottom: `1px solid ${BORDER}`, background: PANEL, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 11 }}>{icon}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: TEXT, letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: MONO }}>{title}</span>
+        {count !== undefined && <span style={{ fontSize: 9, color: SUBTLE }}>({count})</span>}
+      </div>
+      {action}
+    </div>
+  );
+}
 
 export function UnifiedDashboardView() {
-    // State
-    const [selectedSymbol, setSelectedSymbol] = useState('SPY');
-    void setSelectedSymbol; // Mark as intentionally unused for now
-    const [timeframe, setTimeframe] = useState('1D');
-    const [focusMode, setFocusMode] = useState(false);
-    const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
-    const [positions, setPositions] = useState<Position[]>([]);
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
-    const [riskCaps, setRiskCaps] = useState<RiskCaps | null>(null);
-    const [enabledStrategies, setEnabledStrategies] = useState<string[]>([]);
-    const [sentimentGatesEnabled, setSentimentGatesEnabled] = useState(false);
-    const [autopilotSchedule, setAutopilotSchedule] = useState('');
-    const [selectedTrade, setSelectedTrade] = useState<SelectedTrade | null>(null);
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState('SPY');
+  void setSelectedSymbol;
+  const [timeframe, setTimeframe] = useState('1D');
+  const [focusMode, setFocusMode] = useState(false);
+  const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
+  const [riskCaps, setRiskCaps] = useState<RiskCaps | null>(null);
+  const [enabledStrategies, setEnabledStrategies] = useState<string[]>([]);
+  const [sentimentGatesEnabled, setSentimentGatesEnabled] = useState(false);
+  const [autopilotSchedule, setAutopilotSchedule] = useState('');
+  const [selectedTrade, setSelectedTrade] = useState<SelectedTrade | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [spinAngle, setSpinAngle] = useState(0);
+  const timeframes = ['1D', '5D', '1M', '3M', '1Y'];
 
-    // Symbols list
-    const symbols = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMD', 'META', 'GOOGL', 'AMZN'];
-    void symbols; // Mark as intentionally unused for now
-    const timeframes = ['1D', '5D', '1M', '3M', '1Y'];
+  useEffect(() => {
+    if (loading) {
+      const t = setInterval(() => setSpinAngle(a => (a + 20) % 360), 50);
+      return () => clearInterval(t);
+    }
+  }, [loading]);
 
-    // Fetch daily stats
-    const fetchDailyStats = useCallback(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/autopilot/report`);
-            if (res.ok) {
-                const data = await res.json();
-                const report = data.report || {};
-                setDailyStats({
-                    realized_pnl: report.realized_pnl || 0,
-                    unrealized_pnl: report.unrealized_pnl || 0,
-                    daily_loss_cap_used: report.daily_loss_used || 0,
-                    daily_loss_cap_remaining: report.daily_loss_remaining || 100,
-                    total_open_risk: report.total_open_risk || 0,
-                    max_open_risk: report.max_open_risk || 500,
-                    trades_opened: report.trades_opened || 0,
-                    trades_closed: report.trades_closed || 0,
-                    monitoring_passes: report.monitoring_passes || 0
-                });
-            }
-        } catch (err) {
-            console.error('Failed to fetch daily stats:', err);
-        }
-    }, []);
+  const fetchDailyStats = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/autopilot/report`);
+      if (res.ok) {
+        const data = await res.json(); const r = data.report || {};
+        setDailyStats({ realized_pnl: r.realized_pnl || 0, unrealized_pnl: r.unrealized_pnl || 0, daily_loss_cap_used: r.daily_loss_used || 0, daily_loss_cap_remaining: r.daily_loss_remaining || 100, total_open_risk: r.total_open_risk || 0, max_open_risk: r.max_open_risk || 500, trades_opened: r.trades_opened || 0, trades_closed: r.trades_closed || 0, monitoring_passes: r.monitoring_passes || 0 });
+      }
+    } catch (err) { console.error('Failed to fetch daily stats:', err); }
+  }, []);
 
-    // Fetch positions
-    const fetchPositions = useCallback(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/autopilot/positions?status=open`);
-            if (res.ok) {
-                const data = await res.json();
-                const pos = (data.positions || []).slice(0, 10).map((p: any) => ({
-                    id: p.position_id,
-                    symbol: p.symbol,
-                    type: p.legs?.length > 0 ? 'option' : 'equity',
-                    strategy_tag: p.template || 'manual',
-                    size: p.quantity,
-                    entry_time: p.entry_time,
-                    current_pnl: p.unrealized_pnl || 0,
-                    pnl_percent: p.pnl_percent || 0,
-                    dte: p.dte,
-                    status: getPositionStatus(p)
-                }));
-                setPositions(pos);
-            }
-        } catch (err) {
-            console.error('Failed to fetch positions:', err);
-        }
-    }, []);
+  const fetchPositions = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/autopilot/positions?status=open`);
+      if (res.ok) {
+        const data = await res.json();
+        setPositions((data.positions || []).slice(0, 10).map((p: any) => ({ id: p.position_id, symbol: p.symbol, type: p.legs?.length > 0 ? 'option' : 'equity', strategy_tag: p.template || 'manual', size: p.quantity, entry_time: p.entry_time, current_pnl: p.unrealized_pnl || 0, pnl_percent: p.pnl_percent || 0, dte: p.dte, status: getPositionStatus(p) })));
+      }
+    } catch (err) { console.error('Failed to fetch positions:', err); }
+  }, []);
 
-    // Fetch orders
-    const fetchOrders = useCallback(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/portfolio/orders?status=open`);
-            if (res.ok) {
-                const data = await res.json();
-                const ords = (data.orders || []).slice(0, 10).map((o: any) => ({
-                    id: o.id,
-                    client_order_id: o.client_order_id,
-                    symbol: o.symbol,
-                    side: o.side,
-                    status: o.status,
-                    qty: o.qty,
-                    filled_qty: o.filled_qty || 0,
-                    avg_fill_price: o.avg_fill_price,
-                    retry_count: o.retry_count || 0,
-                    run_id: o.run_id
-                }));
-                setOrders(ords);
-            }
-        } catch (err) {
-            console.error('Failed to fetch orders:', err);
-        }
-    }, []);
+  const fetchOrders = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/portfolio/orders?status=open`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrders((data.orders || []).slice(0, 10).map((o: any) => ({ id: o.id, client_order_id: o.client_order_id, symbol: o.symbol, side: o.side, status: o.status, qty: o.qty, filled_qty: o.filled_qty || 0, avg_fill_price: o.avg_fill_price, retry_count: o.retry_count || 0, run_id: o.run_id })));
+      }
+    } catch (err) { console.error('Failed to fetch orders:', err); }
+  }, []);
 
-    // Fetch event log
-    const fetchEventLog = useCallback(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/autopilot/logs?limit=20`);
-            if (res.ok) {
-                const data = await res.json();
-                const logs = (data.logs || []).map((l: any, idx: number) => ({
-                    id: `event-${idx}`,
-                    timestamp: l.timestamp,
-                    type: mapEventType(l.event_type),
-                    message: l.message || l.event_type,
-                    severity: l.level === 'error' ? 'error' : l.level === 'warning' ? 'warning' : 'info',
-                    link_type: l.run_id ? 'run' : l.order_id ? 'order' : undefined,
-                    link_id: l.run_id || l.order_id
-                }));
-                setEventLog(logs);
-            }
-        } catch (err) {
-            console.error('Failed to fetch event log:', err);
-        }
-    }, []);
+  const fetchEventLog = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/autopilot/logs?limit=20`);
+      if (res.ok) {
+        const data = await res.json();
+        setEventLog((data.logs || []).map((l: any, idx: number) => ({ id: `event-${idx}`, timestamp: l.timestamp, type: mapEventType(l.event_type), message: l.message || l.event_type, severity: l.level === 'error' ? 'error' : l.level === 'warning' ? 'warning' : 'info', link_type: l.run_id ? 'run' : l.order_id ? 'order' : undefined, link_id: l.run_id || l.order_id })));
+      }
+    } catch (err) { console.error('Failed to fetch event log:', err); }
+  }, []);
 
-    // Fetch config
-    const fetchConfig = useCallback(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/autopilot/config`);
-            if (res.ok) {
-                const data = await res.json();
-                const config = data.config || {};
-                setRiskCaps({
-                    max_risk_per_trade: config.risk_limits?.max_risk_per_trade || 50,
-                    max_open_risk: config.risk_limits?.max_total_risk || 500,
-                    max_trades_per_day: config.risk_limits?.max_open_positions || 10,
-                    max_daily_loss: config.risk_limits?.max_daily_loss || 100
-                });
-                setEnabledStrategies(config.strategy_constraints?.allowed_templates || []);
-                setSentimentGatesEnabled(config.forecast_settings?.enabled || false);
-                setAutopilotSchedule(`Every ${config.schedule?.interval_minutes || 15}min (market hours)`);
-            }
-        } catch (err) {
-            console.error('Failed to fetch config:', err);
-        }
-    }, []);
+  const fetchConfig = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/autopilot/config`);
+      if (res.ok) {
+        const data = await res.json(); const config = data.config || {};
+        setRiskCaps({ max_risk_per_trade: config.risk_limits?.max_risk_per_trade || 50, max_open_risk: config.risk_limits?.max_total_risk || 500, max_trades_per_day: config.risk_limits?.max_open_positions || 10, max_daily_loss: config.risk_limits?.max_daily_loss || 100 });
+        setEnabledStrategies(config.strategy_constraints?.allowed_templates || []);
+        setSentimentGatesEnabled(config.forecast_settings?.enabled || false);
+        setAutopilotSchedule(`Every ${config.schedule?.interval_minutes || 15}min (market hours)`);
+      }
+    } catch (err) { console.error('Failed to fetch config:', err); }
+  }, []);
 
-    // Run autopilot now
-    const runAutopilotNow = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(`${API_BASE}/api/v1/autopilot/cycle`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dry_run: false, force: false })
-            });
-            const result = await response.json();
-            console.log('Autopilot cycle result:', result);
-            await Promise.all([fetchDailyStats(), fetchPositions(), fetchOrders(), fetchEventLog()]);
-        } catch (err) {
-            console.error('Failed to run autopilot:', err);
-        }
-        setLoading(false);
-    };
+  const runAutopilotNow = async () => {
+    setLoading(true);
+    try {
+      await fetch(`${API_BASE}/api/v1/autopilot/cycle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dry_run: false, force: false }) });
+      await Promise.all([fetchDailyStats(), fetchPositions(), fetchOrders(), fetchEventLog()]);
+    } catch (err) { console.error('Failed to run autopilot:', err); }
+    setLoading(false);
+  };
 
-    // Run monitoring now
-    const runMonitoringNow = async () => {
-        setLoading(true);
-        try {
-            await fetch(`${API_BASE}/api/v1/autopilot/cycle`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ force: true })
-            });
-            await Promise.all([fetchDailyStats(), fetchPositions(), fetchEventLog()]);
-        } catch (err) {
-            console.error('Failed to run monitoring:', err);
-        }
-        setLoading(false);
-    };
+  const runMonitoringNow = async () => {
+    setLoading(true);
+    try {
+      await fetch(`${API_BASE}/api/v1/autopilot/cycle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force: true }) });
+      await Promise.all([fetchDailyStats(), fetchPositions(), fetchEventLog()]);
+    } catch (err) { console.error('Failed to run monitoring:', err); }
+    setLoading(false);
+  };
 
-    // Handle trade marker click
-    const handleTradeClick = (trade: SelectedTrade) => {
-        setSelectedTrade(trade);
-        setDrawerOpen(true);
-    };
+  useEffect(() => {
+    fetchDailyStats(); fetchPositions(); fetchOrders(); fetchEventLog(); fetchConfig();
+  }, [fetchDailyStats, fetchPositions, fetchOrders, fetchEventLog, fetchConfig]);
 
-    // Initial fetch
-    useEffect(() => {
-        fetchDailyStats();
-        fetchPositions();
-        fetchOrders();
-        fetchEventLog();
-        fetchConfig();
-    }, [fetchDailyStats, fetchPositions, fetchOrders, fetchEventLog, fetchConfig]);
+  useEffect(() => {
+    const interval = setInterval(() => { fetchDailyStats(); fetchPositions(); fetchOrders(); fetchEventLog(); }, 60000);
+    return () => clearInterval(interval);
+  }, [fetchDailyStats, fetchPositions, fetchOrders, fetchEventLog]);
 
-    // Polling
-    useEffect(() => {
-        const interval = setInterval(() => {
-            fetchDailyStats();
-            fetchPositions();
-            fetchOrders();
-            fetchEventLog();
-        }, 60000); // Poll every 60s to reduce backend load
-        return () => clearInterval(interval);
-    }, [fetchDailyStats, fetchPositions, fetchOrders, fetchEventLog]);
+  const btnBase: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', border: 'none', borderRadius: 2, fontFamily: MONO, textTransform: 'uppercase', transition: 'background 0.1s' };
 
-    const formatCurrency = (v: number) => new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0
-    }).format(v);
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: BG, fontFamily: MONO, overflow: 'hidden' }} data-testid="unified-dashboard">
 
-    void formatCurrency; // Mark as used if needed later
-
-    return (
-        <div className="h-full flex flex-col bg-background overflow-hidden" data-testid="unified-dashboard">
-            {/* B1: Page Header Strip */}
-            <div className="h-12 px-4 flex items-center justify-between border-b border-border bg-panel-bg shrink-0">
-                <div className="flex items-center gap-3">
-                    {/* Symbol Dropdown */}
-                    <div className="relative">
-                        <button
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-element-bg hover:bg-border transition-colors"
-                            data-testid="symbol-selector"
-                        >
-                            <span className="font-semibold text-text">{selectedSymbol}</span>
-                            <ChevronDown size={14} className="text-text-secondary" />
-                        </button>
-                    </div>
-
-                    {/* Timeframe Selector */}
-                    <div className="flex items-center gap-1 bg-element-bg rounded-lg p-0.5" data-testid="timeframe-selector">
-                        {timeframes.map(tf => (
-                            <button
-                                key={tf}
-                                onClick={() => setTimeframe(tf)}
-                                className={cn(
-                                    "px-2 py-1 text-xs rounded transition-colors",
-                                    timeframe === tf
-                                        ? "bg-brand text-white"
-                                        : "text-text-secondary hover:text-text"
-                                )}
-                            >
-                                {tf}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    {/* Start Risk Desk Demo */}
-                    <button
-                        onClick={() => {
-                            // Dispatch custom event for Shell to navigate
-                            window.dispatchEvent(new CustomEvent('navigate-risk-desk', { detail: { loadDemo: true } }));
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors"
-                        data-testid="start-risk-desk-demo-btn"
-                    >
-                        <TrendingUp size={14} />
-                        Start Risk Desk Demo
-                    </button>
-                
-                    {/* Run Autopilot Now */}
-                    <button
-                        onClick={runAutopilotNow}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand hover:bg-brand/90 text-white text-xs font-medium transition-colors disabled:opacity-50"
-                        data-testid="run-autopilot-btn"
-                    >
-                        <Play size={14} />
-                        Run Autopilot Now
-                    </button>
-
-                    {/* Run Monitoring Now */}
-                    <button
-                        onClick={runMonitoringNow}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-element-bg hover:bg-border text-text text-xs font-medium transition-colors disabled:opacity-50"
-                        data-testid="run-monitoring-btn"
-                    >
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        Run Monitoring Now
-                    </button>
-
-                    {/* Explain Last Action */}
-                    <button
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-element-bg hover:bg-border text-text text-xs font-medium transition-colors"
-                        data-testid="explain-action-btn"
-                    >
-                        <Eye size={14} />
-                        Explain last action
-                    </button>
-
-                    {/* Focus Mode Toggle */}
-                    <button
-                        onClick={() => setFocusMode(!focusMode)}
-                        className={cn(
-                            "p-1.5 rounded-lg transition-colors",
-                            focusMode ? "bg-brand text-white" : "bg-element-bg text-text-secondary hover:text-text"
-                        )}
-                        title="Focus Mode"
-                        data-testid="focus-mode-toggle"
-                    >
-                        {focusMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                    </button>
-                </div>
-            </div>
-
-            {/* B2: Main Grid */}
-            <div className={cn("flex-1 flex overflow-hidden", focusMode && "flex-col")}>
-                {/* Left Column - Supergraph */}
-                <div className={cn("flex-1 flex flex-col overflow-hidden", !focusMode && "border-r border-border")}>
-                    <SupergraphModule
-                        symbol={selectedSymbol}
-                        timeframe={timeframe}
-                        onTradeClick={handleTradeClick}
-                    />
-                </div>
-
-                {/* Right Column - AI Panel (hidden in focus mode) */}
-                {!focusMode && (
-                    <div className="w-[400px] flex flex-col overflow-hidden">
-                        <AIPanel symbol={selectedSymbol} />
-                    </div>
-                )}
-            </div>
-
-            {/* E: Today Operational Strip */}
-            <div className="h-12 px-4 flex items-center justify-between border-t border-border bg-panel-bg shrink-0" data-testid="today-strip">
-                <div className="flex items-center gap-6">
-                    {/* Realized P&L */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase text-text-secondary">Realized P&L</span>
-                        <span className={cn(
-                            "text-sm font-semibold tabular-nums",
-                            (dailyStats?.realized_pnl || 0) >= 0 ? "text-up" : "text-down"
-                        )}>
-                            {dailyStats ? `${dailyStats.realized_pnl >= 0 ? '+' : ''}${formatCurrency(dailyStats.realized_pnl)}` : '--'}
-                        </span>
-                    </div>
-
-                    {/* Unrealized P&L */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase text-text-secondary">Unrealized P&L</span>
-                        <span className={cn(
-                            "text-sm font-semibold tabular-nums",
-                            (dailyStats?.unrealized_pnl || 0) >= 0 ? "text-up" : "text-down"
-                        )}>
-                            {dailyStats ? `${dailyStats.unrealized_pnl >= 0 ? '+' : ''}${formatCurrency(dailyStats.unrealized_pnl)}` : '--'}
-                        </span>
-                    </div>
-
-                    <div className="h-6 w-px bg-border" />
-
-                    {/* Daily Loss Cap */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase text-text-secondary">Daily Loss Cap</span>
-                        <div className="flex items-center gap-1">
-                            <div className="w-20 h-1.5 bg-element-bg rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-red-500 transition-all"
-                                    style={{ width: `${dailyStats ? (dailyStats.daily_loss_cap_used / (dailyStats.daily_loss_cap_used + dailyStats.daily_loss_cap_remaining)) * 100 : 0}%` }}
-                                />
-                            </div>
-                            <span className="text-xs text-text-secondary tabular-nums">
-                                {dailyStats ? `$${dailyStats.daily_loss_cap_used}/$${dailyStats.daily_loss_cap_used + dailyStats.daily_loss_cap_remaining}` : '--'}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Open Risk */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase text-text-secondary">Open Risk</span>
-                        <div className="flex items-center gap-1">
-                            <div className="w-20 h-1.5 bg-element-bg rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-yellow-500 transition-all"
-                                    style={{ width: `${dailyStats ? (dailyStats.total_open_risk / dailyStats.max_open_risk) * 100 : 0}%` }}
-                                />
-                            </div>
-                            <span className="text-xs text-text-secondary tabular-nums">
-                                {dailyStats ? `$${dailyStats.total_open_risk}/$${dailyStats.max_open_risk}` : '--'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    {/* Trades Opened */}
-                    <div className="flex items-center gap-1.5">
-                        <TrendingUp size={12} className="text-up" />
-                        <span className="text-xs text-text-secondary">Opened:</span>
-                        <span className="text-xs font-medium text-text tabular-nums">{dailyStats?.trades_opened || 0}</span>
-                    </div>
-
-                    {/* Trades Closed */}
-                    <div className="flex items-center gap-1.5">
-                        <TrendingDown size={12} className="text-down" />
-                        <span className="text-xs text-text-secondary">Closed:</span>
-                        <span className="text-xs font-medium text-text tabular-nums">{dailyStats?.trades_closed || 0}</span>
-                    </div>
-
-                    {/* Monitoring Passes */}
-                    <div className="flex items-center gap-1.5">
-                        <Activity size={12} className="text-brand" />
-                        <span className="text-xs text-text-secondary">Passes:</span>
-                        <span className="text-xs font-medium text-text tabular-nums">{dailyStats?.monitoring_passes || 0}</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Bottom Section: Positions + Orders + Events + Settings */}
-            <div className="h-48 border-t border-border flex shrink-0 overflow-hidden">
-                {/* F: Positions Widget */}
-                <div className="flex-1 flex flex-col border-r border-border">
-                    <div className="px-3 py-2 border-b border-border flex items-center justify-between bg-element-bg">
-                        <div className="flex items-center gap-2">
-                            <Wallet size={14} className="text-text-secondary" />
-                            <span className="text-xs font-medium text-text">Positions</span>
-                            <span className="text-[10px] text-text-muted">({positions.length})</span>
-                        </div>
-                        <button className="text-[10px] text-brand hover:underline">View All →</button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto" data-testid="positions-widget">
-                        {positions.length === 0 ? (
-                            <div className="h-full flex items-center justify-center text-text-secondary text-xs">No open positions</div>
-                        ) : (
-                            <table className="w-full text-xs">
-                                <thead className="bg-panel-bg sticky top-0">
-                                    <tr className="text-text-secondary">
-                                        <th className="px-2 py-1.5 text-left font-medium">Symbol</th>
-                                        <th className="px-2 py-1.5 text-left font-medium">Type</th>
-                                        <th className="px-2 py-1.5 text-right font-medium">Size</th>
-                                        <th className="px-2 py-1.5 text-right font-medium">P&L</th>
-                                        <th className="px-2 py-1.5 text-right font-medium">DTE</th>
-                                        <th className="px-2 py-1.5 text-center font-medium">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                    {positions.map(pos => (
-                                        <tr key={pos.id} className="hover:bg-element-bg cursor-pointer transition-colors">
-                                            <td className="px-2 py-1.5 font-medium text-text">{pos.symbol}</td>
-                                            <td className="px-2 py-1.5 text-text-secondary">{pos.type}</td>
-                                            <td className="px-2 py-1.5 text-right tabular-nums text-text">{pos.size}</td>
-                                            <td className={cn("px-2 py-1.5 text-right tabular-nums", pos.current_pnl >= 0 ? "text-up" : "text-down")}>
-                                                {formatCurrency(pos.current_pnl)}
-                                            </td>
-                                            <td className="px-2 py-1.5 text-right tabular-nums text-text-secondary">{pos.dte ?? '-'}</td>
-                                            <td className="px-2 py-1.5 text-center">
-                                                <span className={cn(
-                                                    "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                                                    pos.status === 'healthy' ? "bg-green-500/20 text-green-400" :
-                                                        pos.status === 'near_profit' ? "bg-blue-500/20 text-blue-400" :
-                                                            pos.status === 'near_stop' ? "bg-red-500/20 text-red-400" :
-                                                                "bg-yellow-500/20 text-yellow-400"
-                                                )}>
-                                                    {pos.status.replace('_', ' ')}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
-                    </div>
-                </div>
-
-                {/* G: Orders Widget */}
-                <div className="w-72 flex flex-col border-r border-border">
-                    <div className="px-3 py-2 border-b border-border flex items-center justify-between bg-element-bg">
-                        <div className="flex items-center gap-2">
-                            <FileText size={14} className="text-text-secondary" />
-                            <span className="text-xs font-medium text-text">Orders</span>
-                            <span className="text-[10px] text-text-muted">({orders.length})</span>
-                        </div>
-                        <button className="text-[10px] text-brand hover:underline">View All →</button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto" data-testid="orders-widget">
-                        {orders.length === 0 ? (
-                            <div className="h-full flex items-center justify-center text-text-secondary text-xs">No pending orders</div>
-                        ) : (
-                            <div className="divide-y divide-border">
-                                {orders.map(order => (
-                                    <div key={order.id} className="px-2 py-1.5 hover:bg-element-bg transition-colors cursor-pointer">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-medium text-text">{order.symbol}</span>
-                                            <span className={cn(
-                                                "px-1.5 py-0.5 rounded text-[10px]",
-                                                order.status === 'filled' ? "bg-green-500/20 text-green-400" :
-                                                    order.status === 'pending' ? "bg-yellow-500/20 text-yellow-400" :
-                                                        order.status === 'partial' ? "bg-blue-500/20 text-blue-400" :
-                                                            "bg-red-500/20 text-red-400"
-                                            )}>
-                                                {order.status}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-[10px] text-text-secondary mt-0.5">
-                                            <span>{order.side.toUpperCase()} {order.filled_qty}/{order.qty}</span>
-                                            {order.avg_fill_price && <span>${order.avg_fill_price.toFixed(2)}</span>}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* H: Event Log */}
-                <div className="w-80 flex flex-col border-r border-border">
-                    <div className="px-3 py-2 border-b border-border flex items-center justify-between bg-element-bg">
-                        <div className="flex items-center gap-2">
-                            <Activity size={14} className="text-text-secondary" />
-                            <span className="text-xs font-medium text-text">Event Log</span>
-                        </div>
-                        <button className="p-1 hover:bg-border rounded transition-colors">
-                            <Filter size={12} className="text-text-secondary" />
-                        </button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto" data-testid="event-log">
-                        {eventLog.length === 0 ? (
-                            <div className="h-full flex items-center justify-center text-text-secondary text-xs">No events</div>
-                        ) : (
-                            <div className="divide-y divide-border">
-                                {eventLog.map(event => (
-                                    <div key={event.id} className="px-2 py-1.5 hover:bg-element-bg transition-colors cursor-pointer">
-                                        <div className="flex items-start gap-2">
-                                            <div className={cn(
-                                                "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
-                                                event.severity === 'error' ? "bg-red-500" :
-                                                    event.severity === 'warning' ? "bg-yellow-500" :
-                                                        "bg-blue-500"
-                                            )} />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[10px] text-text truncate">{event.message}</p>
-                                                <p className="text-[9px] text-text-muted">
-                                                    {new Date(event.timestamp).toLocaleTimeString('en-US', { hour12: false })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* I: Settings Mini View */}
-                <div className="w-56 flex flex-col">
-                    <div className="px-3 py-2 border-b border-border flex items-center gap-2 bg-element-bg">
-                        <Settings size={14} className="text-text-secondary" />
-                        <span className="text-xs font-medium text-text">Risk Caps</span>
-                    </div>
-                    <div className="flex-1 p-2 overflow-y-auto" data-testid="settings-mini">
-                        <div className="space-y-2 text-[10px]">
-                            <div className="flex justify-between">
-                                <span className="text-text-secondary">Max Risk/Trade</span>
-                                <span className="text-text tabular-nums">${riskCaps?.max_risk_per_trade || '--'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-text-secondary">Max Open Risk</span>
-                                <span className="text-text tabular-nums">${riskCaps?.max_open_risk || '--'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-text-secondary">Max Trades/Day</span>
-                                <span className="text-text tabular-nums">{riskCaps?.max_trades_per_day || '--'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-text-secondary">Max Daily Loss</span>
-                                <span className="text-text tabular-nums">${riskCaps?.max_daily_loss || '--'}</span>
-                            </div>
-
-                            <div className="pt-2 mt-2 border-t border-border">
-                                <div className="flex justify-between mb-1">
-                                    <span className="text-text-secondary">Strategies</span>
-                                    <span className="text-text">{enabledStrategies.length} enabled</span>
-                                </div>
-                                <div className="flex justify-between mb-1">
-                                    <span className="text-text-secondary">Sentiment Gates</span>
-                                    <span className={sentimentGatesEnabled ? "text-green-400" : "text-text-muted"}>
-                                        {sentimentGatesEnabled ? 'ON' : 'OFF'}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-text-secondary">Schedule</span>
-                                    <span className="text-text truncate ml-2">{autopilotSchedule || '--'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Trade Lifecycle Drawer */}
-            {drawerOpen && selectedTrade && (
-                <TradeLifecycleDrawer
-                    trade={selectedTrade}
-                    onClose={() => setDrawerOpen(false)}
-                />
-            )}
+      {/* B1: Header Strip */}
+      <div style={{ height: 44, padding: '0 14px', borderBottom: `1px solid ${BORDER}`, background: PANEL, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, letterSpacing: '0.04em' }} data-testid="symbol-selector">SPY</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: BG, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '2px 3px' }} data-testid="timeframe-selector">
+            {timeframes.map(tf => (
+              <button key={tf} onClick={() => setTimeframe(tf)}
+                style={{ ...btnBase, padding: '2px 7px', background: timeframe === tf ? AMBER : 'none', color: timeframe === tf ? '#000' : SUBTLE, border: 'none', borderRadius: 1 }}>
+                {tf}
+              </button>
+            ))}
+          </div>
         </div>
-    );
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('navigate-risk-desk', { detail: { loadDemo: true } }))}
+            style={{ ...btnBase, background: GREEN, color: '#000' }}
+            data-testid="start-risk-desk-demo-btn"
+          >
+             Start Risk Desk Demo
+          </button>
+          <button onClick={runAutopilotNow} disabled={loading} style={{ ...btnBase, background: AMBER, color: '#000', opacity: loading ? 0.5 : 1 }} data-testid="run-autopilot-btn">
+             Run Autopilot Now
+          </button>
+          <button onClick={runMonitoringNow} disabled={loading} style={{ ...btnBase, background: PANEL, border: `1px solid ${BORDER}`, color: TEXT, opacity: loading ? 0.5 : 1 }} data-testid="run-monitoring-btn">
+            <span style={{ display: 'inline-block', transform: `rotate(${spinAngle}deg)` }}></span> Run Monitoring
+          </button>
+          <button style={{ ...btnBase, background: PANEL, border: `1px solid ${BORDER}`, color: TEXT }} data-testid="explain-action-btn">
+             Explain Last Action
+          </button>
+          <button onClick={() => setFocusMode(!focusMode)}
+            style={{ ...btnBase, background: focusMode ? AMBER : PANEL, color: focusMode ? '#000' : SUBTLE, border: `1px solid ${BORDER}`, padding: '4px 8px' }}
+            data-testid="focus-mode-toggle">
+            {focusMode ? '' : ''}
+          </button>
+        </div>
+      </div>
+
+      {/* B2: Main Grid */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', flexDirection: focusMode ? 'column' : 'row' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: focusMode ? 'none' : `1px solid ${BORDER}` }}>
+          <SupergraphModule symbol={selectedSymbol} timeframe={timeframe} onTradeClick={(t: SelectedTrade) => { setSelectedTrade(t); setDrawerOpen(true); }} />
+        </div>
+        {!focusMode && (
+          <div style={{ width: 400, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <AIPanel symbol={selectedSymbol} />
+          </div>
+        )}
+      </div>
+
+      {/* E: Today Operational Strip */}
+      <div style={{ height: 44, padding: '0 14px', borderTop: `1px solid ${BORDER}`, background: PANEL, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }} data-testid="today-strip">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {[
+            { label: 'Realized P&L', value: dailyStats ? `${dailyStats.realized_pnl >= 0 ? '+' : ''}${fmt(dailyStats.realized_pnl)}` : '--', color: (dailyStats?.realized_pnl || 0) >= 0 ? GREEN : RED },
+            { label: 'Unrealized P&L', value: dailyStats ? `${dailyStats.unrealized_pnl >= 0 ? '+' : ''}${fmt(dailyStats.unrealized_pnl)}` : '--', color: (dailyStats?.unrealized_pnl || 0) >= 0 ? GREEN : RED },
+          ].map(stat => (
+            <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{stat.label}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: stat.color, fontFamily: MONO }}>{stat.value}</span>
+            </div>
+          ))}
+          <div style={{ width: 1, height: 20, background: BORDER }} />
+          {[
+            { label: 'Daily Loss Cap', used: dailyStats?.daily_loss_cap_used || 0, total: (dailyStats?.daily_loss_cap_used || 0) + (dailyStats?.daily_loss_cap_remaining || 100), color: RED },
+            { label: 'Open Risk', used: dailyStats?.total_open_risk || 0, total: dailyStats?.max_open_risk || 500, color: AMBER },
+          ].map(bar => (
+            <div key={bar.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 9, color: SUBTLE, textTransform: 'uppercase' }}>{bar.label}</span>
+              <div style={{ width: 72, height: 4, background: BORDER, borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${(bar.used / bar.total) * 100}%`, background: bar.color, transition: 'width 0.3s' }} />
+              </div>
+              <span style={{ fontSize: 9, color: SUBTLE, fontFamily: MONO }}>${bar.used}/${bar.total}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {[
+            { icon: '', label: 'Opened', value: dailyStats?.trades_opened || 0, color: GREEN },
+            { icon: '', label: 'Closed', value: dailyStats?.trades_closed || 0, color: RED },
+            { icon: '', label: 'Passes', value: dailyStats?.monitoring_passes || 0, color: BLUE },
+          ].map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ color: item.color, fontSize: 11 }}>{item.icon}</span>
+              <span style={{ fontSize: 9, color: SUBTLE }}>{item.label}:</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: TEXT, fontFamily: MONO }}>{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom Section */}
+      <div style={{ height: 180, borderTop: `1px solid ${BORDER}`, display: 'flex', flexShrink: 0, overflow: 'hidden' }}>
+        {/* F: Positions */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: `1px solid ${BORDER}` }}>
+          <PanelHeader icon="" title="Positions" count={positions.length} action={<button style={{ fontSize: 9, color: BLUE, background: 'none', border: 'none', cursor: 'pointer', fontFamily: MONO }}>VIEW ALL </button>} />
+          <div style={{ flex: 1, overflowY: 'auto' }} data-testid="positions-widget">
+            {positions.length === 0 ? (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: SUBTLE }}>No open positions</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+                <thead style={{ position: 'sticky', top: 0, background: PANEL }}>
+                  <tr style={{ color: SUBTLE }}>
+                    {['Symbol', 'Type', 'Size', 'P&L', 'DTE', 'Status'].map(h => (
+                      <th key={h} style={{ padding: '3px 6px', textAlign: h === 'Symbol' || h === 'Type' ? 'left' : 'right', fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {positions.map(pos => (
+                    <tr key={pos.id} style={{ borderTop: `1px solid ${BORDER}` }}>
+                      <td style={{ padding: '3px 6px', fontWeight: 700, color: TEXT }}>{pos.symbol}</td>
+                      <td style={{ padding: '3px 6px', color: SUBTLE }}>{pos.type}</td>
+                      <td style={{ padding: '3px 6px', textAlign: 'right', color: TEXT, fontFamily: MONO }}>{pos.size}</td>
+                      <td style={{ padding: '3px 6px', textAlign: 'right', fontFamily: MONO, color: pos.current_pnl >= 0 ? GREEN : RED }}>{fmt(pos.current_pnl)}</td>
+                      <td style={{ padding: '3px 6px', textAlign: 'right', color: SUBTLE, fontFamily: MONO }}>{pos.dte ?? '-'}</td>
+                      <td style={{ padding: '3px 6px', textAlign: 'right' }}><Badge label={pos.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* G: Orders */}
+        <div style={{ width: 260, display: 'flex', flexDirection: 'column', borderRight: `1px solid ${BORDER}` }}>
+          <PanelHeader icon="" title="Orders" count={orders.length} action={<button style={{ fontSize: 9, color: BLUE, background: 'none', border: 'none', cursor: 'pointer', fontFamily: MONO }}>VIEW ALL </button>} />
+          <div style={{ flex: 1, overflowY: 'auto' }} data-testid="orders-widget">
+            {orders.length === 0 ? (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: SUBTLE }}>No pending orders</div>
+            ) : (
+              <div>
+                {orders.map(order => (
+                  <div key={order.id} style={{ padding: '5px 8px', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: TEXT }}>{order.symbol}</span>
+                      <Badge label={order.status} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: SUBTLE, marginTop: 2 }}>
+                      <span>{order.side.toUpperCase()} {order.filled_qty}/{order.qty}</span>
+                      {order.avg_fill_price && <span>${order.avg_fill_price.toFixed(2)}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* H: Event Log */}
+        <div style={{ width: 290, display: 'flex', flexDirection: 'column', borderRight: `1px solid ${BORDER}` }}>
+          <PanelHeader icon="" title="Event Log" />
+          <div style={{ flex: 1, overflowY: 'auto' }} data-testid="event-log">
+            {eventLog.length === 0 ? (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: SUBTLE }}>No events</div>
+            ) : (
+              <div>
+                {eventLog.map(event => (
+                  <div key={event.id} style={{ padding: '4px 8px', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer', display: 'flex', gap: 6 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: statusColors[event.severity] || SUBTLE, marginTop: 4, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 10, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.message}</div>
+                      <div style={{ fontSize: 9, color: SUBTLE }}>{new Date(event.timestamp).toLocaleTimeString('en-US', { hour12: false })}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* I: Settings Mini */}
+        <div style={{ width: 210, display: 'flex', flexDirection: 'column' }}>
+          <PanelHeader icon="" title="Risk Caps" />
+          <div style={{ flex: 1, padding: '6px 8px', overflowY: 'auto' }} data-testid="settings-mini">
+            {[
+              { label: 'Max Risk/Trade', value: riskCaps ? `$${riskCaps.max_risk_per_trade}` : '--' },
+              { label: 'Max Open Risk', value: riskCaps ? `$${riskCaps.max_open_risk}` : '--' },
+              { label: 'Max Trades/Day', value: riskCaps ? String(riskCaps.max_trades_per_day) : '--' },
+              { label: 'Max Daily Loss', value: riskCaps ? `$${riskCaps.max_daily_loss}` : '--' },
+            ].map(item => (
+              <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, padding: '2px 0', borderBottom: `1px solid ${BORDER}` }}>
+                <span style={{ color: SUBTLE }}>{item.label}</span>
+                <span style={{ color: TEXT, fontFamily: MONO }}>{item.value}</span>
+              </div>
+            ))}
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 6, marginTop: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, padding: '2px 0' }}>
+                <span style={{ color: SUBTLE }}>Strategies</span>
+                <span style={{ color: TEXT, fontFamily: MONO }}>{enabledStrategies.length} enabled</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, padding: '2px 0' }}>
+                <span style={{ color: SUBTLE }}>Sentiment Gates</span>
+                <span style={{ color: sentimentGatesEnabled ? GREEN : SUBTLE, fontFamily: MONO }}>{sentimentGatesEnabled ? 'ON' : 'OFF'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, padding: '2px 0' }}>
+                <span style={{ color: SUBTLE }}>Schedule</span>
+                <span style={{ color: TEXT, fontFamily: MONO, fontSize: 9 }}>{autopilotSchedule || '--'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {drawerOpen && selectedTrade && (
+        <TradeLifecycleDrawer trade={selectedTrade} onClose={() => setDrawerOpen(false)} />
+      )}
+    </div>
+  );
 }

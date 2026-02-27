@@ -1,150 +1,186 @@
-import { useState, useEffect, useRef } from 'react';
-import { FileText, X, RefreshCw, Filter, Circle } from 'lucide-react';
+﻿// Bloomberg palette
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const PURPLE = '#ab47bc';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
+const LEVEL_COLORS: Record<string, string> = {
+  info: '#888', signal: BLUE, order: PURPLE,
+  fill: GREEN, warning: AMBER, error: RED,
+};
 
 interface LogEntry {
-    id: string;
-    timestamp: string;
-    level: 'info' | 'signal' | 'order' | 'fill' | 'error' | 'warning';
-    message: string;
-    data?: Record<string, unknown>;
+  id: string;
+  timestamp: string;
+  level: 'info' | 'signal' | 'order' | 'fill' | 'error' | 'warning';
+  message: string;
+  data?: Record<string, unknown>;
 }
 
 const API_BASE = '/api/v1';
 
+const MOCK_LOGS: LogEntry[] = [
+  { id: '1',  timestamp: new Date(Date.now() - 30000).toISOString(), level: 'info',    message: 'Strategy initialized',              data: { symbol: 'AAPL', mode: 'live' } },
+  { id: '2',  timestamp: new Date(Date.now() - 25000).toISOString(), level: 'signal',  message: 'BUY signal generated',               data: { price: 175.50, indicator: 'SMA crossover', strength: 0.82 } },
+  { id: '3',  timestamp: new Date(Date.now() - 22000).toISOString(), level: 'order',   message: 'Market order submitted',             data: { side: 'BUY', qty: 100, type: 'market', order_id: 'ORD-7823' } },
+  { id: '4',  timestamp: new Date(Date.now() - 20000).toISOString(), level: 'fill',    message: 'Order filled',                       data: { price: 175.52, qty: 100, commission: 1.00, slippage: 0.02 } },
+  { id: '5',  timestamp: new Date(Date.now() - 15000).toISOString(), level: 'info',    message: 'Position updated',                   data: { symbol: 'AAPL', qty: 100, avg: 175.52, unrealized_pnl: 48.00 } },
+  { id: '6',  timestamp: new Date(Date.now() - 10000).toISOString(), level: 'warning', message: 'Approaching position limit',         data: { current: 8500, limit: 10000, pct: 85 } },
+  { id: '7',  timestamp: new Date(Date.now() - 8000).toISOString(),  level: 'signal',  message: 'SELL signal - take profit target',   data: { price: 176.00, target: 176.00, rr: 2.4 } },
+  { id: '8',  timestamp: new Date(Date.now() - 6000).toISOString(),  level: 'order',   message: 'Limit order submitted',              data: { side: 'SELL', qty: 50, type: 'limit', price: 176.10 } },
+  { id: '9',  timestamp: new Date(Date.now() - 3000).toISOString(),  level: 'error',   message: 'Order rejected by risk manager',     data: { reason: 'Position size exceeded', order_id: 'ORD-7824' } },
+  { id: '10', timestamp: new Date(Date.now() - 1000).toISOString(), level: 'info',    message: 'Risk check bypass override pending', data: { user: 'system', action: 'notify' } },
+];
+
+import React, { useState, useEffect, useRef } from 'react';
+
 export function StrategyLogs({ strategyId, onClose }: { strategyId: string; onClose: () => void }) {
-    const [logs, setLogs] = useState<LogEntry[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [autoScroll, setAutoScroll] = useState(true);
-    const [filter, setFilter] = useState<string>('all');
-    const logsEndRef = useRef<HTMLDivElement>(null);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [filter, setFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
+  const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
+  const logsEndRef = useRef<HTMLDivElement>(null);
 
-    const fetchLogs = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch(`${API_BASE}/strategies/${strategyId}/logs`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            setLogs(data);
-        } catch (e) {
-            console.error('Failed to fetch logs:', e);
-            // Mock data
-            setLogs([
-                { id: '1', timestamp: new Date().toISOString(), level: 'info', message: 'Strategy initialized', data: { symbol: 'AAPL' } },
-                { id: '2', timestamp: new Date().toISOString(), level: 'signal', message: 'BUY signal generated', data: { price: 175.50, indicator: 'SMA crossover' } },
-                { id: '3', timestamp: new Date().toISOString(), level: 'order', message: 'Order submitted', data: { side: 'buy', qty: 100, type: 'market' } },
-                { id: '4', timestamp: new Date().toISOString(), level: 'fill', message: 'Order filled', data: { price: 175.52, qty: 100, commission: 1.00 } },
-                { id: '5', timestamp: new Date().toISOString(), level: 'warning', message: 'Approaching position limit', data: { current: 8500, limit: 10000 } },
-                { id: '6', timestamp: new Date().toISOString(), level: 'error', message: 'Order rejected by risk manager', data: { reason: 'Position size exceeded' } },
-            ]);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchLogs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/strategies/${strategyId}/logs`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setLogs(data);
+    } catch {
+      setLogs(MOCK_LOGS);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        fetchLogs();
-        const interval = setInterval(fetchLogs, 2000);
-        return () => clearInterval(interval);
-    }, [strategyId]);
+  useEffect(() => { fetchLogs(); const iv = setInterval(fetchLogs, 2000); return () => clearInterval(iv); }, [strategyId]);
+  useEffect(() => { if (autoScroll && logsEndRef.current) logsEndRef.current.scrollIntoView({ behavior: 'smooth' }); }, [logs, autoScroll]);
 
-    useEffect(() => {
-        if (autoScroll && logsEndRef.current) {
-            logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [logs, autoScroll]);
+  const ALL_LEVELS = ['all', 'info', 'signal', 'order', 'fill', 'warning', 'error'];
+  const filteredLogs = logs.filter(l =>
+    (filter === 'all' || l.level === filter) &&
+    (!search || l.message.toLowerCase().includes(search.toLowerCase()) || JSON.stringify(l.data || {}).toLowerCase().includes(search.toLowerCase()))
+  );
 
-    const filteredLogs = filter === 'all' ? logs : logs.filter(l => l.level === filter);
+  const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 } as Intl.DateTimeFormatOptions);
 
-    const getLevelStyle = (level: string) => {
-        switch (level) {
-            case 'info': return { bg: 'bg-gray-500/20', text: 'text-gray-400', icon: 'text-gray-400' };
-            case 'signal': return { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: 'text-blue-400' };
-            case 'order': return { bg: 'bg-purple-500/20', text: 'text-purple-400', icon: 'text-purple-400' };
-            case 'fill': return { bg: 'bg-green-500/20', text: 'text-green-400', icon: 'text-green-400' };
-            case 'warning': return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', icon: 'text-yellow-400' };
-            case 'error': return { bg: 'bg-red-500/20', text: 'text-red-400', icon: 'text-red-400' };
-            default: return { bg: 'bg-gray-500/20', text: 'text-gray-400', icon: 'text-gray-400' };
-        }
-    };
+  const counts = ALL_LEVELS.slice(1).reduce((acc, l) => { acc[l] = logs.filter(e => e.level === l).length; return acc; }, {} as Record<string,number>);
 
-    const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 } as Intl.DateTimeFormatOptions);
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', fontFamily: MONO }}>
+      <div style={{ width: 860, height: 620, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 6, display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}>
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="w-[800px] h-[600px] bg-gray-800 border border-gray-700 rounded-lg shadow-xl flex flex-col">
-                {/* Header */}
-                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <FileText size={20} />
-                        Strategy Logs
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        <button onClick={fetchLogs} className="p-1 hover:bg-gray-700 rounded">
-                            <RefreshCw size={16} className={`text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-                        </button>
-                        <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded">
-                            <X size={18} className="text-gray-400" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Filters */}
-                <div className="p-3 border-b border-gray-700 flex items-center gap-3">
-                    <Filter size={14} className="text-gray-400" />
-                    {['all', 'info', 'signal', 'order', 'fill', 'warning', 'error'].map(f => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f)}
-                            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${filter === f ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                                }`}
-                        >
-                            {f.charAt(0).toUpperCase() + f.slice(1)}
-                        </button>
-                    ))}
-                    <div className="ml-auto flex items-center gap-2">
-                        <label className="flex items-center gap-2 text-xs text-gray-400">
-                            <input
-                                type="checkbox"
-                                checked={autoScroll}
-                                onChange={(e) => setAutoScroll(e.target.checked)}
-                                className="rounded bg-gray-700 border-gray-600"
-                            />
-                            Auto-scroll
-                        </label>
-                    </div>
-                </div>
-
-                {/* Logs */}
-                <div className="flex-1 overflow-y-auto font-mono text-xs p-2 bg-gray-900">
-                    {filteredLogs.map((log) => {
-                        const style = getLevelStyle(log.level);
-                        return (
-                            <div key={log.id} className={`flex items-start gap-2 px-2 py-1 rounded mb-1 ${style.bg}`}>
-                                <span className="text-gray-500 shrink-0">{formatTime(log.timestamp)}</span>
-                                <Circle size={8} className={`mt-1 shrink-0 ${style.icon}`} fill="currentColor" />
-                                <span className={`uppercase text-[10px] font-bold shrink-0 w-12 ${style.text}`}>{log.level}</span>
-                                <span className="text-gray-200 flex-1">{log.message}</span>
-                                {log.data && (
-                                    <span className="text-gray-500 shrink-0">
-                                        {JSON.stringify(log.data)}
-                                    </span>
-                                )}
-                            </div>
-                        );
-                    })}
-                    <div ref={logsEndRef} />
-                </div>
-
-                {/* Stats */}
-                <div className="p-2 border-t border-gray-700 flex items-center justify-between text-xs text-gray-400">
-                    <span>{filteredLogs.length} events</span>
-                    <div className="flex gap-4">
-                        <span className="text-green-400">{logs.filter(l => l.level === 'fill').length} fills</span>
-                        <span className="text-yellow-400">{logs.filter(l => l.level === 'warning').length} warnings</span>
-                        <span className="text-red-400">{logs.filter(l => l.level === 'error').length} errors</span>
-                    </div>
-                </div>
-            </div>
+        {/* Header */}
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 10, color: AMBER, letterSpacing: 2, fontWeight: 700 }}>â–¸ STRATEGY LOGS</span>
+          <span style={{ fontSize: 10, color: SUBTLE }}>{strategyId}</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            {loading && <span style={{ fontSize: 10, color: AMBER }}>â— LIVE</span>}
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search logs..."
+              style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 3, color: TEXT, fontSize: 10, padding: '3px 8px', fontFamily: MONO, width: 160, outline: 'none' }}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: SUBTLE, cursor: 'pointer' }}>
+              <input type="checkbox" checked={autoScroll} onChange={e => setAutoScroll(e.target.checked)} style={{ accentColor: AMBER }} />
+              AUTO-SCROLL
+            </label>
+            <button onClick={fetchLogs} style={{ background: 'none', border: `1px solid ${BORDER}`, borderRadius: 3, color: SUBTLE, padding: '3px 8px', cursor: 'pointer', fontSize: 10 }}>â†» REFRESH</button>
+            <button onClick={onClose} style={{ background: 'none', border: `1px solid ${BORDER}`, borderRadius: 3, color: RED, padding: '3px 8px', cursor: 'pointer', fontSize: 12 }}>âœ•</button>
+          </div>
         </div>
-    );
+
+        {/* Level filter bar */}
+        <div style={{ padding: '6px 12px', borderBottom: `1px solid ${BORDER}`, display: 'flex', gap: 6, alignItems: 'center' }}>
+          {ALL_LEVELS.map(lv => (
+            <button key={lv} onClick={() => setFilter(lv)} style={{
+              background: filter === lv ? AMBER + '22' : 'none',
+              border: `1px solid ${filter === lv ? AMBER : BORDER}`,
+              borderRadius: 3, cursor: 'pointer', padding: '2px 8px',
+              fontSize: 9, color: filter === lv ? AMBER : SUBTLE,
+              fontFamily: MONO, letterSpacing: 1,
+            }}>
+              {lv.toUpperCase()}{lv !== 'all' && counts[lv] > 0 ? ` (${counts[lv]})` : ''}
+            </button>
+          ))}
+          <div style={{ marginLeft: 'auto', fontSize: 9, color: SUBTLE }}>{filteredLogs.length} events</div>
+        </div>
+
+        {/* Main content: log list + detail pane */}
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          {/* Log list */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
+            {filteredLogs.map(log => {
+              const lc = LEVEL_COLORS[log.level] || SUBTLE;
+              const isSel = selectedLog?.id === log.id;
+              return (
+                <div
+                  key={log.id}
+                  onClick={() => setSelectedLog(prev => prev?.id === log.id ? null : log)}
+                  style={{
+                    display: 'flex', gap: 8, padding: '4px 12px', cursor: 'pointer',
+                    background: isSel ? '#1a1a1a' : 'transparent',
+                    borderLeft: `3px solid ${isSel ? lc : 'transparent'}`,
+                    alignItems: 'flex-start',
+                  }}
+                  onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = '#161616'; }}
+                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <span style={{ color: SUBTLE, fontSize: 9, whiteSpace: 'nowrap', marginTop: 1, minWidth: 76 }}>{formatTime(log.timestamp)}</span>
+                  <span style={{ fontSize: 9, color: lc, width: 48, flexShrink: 0, fontWeight: 700, letterSpacing: 0.5 }}>{log.level.toUpperCase()}</span>
+                  <span style={{ fontSize: 10, color: TEXT, flex: 1 }}>{log.message}</span>
+                  {log.data && <span style={{ fontSize: 9, color: SUBTLE, whiteSpace: 'nowrap' }}>+{Object.keys(log.data).length}f</span>}
+                </div>
+              );
+            })}
+            <div ref={logsEndRef} />
+          </div>
+
+          {/* Detail pane */}
+          {selectedLog && (
+            <div style={{ width: 260, borderLeft: `1px solid ${BORDER}`, padding: 12, overflowY: 'auto' }}>
+              <div style={{ fontSize: 9, color: AMBER, letterSpacing: 2, marginBottom: 10 }}>LOG DETAIL</div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 9, background: LEVEL_COLORS[selectedLog.level] + '22', border: `1px solid ${LEVEL_COLORS[selectedLog.level]}`, borderRadius: 3, padding: '1px 6px', color: LEVEL_COLORS[selectedLog.level] }}>{selectedLog.level.toUpperCase()}</span>
+              </div>
+              <div style={{ fontSize: 10, color: TEXT, marginBottom: 10, lineHeight: 1.6 }}>{selectedLog.message}</div>
+              <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 8 }}>{new Date(selectedLog.timestamp).toLocaleString()}</div>
+              {selectedLog.data && (
+                <div>
+                  <div style={{ fontSize: 9, color: SUBTLE, letterSpacing: 1, marginBottom: 6 }}>PAYLOAD</div>
+                  {Object.entries(selectedLog.data).map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 10 }}>
+                      <span style={{ color: SUBTLE }}>{k}</span>
+                      <span style={{ color: BLUE, fontFamily: MONO }}>{String(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer stats */}
+        <div style={{ padding: '6px 14px', borderTop: `1px solid ${BORDER}`, display: 'flex', gap: 16, fontSize: 9, color: SUBTLE }}>
+          <span>TOTAL: <span style={{ color: TEXT }}>{logs.length}</span></span>
+          <span>FILLS: <span style={{ color: GREEN }}>{counts.fill || 0}</span></span>
+          <span>SIGNALS: <span style={{ color: BLUE }}>{counts.signal || 0}</span></span>
+          <span>ORDERS: <span style={{ color: PURPLE }}>{counts.order || 0}</span></span>
+          <span>WARNS: <span style={{ color: AMBER }}>{counts.warning || 0}</span></span>
+          <span>ERRORS: <span style={{ color: RED }}>{counts.error || 0}</span></span>
+        </div>
+      </div>
+    </div>
+  );
 }

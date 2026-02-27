@@ -1,5 +1,38 @@
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',ORANGE='#ff8a65',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+const Th=({c,ch}:{c?:React.CSSProperties,ch:React.ReactNode})=>(
+  <th style={{padding:'6px 10px',fontSize:10,fontFamily:MONO,color:SUBTLE,textTransform:'uppercase' as const,
+    letterSpacing:'0.08em',borderBottom:`1px solid ${BORDER}`,textAlign:'left',...c}}>{ch}</th>
+)
+const Td=({c,ch}:{c?:React.CSSProperties,ch:React.ReactNode})=>(
+  <td style={{padding:'6px 10px',fontSize:11,fontFamily:MONO,borderBottom:`1px solid ${BORDER}`,color:TEXT,...c}}>{ch}</td>
+)
+function RunStatusBadge({status}:{status:string}){
+  const m:Record<string,string>={running:GREEN,paused:AMBER,stopped:SUBTLE,error:RED,
+    completed:BLUE,pending:ORANGE}
+  const c=m[status]||SUBTLE
+  return <span style={{fontSize:9,fontFamily:MONO,color:c,border:`1px solid ${c}`,
+    padding:'2px 6px',borderRadius:2,textTransform:'uppercase' as const,letterSpacing:'0.08em'}}>{status}</span>
+}
+function TypeBadge({t}:{t:string}){
+  const c=t==='backtest'?PURPLE:ORANGE
+  return <span style={{fontSize:9,fontFamily:MONO,color:c,padding:'2px 6px',borderRadius:2,
+    textTransform:'uppercase' as const}}>{t}</span>
+}
+function StatCard({label,value,color}:{label:string,value:string,color?:string}){
+  return (
+    <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'7px 10px',minWidth:90}}>
+      <div style={{fontSize:9,fontFamily:MONO,color:SUBTLE,textTransform:'uppercase' as const,letterSpacing:'0.08em',marginBottom:3}}>{label}</div>
+      <div style={{fontSize:15,fontFamily:MONO,color:color||AMBER,fontWeight:700}}>{value}</div>
+    </div>
+  )
+}
+
 import { useState, useEffect } from 'react';
-import { Play, Pause, Square, RefreshCw, AlertCircle, CheckCircle, Clock, Zap } from 'lucide-react';
 
 const API_BASE = '/api/v1';
 
@@ -17,11 +50,17 @@ interface Run {
     restart_count: number;
 }
 
+interface LogEntry {level:string;timestamp:string;message:string}
+
+const TABS=['ALL RUNS','RUNNING','HISTORY','LOGS'] as const
+type RTab=typeof TABS[number]
+
 export function RunsDashboard() {
     const [runs, setRuns] = useState<Run[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedRun, setSelectedRun] = useState<string | null>(null);
-    const [logs, setLogs] = useState<any[]>([]);
+    const [logs, setLogs] = useState<LogEntry[]>([]);
+    const [tab, setTab] = useState<RTab>('ALL RUNS');
 
     useEffect(() => {
         fetchRuns();
@@ -33,10 +72,7 @@ export function RunsDashboard() {
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE}/runs`);
-            if (res.ok) {
-                const data = await res.json();
-                setRuns(data);
-            }
+            if (res.ok) setRuns(await res.json());
         } catch (e) {
             console.error('Failed to fetch runs:', e);
         } finally {
@@ -47,10 +83,7 @@ export function RunsDashboard() {
     const fetchLogs = async (runId: string) => {
         try {
             const res = await fetch(`${API_BASE}/runs/${runId}/logs`);
-            if (res.ok) {
-                const data = await res.json();
-                setLogs(data);
-            }
+            if (res.ok) setLogs(await res.json());
         } catch (e) {
             console.error('Failed to fetch logs:', e);
         }
@@ -65,141 +98,145 @@ export function RunsDashboard() {
         }
     };
 
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'running': return <Zap size={14} className="text-green-400" />;
-            case 'paused': return <Pause size={14} className="text-yellow-400" />;
-            case 'stopped': return <Square size={14} className="text-gray-400" />;
-            case 'error': return <AlertCircle size={14} className="text-red-400" />;
-            case 'completed': return <CheckCircle size={14} className="text-blue-400" />;
-            default: return <Clock size={14} className="text-gray-500" />;
-        }
+    const fmtTime=(iso:string|null)=>iso?new Date(iso).toLocaleTimeString():'â€”';
+    const fmtDuration=(r:Run)=>{
+        if(!r.started_at) return 'â€”';
+        const end=r.stopped_at?new Date(r.stopped_at):new Date();
+        const secs=Math.round((end.getTime()-new Date(r.started_at).getTime())/1000);
+        if(secs<60) return `${secs}s`;
+        if(secs<3600) return `${Math.floor(secs/60)}m ${secs%60}s`;
+        return `${Math.floor(secs/3600)}h ${Math.floor((secs%3600)/60)}m`;
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'running': return 'bg-green-500/20 text-green-400';
-            case 'paused': return 'bg-yellow-500/20 text-yellow-400';
-            case 'stopped': return 'bg-gray-500/20 text-gray-400';
-            case 'error': return 'bg-red-500/20 text-red-400';
-            case 'completed': return 'bg-blue-500/20 text-blue-400';
-            default: return 'bg-gray-500/20 text-gray-400';
-        }
-    };
+    const running=runs.filter(r=>r.status==='running');
+    const errored=runs.filter(r=>r.status==='error');
+    const displayRuns=tab==='RUNNING'?running:tab==='HISTORY'?runs.filter(r=>['completed','stopped'].includes(r.status)):runs;
 
-    const formatTime = (iso: string | null) => {
-        if (!iso) return '-';
-        return new Date(iso).toLocaleTimeString();
-    };
+    const S:React.CSSProperties={height:'100%',display:'flex',flexDirection:'column' as const,background:BG,fontFamily:MONO}
+    const HDR:React.CSSProperties={display:'flex',alignItems:'center',gap:8,padding:'8px 14px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}
+    const TABBAR:React.CSSProperties={display:'flex',gap:2,padding:'0 14px',borderBottom:`1px solid ${BORDER}`,
+        background:PANEL,flexShrink:0}
+    const tbtn=(a:boolean):React.CSSProperties=>({padding:'7px 12px',fontSize:10,fontFamily:MONO,
+        letterSpacing:'0.08em',cursor:'pointer',background:'none',border:'none',
+        borderBottom:a?`2px solid ${AMBER}`:'2px solid transparent',
+        color:a?AMBER:SUBTLE,textTransform:'uppercase' as const})
+    const actBtn=(c:string):React.CSSProperties=>({padding:'2px 6px',fontSize:9,fontFamily:MONO,
+        background:PANEL,border:`1px solid ${c}`,color:c,cursor:'pointer',borderRadius:2})
 
     return (
-        <div className="h-full flex flex-col bg-[#131722]">
-            {/* Header */}
-            <div className="h-10 border-b border-[#2a2e39] flex items-center px-4 justify-between bg-[#1e222d]">
-                <span className="text-sm font-bold text-[#d1d4dc]">Runs Dashboard</span>
-                <button onClick={fetchRuns} className="p-1 hover:bg-[#2a2e39] rounded">
-                    <RefreshCw size={14} className={`text-[#787b86] ${loading ? 'animate-spin' : ''}`} />
+        <div style={S}>
+            <div style={HDR}>
+                <span style={{fontSize:11,color:GREEN,letterSpacing:'0.1em'}}>RD</span>
+                <span style={{fontSize:13,color:TEXT,fontWeight:700}}>RUNS DASHBOARD</span>
+                <span style={{fontSize:10,color:SUBTLE}}>APEX STRATEGY ENGINE</span>
+                <div style={{flex:1}}/>
+                {loading&&<span style={{fontSize:10,color:AMBER}}>POLLING</span>}
+                <button onClick={fetchRuns} style={{fontSize:10,fontFamily:MONO,background:PANEL,
+                    border:`1px solid ${BORDER}`,color:BLUE,padding:'3px 8px',cursor:'pointer',borderRadius:2}}>
+                    REFRESH
                 </button>
             </div>
 
-            {/* Runs List */}
-            <div className="flex-1 overflow-auto">
-                <table className="w-full text-xs">
-                    <thead className="bg-[#1e222d] sticky top-0">
-                        <tr className="text-[#787b86] text-left">
-                            <th className="p-3">Status</th>
-                            <th className="p-3">Run ID</th>
-                            <th className="p-3">Strategy</th>
-                            <th className="p-3">Type</th>
-                            <th className="p-3">Started</th>
-                            <th className="p-3">Heartbeat</th>
-                            <th className="p-3">Errors</th>
-                            <th className="p-3">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {runs.map((run) => (
-                            <tr
-                                key={run.run_id}
-                                onClick={() => { setSelectedRun(run.run_id); fetchLogs(run.run_id); }}
-                                className={`border-b border-[#2a2e39] hover:bg-[#1e222d] cursor-pointer ${selectedRun === run.run_id ? 'bg-[#2962ff]/10' : ''}`}
-                            >
-                                <td className="p-3">
-                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] ${getStatusColor(run.status)}`}>
-                                        {getStatusIcon(run.status)}
-                                        {run.status}
-                                    </span>
-                                </td>
-                                <td className="p-3 font-mono text-[#d1d4dc]">{run.run_id}</td>
-                                <td className="p-3 text-[#d1d4dc]">{run.strategy_id}</td>
-                                <td className="p-3">
-                                    <span className={`px-2 py-0.5 rounded text-[10px] ${run.run_type === 'backtest' ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                                        {run.run_type}
-                                    </span>
-                                </td>
-                                <td className="p-3 text-[#787b86]">{formatTime(run.started_at)}</td>
-                                <td className="p-3 text-[#787b86]">{formatTime(run.last_heartbeat)}</td>
-                                <td className="p-3">
-                                    {run.error_count > 0 && (
-                                        <span className="text-red-400">{run.error_count}</span>
-                                    )}
-                                </td>
-                                <td className="p-3">
-                                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                        {run.status === 'pending' && (
-                                            <button onClick={() => handleAction(run.run_id, 'start')} className="p-1 hover:bg-[#2a2e39] rounded">
-                                                <Play size={12} className="text-green-400" />
-                                            </button>
-                                        )}
-                                        {run.status === 'running' && (
-                                            <>
-                                                <button onClick={() => handleAction(run.run_id, 'pause')} className="p-1 hover:bg-[#2a2e39] rounded">
-                                                    <Pause size={12} className="text-yellow-400" />
-                                                </button>
-                                                <button onClick={() => handleAction(run.run_id, 'stop')} className="p-1 hover:bg-[#2a2e39] rounded">
-                                                    <Square size={12} className="text-red-400" />
-                                                </button>
-                                            </>
-                                        )}
-                                        {run.status === 'paused' && (
-                                            <>
-                                                <button onClick={() => handleAction(run.run_id, 'resume')} className="p-1 hover:bg-[#2a2e39] rounded">
-                                                    <Play size={12} className="text-green-400" />
-                                                </button>
-                                                <button onClick={() => handleAction(run.run_id, 'stop')} className="p-1 hover:bg-[#2a2e39] rounded">
-                                                    <Square size={12} className="text-red-400" />
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {runs.length === 0 && (
-                            <tr>
-                                <td colSpan={8} className="p-8 text-center text-[#787b86]">
-                                    No runs found. Create a run from the Strategy IDE.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+            {/* Stats strip */}
+            <div style={{display:'flex',gap:8,padding:'8px 14px',borderBottom:`1px solid ${BORDER}`,
+                background:PANEL,flexShrink:0}}>
+                <StatCard label="Total Runs" value={String(runs.length)} color={TEXT}/>
+                <StatCard label="Running" value={String(running.length)} color={running.length>0?GREEN:TEXT}/>
+                <StatCard label="Errors" value={String(errored.length)} color={errored.length>0?RED:TEXT}/>
+                <StatCard label="Backtests" value={String(runs.filter(r=>r.run_type==='backtest').length)} color={PURPLE}/>
+                <StatCard label="Paper" value={String(runs.filter(r=>r.run_type==='paper').length)} color={ORANGE}/>
             </div>
 
-            {/* Logs Panel */}
-            {selectedRun && (
-                <div className="h-40 border-t border-[#2a2e39] bg-[#0d1117] overflow-y-auto">
-                    <div className="px-3 py-1 border-b border-[#2a2e39] text-[10px] text-[#787b86] uppercase font-bold sticky top-0 bg-[#0d1117] flex justify-between">
-                        <span>Logs: {selectedRun}</span>
-                        <button onClick={() => setSelectedRun(null)} className="text-[#787b86] hover:text-white">×</button>
+            <div style={TABBAR}>
+                {TABS.map(t=><button key={t} style={tbtn(tab===t)} onClick={()=>setTab(t)}>{t}</button>)}
+            </div>
+
+            {/* LOGS tab */}
+            {tab==='LOGS'&&(
+                <div style={{flex:1,display:'flex',flexDirection:'column' as const}}>
+                    <div style={{padding:'4px 14px',borderBottom:`1px solid ${BORDER}`,background:PANEL,
+                        fontSize:10,color:SUBTLE,display:'flex',alignItems:'center',gap:8}}>
+                        <span>LOG STREAM</span>
+                        {selectedRun&&<span style={{color:BLUE}}>{selectedRun}</span>}
+                        <button onClick={()=>{setSelectedRun(null);setLogs([]);}}
+                            style={{marginLeft:'auto',background:'none',border:'none',color:SUBTLE,cursor:'pointer',fontFamily:MONO,fontSize:9}}>
+                            CLEAR
+                        </button>
                     </div>
-                    <div className="p-2 font-mono text-xs">
-                        {logs.map((log, i) => (
-                            <div key={i} className={`py-0.5 ${log.level === 'error' ? 'text-red-400' : log.level === 'warning' ? 'text-yellow-400' : 'text-[#787b86]'}`}>
-                                [{log.timestamp}] [{log.level?.toUpperCase()}] {log.message}
+                    <div style={{flex:1,overflowY:'auto' as const,padding:'8px 14px',fontSize:11,fontFamily:MONO,lineHeight:1.5}}>
+                        {logs.length===0&&<span style={{color:SUBTLE}}>SELECT A RUN FROM THE TABLE THEN CLICK THIS TAB</span>}
+                        {logs.map((l,i)=>(
+                            <div key={i} style={{color:l.level==='error'?RED:l.level==='warning'?AMBER:TEXT,padding:'1px 0'}}>
+                                [{l.timestamp}] [{l.level?.toUpperCase().padEnd(5)}] {l.message}
                             </div>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* Table tabs */}
+            {tab!=='LOGS'&&(
+                <div style={{flex:1,overflowY:'auto' as const}}>
+                    {displayRuns.length===0&&(
+                        <div style={{padding:40,textAlign:'center' as const,fontSize:12,color:SUBTLE}}>
+                            {loading?'LOADING...':'NO RUNS FOUND'}
+                        </div>
+                    )}
+                    {displayRuns.length>0&&(
+                        <table style={{width:'100%',borderCollapse:'collapse'}}>
+                            <thead style={{position:'sticky' as const,top:0,background:PANEL}}>
+                                <tr>
+                                    <Th ch="Status"/>
+                                    <Th ch="Run ID"/>
+                                    <Th ch="Strategy"/>
+                                    <Th ch="Type"/>
+                                    <Th ch="Started"/>
+                                    <Th ch="Duration"/>
+                                    <Th ch="Heartbeat"/>
+                                    <Th c={{textAlign:'right'}} ch="Errors"/>
+                                    <Th c={{textAlign:'right'}} ch="Restarts"/>
+                                    <Th ch="Actions"/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayRuns.map(run=>(
+                                    <tr key={run.run_id}
+                                        onClick={()=>{setSelectedRun(run.run_id);fetchLogs(run.run_id);setTab('LOGS');}}
+                                        style={{cursor:'pointer',background:selectedRun===run.run_id?`${AMBER}11`:'transparent'}}>
+                                        <Td ch={<RunStatusBadge status={run.status}/>}/>
+                                        <Td c={{color:BLUE,fontSize:10}} ch={run.run_id.substring(0,20)}/>
+                                        <Td c={{fontSize:10}} ch={run.strategy_id}/>
+                                        <Td ch={<TypeBadge t={run.run_type}/>}/>
+                                        <Td c={{fontSize:10,color:SUBTLE}} ch={fmtTime(run.started_at)}/>
+                                        <Td c={{color:run.status==='running'?GREEN:TEXT}} ch={fmtDuration(run)}/>
+                                        <Td c={{fontSize:10,color:SUBTLE}} ch={fmtTime(run.last_heartbeat)}/>
+                                        <Td c={{textAlign:'right',color:run.error_count>0?RED:SUBTLE}} ch={run.error_count||'â€”'}/>
+                                        <Td c={{textAlign:'right',color:run.restart_count>0?AMBER:SUBTLE}} ch={run.restart_count||'â€”'}/>
+                                        <Td ch={
+                                            <div style={{display:'flex',gap:4}} onClick={e=>e.stopPropagation()}>
+                                                {run.status==='pending'&&(
+                                                    <button onClick={()=>handleAction(run.run_id,'start')} style={actBtn(GREEN)}>â–¶</button>
+                                                )}
+                                                {run.status==='running'&&(
+                                                    <>
+                                                        <button onClick={()=>handleAction(run.run_id,'pause')} style={actBtn(AMBER)}>â¸</button>
+                                                        <button onClick={()=>handleAction(run.run_id,'stop')} style={actBtn(RED)}>â– </button>
+                                                    </>
+                                                )}
+                                                {run.status==='paused'&&(
+                                                    <>
+                                                        <button onClick={()=>handleAction(run.run_id,'resume')} style={actBtn(GREEN)}>â–¶</button>
+                                                        <button onClick={()=>handleAction(run.run_id,'stop')} style={actBtn(RED)}>â– </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        }/>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             )}
         </div>

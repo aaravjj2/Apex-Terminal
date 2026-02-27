@@ -360,6 +360,9 @@ def create_app() -> FastAPI:
     app.include_router(reports.router, prefix="/api/v1", tags=["reports"])
     app.include_router(health_router, prefix="/api/v1", tags=["health"])
     app.include_router(options.router, prefix="/api/v1", tags=["options"])
+    # ── Real BSM options chain (POST /api/v4/options/chain) ──────────────────
+    from .routes.options_chain_v4 import router as options_chain_v4_router
+    app.include_router(options_chain_v4_router, tags=["options-chain-v4"])
     app.include_router(profiles.router, prefix="/api/v1/profiles", tags=["profiles"])
     app.include_router(patterns.router, prefix="/api/v1/patterns", tags=["patterns"])
     app.include_router(fundamentals.router, prefix="/api/v1/fundamentals", tags=["fundamentals"])
@@ -630,6 +633,19 @@ def create_app() -> FastAPI:
     from .routes.market_quote import router as market_quote_router
     app.include_router(market_quote_router, tags=["market-quote"])
     
+    # ── v4 Engines: TA, Options, Risk, Screener, Portfolio, Backtest ──────────
+    try:
+        from .routes import ta_indicators_v4, options_v4, risk_v4, screener_v4, portfolio_v4, backtest_v4
+        app.include_router(ta_indicators_v4.router, tags=["ta-indicators-v4"])
+        app.include_router(options_v4.router,       tags=["options-v4"])
+        app.include_router(risk_v4.router,          tags=["risk-v4"])
+        app.include_router(screener_v4.router,      tags=["screener-v4"])
+        app.include_router(portfolio_v4.router,     tags=["portfolio-v4"])
+        app.include_router(backtest_v4.router,       tags=["backtest-v4"])
+    except Exception as _v4_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"v4 engine routes not loaded: {_v4_err}")
+
     # ── Nuclear Compatibility endpoints (backtest aliases, indicators, etc.) ──
     from .routes.nuclear_compat import router as nuclear_compat_router
     app.include_router(nuclear_compat_router, tags=["nuclear-compat"])

@@ -1,120 +1,172 @@
-import { History, Layers, Bell, Settings, FileText, Wallet, ChevronLeft, ChevronRight, BarChart3, Grid3X3, Bot, AlertTriangle, TrendingUp, Cpu } from 'lucide-react';
-import { cn } from '../../../ui/utils';
+﻿// Bloomberg palette
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
+import React, { useState } from 'react';
 import { useAppStore } from '../../../state/appStore';
 
 export type ViewId = 'monitor' | 'dashboard' | 'options' | 'replay' | 'strategies' | 'alerts' | 'portfolio' | 'reports' | 'automation' | 'incidents' | 'autopilot' | 'settings';
 
 interface LeftNavProps {
-    activeView: ViewId;
-    onViewChange: (view: ViewId) => void;
+  activeView: ViewId;
+  onViewChange: (view: ViewId) => void;
 }
 
-interface NavItemProps {
-    id: ViewId;
-    icon: React.ReactNode;
-    label: string;
-    shortcut?: string;
-    activeView: ViewId;
-    onViewChange: (view: ViewId) => void;
-    expanded: boolean;
-}
-
-const navItems: { id: ViewId; icon: React.ReactNode; label: string; shortcut: string }[] = [
-    { id: 'monitor', icon: <BarChart3 size={20} />, label: 'Chart', shortcut: '⌘1' },
-    { id: 'dashboard', icon: <Grid3X3 size={20} />, label: 'Dashboard', shortcut: '⌘2' },
-    { id: 'options', icon: <TrendingUp size={20} />, label: 'Options', shortcut: '⌘3' },
-    { id: 'autopilot', icon: <Cpu size={20} />, label: 'Autopilot', shortcut: '⌘0' },
-    { id: 'replay', icon: <History size={20} />, label: 'Replay', shortcut: '⌘4' },
-    { id: 'strategies', icon: <Layers size={20} />, label: 'Strategies', shortcut: '⌘5' },
-    { id: 'alerts', icon: <Bell size={20} />, label: 'Alerts', shortcut: '⌘6' },
-    { id: 'portfolio', icon: <Wallet size={20} />, label: 'Portfolio', shortcut: '⌘7' },
-    { id: 'reports', icon: <FileText size={20} />, label: 'Reports', shortcut: '' },
-    { id: 'automation', icon: <Bot size={20} />, label: 'Automation', shortcut: '⌘8' },
-    { id: 'incidents', icon: <AlertTriangle size={20} />, label: 'Incidents', shortcut: '⌘9' },
+const NAV_ITEMS: { id: ViewId; icon: string; label: string; shortcut: string; color: string }[] = [
+  { id: 'monitor',    icon: 'â—ˆ', label: 'Chart',      shortcut: 'âŒ˜1', color: BLUE },
+  { id: 'dashboard',  icon: 'âŠž', label: 'Dashboard',  shortcut: 'âŒ˜2', color: AMBER },
+  { id: 'options',    icon: 'â—‰', label: 'Options',    shortcut: 'âŒ˜3', color: GREEN },
+  { id: 'autopilot',  icon: 'âŠ™', label: 'Autopilot',  shortcut: 'âŒ˜0', color: '#ab47bc' },
+  { id: 'replay',     icon: 'â–·', label: 'Replay',     shortcut: 'âŒ˜4', color: BLUE },
+  { id: 'strategies', icon: 'âŸ‘', label: 'Strategies', shortcut: 'âŒ˜5', color: AMBER },
+  { id: 'alerts',     icon: 'âš‘', label: 'Alerts',     shortcut: 'âŒ˜6', color: RED },
+  { id: 'portfolio',  icon: 'â—«', label: 'Portfolio',  shortcut: 'âŒ˜7', color: GREEN },
+  { id: 'reports',    icon: 'â‰¡', label: 'Reports',    shortcut: '',   color: SUBTLE },
+  { id: 'automation', icon: 'âŠ¶', label: 'Automation', shortcut: 'âŒ˜8', color: '#ab47bc' },
+  { id: 'incidents',  icon: 'âš ', label: 'Incidents',  shortcut: 'âŒ˜9', color: RED },
 ];
 
-function NavItem({ id, icon, label, shortcut, activeView, onViewChange, expanded }: NavItemProps) {
-    const isActive = activeView === id;
-
-    return (
-        <button
-            onClick={() => onViewChange(id)}
-            title={!expanded ? `${label} ${shortcut}` : undefined}
-            data-testid={`nav-item-${id}`}
-            className={cn(
-                "relative flex items-center gap-3 rounded-lg transition-all w-full",
-                expanded ? "px-3 py-2.5" : "w-12 h-12 justify-center",
-                isActive
-                    ? "text-brand bg-brand/10"
-                    : "text-text-secondary hover:text-text hover:bg-element-bg"
-            )}
-        >
-            {/* Active indicator */}
-            {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-brand rounded-r" />
-            )}
-
-            <span className="shrink-0">{icon}</span>
-
-            {expanded && (
-                <>
-                    <span className="text-sm font-medium">{label}</span>
-                    {shortcut && (
-                        <span className="ml-auto text-xxs text-text-muted">{shortcut}</span>
-                    )}
-                </>
-            )}
-        </button>
-    );
-}
-
 export function LeftNav({ activeView, onViewChange }: LeftNavProps) {
-    const { leftNavExpanded, toggleLeftNav } = useAppStore();
+  const { leftNavExpanded, toggleLeftNav } = useAppStore();
+  const [hovered, setHovered] = useState<ViewId | null>(null);
+  const expanded = leftNavExpanded;
 
-    return (
-        <nav className={cn(
-            "bg-panel-bg border-r border-border flex flex-col py-3 shrink-0 z-dock transition-all duration-200",
-            leftNavExpanded ? "w-60 px-2" : "w-16 items-center"
-        )}>
-            {/* Main nav items */}
-            <div className="flex flex-col gap-1">
-                {navItems.map(item => (
-                    <NavItem
-                        key={item.id}
-                        {...item}
-                        activeView={activeView}
-                        onViewChange={onViewChange}
-                        expanded={leftNavExpanded}
-                    />
-                ))}
-            </div>
+  return (
+    <nav style={{
+      background: PANEL, borderRight: `1px solid ${BORDER}`,
+      display: 'flex', flexDirection: 'column', padding: '8px 0',
+      width: expanded ? 200 : 52, flexShrink: 0,
+      transition: 'width 0.2s ease', fontFamily: MONO, zIndex: 40,
+      overflowX: 'hidden',
+    }}>
+      {/* Logo / brand strip */}
+      <div style={{
+        padding: expanded ? '10px 14px 12px' : '10px 0 12px',
+        display: 'flex', alignItems: 'center',
+        justifyContent: expanded ? 'flex-start' : 'center',
+        borderBottom: `1px solid ${BORDER}`, marginBottom: 6,
+      }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: 4,
+          background: AMBER, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: 14, fontWeight: 900,
+          color: BG, flexShrink: 0,
+        }}>A</div>
+        {expanded && (
+          <div style={{ marginLeft: 10 }}>
+            <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, letterSpacing: 2 }}>APEX</div>
+            <div style={{ fontSize: 9, color: SUBTLE, letterSpacing: 1 }}>TERMINAL</div>
+          </div>
+        )}
+      </div>
 
-            <div className="flex-1" />
+      {/* Main nav items */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
+        {NAV_ITEMS.map(item => {
+          const isActive = activeView === item.id;
+          const isHov = hovered === item.id;
+          return (
+            <button
+              key={item.id}
+              data-testid={`nav-item-${item.id}`}
+              onClick={() => onViewChange(item.id)}
+              title={!expanded ? `${item.label}${item.shortcut ? '  ' + item.shortcut : ''}` : undefined}
+              onMouseEnter={() => setHovered(item.id)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                display: 'flex', alignItems: 'center',
+                width: '100%', padding: expanded ? '8px 10px' : '10px 0',
+                justifyContent: expanded ? 'flex-start' : 'center',
+                background: isActive ? '#1a1a1a' : isHov ? '#161616' : 'transparent',
+                border: 'none', borderRadius: 4, cursor: 'pointer',
+                borderLeft: isActive ? `3px solid ${item.color}` : '3px solid transparent',
+                marginBottom: 2, transition: 'all 0.12s',
+                position: 'relative',
+              }}
+            >
+              <span style={{
+                fontSize: 15, color: isActive ? item.color : isHov ? TEXT : SUBTLE,
+                flexShrink: 0, lineHeight: 1, transition: 'color 0.12s',
+              }}>{item.icon}</span>
+              {expanded && (
+                <>
+                  <span style={{
+                    marginLeft: 10, fontSize: 11, color: isActive ? TEXT : isHov ? TEXT : '#888',
+                    fontWeight: isActive ? 600 : 400, letterSpacing: 0.5, flex: 1,
+                    textAlign: 'left',
+                  }}>{item.label}</span>
+                  {item.shortcut && (
+                    <span style={{ fontSize: 9, color: SUBTLE }}>{item.shortcut}</span>
+                  )}
+                </>
+              )}
+              {isActive && !expanded && (
+                <div style={{
+                  position: 'absolute', right: 0, top: '25%', height: '50%',
+                  width: 2, background: item.color, borderRadius: '2px 0 0 2px',
+                }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-            {/* Bottom items */}
-            <div className="flex flex-col gap-1">
-                <NavItem
-                    id="settings"
-                    icon={<Settings size={20} />}
-                    label="Settings"
-                    shortcut=""
-                    activeView={activeView}
-                    onViewChange={onViewChange}
-                    expanded={leftNavExpanded}
-                />
+      {/* Divider */}
+      <div style={{ height: 1, background: BORDER, margin: '6px 8px' }} />
 
-                {/* Collapse toggle */}
-                <button
-                    onClick={toggleLeftNav}
-                    className={cn(
-                        "flex items-center justify-center text-text-secondary hover:text-text hover:bg-element-bg rounded-lg transition-colors mt-2",
-                        leftNavExpanded ? "py-2" : "w-12 h-10"
-                    )}
-                    title={leftNavExpanded ? "Collapse" : "Expand"}
-                >
-                    {leftNavExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-                </button>
-            </div>
-        </nav>
-    );
-}
+      {/* Settings */}
+      <div style={{ padding: '0 4px' }}>
+        {(['settings'] as ViewId[]).map(id => {
+          const isActive = activeView === id;
+          const isHov = hovered === id;
+          return (
+            <button
+              key={id}
+              data-testid={`nav-item-${id}`}
+              onClick={() => onViewChange(id)}
+              onMouseEnter={() => setHovered(id)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                display: 'flex', alignItems: 'center', width: '100%',
+                padding: expanded ? '8px 10px' : '10px 0',
+                justifyContent: expanded ? 'flex-start' : 'center',
+                background: isActive ? '#1a1a1a' : isHov ? '#161616' : 'transparent',
+                border: 'none', borderRadius: 4, cursor: 'pointer',
+                borderLeft: isActive ? `3px solid ${SUBTLE}` : '3px solid transparent',
+                marginBottom: 2,
+              }}
+            >
+              <span style={{ fontSize: 14, color: isHov ? TEXT : SUBTLE }}>âš™</span>
+              {expanded && <span style={{ marginLeft: 10, fontSize: 11, color: isHov ? TEXT : SUBTLE }}>Settings</span>}
+            </button>
+          );
+        })}
+
+        {/* Collapse/expand toggle */}
+        <button
+          onClick={toggleLeftNav}
+          title={expanded ? 'Collapse' : 'Expand'}
+          style={{
+            display: 'flex', alignItems: 'center', width: '100%',
+            padding: expanded ? '8px 10px' : '10px 0',
+            justifyContent: expanded ? 'flex-start' : 'center',
+            background: 'transparent', border: 'none', borderLeft: '3px solid transparent',
+            borderRadius: 4, cursor: 'pointer', marginBottom: 4,
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#161616')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        >
+          <span style={{ fontSize: 13, color: SUBTLE }}>{expanded ? 'â—€' : 'â–¶'}</span>
+          {expanded && <span style={{ marginLeft: 10, fontSize: 10, color: SUBTLE }}>COLLAPSE</span>}
+        </button>
+      </div>
+    </nav>
+  );

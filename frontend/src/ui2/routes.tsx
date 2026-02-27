@@ -197,6 +197,10 @@ import {
   PlatformDebtUI2,
   OperatorEnableUI2,
   GlobalReadinessUI2,
+  // Husk preview components
+  TradingUI2Husk,
+  PortfolioUI2Husk,
+  DashboardUI2Husk,
 } from './pages';
 import TerraCodeJudge from './pages/TerraCodeJudge';
 
@@ -206,6 +210,10 @@ export function UI2Routes() {
       <Route path="/" element={<AppShellUI2 />}>
         <Route index element={<Navigate to="/ui2/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardUI2 />} />
+        {/* Husk preview routes */}
+        <Route path="husk/dashboard" element={<DashboardUI2Husk />} />
+        <Route path="husk/trading" element={<TradingUI2Husk />} />
+        <Route path="husk/portfolio" element={<PortfolioUI2Husk />} />
         <Route path="trading" element={<TradingUI2 />} />
         <Route path="research" element={<ResearchUI2 />} />
         <Route path="risk" element={<RiskUI2 />} />

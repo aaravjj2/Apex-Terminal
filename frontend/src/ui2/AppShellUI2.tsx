@@ -1428,8 +1428,8 @@ export function AppShellUI2() {
         width: '100vw',
         height: '100vh',
         display: 'grid',
-        gridTemplateRows: '48px 32px 1fr 240px',
-        gridTemplateColumns: '56px auto 1fr auto',
+        gridTemplateRows: '36px 28px 1fr 200px',
+        gridTemplateColumns: '48px auto 1fr auto',
         gridTemplateAreas: `
           "topbar topbar topbar topbar"
           "tape tape tape tape"
@@ -1438,6 +1438,7 @@ export function AppShellUI2() {
         `,
         background: 'var(--ui2-bg-base)',
         overflow: 'hidden',
+        fontFamily: "'IBM Plex Mono', 'Roboto Mono', monospace",
       }}
     >
       {/* TopBar */}
@@ -1446,33 +1447,36 @@ export function AppShellUI2() {
         style={{
           gridArea: 'topbar',
           background: 'var(--ui2-bg-elevated)',
-          borderBottom: '1px solid var(--ui2-border)',
+          borderBottom: '1px solid var(--ui2-border-strong)',
           display: 'flex',
           alignItems: 'center',
-          padding: '0 16px',
-          gap: '16px',
+          padding: '0 12px',
+          gap: '12px',
         }}
       >
-        {/* Brand */}
+        {/* Bloomberg APEX Brand */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
+            flexShrink: 0,
           }}
         >
           <div
             style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: 'var(--ui2-radius-md)',
-              background: 'linear-gradient(135deg, var(--ui2-brand-primary) 0%, var(--ui2-brand-hover) 100%)',
+              width: '22px',
+              height: '22px',
+              background: 'var(--ui2-amber)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '14px',
+              fontSize: '11px',
               fontWeight: 700,
-              color: 'white',
+              color: '#000',
+              fontFamily: "'IBM Plex Mono', monospace",
+              letterSpacing: '-0.03em',
+              flexShrink: 0,
             }}
           >
             A
@@ -1480,69 +1484,81 @@ export function AppShellUI2() {
           <div>
             <div
               style={{
-                fontSize: '14px',
+                fontSize: '11px',
                 fontWeight: 700,
-                color: 'var(--ui2-text-primary)',
+                color: 'var(--ui2-amber)',
                 lineHeight: 1,
+                fontFamily: "'IBM Plex Mono', monospace",
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
               }}
             >
-              Apex Terminal
+              APEX
             </div>
             <div
               style={{
-                fontSize: '10px',
-                color: 'var(--ui2-text-tertiary)',
+                fontSize: '8px',
+                color: 'var(--ui2-text-muted)',
                 lineHeight: 1,
-                marginTop: '2px',
+                marginTop: '1px',
+                fontFamily: "'IBM Plex Mono', monospace",
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
               }}
             >
-              Professional Edition
+              TERMINAL
             </div>
           </div>
         </div>
 
-        {/* Command Search Input (triggers palette) */}
+        {/* Bloomberg Command Search */}
         <button
           onClick={() => setCommandPaletteOpen(true)}
           data-testid="ui2-command-trigger"
           aria-label="Open command palette (Ctrl+K)"
           style={{
             flex: 1,
-            maxWidth: '600px',
-            padding: '6px 12px',
-            fontSize: '13px',
+            maxWidth: '500px',
+            padding: '4px 10px',
+            fontSize: '11px',
+            fontFamily: "'IBM Plex Mono', monospace",
             background: 'var(--ui2-bg-input)',
             border: '1px solid var(--ui2-border)',
-            borderRadius: 'var(--ui2-radius-md)',
-            color: 'var(--ui2-text-tertiary)',
+            borderRadius: '0',
+            color: 'var(--ui2-text-muted)',
             textAlign: 'left',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            transition: 'border-color var(--ui2-transition-fast)',
+            transition: 'border-color 80ms ease, box-shadow 80ms ease',
+            letterSpacing: '0.03em',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--ui2-border-strong)';
+            e.currentTarget.style.borderColor = 'var(--ui2-amber)';
+            e.currentTarget.style.boxShadow = '0 0 8px rgba(255,153,0,0.15)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.borderColor = 'var(--ui2-border)';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🔍</span>
-            <span>Search or run command...</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ui2-text-muted)' }}>
+            <span style={{ fontSize: '10px' }}>⎈</span>
+            <span>SEARCH / COMMAND...</span>
           </div>
           <div
             style={{
-              fontSize: '11px',
-              padding: '2px 6px',
-              background: 'var(--ui2-bg-elevated)',
-              borderRadius: 'var(--ui2-radius-sm)',
-              color: 'var(--ui2-text-secondary)',
+              fontSize: '9px',
+              padding: '1px 5px',
+              background: 'var(--ui2-bg-panel)',
+              border: '1px solid var(--ui2-border)',
+              color: 'var(--ui2-amber)',
+              fontFamily: "'IBM Plex Mono', monospace",
+              letterSpacing: '0.06em',
             }}
           >
-            Ctrl+K
+            CTRL+K
           </div>
         </button>
 
@@ -1552,15 +1568,15 @@ export function AppShellUI2() {
         <div
           data-testid="ui2-active-symbol"
           style={{
-            padding: '4px 10px',
-            background: 'var(--ui2-bg-panel)',
-            border: '1px solid var(--ui2-brand-primary, #6366f1)',
-            borderRadius: 'var(--ui2-radius-md)',
-            fontSize: '13px',
+            padding: '3px 8px',
+            background: 'var(--ui2-amber-ghost)',
+            border: '1px solid var(--ui2-amber)',
+            borderRadius: '0',
+            fontSize: '11px',
             fontWeight: 700,
-            color: 'var(--ui2-brand-primary, #6366f1)',
-            fontFamily: 'monospace',
-            letterSpacing: '0.5px',
+            color: 'var(--ui2-amber)',
+            fontFamily: "'IBM Plex Mono', monospace",
+            letterSpacing: '0.06em',
           }}
         >
           {useContextBus((s) => s.activeSymbol)}
@@ -1586,16 +1602,19 @@ export function AppShellUI2() {
 
           {/* Connectivity (v1.94: Real status from tradingStore) */}
           <div 
-            className={`ui2-badge ${
-              connectionStatus === 'connected' ? 'ui2-badge-success' :
-              connectionStatus === 'connecting' ? 'ui2-badge-warning' :
-              connectionStatus === 'fallback' ? 'ui2-badge-warning' :
-              'ui2-badge-neutral'
-            }`} 
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              fontSize: '9px', fontFamily: "'IBM Plex Mono', monospace",
+              fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+              padding: '2px 6px',
+              background: connectionStatus === 'connected' ? 'rgba(0,216,138,0.08)' : 'rgba(255,153,0,0.08)',
+              border: `1px solid ${connectionStatus === 'connected' ? 'rgba(0,216,138,0.3)' : 'rgba(255,153,0,0.3)'}`,
+              color: connectionStatus === 'connected' ? 'var(--ui2-green)' : 'var(--ui2-amber)',
+            }} 
             data-testid="ui2-conn-status"
             title={`Connection: ${connectionStatus}`}
           >
-            <span>{connectionStatus === 'connected' ? '⚡' : connectionStatus === 'connecting' ? '⏳' : connectionStatus === 'fallback' ? '📡' : '○'}</span>
+            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
             <span>
               {connectionStatus === 'connected' ? 'WS' :
                connectionStatus === 'connecting' ? 'Connecting' :
@@ -1609,31 +1628,31 @@ export function AppShellUI2() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '4px 10px',
+              gap: '6px',
+              padding: '3px 8px',
               background: 'var(--ui2-bg-panel)',
-              borderRadius: 'var(--ui2-radius-md)',
               border: '1px solid var(--ui2-border)',
+              borderRadius: '0',
             }}
           >
             <div
               style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--ui2-brand-primary) 0%, var(--ui2-brand-hover) 100%)',
+                width: '18px',
+                height: '18px',
+                background: 'var(--ui2-amber)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '10px',
-                color: 'white',
-                fontWeight: 600,
+                fontSize: '8px',
+                color: '#000',
+                fontWeight: 700,
+                fontFamily: "'IBM Plex Mono', monospace",
               }}
             >
               {APEX_USER.name.slice(0, 2).toUpperCase()}
             </div>
-            <span style={{ color: 'var(--ui2-text-primary)', fontSize: '13px', fontWeight: 500 }}>
-              {APEX_USER.name}
+            <span style={{ color: 'var(--ui2-text-secondary)', fontSize: '10px', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              {APEX_USER.name.split(' ')[0]}
             </span>
           </div>
         </div>
@@ -1654,8 +1673,8 @@ export function AppShellUI2() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          paddingTop: '8px',
-          gap: '4px',
+          paddingTop: '6px',
+          gap: '2px',
           overflowY: 'auto',
           overflowX: 'hidden',
         }}
@@ -1667,7 +1686,7 @@ export function AppShellUI2() {
           return (
             <div key={workspace.id} style={{ display: 'contents' }}>
               {showDivider && (
-                <div style={{ width: '32px', height: '1px', background: 'var(--ui2-border)', margin: '4px 0' }} />
+                <div style={{ width: '28px', height: '1px', background: 'var(--ui2-border)', margin: '3px 0' }} />
               )}
               <button
                 data-testid={`ui2-rail-${workspace.id}`}
@@ -1675,28 +1694,33 @@ export function AppShellUI2() {
                 title={workspace.label}
                 aria-label={workspace.label}
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '40px',
+                  height: '32px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '18px',
-                  background: isActive ? 'var(--ui2-bg-selected)' : 'transparent',
+                  fontSize: '14px',
+                  background: isActive ? 'var(--ui2-amber-hover)' : 'transparent',
                   border: 'none',
-                  borderRadius: 'var(--ui2-radius-md)',
+                  borderRadius: '0',
                   cursor: 'pointer',
-                  transition: 'background 0.15s',
-                  borderLeft: isActive ? '3px solid var(--ui2-brand)' : '3px solid transparent',
+                  transition: 'all 80ms ease',
+                  borderLeft: isActive ? '2px solid var(--ui2-amber)' : '2px solid transparent',
                   flexShrink: 0,
+                  filter: isActive ? 'none' : 'grayscale(0.6) opacity(0.7)',
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.background = 'var(--ui2-bg-hover)';
+                    e.currentTarget.style.background = 'var(--ui2-amber-ghost)';
+                    e.currentTarget.style.borderLeftColor = 'rgba(255,153,0,0.3)';
+                    e.currentTarget.style.filter = 'none';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderLeftColor = 'transparent';
+                    e.currentTarget.style.filter = 'grayscale(0.6) opacity(0.7)';
                   }
                 }}
               >

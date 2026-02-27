@@ -1,19 +1,16 @@
-/**
- * Portfolio Attach Selector (v1.21)
- * 
- * Provides a dropdown to attach/select a portfolio in session-only mode.
- * Used in Risk Desk and Backtest panels to associate a portfolio with analysis runs.
- * 
- * Requirements:
- * - DEMO mode: defaults to DEMO-PORT-001 deterministically
- * - Session-only: no persistence, React state only
- * - Stable ordering: by portfolio_id ascending
- * - All selectors ONLY use data-testid
- */
+﻿import React from 'react';
 
-import { useState, useEffect } from 'react';
-import { Wallet, ChevronDown } from 'lucide-react';
-import { API_BASE } from '../../config/api';
+// Bloomberg palette
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
+const API_BASE = '/api/v1';
 
 interface Portfolio {
   portfolio_id: string;
@@ -24,9 +21,7 @@ interface Portfolio {
 }
 
 interface PortfolioAttachSelectorProps {
-  /** Callback when portfolio selection changes */
   onPortfolioChange: (portfolioId: string) => void;
-  /** Currently selected portfolio ID */
   currentPortfolioId?: string;
 }
 
@@ -34,119 +29,106 @@ export function PortfolioAttachSelector({
   onPortfolioChange,
   currentPortfolioId,
 }: PortfolioAttachSelectorProps) {
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [portfolios, setPortfolios] = React.useState<Portfolio[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [hovered, setHovered] = React.useState<string | null>(null);
 
-  useEffect(() => {
-    loadPortfolios();
-  }, []);
+  React.useEffect(() => { loadPortfolios(); }, []);
 
   const loadPortfolios = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/portfolios?sort_by=portfolio_id`, { signal: AbortSignal.timeout(3000) });
+      const res = await fetch(`${API_BASE}/portfolios?sort_by=portfolio_id`, { signal: AbortSignal.timeout(3000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const portfolioList = data.portfolios || [];
-      setPortfolios(portfolioList);
-
-      // Deterministic default: DEMO-PORT-001 if available and no current selection
-      if (!currentPortfolioId && portfolioList.length > 0) {
-        const defaultPortfolio = portfolioList.find((p: Portfolio) => p.portfolio_id === 'DEMO-PORT-001') || portfolioList[0];
-        onPortfolioChange(defaultPortfolio.portfolio_id);
+      const list: Portfolio[] = data.portfolios || [];
+      setPortfolios(list);
+      if (!currentPortfolioId && list.length > 0) {
+        const def = list.find(p => p.portfolio_id === 'DEMO-PORT-001') || list[0];
+        onPortfolioChange(def.portfolio_id);
       }
-    } catch (e) {
-      console.warn('Failed to load portfolios:', e);
-      const demoList = [{ portfolio_id: 'DEMO-PORT-001', name: 'Demo Portfolio', currency: 'USD', cash_balance: '100000', content_hash: null }];
-      setPortfolios(demoList);
-      // Deterministic default
-      if (!currentPortfolioId) {
-        onPortfolioChange('DEMO-PORT-001');
-      }
-    } finally {
-      setLoading(false);
-    }
+    } catch {
+      const demo: Portfolio[] = [{ portfolio_id: 'DEMO-PORT-001', name: 'Demo Portfolio', currency: 'USD', cash_balance: '100000', content_hash: null }];
+      setPortfolios(demo);
+      if (!currentPortfolioId) onPortfolioChange('DEMO-PORT-001');
+    } finally { setLoading(false); }
   };
 
   const currentPortfolio = portfolios.find(p => p.portfolio_id === currentPortfolioId);
 
-  const handleSelect = (portfolioId: string) => {
-    onPortfolioChange(portfolioId);
-    setIsOpen(false);
-  };
-
-  if (error) {
-    return (
-      <div data-testid="portfolio-attach-selector-error" className="text-red-500 text-sm">
-        {error}
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div data-testid="portfolio-attach-selector-loading" className="animate-pulse">
-        <div className="h-10 bg-gray-700 rounded w-48"></div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div data-testid="portfolio-attach-selector-loading" style={{ padding: 8, fontFamily: MONO }}>
+      <div style={{ height: 36, background: '#181818', borderRadius: 4, width: 200, animation: 'pulse 1.5s infinite' }} />
+    </div>
+  );
 
   return (
-    <div data-testid="portfolio-attach-selector" className="relative">
-      {/* Current Selection Display */}
+    <div data-testid="portfolio-attach-selector" style={{ position: 'relative', fontFamily: MONO }}>
+      {/* Trigger */}
       <button
         data-testid="portfolio-attach-current"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 transition-colors"
+        onClick={() => setIsOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px',
+          background: isOpen ? '#1a1a1a' : '#141414', border: `1px solid ${isOpen ? AMBER + '66' : BORDER}`,
+          borderRadius: 4, cursor: 'pointer', color: TEXT, fontSize: 11,
+          fontFamily: MONO, minWidth: 200,
+        }}
       >
-        <Wallet size={16} className="text-blue-400" />
-        <span className="text-sm font-medium">
-          {currentPortfolio ? currentPortfolio.name : 'Select Portfolio'}
-        </span>
-        <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span style={{ color: GREEN }}>â—«</span>
+        <span style={{ flex: 1, textAlign: 'left' }}>{currentPortfolio ? currentPortfolio.name : 'Select Portfolio'}</span>
+        <span style={{ color: SUBTLE, fontSize: 9 }}>{isOpen ? 'â–²' : 'â–¼'}</span>
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-72 bg-gray-800 border border-gray-600 rounded shadow-lg z-50">
-          <div className="max-h-64 overflow-y-auto">
-            {portfolios.map((portfolio) => (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, marginTop: 2,
+          width: 300, background: PANEL, border: `1px solid ${BORDER}`,
+          borderRadius: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.6)', zIndex: 50,
+          maxHeight: 260, overflowY: 'auto',
+        }}>
+          {portfolios.map(portfolio => {
+            const isActive = portfolio.portfolio_id === currentPortfolioId;
+            const isHov = hovered === portfolio.portfolio_id;
+            return (
               <button
                 key={portfolio.portfolio_id}
                 data-testid={`portfolio-attach-option-${portfolio.portfolio_id}`}
-                onClick={() => handleSelect(portfolio.portfolio_id)}
-                className={`w-full text-left px-3 py-2 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-b-0 ${
-                  portfolio.portfolio_id === currentPortfolioId ? 'bg-gray-700' : ''
-                }`}
+                onClick={() => { onPortfolioChange(portfolio.portfolio_id); setIsOpen(false); }}
+                onMouseEnter={() => setHovered(portfolio.portfolio_id)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '8px 12px',
+                  background: isActive ? '#1a1a1a' : isHov ? '#161616' : 'transparent',
+                  border: 'none', borderBottom: `1px solid ${BORDER}`,
+                  borderLeft: `3px solid ${isActive ? AMBER : 'transparent'}`,
+                  cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                }}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="text-sm font-medium">{portfolio.name}</div>
-                    <div className="text-xs text-gray-400">{portfolio.portfolio_id}</div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {portfolio.currency} {parseFloat(portfolio.cash_balance).toFixed(2)}
-                  </div>
+                <div>
+                  <div style={{ fontSize: 11, color: isActive ? AMBER : TEXT, fontWeight: isActive ? 600 : 400 }}>{portfolio.name}</div>
+                  <div style={{ fontSize: 9, color: SUBTLE, fontFamily: MONO }}>{portfolio.portfolio_id}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 10, color: GREEN }}>{portfolio.currency}</div>
+                  <div style={{ fontSize: 9, color: SUBTLE }}>${parseFloat(portfolio.cash_balance).toLocaleString('en-US', { minimumFractionDigits: 0 })}</div>
                 </div>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Attached Summary (below selector) */}
+      {/* Attached summary */}
       {currentPortfolio && (
-        <div data-testid="portfolio-attached-summary" className="mt-2 text-xs text-gray-400">
-          <div className="flex items-center gap-2">
-            <span>Attached:</span>
-            <span className="font-mono">{currentPortfolio.portfolio_id}</span>
-          </div>
+        <div data-testid="portfolio-attached-summary" style={{ marginTop: 6, fontSize: 9, color: SUBTLE, fontFamily: MONO }}>
+          <span>Attached: </span>
+          <span style={{ color: TEXT }}>{currentPortfolio.portfolio_id}</span>
           {currentPortfolio.content_hash && (
-            <div data-testid="portfolio-attached-checksum" className="font-mono text-gray-500 truncate">
-              {currentPortfolio.content_hash.substring(0, 16)}...
+            <div data-testid="portfolio-attached-checksum" style={{ color: '#3a3a3a', marginTop: 2 }}>
+              #{currentPortfolio.content_hash.substring(0, 16)}â€¦
             </div>
           )}
         </div>

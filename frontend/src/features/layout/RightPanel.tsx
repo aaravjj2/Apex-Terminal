@@ -1,31 +1,33 @@
-import { Database, TrendingUp, PenTool, Bell, X } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../ui/Tabs';
-import { IconButton } from '../../ui/IconButton';
+﻿// Bloomberg Palette
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const PURPLE = '#ab47bc';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
+import React, { useState } from 'react';
 import { useAppStore } from '../../state/appStore';
 import { useStore } from '../../state/store';
 import { IndicatorDock } from '../indicators/IndicatorDock';
 
 // Panel content components
 function DataInspector() {
-    // Get data directly from stores
     const { candles, lastCandle } = useStore();
     const { providers } = useAppStore();
 
-    // Determine current price data
     const current = lastCandle || (candles.length > 0 ? candles[candles.length - 1] : null);
-
-    // Calculate change (using previous candle close if available)
     const prev = candles.length > 1 ? candles[candles.length - 2] : null;
     const change = current && prev ? current.close - prev.close : 0;
     const changePercent = current && prev && prev.close ? (change / prev.close) * 100 : 0;
 
-    // Determine active provider
     const activeProvider = providers.alpaca.status === 'connected' ? 'Alpaca' :
         providers.finnhub.status === 'connected' ? 'Finnhub' : 'Mock/Offline';
-
-    if (!current) {
-        return <div className="p-3 text-xs text-text-secondary">No data available</div>;
-    }
 
     const fmt = (n: number) => n.toFixed(2);
     const fmtVol = (n: number) => {
@@ -34,69 +36,93 @@ function DataInspector() {
         return n.toString();
     };
 
+    const rowStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: `1px solid ${BORDER}` };
+    const labelStyle: React.CSSProperties = { fontSize: 10, color: SUBTLE, fontFamily: MONO, letterSpacing: '0.05em' };
+    const valStyle: React.CSSProperties = { fontSize: 11, fontFamily: MONO, color: TEXT };
+    const sectionLabel: React.CSSProperties = { fontSize: 9, color: AMBER, letterSpacing: '0.1em', fontWeight: 700, marginBottom: 6, marginTop: 12, fontFamily: MONO };
+
+    if (!current) {
+        return <div style={{ padding: 12, fontSize: 11, color: SUBTLE, fontFamily: MONO }}>NO DATA â€” WAITING FOR FEED</div>;
+    }
+
     return (
-        <div className="p-3 space-y-4">
-            {/* OHLC */}
-            <div>
-                <h4 className="text-xxs text-text-secondary uppercase tracking-wider mb-2">Price</h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Open</span>
-                        <span className="text-text font-mono tabular-nums">{fmt(current.open)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">High</span>
-                        <span className="text-up font-mono tabular-nums">{fmt(current.high)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Low</span>
-                        <span className="text-down font-mono tabular-nums">{fmt(current.low)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Close</span>
-                        <span className="text-text font-mono tabular-nums">{fmt(current.close)}</span>
-                    </div>
+        <div style={{ padding: '12px 14px', overflow: 'auto', height: '100%' }}>
+            <div style={{ fontFamily: MONO, fontSize: 9, color: AMBER, letterSpacing: '0.1em', fontWeight: 700, marginBottom: 8 }}>PRICE DATA</div>
+
+            {/* OHLCV */}
+            {[
+                { label: 'OPEN', val: fmt(current.open) },
+                { label: 'HIGH', val: fmt(current.high), color: GREEN },
+                { label: 'LOW', val: fmt(current.low), color: RED },
+                { label: 'CLOSE', val: fmt(current.close) },
+                { label: 'VOLUME', val: fmtVol(current.volume) },
+            ].map(({ label, val, color }) => (
+                <div key={label} style={rowStyle}>
+                    <span style={labelStyle}>{label}</span>
+                    <span style={{ ...valStyle, color: color || TEXT }}>{val}</span>
                 </div>
+            ))}
+
+            {/* Change */}
+            <div style={rowStyle}>
+                <span style={labelStyle}>CHANGE</span>
+                <span style={{ ...valStyle, color: change >= 0 ? GREEN : RED }}>
+                    {change >= 0 ? '+' : ''}{fmt(change)} ({fmt(changePercent)}%)
+                </span>
+            </div>
+            <div style={rowStyle}>
+                <span style={labelStyle}>SPREAD</span>
+                <span style={valStyle}>â€”</span>
             </div>
 
-            {/* Volume & Change */}
-            <div>
-                <h4 className="text-xxs text-text-secondary uppercase tracking-wider mb-2">Stats</h4>
-                <div className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Volume</span>
-                        <span className="text-text font-mono tabular-nums">{fmtVol(current.volume)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Change</span>
-                        <span className={`${change >= 0 ? 'text-up' : 'text-down'} font-mono tabular-nums`}>
-                            {change >= 0 ? '+' : ''}{fmt(change)} ({fmt(changePercent)}%)
-                        </span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Spread</span>
-                        {/* We don't have spread in bar data, defaulting to -- or est */}
-                        <span className="text-text font-mono tabular-nums">--</span>
-                    </div>
+            {/* VWAP/Range */}
+            <div style={sectionLabel}>SESSION METRICS</div>
+            {[
+                { label: 'DAY HIGH', val: fmt(Math.max(...candles.slice(-78).map(c => c.high), current.high)) },
+                { label: 'DAY LOW', val: fmt(Math.min(...candles.slice(-78).map(c => c.low), current.low)) },
+                { label: 'BAR COUNT', val: candles.length.toString() },
+                { label: 'LAST BAR', val: new Date(current.time).toLocaleTimeString() },
+            ].map(({ label, val }) => (
+                <div key={label} style={rowStyle}>
+                    <span style={labelStyle}>{label}</span>
+                    <span style={valStyle}>{val}</span>
                 </div>
-            </div>
+            ))}
 
-            {/* Provider Info */}
-            <div>
-                <h4 className="text-xxs text-text-secondary uppercase tracking-wider mb-2">Data Source</h4>
-                <div className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Provider</span>
-                        <span className="text-text">{activeProvider}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-text-secondary">Last Update</span>
-                        <span className="text-text font-mono tabular-nums">
-                            {new Date(current.time).toLocaleTimeString()}
-                        </span>
-                    </div>
+            {/* Provider */}
+            <div style={sectionLabel}>DATA SOURCE</div>
+            {[
+                { label: 'PROVIDER', val: activeProvider, color: providers.alpaca.status === 'connected' ? GREEN : providers.finnhub.status === 'connected' ? BLUE : SUBTLE },
+                { label: 'ALPACA', val: providers.alpaca.status.toUpperCase(), color: providers.alpaca.status === 'connected' ? GREEN : SUBTLE },
+                { label: 'FINNHUB', val: providers.finnhub.status.toUpperCase(), color: providers.finnhub.status === 'connected' ? GREEN : SUBTLE },
+                { label: 'YAHOO', val: providers.yahoo.status.toUpperCase(), color: providers.yahoo.status === 'connected' ? GREEN : SUBTLE },
+            ].map(({ label, val, color }) => (
+                <div key={label} style={rowStyle}>
+                    <span style={labelStyle}>{label}</span>
+                    <span style={{ ...valStyle, color: color || TEXT }}>{val}</span>
                 </div>
-            </div>
+            ))}
+
+            {/* Technical quick stats */}
+            <div style={sectionLabel}>TECHNICALS</div>
+            {(() => {
+                const closes = candles.slice(-20).map(c => c.close);
+                const sma20 = closes.length > 0 ? closes.reduce((a, b) => a + b, 0) / closes.length : 0;
+                const sma5 = candles.slice(-5).map(c => c.close).reduce((a, b) => a + b, 0) / Math.min(5, candles.length);
+                const vols = candles.slice(-14).map((c, i, a) => i === 0 ? 0 : Math.abs(c.close - a[i-1].close));
+                const avgVol = vols.slice(1).reduce((a, b) => a + b, 0) / Math.max(1, vols.length - 1);
+                return [
+                    { label: 'SMA(20)', val: sma20 > 0 ? fmt(sma20) : 'â€”', color: current.close > sma20 ? GREEN : RED },
+                    { label: 'SMA(5)', val: sma5 > 0 ? fmt(sma5) : 'â€”', color: current.close > sma5 ? GREEN : RED },
+                    { label: 'ATR(14)', val: avgVol > 0 ? fmt(avgVol) : 'â€”' },
+                    { label: 'MOM', val: closes.length >= 10 ? ((current.close / closes[0] - 1) * 100).toFixed(2) + '%' : 'â€”', color: current.close >= closes[0] ? GREEN : RED },
+                ].map(({ label, val, color }) => (
+                    <div key={label} style={rowStyle}>
+                        <span style={labelStyle}>{label}</span>
+                        <span style={{ ...valStyle, color: color || TEXT }}>{val}</span>
+                    </div>
+                ));
+            })()}
         </div>
     );
 }
@@ -106,78 +132,102 @@ function IndicatorManager() {
 }
 
 function DrawingManager() {
+    const drawings = [
+        { type: 'Trend Line', symbol: 'AAPL', note: 'Bullish channel', color: BLUE },
+        { type: 'Horizontal', symbol: 'AAPL', note: '$185.00 Support', color: GREEN },
+        { type: 'Rectangle', symbol: 'AAPL', note: 'Support Zone', color: AMBER },
+        { type: 'Fib Retrace', symbol: 'MSFT', note: '0.618 Level', color: PURPLE },
+        { type: 'Channel', symbol: 'SPY', note: 'Wedge pattern', color: RED },
+    ];
+
     return (
-        <div className="p-3">
-            <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xxs text-text-secondary uppercase tracking-wider">Drawings</h4>
-                <span className="text-xxs text-text-secondary">3 items</span>
+        <div style={{ padding: '12px 14px', height: '100%', overflow: 'auto' }}>
+            <div style={{ fontFamily: MONO, fontSize: 9, color: AMBER, letterSpacing: '0.1em', fontWeight: 700, marginBottom: 10 }}>CHART DRAWINGS</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontFamily: MONO, fontSize: 10, color: SUBTLE }}>{drawings.length} OBJECTS</span>
+                <button style={{ padding: '2px 8px', fontSize: 9, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, borderRadius: 2, cursor: 'pointer', fontFamily: MONO }}>+ NEW</button>
             </div>
-            <div className="space-y-1 text-xs text-text-secondary">
-                <div className="py-1.5 px-2 rounded bg-element-bg">Trend Line • AAPL</div>
-                <div className="py-1.5 px-2 rounded bg-element-bg">Horizontal Line • $185.00</div>
-                <div className="py-1.5 px-2 rounded bg-element-bg">Rectangle • Support Zone</div>
-            </div>
+            {drawings.map((d, i) => (
+                <div key={i} onMouseEnter={e => (e.currentTarget.style.background = PANEL)} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer', borderLeft: `2px solid ${d.color}` }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: MONO, fontSize: 10, color: TEXT }}>{d.type}</div>
+                        <div style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE }}>{d.symbol} â€¢ {d.note}</div>
+                    </div>
+                    <button onMouseEnter={e => { e.stopPropagation(); (e.currentTarget as HTMLButtonElement).style.color = RED; }} onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = SUBTLE; }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: SUBTLE, fontSize: 12 }}>âœ•</button>
+                </div>
+            ))}
         </div>
     );
 }
 
 function AlertsPanel() {
+    const alerts = [
+        { symbol: 'AAPL', condition: '> $190.00', type: 'Price', active: true, color: AMBER },
+        { symbol: 'SPY', condition: 'RSI > 70', type: 'Indicator', active: true, color: RED },
+        { symbol: 'TSLA', condition: 'Vol Spike', type: 'Volume', active: false, color: BLUE },
+        { symbol: 'MSFT', condition: '< $390.00', type: 'Price', active: true, color: GREEN },
+    ];
+
     return (
-        <div className="p-3">
-            <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xxs text-text-secondary uppercase tracking-wider">Active Alerts</h4>
-                <button className="text-xxs text-brand hover:underline">+ New</button>
+        <div style={{ padding: '12px 14px', height: '100%', overflow: 'auto' }}>
+            <div style={{ fontFamily: MONO, fontSize: 9, color: AMBER, letterSpacing: '0.1em', fontWeight: 700, marginBottom: 10 }}>ACTIVE ALERTS</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontFamily: MONO, fontSize: 10, color: SUBTLE }}>{alerts.filter(a => a.active).length} ACTIVE</span>
+                <button style={{ padding: '2px 8px', fontSize: 9, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, borderRadius: 2, cursor: 'pointer', fontFamily: MONO }}>+ NEW</button>
             </div>
-            <div className="space-y-2 text-xs">
-                <div className="py-2 px-2 rounded bg-element-bg border-l-2 border-warn">
-                    <div className="text-text">AAPL &gt; $190.00</div>
-                    <div className="text-text-secondary text-xxs mt-0.5">Price above threshold</div>
+            {alerts.map((a, i) => (
+                <div key={i} onMouseEnter={e => (e.currentTarget.style.background = PANEL)} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')} style={{ padding: '8px', marginBottom: 6, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${a.active ? a.color : SUBTLE}`, borderRadius: '0 2px 2px 0', cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: TEXT }}>{a.symbol}</span>
+                        <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 2, background: a.active ? GREEN + '22' : BORDER, color: a.active ? GREEN : SUBTLE, fontFamily: MONO }}>{a.active ? 'ACTIVE' : 'PAUSED'}</span>
+                    </div>
+                    <div style={{ fontFamily: MONO, fontSize: 10, color: a.color, marginTop: 3 }}>{a.condition}</div>
+                    <div style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, marginTop: 2 }}>{a.type.toUpperCase()}</div>
                 </div>
-                <div className="py-2 px-2 rounded bg-element-bg border-l-2 border-brand">
-                    <div className="text-text">RSI &gt; 70</div>
-                    <div className="text-text-secondary text-xxs mt-0.5">Overbought condition</div>
-                </div>
-            </div>
+            ))}
         </div>
     );
 }
 
 export function RightPanel() {
     const { rightDockOpen, toggleRightDock } = useAppStore();
+    const [activeTab, setActiveTab] = useState<'DATA' | 'IND' | 'DRAW' | 'ALERTS'>('DATA');
 
     if (!rightDockOpen) return null;
 
-    return (
-        <div className="h-full bg-panel-bg border-l border-border flex flex-col animate-slide-in-right">
-            <Tabs defaultValue="data" className="flex-1">
-                <TabsList className="px-1">
-                    <TabsTrigger value="data" icon={<Database size={14} />}>Data</TabsTrigger>
-                    <TabsTrigger value="indicators" icon={<TrendingUp size={14} />} data-testid="right-dock-tab-ind">Ind</TabsTrigger>
-                    <TabsTrigger value="drawings" icon={<PenTool size={14} />}>Draw</TabsTrigger>
-                    <TabsTrigger value="alerts" icon={<Bell size={14} />}>Alerts</TabsTrigger>
-                    <div className="flex-1" />
-                    <IconButton
-                        icon={<X size={14} />}
-                        tooltip="Close panel"
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleRightDock}
-                    />
-                </TabsList>
+    const tabStyle = (active: boolean): React.CSSProperties => ({
+        padding: '0 10px',
+        height: 36,
+        border: 'none',
+        borderBottom: active ? `2px solid ${AMBER}` : '2px solid transparent',
+        background: 'transparent',
+        color: active ? AMBER : SUBTLE,
+        fontFamily: MONO,
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        cursor: 'pointer',
+    });
 
-                <TabsContent value="data">
-                    <DataInspector />
-                </TabsContent>
-                <TabsContent value="indicators">
-                    <IndicatorManager />
-                </TabsContent>
-                <TabsContent value="drawings">
-                    <DrawingManager />
-                </TabsContent>
-                <TabsContent value="alerts">
-                    <AlertsPanel />
-                </TabsContent>
-            </Tabs>
+    return (
+        <div style={{ height: '100%', background: BG, borderLeft: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', color: TEXT, fontFamily: MONO }}>
+            {/* Tab bar */}
+            <div style={{ background: PANEL, borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                {(['DATA', 'IND', 'DRAW', 'ALERTS'] as const).map(t => (
+                    <button key={t} style={tabStyle(activeTab === t)} onClick={() => setActiveTab(t)}
+                        data-testid={t === 'IND' ? 'right-dock-tab-ind' : undefined}>{t}</button>
+                ))}
+                <div style={{ flex: 1 }} />
+                <button onClick={toggleRightDock} onMouseEnter={e => (e.currentTarget.style.color = RED)} onMouseLeave={e => (e.currentTarget.style.color = SUBTLE)} style={{ background: 'none', border: 'none', color: SUBTLE, cursor: 'pointer', padding: '0 10px', fontSize: 13 }}>âœ•</button>
+            </div>
+
+            {/* Content */}
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+                {activeTab === 'DATA' && <DataInspector />}
+                {activeTab === 'IND' && <IndicatorManager />}
+                {activeTab === 'DRAW' && <DrawingManager />}
+                {activeTab === 'ALERTS' && <AlertsPanel />}
+            </div>
         </div>
     );
 }

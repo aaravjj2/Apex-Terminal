@@ -1,346 +1,330 @@
-/**
- * AutopilotExplainUI2 Page - Wave 12 v1.116
- * Autopilot Explainability: Shadow/live indicator, candidate decisions, rejection codes, explanations
- */
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// AutopilotExplainUI2 â€” Bloomberg APEX Autopilot Explainability terminal
+// Shadow/live mode indicator, decision stream, rejection analysis, explanation rendering, risk scoring
+// Tabs: DECISIONS | REJECTIONS | EXPLANATIONS | RISK SCORES | AUDIT
+// APIs: /api/v4/autopilot/decisions, /rejections, /explanations, /risk, /audit
 
-import React, { useState } from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { Eye, CheckCircle, XCircle, AlertTriangle, TrendingUp, Shield } from 'lucide-react';
-
-type AutopilotMode = 'shadow' | 'live';
-type DecisionStatus = 'approved' | 'rejected' | 'pending';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
 interface AutopilotDecision {
-  id: string;
-  timestamp: string;
-  symbol: string;
-  action: 'buy' | 'sell' | 'hold';
-  confidence: number;
-  status: DecisionStatus;
-  rejectionCode?: string;
-  rejectionReason?: string;
-  maxProfit?: number;
-  maxLoss?: number;
-  riskScore?: number;
-  explanation?: string;
+  decisionId: string
+  timestamp: string
+  symbol: string
+  action: 'buy' | 'sell' | 'hold'
+  confidence: number
+  status: 'approved' | 'rejected' | 'pending' | 'executed'
+  rejectionCode: string | null
+  rejectionReason: string | null
+  maxProfit: number | null
+  maxLoss: number | null
+  riskScore: number | null
+  mode: 'shadow' | 'live'
 }
 
-// DEMO data
-const demoDecisions: AutopilotDecision[] = [
-  {
-    id: 'dec-001',
-    timestamp: new Date().toISOString(),
-    symbol: 'AAPL',
-    action: 'buy',
-    confidence: 0.85,
-    status: 'approved',
-    maxProfit: 500,
-    maxLoss: 150,
-    riskScore: 0.3,
-    explanation: 'Strong momentum + high volume breakout above resistance at $175. Risk/reward ratio 3.3:1.',
-  },
-  {
-    id: 'dec-002',
-    timestamp: new Date(Date.now() - 60000).toISOString(),
-    symbol: 'TSLA',
-    action: 'sell',
-    confidence: 0.72,
-    status: 'rejected',
-    rejectionCode: 'RISK_EXCEEDED',
-    rejectionReason: 'Portfolio risk limit would be exceeded (current: 45%, limit: 50%)',
-    maxProfit: 800,
-    maxLoss: 400,
-    riskScore: 0.65,
-  },
-  {
-    id: 'dec-003',
-    timestamp: new Date(Date.now() - 120000).toISOString(),
-    symbol: 'MSFT',
-    action: 'buy',
-    confidence: 0.68,
-    status: 'rejected',
-    rejectionCode: 'LOW_CONFIDENCE',
-    rejectionReason: 'Decision confidence 0.68 below minimum threshold 0.70',
-    maxProfit: 300,
-    maxLoss: 120,
-    riskScore: 0.4,
-  },
-  {
-    id: 'dec-004',
-    timestamp: new Date(Date.now() - 180000).toISOString(),
-    symbol: 'GOOGL',
-    action: 'buy',
-    confidence: 0.91,
-    status: 'approved',
-    maxProfit: 650,
-    maxLoss: 180,
-    riskScore: 0.28,
-    explanation: 'Earnings beat + analyst upgrades. Strong technical setup.',
-  },
-];
+interface RejectionAnalysis {
+  rejectionCode: string
+  description: string
+  count: number
+  pct: number
+  lastSeen: string
+  severity: 'critical' | 'high' | 'medium' | 'low'
+}
 
-const statusIcons = {
-  approved: CheckCircle,
-  rejected: XCircle,
-  pending: AlertTriangle,
-};
+interface ExplanationEntry {
+  decisionId: string
+  symbol: string
+  action: string
+  explanation: string
+  keyFactors: string[]
+  confidence: number
+  timestamp: string
+}
 
-const statusColors = {
-  approved: 'text-green-400',
-  rejected: 'text-red-400',
-  pending: 'text-yellow-400',
-};
+interface RiskScoreEntry {
+  symbol: string
+  riskScore: number
+  maxLoss: number
+  maxProfit: number
+  volatility: number
+  marketCondition: string
+  flags: string[]
+  timestamp: string
+}
 
-const statusBgColors = {
-  approved: 'bg-green-950/30',
-  rejected: 'bg-red-950/30',
-  pending: 'bg-yellow-950/30',
-};
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function ActionBadge({ a }: { a: string }) {
+  const m: Record<string, string> = { buy: GREEN, sell: RED, hold: AMBER }
+  const c = m[a] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{a.toUpperCase()}</span>
+}
+function StatusBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { approved: GREEN, rejected: RED, pending: AMBER, executed: BLUE }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.toUpperCase()}</span>
+}
+function ModeBadge({ m }: { m: string }) {
+  const c = m === 'live' ? RED : BLUE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{m.toUpperCase()}</span>
+}
+
 
 export function AutopilotExplainUI2() {
-  const [mode, setMode] = useState<AutopilotMode>('shadow');
-  const [selectedDecision, setSelectedDecision] = useState<AutopilotDecision | null>(null);
-  const [killSwitchActive, setKillSwitchActive] = useState(false);
+  const [tab, setTab] = useState<'decisions' | 'rejections' | 'explanations' | 'risk' | 'audit'>('decisions')
+  const [decisions, setDecisions] = useState<AutopilotDecision[]>([])
+  const [rejections, setRejections] = useState<RejectionAnalysis[]>([])
+  const [explanations, setExplanations] = useState<ExplanationEntry[]>([])
+  const [riskScores, setRiskScores] = useState<RiskScoreEntry[]>([])
+  const [auditLog, setAuditLog] = useState<Array<{ auditId: string; action: string; actor: string; detail: string; timestamp: string }>>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+  const [mode, setMode] = useState<'shadow' | 'live' | 'all'>('all')
 
-  const formatTimestamp = (ts: string) => {
-    const date = new Date(ts);
-    return date.toLocaleTimeString('en-US', { hour12: false });
-  };
+  const fetchAll = useCallback(async () => {
+    try {
+      const [rD, rR, rE, rRisk, rA] = await Promise.allSettled([
+        fetch('/api/v4/autopilot/decisions').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/autopilot/rejections').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/autopilot/explanations').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/autopilot/risk').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/autopilot/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rD.status === 'fulfilled') {
+        const raw = Array.isArray(rD.value) ? rD.value : rD.value.decisions ?? rD.value.data ?? []
+        setDecisions(raw.map((d: any) => ({
+          decisionId: d.decision_id ?? d.decisionId ?? d.id ?? '',
+          timestamp: d.timestamp ?? '', symbol: d.symbol ?? '',
+          action: d.action ?? 'hold', confidence: Number(d.confidence ?? 0),
+          status: d.status ?? 'pending',
+          rejectionCode: d.rejection_code ?? d.rejectionCode ?? null,
+          rejectionReason: d.rejection_reason ?? d.rejectionReason ?? null,
+          maxProfit: d.max_profit ?? d.maxProfit ?? null,
+          maxLoss: d.max_loss ?? d.maxLoss ?? null,
+          riskScore: d.risk_score ?? d.riskScore ?? null,
+          mode: d.mode ?? 'shadow',
+        })))
+        setErr(null)
+      } else setErr('Failed to load decisions')
+      if (rR.status === 'fulfilled') {
+        const raw = Array.isArray(rR.value) ? rR.value : rR.value.rejections ?? rR.value.data ?? []
+        setRejections(raw.map((r: any) => ({
+          rejectionCode: r.rejection_code ?? r.rejectionCode ?? '',
+          description: r.description ?? '', count: Number(r.count ?? 0),
+          pct: Number(r.pct ?? 0), lastSeen: r.last_seen ?? r.lastSeen ?? '',
+          severity: r.severity ?? 'medium',
+        })))
+      }
+      if (rE.status === 'fulfilled') {
+        const raw = Array.isArray(rE.value) ? rE.value : rE.value.explanations ?? rE.value.data ?? []
+        setExplanations(raw.map((e: any) => ({
+          decisionId: e.decision_id ?? e.decisionId ?? '', symbol: e.symbol ?? '',
+          action: e.action ?? '', explanation: e.explanation ?? '',
+          keyFactors: e.key_factors ?? e.keyFactors ?? [],
+          confidence: Number(e.confidence ?? 0), timestamp: e.timestamp ?? '',
+        })))
+      }
+      if (rRisk.status === 'fulfilled') {
+        const raw = Array.isArray(rRisk.value) ? rRisk.value : rRisk.value.risk ?? rRisk.value.data ?? []
+        setRiskScores(raw.map((r: any) => ({
+          symbol: r.symbol ?? '', riskScore: Number(r.risk_score ?? r.riskScore ?? 0),
+          maxLoss: Number(r.max_loss ?? r.maxLoss ?? 0),
+          maxProfit: Number(r.max_profit ?? r.maxProfit ?? 0),
+          volatility: Number(r.volatility ?? 0),
+          marketCondition: r.market_condition ?? r.marketCondition ?? '',
+          flags: r.flags ?? [], timestamp: r.timestamp ?? '',
+        })))
+      }
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.audit ?? rA.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '', action: a.action ?? '',
+          actor: a.actor ?? '', detail: a.detail ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  const approvedCount = demoDecisions.filter(d => d.status === 'approved').length;
-  const rejectedCount = demoDecisions.filter(d => d.status === 'rejected').length;
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 20000); return () => clearInterval(id) }, [fetchAll])
+
+  const filteredDecisions = mode === 'all' ? decisions : decisions.filter(d => d.mode === mode)
+  const approvedCount = decisions.filter(d => d.status === 'approved').length
+  const rejectedCount = decisions.filter(d => d.status === 'rejected').length
+  const avgConfidence = decisions.length ? (decisions.reduce((s, d) => s + d.confidence, 0) / decisions.length) : null
+  const liveCount = decisions.filter(d => d.mode === 'live').length
+
+  const TABS2 = [
+    { id: 'decisions' as const, label: 'DECISIONS' },
+    { id: 'rejections' as const, label: 'REJECTIONS' },
+    { id: 'explanations' as const, label: 'EXPLANATIONS' },
+    { id: 'risk' as const, label: 'RISK SCORES' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <div className="h-full flex flex-col bg-neutral-950" data-testid="autopilot-explain-page" data-ready="true">
-      <PageHeader
-        title="Autopilot Explainability"
-        subtitle={`${demoDecisions.length} decisions · ${approvedCount} approved · ${rejectedCount} rejected`}
-        badge={
-          <div className="flex items-center gap-2">
-            {mode === 'shadow' ? (
-              <Eye className="w-4 h-4 text-blue-400" />
-            ) : (
-              <TrendingUp className="w-4 h-4 text-green-400" />
-            )}
-            <span className={`px-2 py-1 ${mode === 'shadow' ? 'bg-blue-950/30 border-blue-900/50 text-blue-400' : 'bg-green-950/30 border-green-900/50 text-green-400'} border text-xs font-medium rounded uppercase tracking-wider`}>
-              {mode} MODE
-            </span>
-          </div>
-        }
-        actions={
-          <button
-            onClick={() => setKillSwitchActive(!killSwitchActive)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-              killSwitchActive
-                ? 'bg-red-600/20 border border-red-600 text-red-400 hover:bg-red-600/30'
-                : 'bg-neutral-800 border border-neutral-700 text-neutral-300 hover:bg-neutral-700'
-            }`}
-            data-testid="autopilot-killswitch-btn"
-          >
-            <Shield className="w-4 h-4" />
-            {killSwitchActive ? 'Kill Switch: ON' : 'Kill Switch: OFF'}
-          </button>
-        }
-        testId="autopilot-explain-header"
-      />
-
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Decisions list */}
-        <div className="flex-1 flex flex-col overflow-hidden border-r border-neutral-800">
-          {/*Controls */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-neutral-800 bg-neutral-900/50">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setMode('shadow')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  mode === 'shadow'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                }`}
-                data-testid="mode-shadow-btn"
-              >
-                <Eye className="w-4 h-4 inline mr-1.5" />
-                Shadow
-              </button>
-              <button
-                onClick={() => setMode('live')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  mode === 'live'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                }`}
-                data-testid="mode-live-btn"
-              >
-                <TrendingUp className="w-4 h-4 inline mr-1.5" />
-                Live
-              </button>
-            </div>
-
-            <div className="flex-1" />
-
-            <div className="text-xs text-neutral-500">
-              {mode === 'shadow'
-                ? 'Shadow mode: Decisions logged but not executed'
-                : 'Live mode: Decisions executed automatically'}
-            </div>
-          </div>
-
-          {/* Decisions list */}
-          <div className="flex-1 overflow-auto" data-testid="decisions-list">
-            {demoDecisions.map((decision) => {
-              const StatusIcon = statusIcons[decision.status];
-              const isSelected = selectedDecision?.id === decision.id;
-
-              return (
-                <div
-                  key={decision.id}
-                  onClick={() => setSelectedDecision(decision)}
-                  className={`
-                    px-4 py-3 border-b border-neutral-800/50 cursor-pointer transition-colors
-                    ${isSelected ? 'bg-blue-950/20 border-l-2 border-l-blue-500' : 'hover:bg-neutral-900/50 border-l-2 border-l-transparent'}
-                  `}
-                  data-testid={`decision-${decision.id}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <StatusIcon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${statusColors[decision.status]}`} />
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-semibold text-neutral-100">{decision.symbol}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${decision.action === 'buy' ? 'bg-green-950/30 text-green-400' : 'bg-red-950/30 text-red-400'}`}>
-                          {decision.action.toUpperCase()}
-                        </span>
-                        <span className="text-xs font-mono text-neutral-500">
-                          {formatTimestamp(decision.timestamp)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-3 mb-1">
-                        <div className="text-xs">
-                          <span className="text-neutral-500">Confidence:</span>{' '}
-                          <span className={`font-mono font-semibold ${decision.confidence >= 0.8 ? 'text-green-400' : decision.confidence >= 0.7 ? 'text-yellow-400' : 'text-red-400'}`}>
-                            {(decision.confidence * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                        {decision.riskScore !== undefined && (
-                          <div className="text-xs">
-                            <span className="text-neutral-500">Risk:</span>{' '}
-                            <span className={`font-mono font-semibold ${decision.riskScore <= 0.3 ? 'text-green-400' : decision.riskScore <= 0.5 ? 'text-yellow-400' : 'text-red-400'}`}>
-                              {(decision.riskScore * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {decision.status === 'rejected' && decision.rejectionCode && (
-                        <div className="mt-2 px-2 py-1 bg-red-950/20 border border-red-900/50 rounded text-xs">
-                          <span className="font-mono text-red-400">{decision.rejectionCode}</span>
-                          {decision.rejectionReason && (
-                            <div className="text-neutral-400 mt-0.5">{decision.rejectionReason}</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right: Decision detail */}
-        <div
-          className={`w-96 bg-neutral-900 border-l border-neutral-800 transition-all duration-300 ${
-            selectedDecision ? 'translate-x-0' : 'translate-x-full'
-          }`}
-          data-testid="decision-detail-drawer"
-        >
-          {selectedDecision && (
-            <div className="h-full flex flex-col overflow-auto">
-              <div className="px-4 py-3 border-b border-neutral-800">
-                <h3 className="text-sm font-semibold text-neutral-100">Decision Analysis</h3>
-              </div>
-
-              <div className="p-4 space-y-4">
-                <div>
-                  <div className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Symbol</div>
-                  <div className="text-lg font-semibold text-neutral-100">{selectedDecision.symbol}</div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Action</div>
-                  <span className={`px-2 py-1 rounded text-sm font-medium ${selectedDecision.action === 'buy' ? 'bg-green-950/30 text-green-400' : 'bg-red-950/30 text-red-400'}`}>
-                    {selectedDecision.action.toUpperCase()}
-                  </span>
-                </div>
-
-                <div>
-                  <div className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Status</div>
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium ${statusBgColors[selectedDecision.status]} ${statusColors[selectedDecision.status]}`}>
-                    {React.createElement(statusIcons[selectedDecision.status], { className: 'w-3.5 h-3.5' })}
-                    {selectedDecision.status.toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Confidence</div>
-                    <div className={`text-lg font-mono font-semibold ${selectedDecision.confidence >= 0.8 ? 'text-green-400' : selectedDecision.confidence >= 0.7 ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {(selectedDecision.confidence * 100).toFixed(0)}%
-                    </div>
-                  </div>
-                  {selectedDecision.riskScore !== undefined && (
-                    <div>
-                      <div className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Risk Score</div>
-                      <div className={`text-lg font-mono font-semibold ${selectedDecision.riskScore <= 0.3 ? 'text-green-400' : selectedDecision.riskScore <= 0.5 ? 'text-yellow-400' : 'text-red-400'}`}>
-                        {(selectedDecision.riskScore * 100).toFixed(0)}%
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {(selectedDecision.maxProfit !== undefined || selectedDecision.maxLoss !== undefined) && (
-                  <div className="grid grid-cols-2 gap-3">
-                    {selectedDecision.maxProfit !== undefined && (
-                      <div>
-                        <div className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Max Profit</div>
-                        <div className="text-sm font-mono text-green-400">${selectedDecision.maxProfit.toFixed(2)}</div>
-                      </div>
-                    )}
-                    {selectedDecision.maxLoss !== undefined && (
-                      <div>
-                        <div className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Max Loss</div>
-                        <div className="text-sm font-mono text-red-400">${selectedDecision.maxLoss.toFixed(2)}</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {selectedDecision.explanation && (
-                  <div>
-                    <div className="text-xs text-neutral-500 uppercase tracking-wider mb-2">Explanation</div>
-                    <div className="text-sm text-neutral-300 leading-relaxed bg-neutral-950 border border-neutral-800 rounded p-3">
-                      {selectedDecision.explanation}
-                    </div>
-                  </div>
-                )}
-
-                {selectedDecision.status === 'rejected' && selectedDecision.rejectionCode && (
-                  <div>
-                    <div className="text-xs text-neutral-500 uppercase tracking-wider mb-2">Rejection Details</div>
-                    <div className="bg-red-950/20 border border-red-900/50 rounded p-3">
-                      <div className="font-mono text-sm text-red-400 mb-1">{selectedDecision.rejectionCode}</div>
-                      {selectedDecision.rejectionReason && (
-                        <div className="text-xs text-neutral-400">{selectedDecision.rejectionReason}</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>AUTOPILOT EXPLAINABILITY â€” DECISION STREAM + REJECTION ANALYSIS + EXPLANATION ENGINE + RISK SCORING</span>
+        {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+          {(['all', 'shadow', 'live'] as const).map(m => (
+            <button key={m} onClick={() => setMode(m)}
+              style={{ fontFamily: MONO, fontSize: 10, color: mode === m ? (m === 'live' ? RED : m === 'shadow' ? BLUE : AMBER) : SUBTLE, background: mode === m ? (m === 'live' ? RED : m === 'shadow' ? BLUE : AMBER) + '22' : 'transparent', border: `1px solid ${mode === m ? (m === 'live' ? RED : m === 'shadow' ? BLUE : AMBER) + '44' : BORDER}`, borderRadius: 3, padding: '3px 8px', cursor: 'pointer' }}>
+              {m.toUpperCase()}
+            </button>
+          ))}
         </div>
       </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Total Decisions" value={decisions.length} col={TEXT} />
+        <StatCard label="Approved" value={approvedCount} col={GREEN} />
+        <StatCard label="Rejected" value={rejectedCount} col={RED} />
+        <StatCard label="Avg Confidence" value={avgConfidence !== null ? `${(avgConfidence * 100).toFixed(1)}%` : 'â€”'} col={avgConfidence !== null ? (avgConfidence >= 0.7 ? GREEN : AMBER) : SUBTLE} />
+        <StatCard label="Live Mode" value={liveCount} col={liveCount > 0 ? RED : BLUE} sub={liveCount > 0 ? 'active' : 'shadow'} />
+      </div>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {tab === 'decisions' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Decision ID</Th><Th>Symbol</Th><Th>Action</Th><Th>Status</Th><Th>Mode</Th><Th right>Confidence</Th><Th right>Risk Score</Th><Th right>Max Profit</Th><Th right>Max Loss</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {filteredDecisions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No decisions â€” check /api/v4/autopilot/decisions</td></tr>}
+                {filteredDecisions.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).map((d, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{d.decisionId.slice(0, 14)}</Td>
+                    <Td mono col={TEXT}>{d.symbol}</Td>
+                    <Td><ActionBadge a={d.action} /></Td>
+                    <Td><StatusBadge s={d.status} /></Td>
+                    <Td><ModeBadge m={d.mode} /></Td>
+                    <Td right mono col={d.confidence >= 0.7 ? GREEN : d.confidence >= 0.5 ? AMBER : RED}>{(d.confidence * 100).toFixed(1)}%</Td>
+                    <Td right mono col={d.riskScore !== null ? (d.riskScore > 0.7 ? RED : d.riskScore > 0.4 ? AMBER : GREEN) : SUBTLE}>{d.riskScore !== null ? d.riskScore.toFixed(2) : 'â€”'}</Td>
+                    <Td right mono col={GREEN}>{d.maxProfit !== null ? `$${d.maxProfit.toFixed(0)}` : 'â€”'}</Td>
+                    <Td right mono col={RED}>{d.maxLoss !== null ? `$${d.maxLoss.toFixed(0)}` : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{d.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'rejections' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Rejection Code</Th><Th>Description</Th><Th>Severity</Th><Th right>Count</Th><Th right>Pct</Th><Th>Last Seen</Th></tr></thead>
+              <tbody>
+                {rejections.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rejections â€” check /api/v4/autopilot/rejections</td></tr>}
+                {rejections.sort((a, b) => b.count - a.count).map((r, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{r.rejectionCode}</Td>
+                    <Td mono col={TEXT}>{r.description.slice(0, 50)}</Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.severity === 'critical' ? RED : r.severity === 'high' ? ORANGE : r.severity === 'medium' ? AMBER : BLUE, background: (r.severity === 'critical' ? RED : r.severity === 'high' ? ORANGE : r.severity === 'medium' ? AMBER : BLUE) + '22', borderRadius: 3, padding: '2px 5px' }}>{r.severity.toUpperCase()}</span></Td>
+                    <Td right mono col={TEXT}>{r.count}</Td>
+                    <Td right mono col={r.pct > 50 ? RED : r.pct > 25 ? AMBER : GREEN}>{r.pct.toFixed(1)}%</Td>
+                    <Td mono col={SUBTLE}>{r.lastSeen}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'explanations' && (
+          <div>
+            {explanations.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No explanations â€” check /api/v4/autopilot/explanations</div>}
+            {explanations.map((e, i) => (
+              <div key={i} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '12px 16px', marginBottom: 8 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: AMBER }}>{e.decisionId.slice(0, 14)}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: TEXT }}>{e.symbol}</span>
+                  <ActionBadge a={e.action} />
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: e.confidence >= 0.7 ? GREEN : AMBER }}>{(e.confidence * 100).toFixed(1)}%</span>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: SUBTLE, marginLeft: 'auto' }}>{e.timestamp}</span>
+                </div>
+                <div style={{ fontFamily: MONO, fontSize: 11, color: TEXT, marginBottom: 8 }}>{e.explanation}</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {e.keyFactors.map((f, j) => (
+                    <span key={j} style={{ fontFamily: MONO, fontSize: 10, color: PURPLE, background: PURPLE + '22', borderRadius: 3, padding: '2px 6px' }}>{f}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {tab === 'risk' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Symbol</Th><Th right>Risk Score</Th><Th right>Max Loss</Th><Th right>Max Profit</Th><Th right>Volatility</Th><Th>Condition</Th><Th>Flags</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {riskScores.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk scores â€” check /api/v4/autopilot/risk</td></tr>}
+                {riskScores.sort((a, b) => b.riskScore - a.riskScore).map((r, i) => (
+                  <tr key={i}>
+                    <Td mono col={TEXT}>{r.symbol}</Td>
+                    <Td right mono col={r.riskScore > 0.7 ? RED : r.riskScore > 0.4 ? AMBER : GREEN}>{r.riskScore.toFixed(3)}</Td>
+                    <Td right mono col={RED}>${r.maxLoss.toFixed(0)}</Td>
+                    <Td right mono col={GREEN}>${r.maxProfit.toFixed(0)}</Td>
+                    <Td right mono col={TEXT}>{r.volatility.toFixed(4)}</Td>
+                    <Td mono col={BLUE}>{r.marketCondition}</Td>
+                    <Td mono col={ORANGE}>{r.flags.slice(0, 3).join(', ')}</Td>
+                    <Td mono col={SUBTLE}>{r.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/autopilot/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }

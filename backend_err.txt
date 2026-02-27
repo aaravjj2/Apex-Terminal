@@ -1,0 +1,16 @@
+INFO:     Started server process [20504]
+INFO:     Waiting for application startup.
+FLATTEN TRIGGERED: Current time 23:25:45.348490 >= cutoff 14:15:00
+🚨 RESTART SAFETY: Restart after cutoff: After trading cutoff (14:15:00). Flatten triggered.
+🔴 Executing FLATTEN ALL: Restart after cutoff: After trading cutoff (14:15:00). Flatten triggered.
+FLATTEN_ALL triggered: Restart after cutoff: After trading cutoff (14:15:00). Flatten triggered.
+FLATTEN_ALL complete: Cancelled 0 orders, Closed 0 positions, Errors: 0
+Flatten result: {'orders_cancelled': 0, 'orders_failed': 0, 'positions_closed': 0, 'positions_failed': 0, 'errors': [], 'reason': 'Restart after cutoff: After trading cutoff (14:15:00). Flatten triggered.'}
+INFO:     Application startup complete.
+C:\Tradingview\Tradingview recreation\.venv\Lib\site-packages\yfinance\scrapers\history.py:173: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dt_now = pd.Timestamp.utcnow()
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+C:\Tradingview\Tradingview recreation\.venv\Lib\site-packages\yfinance\scrapers\history.py:173: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dt_now = pd.Timestamp.utcnow()
+C:\Tradingview\Tradingview recreation\.venv\Lib\site-packages\yfinance\scrapers\history.py:173: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dt_now = pd.Timestamp.utcnow()

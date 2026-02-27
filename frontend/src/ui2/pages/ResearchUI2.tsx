@@ -1,217 +1,337 @@
-/**
- * v1.61 — ResearchUI2 Page (Enhanced)
- * Strategy artifacts, validation, diff viewer, "Run Backtest from Artifact"
- */
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// ResearchUI2 â€” Bloomberg APEX Research Terminal
+// Strategy artifacts, validation, backtest diff viewer, artifact registry, research governance
+// Tabs: STRATEGIES | ARTIFACTS | VALIDATION | DIFF VIEWER | AUDIT
+// APIs: /api/v3/research/strategies, /artifacts, /validation, /diff, /audit
 
-import { useState } from 'react';
-import { PageHeader, Tabs, DataTable, StatusBadge, type ColumnDef } from '../components';
-interface Strategy {
-  id: string;
-  name: string;
-  type: 'momentum' | 'meanReversion' | 'breakout' | 'custom';
-  symbol: string;
-  status: 'draft' | 'validated' | 'backtested' | 'live';
-  version: number;
-  createdAt: number;
-  updatedAt: number;
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
+
+interface ResearchStrategy {
+  id: string
+  name: string
+  type: 'momentum' | 'meanReversion' | 'breakout' | 'custom' | 'arbitrage' | 'pairs'
+  symbol: string
+  status: 'draft' | 'validated' | 'backtested' | 'live' | 'archived'
+  version: number
+  createdAt: number
+  updatedAt: number
+  author: string
 }
 
-interface Artifact {
-  id: string;
-  strategyId: string;
-  type: 'backtest' | 'validation' | 'export';
-  name: string;
-  status: 'running' | 'completed' | 'failed';
-  size: number;
-  createdAt: number;
+interface ResearchArtifact {
+  id: string
+  strategyId: string
+  type: 'backtest' | 'validation' | 'export' | 'report' | 'notebook'
+  name: string
+  status: 'running' | 'completed' | 'failed'
+  sizeBytes: number
+  sha256: string
+  createdAt: number
 }
 
-// Online-only: data fetched from backend, starts empty
-const STRATEGIES: Strategy[] = [];
-const ARTIFACTS: Artifact[] = [];
-
-function formatSize(bytes: number): string {
-  if (bytes > 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
-  if (bytes > 1_000) return `${(bytes / 1_000).toFixed(1)} KB`;
-  return `${bytes} B`;
+interface ValidationResult {
+  strategyId: string
+  strategyName: string
+  passed: boolean
+  score: number
+  checks: Array<{ name: string; passed: boolean; message: string; severity: 'error' | 'warning' | 'info' }>
+  validatedAt: string
 }
+
+interface DiffEntry {
+  artifactId: string
+  name: string
+  strategyId: string
+  fieldName: string
+  oldValue: string
+  newValue: string
+  changePct: number | null
+  changeType: 'params' | 'symbols' | 'performance' | 'logic'
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function StatusBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { draft: SUBTLE, validated: GREEN, backtested: BLUE, live: AMBER, archived: SUBTLE, running: ORANGE, completed: GREEN, failed: RED }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.toUpperCase()}</span>
+}
+function fmtBytes(b: number) {
+  if (b >= 1048576) return `${(b / 1048576).toFixed(1)} MB`
+  if (b >= 1024) return `${(b / 1024).toFixed(1)} KB`
+  return `${b} B`
+}
+
 
 export function ResearchUI2() {
-  const [activeTab, setActiveTab] = useState('strategies');
-  const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
-  const [validationResult, setValidationResult] = useState<{ strategyId: string; pass: boolean; checks: { name: string; pass: boolean }[] } | null>(null);
+  const [tab, setTab] = useState<'strategies' | 'artifacts' | 'validation' | 'diff' | 'audit'>('strategies')
+  const [strategies, setStrategies] = useState<ResearchStrategy[]>([])
+  const [artifacts, setArtifacts] = useState<ResearchArtifact[]>([])
+  const [validations, setValidations] = useState<ValidationResult[]>([])
+  const [diffs, setDiffs] = useState<DiffEntry[]>([])
+  const [auditLog, setAuditLog] = useState<Array<{ auditId: string; action: string; actor: string; detail: string; timestamp: string }>>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+  const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null)
+  const [backtesting, setBacktesting] = useState(false)
+  const [btMsg, setBtMsg] = useState<string | null>(null)
 
+  const fetchAll = useCallback(async () => {
+    try {
+      const [rS, rA, rV, rD, rL] = await Promise.allSettled([
+        fetch('/api/v3/research/strategies').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/research/artifacts').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/research/validation').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/research/diff').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/research/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rS.status === 'fulfilled') {
+        const raw = Array.isArray(rS.value) ? rS.value : rS.value.strategies ?? rS.value.data ?? []
+        setStrategies(raw.map((s: any) => ({
+          id: s.id ?? '', name: s.name ?? '', type: s.type ?? 'custom',
+          symbol: s.symbol ?? '', status: s.status ?? 'draft',
+          version: Number(s.version ?? 1), createdAt: Number(s.created_at ?? s.createdAt ?? 0),
+          updatedAt: Number(s.updated_at ?? s.updatedAt ?? 0), author: s.author ?? '',
+        })))
+        setErr(null)
+      } else setErr('Failed to load strategies')
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.artifacts ?? rA.value.data ?? []
+        setArtifacts(raw.map((a: any) => ({
+          id: a.id ?? '', strategyId: a.strategy_id ?? a.strategyId ?? '',
+          type: a.type ?? 'backtest', name: a.name ?? '', status: a.status ?? 'completed',
+          sizeBytes: Number(a.size ?? a.sizeBytes ?? 0), sha256: a.sha256 ?? '',
+          createdAt: Number(a.created_at ?? a.createdAt ?? 0),
+        })))
+      }
+      if (rV.status === 'fulfilled') {
+        const raw = Array.isArray(rV.value) ? rV.value : rV.value.validations ?? rV.value.data ?? []
+        setValidations(raw.map((v: any) => ({
+          strategyId: v.strategy_id ?? v.strategyId ?? '',
+          strategyName: v.strategy_name ?? v.strategyName ?? '',
+          passed: Boolean(v.passed), score: Number(v.score ?? 0),
+          checks: (v.checks ?? []).map((c: any) => ({
+            name: c.name ?? '', passed: Boolean(c.passed), message: c.message ?? '', severity: c.severity ?? 'info',
+          })),
+          validatedAt: v.validated_at ?? v.validatedAt ?? '',
+        })))
+      }
+      if (rD.status === 'fulfilled') {
+        const raw = Array.isArray(rD.value) ? rD.value : rD.value.diffs ?? rD.value.data ?? []
+        setDiffs(raw.map((d: any) => ({
+          artifactId: d.artifact_id ?? d.artifactId ?? '',
+          name: d.name ?? '', strategyId: d.strategy_id ?? d.strategyId ?? '',
+          fieldName: d.field_name ?? d.fieldName ?? '',
+          oldValue: String(d.old_value ?? d.oldValue ?? ''),
+          newValue: String(d.new_value ?? d.newValue ?? ''),
+          changePct: d.change_pct ?? d.changePct ?? null,
+          changeType: d.change_type ?? d.changeType ?? 'params',
+        })))
+      }
+      if (rL.status === 'fulfilled') {
+        const raw = Array.isArray(rL.value) ? rL.value : rL.value.audit ?? rL.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '', action: a.action ?? '',
+          actor: a.actor ?? '', detail: a.detail ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  const strategyColumns: ColumnDef<Record<string, unknown>>[] = [
-    { key: 'id', label: 'ID', width: '80px' },
-    { key: 'name', label: 'Name', width: '180px' },
-    { key: 'type', label: 'Type', width: '120px' },
-    { key: 'symbol', label: 'Symbol', width: '80px' },
-    { key: 'status', label: 'Status', width: '100px', render: (_v: unknown, row: Record<string, unknown>) => {
-      const st = row['status'] as string;
-      const variant = st === 'live' ? 'success' : st === 'backtested' ? 'working' : st === 'validated' ? 'neutral' : 'queued';
-      return <StatusBadge variant={variant} testId={`strategy-status-${row['id']}`}>{st}</StatusBadge>;
-    }},
-    { key: 'version', label: 'Ver', width: '50px', render: (v: unknown) => `v${v}` },
-    { key: 'id', label: 'Actions', width: '200px', render: (_v: unknown, row: Record<string, unknown>) => (
-      <div style={{ display: 'flex', gap: '4px' }}>
-        <button data-testid={`strategy-select-${row['id']}`}
-          onClick={() => { setSelectedStrategy(STRATEGIES.find(s => s.id === row['id']) || null); setActiveTab('artifacts'); }}
-          style={{ padding: '2px 6px', fontSize: '10px', background: 'var(--ui2-brand-primary)', color: 'white', border: 'none', borderRadius: 'var(--ui2-radius-sm)', cursor: 'pointer' }}>
-          Artifacts
-        </button>
-        <button data-testid={`strategy-validate-${row['id']}`}
-          onClick={() => {
-            setValidationResult({
-              strategyId: row['id'] as string,
-              pass: (row['status'] as string) !== 'draft',
-              checks: [
-                { name: 'Schema Valid', pass: true },
-                { name: 'Symbol Exists', pass: true },
-                { name: 'Params in Range', pass: (row['status'] as string) !== 'draft' },
-                { name: 'Backtest Exists', pass: (row['status'] as string) === 'backtested' || (row['status'] as string) === 'live' },
-              ],
-            });
-            setActiveTab('validation');
-          }}
-          style={{ padding: '2px 6px', fontSize: '10px', background: 'var(--ui2-bg-tertiary)', color: 'var(--ui2-text-primary)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', cursor: 'pointer' }}>
-          Validate
-        </button>
-        <button data-testid={`strategy-diff-${row['id']}`}
-          onClick={() => { setSelectedStrategy(STRATEGIES.find(s => s.id === row['id']) || null); setActiveTab('diff'); }}
-          style={{ padding: '2px 6px', fontSize: '10px', background: 'var(--ui2-bg-tertiary)', color: 'var(--ui2-text-primary)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', cursor: 'pointer' }}>
-          Diff
-        </button>
-      </div>
-    )},
-  ];
+  const handleRunBacktest = async () => {
+    if (!selectedStrategy) return
+    setBacktesting(true); setBtMsg(null)
+    try {
+      const r = await fetch('/api/v3/research/backtest', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ strategy_id: selectedStrategy }),
+      })
+      if (r.ok) { const d = await r.json(); setBtMsg(`Backtest queued: ${d.artifact_id ?? d.id ?? 'ok'}`); fetchAll() }
+      else setBtMsg('Backtest failed â€” check backend')
+    } catch (e: any) { setBtMsg(e.message) }
+    finally { setBacktesting(false) }
+  }
 
-  const artifactColumns: ColumnDef<Record<string, unknown>>[] = [
-    { key: 'id', label: 'ID', width: '80px' },
-    { key: 'name', label: 'Name', width: '200px' },
-    { key: 'type', label: 'Type', width: '100px' },
-    { key: 'status', label: 'Status', width: '100px', render: (_v: unknown, row: Record<string, unknown>) => {
-      const st = row['status'] as string;
-      return <StatusBadge variant={st === 'completed' ? 'success' : st === 'running' ? 'working' : 'danger'} testId={`artifact-status-${row['id']}`}>{st}</StatusBadge>;
-    }},
-    { key: 'size', label: 'Size', width: '80px', render: (v: unknown) => formatSize(v as number) },
-    { key: 'id', label: 'Action', width: '120px', render: (_v: unknown, row: Record<string, unknown>) => (
-      <button data-testid={`artifact-run-backtest-${row['id']}`}
-        style={{ padding: '2px 6px', fontSize: '10px', background: 'var(--ui2-brand-primary)', color: 'white', border: 'none', borderRadius: 'var(--ui2-radius-sm)', cursor: 'pointer' }}>
-        Run Backtest
-      </button>
-    )},
-  ];
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
-  const filteredArtifacts = selectedStrategy
-    ? ARTIFACTS.filter(a => a.strategyId === selectedStrategy.id)
-    : ARTIFACTS;
+  const validatedCount = strategies.filter(s => s.status === 'validated' || s.status === 'backtested' || s.status === 'live').length
+  const passedValidations = validations.filter(v => v.passed).length
+  const artCompleted = artifacts.filter(a => a.status === 'completed').length
+  const TABS2 = [
+    { id: 'strategies' as const, label: 'STRATEGIES' },
+    { id: 'artifacts' as const, label: 'ARTIFACTS' },
+    { id: 'validation' as const, label: 'VALIDATION' },
+    { id: 'diff' as const, label: 'DIFF VIEWER' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <div data-testid="research-ui2-page" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '12px 16px 0 16px' }}>
-        <PageHeader title="Research" subtitle="Strategy Lab: Build, Test, Validate, Diff" icon="R" testId="research-header" />
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH â€” STRATEGY ARTIFACTS + VALIDATION + BACKTEST DIFF + ARTIFACT REGISTRY</span>
+        {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {btMsg && <span style={{ fontSize: 10, color: GREEN }}>{btMsg}</span>}
+          <button onClick={handleRunBacktest} disabled={backtesting || !selectedStrategy}
+            style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: !selectedStrategy ? SUBTLE : BLUE, background: (!selectedStrategy ? SUBTLE : BLUE) + '22', border: `1px solid ${!selectedStrategy ? SUBTLE : BLUE}44`, borderRadius: 3, padding: '4px 10px', cursor: !selectedStrategy || backtesting ? 'not-allowed' : 'pointer' }}>
+            {backtesting ? 'QUEUEINGâ€¦' : 'RUN BACKTEST'}
+          </button>
+        </div>
       </div>
-
-      <div style={{ padding: '0 16px 8px 16px' }}>
-        <Tabs
-          items={[
-            { id: 'strategies', label: 'Strategies' },
-            { id: 'artifacts', label: 'Artifacts' },
-            { id: 'validation', label: 'Validation' },
-            { id: 'diff', label: 'Diff' },
-          ]}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          testId="research-tabs"
-        />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Total Strategies" value={strategies.length} col={TEXT} />
+        <StatCard label="Validated / Live" value={validatedCount} col={GREEN} />
+        <StatCard label="Artifacts" value={artifacts.length} col={BLUE} sub={`${artCompleted} completed`} />
+        <StatCard label="Validation Pass" value={passedValidations} col={passedValidations > 0 ? GREEN : AMBER} sub={`/ ${validations.length} total`} />
+        <StatCard label="Diff Entries" value={diffs.length} col={PURPLE} />
       </div>
-
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 16px 16px 16px' }}>
-        {activeTab === 'strategies' && (
-          <div data-testid="research-strategies-panel">
-            <DataTable data={STRATEGIES as unknown as Record<string, unknown>[]} columns={strategyColumns} keyField="id" testId="research-strategies-table" />
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {tab === 'strategies' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th></Th><Th>ID</Th><Th>Name</Th><Th>Type</Th><Th>Symbol</Th><Th>Status</Th><Th right>Version</Th><Th>Author</Th><Th>Updated</Th></tr></thead>
+              <tbody>
+                {strategies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies â€” check /api/v3/research/strategies</td></tr>}
+                {strategies.sort((a, b) => b.updatedAt - a.updatedAt).map((s, i) => (
+                  <tr key={i} onClick={() => setSelectedStrategy(selectedStrategy === s.id ? null : s.id)} style={{ cursor: 'pointer', background: selectedStrategy === s.id ? AMBER + '11' : 'transparent' }}>
+                    <Td mono col={selectedStrategy === s.id ? AMBER : SUBTLE}>{selectedStrategy === s.id ? 'â–¶' : 'â—‹'}</Td>
+                    <Td mono col={AMBER}>{s.id.slice(0, 12)}</Td>
+                    <Td mono col={TEXT}>{s.name.slice(0, 30)}</Td>
+                    <Td mono col={BLUE}>{s.type}</Td>
+                    <Td mono col={TEXT}>{s.symbol}</Td>
+                    <Td><StatusBadge s={s.status} /></Td>
+                    <Td right mono col={SUBTLE}>v{s.version}</Td>
+                    <Td mono col={SUBTLE}>{s.author}</Td>
+                    <Td mono col={SUBTLE}>{s.updatedAt ? new Date(s.updatedAt).toISOString().slice(0, 10) : 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-
-        {activeTab === 'artifacts' && (
-          <div data-testid="research-artifacts-panel">
-            {selectedStrategy && (
-              <div style={{ marginBottom: '12px', fontSize: '13px', color: 'var(--ui2-text-secondary)' }}>
-                Artifacts for: <strong style={{ color: 'var(--ui2-text-primary)' }}>{selectedStrategy.name}</strong> ({selectedStrategy.id})
-              </div>
-            )}
-            <DataTable data={filteredArtifacts as unknown as Record<string, unknown>[]} columns={artifactColumns} keyField="id" testId="research-artifacts-table" />
+        {tab === 'artifacts' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Artifact ID</Th><Th>Name</Th><Th>Type</Th><Th>Strategy</Th><Th>Status</Th><Th right>Size</Th><Th>SHA256</Th><Th>Created</Th></tr></thead>
+              <tbody>
+                {artifacts.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No artifacts â€” check /api/v3/research/artifacts</td></tr>}
+                {artifacts.sort((a, b) => b.createdAt - a.createdAt).map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.id.slice(0, 12)}</Td>
+                    <Td mono col={TEXT}>{a.name.slice(0, 28)}</Td>
+                    <Td mono col={BLUE}>{a.type}</Td>
+                    <Td mono col={SUBTLE}>{a.strategyId.slice(0, 12)}</Td>
+                    <Td><StatusBadge s={a.status} /></Td>
+                    <Td right mono col={TEXT}>{fmtBytes(a.sizeBytes)}</Td>
+                    <Td mono col={SUBTLE}>{a.sha256.slice(0, 14)}â€¦</Td>
+                    <Td mono col={SUBTLE}>{a.createdAt ? new Date(a.createdAt).toISOString().slice(0, 10) : 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-
-        {activeTab === 'validation' && (
-          <div data-testid="research-validation-panel">
-            {validationResult ? (
-              <div data-testid="research-validation-result">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                  <StatusBadge variant={validationResult.pass ? 'success' : 'danger'} testId="validation-overall">
-                    {validationResult.pass ? 'PASS' : 'FAIL'}
-                  </StatusBadge>
-                  <span style={{ fontSize: '13px', color: 'var(--ui2-text-secondary)' }}>
-                    Strategy: {validationResult.strategyId}
-                  </span>
+        {tab === 'validation' && (
+          <div>
+            {validations.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No validations â€” check /api/v3/research/validation</div>}
+            {validations.map((v, i) => (
+              <div key={i} style={{ background: PANEL, border: `1px solid ${v.passed ? GREEN : RED}33`, borderRadius: 4, padding: '12px 16px', marginBottom: 8 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: AMBER }}>{v.strategyId.slice(0, 14)}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: TEXT }}>{v.strategyName.slice(0, 30)}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 9, color: v.passed ? GREEN : RED, background: (v.passed ? GREEN : RED) + '22', borderRadius: 3, padding: '2px 5px' }}>{v.passed ? 'PASSED' : 'FAILED'}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: v.score >= 80 ? GREEN : v.score >= 50 ? AMBER : RED }}>{v.score.toFixed(0)}/100</span>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: SUBTLE, marginLeft: 'auto' }}>{v.validatedAt.slice(0, 16)}</span>
                 </div>
-                <div data-testid="validation-checks" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {validationResult.checks.map((c, i) => (
-                    <div key={i} data-testid={`validation-check-${i}`} style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '8px 12px', background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)',
-                    }}>
-                      <span style={{ color: c.pass ? 'var(--ui2-success)' : 'var(--ui2-danger)', fontSize: '14px' }}>
-                        {c.pass ? '✔' : '✘'}
-                      </span>
-                      <span style={{ fontSize: '13px', color: 'var(--ui2-text-primary)' }}>{c.name}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {v.checks.map((c, j) => (
+                    <div key={j} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <span style={{ fontFamily: MONO, fontSize: 11, color: c.passed ? GREEN : c.severity === 'error' ? RED : AMBER }}>{c.passed ? 'âœ“' : 'âœ—'}</span>
+                      <span style={{ fontFamily: MONO, fontSize: 11, color: TEXT }}>{c.name}</span>
+                      <span style={{ fontFamily: MONO, fontSize: 10, color: SUBTLE }}>{c.message.slice(0, 60)}</span>
                     </div>
                   ))}
                 </div>
               </div>
-            ) : (
-              <div data-testid="validation-empty" style={{ textAlign: 'center', padding: '40px', color: 'var(--ui2-text-muted)', fontSize: '13px' }}>
-                Select a strategy and click "Validate" to run checks.
-              </div>
-            )}
+            ))}
           </div>
         )}
-
-        {activeTab === 'diff' && (
-          <div data-testid="research-diff-panel">
-            {selectedStrategy ? (
-              <div data-testid="research-diff-content">
-                <div style={{ fontSize: '13px', color: 'var(--ui2-text-secondary)', marginBottom: '12px' }}>
-                  Version diff for: <strong style={{ color: 'var(--ui2-text-primary)' }}>{selectedStrategy.name}</strong> v{selectedStrategy.version - 1} → v{selectedStrategy.version}
-                </div>
-                <div data-testid="research-diff-view" style={{
-                  fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.6,
-                  background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)',
-                  borderRadius: 'var(--ui2-radius-md)', padding: '16px', whiteSpace: 'pre-wrap',
-                }}>
-                  <div style={{ color: 'var(--ui2-text-muted)' }}>--- {selectedStrategy.id}/config.json (v{selectedStrategy.version - 1})</div>
-                  <div style={{ color: 'var(--ui2-text-muted)' }}>+++ {selectedStrategy.id}/config.json (v{selectedStrategy.version})</div>
-                  <div style={{ color: 'var(--ui2-text-muted)' }}>@@ -1,6 +1,8 @@</div>
-                  <div> {'{'}</div>
-                  <div>   "strategy": "{selectedStrategy.type}",</div>
-                  <div style={{ color: 'var(--ui2-danger)' }}>-  "lookback": 14,</div>
-                  <div style={{ color: 'var(--ui2-success)' }}>+  "lookback": 21,</div>
-                  <div style={{ color: 'var(--ui2-success)' }}>+  "smoothing": "ema",</div>
-                  <div>   "symbol": "{selectedStrategy.symbol}",</div>
-                  <div> {'}'}</div>
-                </div>
-              </div>
-            ) : (
-              <div data-testid="diff-empty" style={{ textAlign: 'center', padding: '40px', color: 'var(--ui2-text-muted)', fontSize: '13px' }}>
-                Select a strategy to view version diff.
-              </div>
-            )}
+        {tab === 'diff' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Artifact ID</Th><Th>Name</Th><Th>Change Type</Th><Th>Field</Th><Th>Old Value</Th><Th>New Value</Th><Th right>Change %</Th></tr></thead>
+              <tbody>
+                {diffs.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No diffs â€” check /api/v3/research/diff</td></tr>}
+                {diffs.map((d, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{d.artifactId.slice(0, 12)}</Td>
+                    <Td mono col={TEXT}>{d.name.slice(0, 26)}</Td>
+                    <Td mono col={BLUE}>{d.changeType}</Td>
+                    <Td mono col={TEXT}>{d.fieldName}</Td>
+                    <Td mono col={RED}>{String(d.oldValue).slice(0, 20)}</Td>
+                    <Td mono col={GREEN}>{String(d.newValue).slice(0, 20)}</Td>
+                    <Td right mono col={d.changePct !== null ? (d.changePct > 0 ? GREEN : RED) : SUBTLE}>{d.changePct !== null ? `${d.changePct >= 0 ? '+' : ''}${d.changePct.toFixed(1)}%` : 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v3/research/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
-      <div data-testid="research-ready" style={{ display: 'none' }} />
     </div>
-  );
+  )
 }

@@ -1,230 +1,366 @@
-/**
- * DevPortalUI2 — W89: Developer Portal
- * Developer portal with documentation, playground, and API explorer
- *
- * Production-grade terminal interface using ui2 design system.
- * Tabs: Overview | Data | Analytics | Configuration
- */
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// DevPortalUI2 â€” Bloomberg DEVP developer portal terminal
+// API catalog, key management, usage analytics, documentation, changelog
+// Tabs: APIS | KEYS | USAGE | DOCS | CHANGELOG
+// APIs: /api/v4/dev-portal/apis, /keys, /usage, /docs, /changelog
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  PageHeader, Tabs, Panel, DataTable, StatusBadge, KPIStrip, Button, EmptyState, Skeleton,
-} from '../components';
-import type { ColumnDef, KPIItem } from '../components';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
-const API = '/api/v4/dev-portal';
-
-const TABS = [
-  { id: 'overview',  label: 'Overview' },
-  { id: 'data',      label: 'Data' },
-  { id: 'analytics', label: 'Analytics' },
-  { id: 'config',    label: 'Configuration' },
-];
-
-const S = {
-  page:    { height: '100%', display: 'flex', flexDirection: 'column' as const, overflow: 'hidden' },
-  content: { flex: 1, overflow: 'auto', padding: '0 16px 16px 16px' },
-  gap:     { display: 'flex', flexDirection: 'column' as const, gap: 'var(--ui2-space-4)' },
-  grid2:   { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--ui2-space-3)' },
-  grid3:   { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--ui2-space-3)' },
-  surface: { background: 'var(--ui2-bg-surface)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', padding: 'var(--ui2-space-3)' } as React.CSSProperties,
-  mono:    { fontFamily: 'var(--ui2-font-mono)', fontSize: '11px', color: 'var(--ui2-text-tertiary)' } as React.CSSProperties,
-  dimText: { fontSize: '11px', color: 'var(--ui2-text-muted)' } as React.CSSProperties,
-  label:   { fontSize: '11px', fontWeight: 600, color: 'var(--ui2-text-secondary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '4px', display: 'block' } as React.CSSProperties,
-  errorBox:  { background: 'var(--ui2-danger-bg)', border: '1px solid var(--ui2-danger-border)', borderRadius: 'var(--ui2-radius-sm)', padding: 'var(--ui2-space-3)', color: 'var(--ui2-danger)', fontSize: '13px' } as React.CSSProperties,
-};
-
-interface DataItem { [key: string]: unknown }
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={S.dimText}>{label}</span>
-      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ui2-text-primary)' }}>{value}</span>
-    </div>
-  );
+interface ApiEndpoint {
+  endpointId: string
+  path: string
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  category: string
+  version: string
+  status: 'stable' | 'beta' | 'deprecated' | 'experimental'
+  latencyP50: number
+  latencyP99: number
+  rpsAvg: number
+  errorRatePct: number
+  authRequired: boolean
+  rateLimit: number
+  desc: string
 }
 
-function MetricCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={S.surface}>
-      <div style={S.dimText}>{label}</div>
-      <div style={{ fontSize: '16px', fontWeight: 700, fontFamily: 'var(--ui2-font-mono)', color: 'var(--ui2-text-primary)', marginTop: '2px' }}>{value}</div>
-    </div>
-  );
+interface ApiKey {
+  keyId: string
+  name: string
+  owner: string
+  scopes: string[]
+  status: 'active' | 'revoked' | 'expired'
+  createdAt: string
+  expiresAt: string
+  lastUsed: string
+  requestsTotal: number
+  requestsToday: number
+  rateLimit: number
 }
+
+interface UsageRecord {
+  endpoint: string
+  method: string
+  requestsToday: number
+  requestsWeek: number
+  requestsMonth: number
+  errorCount: number
+  avgLatencyMs: number
+  topConsumer: string
+  peakRps: number
+}
+
+interface DocEntry {
+  docId: string
+  title: string
+  category: string
+  version: string
+  lastUpdated: string
+  tags: string[]
+  views: number
+  helpful: number
+  notHelpful: number
+  status: 'current' | 'outdated' | 'draft'
+}
+
+interface ChangelogEntry {
+  version: string
+  releaseDate: string
+  changeType: 'breaking' | 'feature' | 'fix' | 'deprecation' | 'security'
+  summary: string
+  affectedEndpoints: string[]
+  migrationRequired: boolean
+  author: string
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function MethodBadge({ m }: { m: string }) {
+  const c: Record<string, string> = { GET: GREEN, POST: BLUE, PUT: AMBER, DELETE: RED, PATCH: ORANGE }
+  const col = c[m] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, color: col, background: col + '22', borderRadius: 3, padding: '2px 5px', minWidth: 48, display: 'inline-block', textAlign: 'center' }}>{m}</span>
+}
+function StatusBadge2({ s }: { s: string }) {
+  const m: Record<string, string> = { stable: GREEN, beta: BLUE, deprecated: RED, experimental: AMBER }
+  const col = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: col, background: col + '22', borderRadius: 3, padding: '2px 5px' }}>{s.toUpperCase()}</span>
+}
+function KeyStatusBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { active: GREEN, revoked: RED, expired: AMBER }
+  const col = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: col, background: col + '22', borderRadius: 3, padding: '2px 5px' }}>{s.toUpperCase()}</span>
+}
+function ChangeTypeBadge({ t }: { t: string }) {
+  const m: Record<string, string> = { breaking: RED, feature: GREEN, fix: BLUE, deprecation: AMBER, security: PURPLE }
+  const col = m[t] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: col, background: col + '22', borderRadius: 3, padding: '2px 5px' }}>{t.toUpperCase()}</span>
+}
+
 
 export function DevPortalUI2() {
-  const [tab, setTab] = useState('overview');
-  const [data, setData] = useState<DataItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [stats, setStats] = useState<Record<string, any>>({ });
+  const [tab, setTab] = useState<'apis' | 'keys' | 'usage' | 'docs' | 'changelog'>('apis')
+  const [apis, setApis] = useState<ApiEndpoint[]>([])
+  const [keys, setKeys] = useState<ApiKey[]>([])
+  const [usage, setUsage] = useState<UsageRecord[]>([])
+  const [docs, setDocs] = useState<DocEntry[]>([])
+  const [changelog, setChangelog] = useState<ChangelogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const fetchAll = useCallback(async () => {
     try {
-      const r = await fetch(`${API}/docs` );
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const json = await r.json();
-      setData(Array.isArray(json.data) ? json.data : []);
-      setStats(json.metadata || {});
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  }, []);
+      const [rA, rK, rU, rD, rC] = await Promise.allSettled([
+        fetch('/api/v4/dev-portal/apis').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/dev-portal/keys').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/dev-portal/usage').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/dev-portal/docs').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/dev-portal/changelog').then(r => r.ok ? r.json() : []),
+      ])
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.apis ?? rA.value.data ?? []
+        setApis(raw.map((a: any) => ({
+          endpointId: a.endpoint_id ?? a.endpointId ?? '', path: a.path ?? '', method: a.method ?? 'GET',
+          category: a.category ?? '', version: a.version ?? 'v1', status: a.status ?? 'stable',
+          latencyP50: Number(a.latency_p50 ?? a.latencyP50 ?? 0), latencyP99: Number(a.latency_p99 ?? a.latencyP99 ?? 0),
+          rpsAvg: Number(a.rps_avg ?? a.rpsAvg ?? 0), errorRatePct: Number(a.error_rate_pct ?? a.errorRatePct ?? 0),
+          authRequired: Boolean(a.auth_required ?? a.authRequired ?? true),
+          rateLimit: Number(a.rate_limit ?? a.rateLimit ?? 0), desc: a.desc ?? a.description ?? '',
+        })))
+        setErr(null)
+      } else setErr('Failed to load APIs')
+      if (rK.status === 'fulfilled') {
+        const raw = Array.isArray(rK.value) ? rK.value : rK.value.keys ?? rK.value.data ?? []
+        setKeys(raw.map((k: any) => ({
+          keyId: k.key_id ?? k.keyId ?? '', name: k.name ?? '', owner: k.owner ?? '',
+          scopes: Array.isArray(k.scopes) ? k.scopes : [], status: k.status ?? 'active',
+          createdAt: k.created_at ?? k.createdAt ?? '', expiresAt: k.expires_at ?? k.expiresAt ?? '',
+          lastUsed: k.last_used ?? k.lastUsed ?? '', requestsTotal: Number(k.requests_total ?? k.requestsTotal ?? 0),
+          requestsToday: Number(k.requests_today ?? k.requestsToday ?? 0), rateLimit: Number(k.rate_limit ?? k.rateLimit ?? 0),
+        })))
+      }
+      if (rU.status === 'fulfilled') {
+        const raw = Array.isArray(rU.value) ? rU.value : rU.value.usage ?? rU.value.data ?? []
+        setUsage(raw.map((u: any) => ({
+          endpoint: u.endpoint ?? '', method: u.method ?? 'GET',
+          requestsToday: Number(u.requests_today ?? u.requestsToday ?? 0),
+          requestsWeek: Number(u.requests_week ?? u.requestsWeek ?? 0),
+          requestsMonth: Number(u.requests_month ?? u.requestsMonth ?? 0),
+          errorCount: Number(u.error_count ?? u.errorCount ?? 0),
+          avgLatencyMs: Number(u.avg_latency_ms ?? u.avgLatencyMs ?? 0),
+          topConsumer: u.top_consumer ?? u.topConsumer ?? '', peakRps: Number(u.peak_rps ?? u.peakRps ?? 0),
+        })))
+      }
+      if (rD.status === 'fulfilled') {
+        const raw = Array.isArray(rD.value) ? rD.value : rD.value.docs ?? rD.value.data ?? []
+        setDocs(raw.map((d: any) => ({
+          docId: d.doc_id ?? d.docId ?? '', title: d.title ?? '', category: d.category ?? '',
+          version: d.version ?? '', lastUpdated: d.last_updated ?? d.lastUpdated ?? '',
+          tags: Array.isArray(d.tags) ? d.tags : [], views: Number(d.views ?? 0),
+          helpful: Number(d.helpful ?? 0), notHelpful: Number(d.not_helpful ?? d.notHelpful ?? 0),
+          status: d.status ?? 'current',
+        })))
+      }
+      if (rC.status === 'fulfilled') {
+        const raw = Array.isArray(rC.value) ? rC.value : rC.value.changelog ?? rC.value.data ?? []
+        setChangelog(raw.map((c: any) => ({
+          version: c.version ?? '', releaseDate: c.release_date ?? c.releaseDate ?? '',
+          changeType: c.change_type ?? c.changeType ?? 'feature', summary: c.summary ?? '',
+          affectedEndpoints: Array.isArray(c.affected_endpoints ?? c.affectedEndpoints) ? (c.affected_endpoints ?? c.affectedEndpoints) : [],
+          migrationRequired: Boolean(c.migration_required ?? c.migrationRequired ?? false),
+          author: c.author ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
-  const columns: ColumnDef<DataItem>[] = [
-    { key: 'id', label: 'ID', width: '120px', render: (_v, row) => <span style={S.mono}>{String(row.id || '—')}</span> },
-    { key: 'name', label: 'Name', width: '200px' },
-    { key: 'status', label: 'Status', width: '100px', render: (_v, row) => <StatusBadge variant={String(row.status) === 'active' ? 'success' : 'neutral'}>{String(row.status || 'pending')}</StatusBadge> },
-    { key: 'updated', label: 'Updated', width: '140px', render: (_v, row) => <span style={{ fontSize: '12px' }}>{String(row.updated || '—')}</span> },
-  ];
+  const totalApis = apis.length
+  const stableApis = apis.filter(a => a.status === 'stable').length
+  const deprecatedApis = apis.filter(a => a.status === 'deprecated').length
+  const highErrorApis = apis.filter(a => a.errorRatePct > 1).length
+  const activeKeys = keys.filter(k => k.status === 'active').length
+  const breakingChanges = changelog.filter(c => c.changeType === 'breaking').length
 
-  const kpiItems: KPIItem[] = [
-    { id: 'total', label: 'Total Items', value: String(data.length), status: 'neutral', icon: <span style={{ fontSize: '16px' }}>📊</span> },
-    { id: 'active', label: 'Active', value: String(data.filter((d: any) => d.status === 'active').length), status: 'success', icon: <span style={{ fontSize: '16px' }}>✅</span> },
-    { id: 'week', label: 'Week', value: 'W89', status: 'neutral', icon: <span style={{ fontSize: '16px' }}>🌐</span> },
-    { id: 'version', label: 'API Version', value: 'v4', status: 'neutral', icon: <span style={{ fontSize: '16px' }}>🔗</span> },
-  ];
+  const TABS = [
+    { id: 'apis' as const, label: 'APIS' },
+    { id: 'keys' as const, label: 'KEYS' },
+    { id: 'usage' as const, label: 'USAGE' },
+    { id: 'docs' as const, label: 'DOCS' },
+    { id: 'changelog' as const, label: 'CHANGELOG' },
+  ]
 
   return (
-    <div data-testid="dev-portal-page" data-ready="true" style={S.page}>
-      <div style={{ padding: '12px 16px 0 16px' }}>
-        <PageHeader title="Developer Portal" subtitle="Developer portal with documentation, playground, and API explorer" testId="dev-portal-header" />
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DEVP</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>DEVELOPER PORTAL â€” API CATALOG + KEYS + USAGE ANALYTICS + DOCS + CHANGELOG</span>
+        {highErrorApis > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {highErrorApis} HIGH ERROR RATE</span>}
+        {deprecatedApis > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {deprecatedApis} DEPRECATED</span>}
+        {breakingChanges > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {breakingChanges} BREAKING CHANGES</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
       </div>
-      <div style={{ padding: '0 16px 8px 16px' }}>
-        <Tabs items={TABS} activeTab={tab} onTabChange={setTab} testId="dev-portal-tabs" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Total APIs" value={totalApis} col={BLUE} />
+        <StatCard label="Stable" value={stableApis} col={GREEN} />
+        <StatCard label="Active Keys" value={activeKeys} col={PURPLE} />
+        <StatCard label="High Error Rate" value={highErrorApis} col={highErrorApis > 0 ? RED : GREEN} />
+        <StatCard label="Breaking Changes" value={breakingChanges} col={breakingChanges > 0 ? AMBER : GREEN} />
       </div>
-      <div style={S.content}>
-        {error && <div style={S.errorBox}>{error}</div>}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
 
-        {tab === 'overview' && (
-          <div style={S.gap}>
-            <KPIStrip items={kpiItems} variant="hero" testId="dev-portal-kpi" />
-            <div style={S.grid2}>
-              <Panel title="Service Status" variant="elevated" padding="md" testId="dev-portal-status"
-                status={<StatusBadge variant="success">Operational</StatusBadge>}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <InfoRow label="Feature" value="Developer Portal" />
-                  <InfoRow label="Week" value="W89" />
-                  <InfoRow label="API Prefix" value="/api/v4/dev-portal" />
-                  <InfoRow label="Endpoints" value="5" />
-                  <InfoRow label="Version" value="v4" />
-                </div>
-              </Panel>
-              <Panel title="Quick Actions" variant="elevated" padding="md" testId="dev-portal-actions">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ui2-space-2)' }}>
-                  <Button variant="primary" fullWidth onClick={fetchData} loading={loading} testId="dev-portal-refresh">
-                    Refresh Data
-                  </Button>
-                  <Button variant="secondary" fullWidth testId="dev-portal-export">
-                    Export Report
-                  </Button>
-                  <Button variant="ghost" fullWidth testId="dev-portal-docs">
-                    View Documentation
-                  </Button>
-                </div>
-              </Panel>
-            </div>
+        {tab === 'apis' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Method</Th><Th>Path</Th><Th>Category</Th><Th>Status</Th><Th right>P50 (ms)</Th><Th right>P99 (ms)</Th><Th right>Avg RPS</Th><Th right>Error %</Th><Th right>Rate Limit</Th><Th>Auth</Th></tr></thead>
+              <tbody>
+                {apis.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No APIs â€” check /api/v4/dev-portal/apis</td></tr>}
+                {apis.sort((a, b) => b.errorRatePct - a.errorRatePct).map((a, i) => (
+                  <tr key={i} style={{ background: a.errorRatePct > 5 ? RED + '0a' : a.status === 'deprecated' ? AMBER + '06' : 'transparent' }}>
+                    <Td><MethodBadge m={a.method} /></Td>
+                    <Td mono col={AMBER}>{a.path}</Td>
+                    <Td mono col={BLUE}>{a.category}</Td>
+                    <Td><StatusBadge2 s={a.status} /></Td>
+                    <Td right mono col={a.latencyP50 > 200 ? RED : a.latencyP50 > 100 ? AMBER : GREEN}>{a.latencyP50}</Td>
+                    <Td right mono col={a.latencyP99 > 500 ? RED : a.latencyP99 > 200 ? AMBER : TEXT}>{a.latencyP99}</Td>
+                    <Td right mono col={TEXT}>{a.rpsAvg.toFixed(1)}</Td>
+                    <Td right mono col={a.errorRatePct > 5 ? RED : a.errorRatePct > 1 ? AMBER : GREEN}>{a.errorRatePct.toFixed(2)}%</Td>
+                    <Td right mono col={SUBTLE}>{a.rateLimit.toLocaleString()}/m</Td>
+                    <Td mono col={a.authRequired ? ORANGE : GREEN}>{a.authRequired ? 'REQ' : 'OPEN'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'data' && (
-          <div style={S.gap}>
-            {loading ? <Skeleton height={300} /> : data.length > 0 ? (
-              <Panel title="Developer Portal Data" variant="default" padding="none" testId="dev-portal-data-panel">
-                <DataTable columns={columns} data={data} keyField="id" density="compact" testId="dev-portal-table" />
-              </Panel>
-            ) : (
-              <EmptyState title="No data available" description="Run a refresh or check the API connection to load data." />
-            )}
+        {tab === 'keys' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Name</Th><Th>Owner</Th><Th>Status</Th><Th>Scopes</Th><Th right>Total Req</Th><Th right>Today</Th><Th right>Rate Limit</Th><Th>Last Used</Th><Th>Expires</Th></tr></thead>
+              <tbody>
+                {keys.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No keys â€” check /api/v4/dev-portal/keys</td></tr>}
+                {keys.sort((a, b) => b.requestsToday - a.requestsToday).map((k, i) => (
+                  <tr key={i} style={{ background: k.status === 'revoked' ? RED + '0a' : 'transparent' }}>
+                    <Td mono col={AMBER}>{k.name}</Td>
+                    <Td mono col={BLUE}>{k.owner}</Td>
+                    <Td><KeyStatusBadge s={k.status} /></Td>
+                    <Td mono col={PURPLE} style={{ fontSize: 10 } as any}>{k.scopes.slice(0, 3).join(', ')}</Td>
+                    <Td right mono col={TEXT}>{k.requestsTotal.toLocaleString()}</Td>
+                    <Td right mono col={k.requestsToday > k.rateLimit * 0.8 ? AMBER : TEXT}>{k.requestsToday.toLocaleString()}</Td>
+                    <Td right mono col={SUBTLE}>{k.rateLimit.toLocaleString()}/m</Td>
+                    <Td mono col={SUBTLE}>{k.lastUsed}</Td>
+                    <Td mono col={SUBTLE}>{k.expiresAt}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'analytics' && (
-          <div style={S.gap}>
-            <Panel title="Analytics Overview" variant="elevated" padding="md" testId="dev-portal-analytics">
-              <div style={S.grid3}>
-                <MetricCell label="Data Points" value={String(data.length)} />
-                <MetricCell label="API Calls" value="—" />
-                <MetricCell label="Latency (p99)" value="—" />
-                <MetricCell label="Error Rate" value="0%" />
-                <MetricCell label="Throughput" value="—" />
-                <MetricCell label="Cache Hit" value="—" />
-              </div>
-            </Panel>
-            <Panel title="Recent Activity" variant="bordered" padding="md" testId="dev-portal-activity">
-              <EmptyState title="No recent activity" description="Analytics data will populate as the service processes requests." />
-            </Panel>
+        {tab === 'usage' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Endpoint</Th><Th>Method</Th><Th right>Today</Th><Th right>Week</Th><Th right>Month</Th><Th right>Errors</Th><Th right>Avg Lat (ms)</Th><Th right>Peak RPS</Th><Th>Top Consumer</Th></tr></thead>
+              <tbody>
+                {usage.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No usage â€” check /api/v4/dev-portal/usage</td></tr>}
+                {usage.sort((a, b) => b.requestsToday - a.requestsToday).map((u, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{u.endpoint}</Td>
+                    <Td><MethodBadge m={u.method} /></Td>
+                    <Td right mono col={TEXT}>{u.requestsToday.toLocaleString()}</Td>
+                    <Td right mono col={SUBTLE}>{u.requestsWeek.toLocaleString()}</Td>
+                    <Td right mono col={SUBTLE}>{u.requestsMonth.toLocaleString()}</Td>
+                    <Td right mono col={u.errorCount > 0 ? RED : GREEN}>{u.errorCount.toLocaleString()}</Td>
+                    <Td right mono col={u.avgLatencyMs > 500 ? RED : u.avgLatencyMs > 200 ? AMBER : GREEN}>{u.avgLatencyMs.toFixed(1)}</Td>
+                    <Td right mono col={TEXT}>{u.peakRps.toFixed(1)}</Td>
+                    <Td mono col={BLUE}>{u.topConsumer}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'config' && (
-          <div style={S.gap}>
-            <Panel title="Service Configuration" variant="elevated" padding="md" testId="dev-portal-config">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <InfoRow label="API Endpoint" value="/api/v4/dev-portal" />
-                <InfoRow label="Week" value="W89" />
-                <InfoRow label="Section" value="tools" />
-                <InfoRow label="Auto-refresh" value="Enabled" />
-                <InfoRow label="Cache TTL" value="60s" />
-              </div>
-            </Panel>
-            <Panel title="Endpoints" variant="bordered" padding="md" testId="dev-portal-endpoints">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/docs
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>List documentation pages</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/playground/examples
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>List playground examples</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="warning">POST</StatusBadge>
-                      {' '}/playground/run
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Run playground example</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/getting-started
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Get getting started guide</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/changelog
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Get portal changelog</div>
-                </div>
-              </div>
-            </Panel>
+        {tab === 'docs' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Title</Th><Th>Category</Th><Th>Version</Th><Th>Status</Th><Th right>Views</Th><Th right>Helpful</Th><Th right>Not Helpful</Th><Th>Last Updated</Th></tr></thead>
+              <tbody>
+                {docs.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No docs â€” check /api/v4/dev-portal/docs</td></tr>}
+                {docs.sort((a, b) => b.views - a.views).map((d, i) => {
+                  const statusCol = d.status === 'current' ? GREEN : d.status === 'outdated' ? RED : AMBER
+                  return (
+                    <tr key={i}>
+                      <Td mono col={AMBER}>{d.title}</Td>
+                      <Td mono col={BLUE}>{d.category}</Td>
+                      <Td mono col={SUBTLE}>{d.version}</Td>
+                      <Td><span style={{ fontFamily: MONO, fontSize: 9, color: statusCol, background: statusCol + '22', borderRadius: 3, padding: '2px 5px' }}>{d.status.toUpperCase()}</span></Td>
+                      <Td right mono col={TEXT}>{d.views.toLocaleString()}</Td>
+                      <Td right mono col={GREEN}>{d.helpful.toLocaleString()}</Td>
+                      <Td right mono col={d.notHelpful > d.helpful * 0.3 ? RED : SUBTLE}>{d.notHelpful.toLocaleString()}</Td>
+                      <Td mono col={SUBTLE}>{d.lastUpdated}</Td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === 'changelog' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Version</Th><Th>Date</Th><Th>Type</Th><Th>Summary</Th><Th>Affected Endpoints</Th><Th>Migration</Th><Th>Author</Th></tr></thead>
+              <tbody>
+                {changelog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No changelog â€” check /api/v4/dev-portal/changelog</td></tr>}
+                {changelog.map((c, i) => (
+                  <tr key={i} style={{ background: c.changeType === 'breaking' ? RED + '0a' : 'transparent' }}>
+                    <Td mono col={AMBER}>{c.version}</Td>
+                    <Td mono col={SUBTLE}>{c.releaseDate}</Td>
+                    <Td><ChangeTypeBadge t={c.changeType} /></Td>
+                    <Td mono col={TEXT} style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{c.summary}</Td>
+                    <Td mono col={BLUE} style={{ fontSize: 10 } as any}>{c.affectedEndpoints.slice(0, 2).join(', ')}</Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.migrationRequired ? ORANGE : GREEN }}>{c.migrationRequired ? 'REQUIRED' : 'NONE'}</span></Td>
+                    <Td mono col={SUBTLE}>{c.author}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }

@@ -1,8 +1,18 @@
-/**
- * v1.38 — Citations Panel
- * Reusable component for rendering citation/evidence items.
- */
+// Bloomberg CP — Citations Panel  
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const PURPLE = '#ab47bc';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
 import { useState } from 'react';
+import React from 'react';
 
 export interface CitationItem {
   id: string;
@@ -13,7 +23,7 @@ export interface CitationItem {
   timestamp: string;
   confidence?: number | null;
   url?: string | null;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface CitationsPanelProps {
@@ -22,23 +32,27 @@ interface CitationsPanelProps {
   loading?: boolean;
 }
 
-const sourceColors: Record<string, string> = {
-  risk_run: 'bg-red-500/20 text-red-400',
-  backtest: 'bg-blue-500/20 text-blue-400',
-  validation: 'bg-green-500/20 text-green-400',
-  strategy: 'bg-purple-500/20 text-purple-400',
-  export: 'bg-yellow-500/20 text-yellow-400',
-  provenance: 'bg-cyan-500/20 text-cyan-400',
+const SOURCE_COLOR: Record<string, string> = {
+  risk_run:   RED,
+  backtest:   BLUE,
+  validation: GREEN,
+  strategy:   PURPLE,
+  export:     AMBER,
+  provenance: '#26c6da',
 };
 
 export function CitationsPanel({ citations, maxVisible = 5, loading }: CitationsPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   if (loading) {
     return (
-      <div data-testid="citations-panel" className="p-3 rounded-lg border border-border bg-panel-bg">
-        <div data-testid="citations-loading" className="animate-pulse space-y-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-8 bg-element-bg/50 rounded w-full" />)}
+      <div data-testid="citations-panel"
+        style={{ padding:8, background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, fontFamily:MONO }}>
+        <div data-testid="citations-loading">
+          {[1,2,3].map(i => (
+            <div key={i} style={{ height:28, background:BG, borderRadius:2, marginBottom:4, opacity: 0.6 - i*0.1 }} />
+          ))}
         </div>
       </div>
     );
@@ -46,9 +60,10 @@ export function CitationsPanel({ citations, maxVisible = 5, loading }: Citations
 
   if (!citations.length) {
     return (
-      <div data-testid="citations-panel" className="p-3 rounded-lg border border-border bg-panel-bg">
-        <div data-testid="citations-empty" className="text-sm text-text-muted text-center py-4">
-          No citations available
+      <div data-testid="citations-panel"
+        style={{ padding:12, background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, fontFamily:MONO }}>
+        <div data-testid="citations-empty" style={{ color:SUBTLE, fontSize:10, textAlign:'center', padding:'8px 0' }}>
+          NO CITATIONS AVAILABLE
         </div>
       </div>
     );
@@ -58,47 +73,66 @@ export function CitationsPanel({ citations, maxVisible = 5, loading }: Citations
   const hasMore = citations.length > maxVisible;
 
   return (
-    <div data-testid="citations-panel" className="p-3 rounded-lg border border-border bg-panel-bg">
-      <h3 className="text-sm font-semibold text-text mb-2 flex items-center gap-2">
-        <span>Citations & Evidence</span>
-        <span className="text-xs text-text-muted">({citations.length})</span>
-      </h3>
-      <div className="space-y-2">
-        {visible.map((c, idx) => (
-          <div
-            key={c.id}
-            data-testid={`citation-item-${idx}`}
-            className="p-2 rounded bg-element-bg/30 border border-border/50"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                data-testid={`citation-source-${idx}`}
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${sourceColors[c.source_type] || 'bg-gray-500/20 text-gray-400'}`}
-              >
-                {c.source_type}
-              </span>
-              <span className="text-xs font-medium text-text flex-1 truncate">{c.title}</span>
-              {c.confidence != null && (
-                <span
-                  data-testid={`citation-confidence-${idx}`}
-                  className="text-[10px] text-text-muted"
-                >
-                  {Math.round(c.confidence * 100)}%
+    <div data-testid="citations-panel"
+      style={{ background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, fontFamily:MONO }}>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'4px 8px', borderBottom:`1px solid ${BORDER}`, background:BG }}>
+        <span style={{ color:AMBER, fontWeight:700, fontSize:10, letterSpacing:1 }}>CITATIONS & EVIDENCE</span>
+        <span style={{ color:SUBTLE, fontSize:9 }}>{citations.length} ITEMS</span>
+      </div>
+
+      {/* Citation list */}
+      <div style={{ padding:4 }}>
+        {visible.map((c, idx) => {
+          const color = SOURCE_COLOR[c.source_type] ?? SUBTLE;
+          const isHov = hovered === c.id;
+          return (
+            <div key={c.id}
+              data-testid={`citation-item-${idx}`}
+              onMouseEnter={() => setHovered(c.id)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                padding:'5px 8px', marginBottom:2, borderRadius:2,
+                background: isHov ? '#141414' : BG,
+                border:`1px solid ${isHov ? color : BORDER}`,
+                borderLeft:`3px solid ${color}`,
+              }}
+            >
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                <span data-testid={`citation-source-${idx}`}
+                  style={{ color, fontSize:8, border:`1px solid ${color}`, padding:'0 3px', borderRadius:1, whiteSpace:'nowrap' }}>
+                  {c.source_type.toUpperCase()}
                 </span>
+                <span style={{ color:TEXT, fontSize:10, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.title}</span>
+                {c.confidence != null && (
+                  <span data-testid={`citation-confidence-${idx}`}
+                    style={{ color: c.confidence >= 0.8 ? GREEN : c.confidence >= 0.5 ? AMBER : RED, fontSize:9, fontFamily:MONO }}>
+                    {Math.round(c.confidence * 100)}%
+                  </span>
+                )}
+              </div>
+              <div style={{ color:SUBTLE, fontSize:9, lineHeight:1.3, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
+                {c.detail}
+              </div>
+              {c.url && isHov && (
+                <div style={{ color:BLUE, fontSize:8, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {c.url}
+                </div>
               )}
             </div>
-            <p className="text-xs text-text-secondary line-clamp-2">{c.detail}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {/* Show more */}
       {hasMore && (
-        <button
-          data-testid="citations-toggle"
-          onClick={() => setExpanded(!expanded)}
-          className="mt-2 text-xs text-brand hover:text-brand/80 transition-colors"
-        >
-          {expanded ? 'Show less' : `Show ${citations.length - maxVisible} more`}
-        </button>
+        <div style={{ padding:'3px 8px', borderTop:`1px solid ${BORDER}` }}>
+          <button data-testid="citations-toggle"
+            onClick={() => setExpanded(!expanded)}
+            style={{ background:'transparent', border:'none', color:BLUE, fontFamily:MONO, fontSize:9, cursor:'pointer', padding:0 }}>
+            {expanded ? '▲ SHOW LESS' : `▼ SHOW ${citations.length - maxVisible} MORE`}
+          </button>
+        </div>
       )}
     </div>
   );

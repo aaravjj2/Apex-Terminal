@@ -1,5 +1,27 @@
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+const Th=({c,ch}:{c?:React.CSSProperties,ch:React.ReactNode})=>(
+  <th style={{padding:'5px 8px',fontSize:10,fontFamily:MONO,color:SUBTLE,textTransform:'uppercase' as const,
+    letterSpacing:'0.08em',borderBottom:`1px solid ${BORDER}`,textAlign:'left',cursor:'pointer',...c}}>{ch}</th>
+)
+const Td=({c,ch}:{c?:React.CSSProperties,ch:React.ReactNode})=>(
+  <td style={{padding:'5px 8px',fontSize:11,fontFamily:MONO,borderBottom:`1px solid ${BORDER}`,color:TEXT,...c}}>{ch}</td>
+)
+function SBadge({status}:{status:string}){
+  const m:Record<string,{c:string,bg:string}>={
+    filled:{c:GREEN,bg:`${GREEN}18`},partial:{c:BLUE,bg:`${BLUE}18`},
+    submitted:{c:AMBER,bg:`${AMBER}18`},canceled:{c:SUBTLE,bg:`${SUBTLE}18`},rejected:{c:RED,bg:`${RED}18`},
+  }
+  const x=m[status]||{c:SUBTLE,bg:`${SUBTLE}18`}
+  return <span style={{fontSize:9,fontFamily:MONO,color:x.c,background:x.bg,padding:'2px 5px',borderRadius:2,
+    textTransform:'uppercase' as const}}>{status}</span>
+}
+
 import { useState, useEffect } from 'react';
-import { ClipboardList, Filter, X, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 
 interface Order {
     id: string;
@@ -25,8 +47,6 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
-    // Filters
     const [filterSymbol, setFilterSymbol] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [sortField, setSortField] = useState<'submitted_at' | 'symbol'>('submitted_at');
@@ -38,10 +58,9 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
             const res = await fetch(`${API_BASE}/portfolio/orders`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            setOrders(data);
+            setOrders(Array.isArray(data)?data:data.orders||[]);
         } catch (e) {
             console.error('Failed to fetch orders:', e);
-            setOrders([]);
         } finally {
             setLoading(false);
         }
@@ -55,191 +74,148 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
         }
     }, [isOpen, embedded]);
 
-    const filteredOrders = orders
+    const filtered = orders
         .filter(o => !filterSymbol || o.symbol.toLowerCase().includes(filterSymbol.toLowerCase()))
         .filter(o => !filterStatus || o.status === filterStatus)
         .sort((a, b) => {
-            const aVal = sortField === 'submitted_at' ? new Date(a.submitted_at).getTime() : a.symbol;
-            const bVal = sortField === 'submitted_at' ? new Date(b.submitted_at).getTime() : b.symbol;
-            if (aVal < bVal) return sortAsc ? -1 : 1;
-            if (aVal > bVal) return sortAsc ? 1 : -1;
+            const av = sortField==='submitted_at'?new Date(a.submitted_at).getTime():a.symbol;
+            const bv = sortField==='submitted_at'?new Date(b.submitted_at).getTime():b.symbol;
+            if (av<bv) return sortAsc?-1:1;
+            if (av>bv) return sortAsc?1:-1;
             return 0;
         });
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'filled': return 'bg-green-500/20 text-green-400';
-            case 'partial': return 'bg-yellow-500/20 text-yellow-400';
-            case 'submitted': return 'bg-blue-500/20 text-blue-400';
-            case 'canceled': return 'bg-gray-500/20 text-gray-400';
-            case 'rejected': return 'bg-red-500/20 text-red-400';
-            default: return 'bg-gray-500/20 text-gray-400';
-        }
+    const fmtTime=(iso:string)=>new Date(iso).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const fmtPrice=(v?:number)=>v!=null?`$${v.toFixed(2)}`:'â€”';
+    const toggleSort=(f:'submitted_at'|'symbol')=>{
+        if(sortField===f) setSortAsc(!sortAsc);
+        else{setSortField(f);setSortAsc(false);}
     };
 
-    const getSideColor = (side: string) => side === 'buy' ? 'text-green-400' : 'text-red-400';
+    const inp:React.CSSProperties={background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,
+        padding:'3px 7px',fontSize:10,fontFamily:MONO,color:TEXT}
+    const sel:React.CSSProperties={...inp,appearance:'none' as const}
+    const toggleBtn:React.CSSProperties={display:'flex',alignItems:'center',gap:6,padding:'4px 10px',
+        fontSize:10,fontFamily:MONO,background:PANEL,border:`1px solid ${BORDER}`,color:BLUE,cursor:'pointer',borderRadius:2}
 
-    const formatTime = (iso: string) => {
-        const d = new Date(iso);
-        return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    };
-
-    const toggleSort = (field: 'submitted_at' | 'symbol') => {
-        if (sortField === field) {
-            setSortAsc(!sortAsc);
-        } else {
-            setSortField(field);
-            setSortAsc(false);
-        }
-    };
-
-    const containerClass = embedded
-        ? "h-full flex flex-col bg-gray-900 text-gray-100"
-        : "fixed bottom-0 left-0 right-0 h-80 bg-gray-900 border-t border-gray-700 z-50 flex flex-col shadow-2xl animate-slide-up";
-
-    return (
-        <>
-            {!embedded && (
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    data-testid="orders-blotter-toggle"
-                    className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors"
-                >
-                    <ClipboardList size={14} />
-                    Orders
-                    {orders.filter(o => o.status === 'submitted').length > 0 && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-indigo-800 rounded-full text-xs">
-                            {orders.filter(o => o.status === 'submitted').length}
+    if (!embedded) {
+        return (
+            <>
+                <button onClick={()=>setIsOpen(!isOpen)} style={toggleBtn} data-testid="orders-blotter-toggle">
+                    ORDERS
+                    {orders.filter(o=>o.status==='submitted').length>0&&(
+                        <span style={{fontSize:9,background:AMBER,color:BG,padding:'1px 5px',borderRadius:2}}>
+                            {orders.filter(o=>o.status==='submitted').length}
                         </span>
                     )}
                 </button>
-            )}
+                {isOpen&&<BlotterPanel orders={filtered} filterSymbol={filterSymbol} setFilterSymbol={setFilterSymbol}
+                    filterStatus={filterStatus} setFilterStatus={setFilterStatus} loading={loading}
+                    fetch={fetchOrders} selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder}
+                    sortField={sortField} toggleSort={toggleSort} sortAsc={sortAsc} onClose={()=>setIsOpen(false)}
+                    fmtTime={fmtTime} fmtPrice={fmtPrice} inp={inp} sel={sel}/>}
+            </>
+        );
+    }
 
-            {(isOpen || embedded) && (
-                <div className={containerClass} data-testid="orders-blotter-panel">
-                    {/* Header - Only show if NOT embedded, or simplified if embedded */}
-                    {!embedded ? (
-                        <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-white">Orders Blotter</h2>
-                            <div className="flex items-center gap-2">
-                                <button onClick={fetchOrders} className="p-1 hover:bg-gray-700 rounded">
-                                    <RefreshCw size={16} className={`text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-                                </button>
-                                <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-gray-700 rounded">
-                                    <X size={16} className="text-gray-400" />
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        // Embedded Toolbar
-                        <div className="p-2 border-b border-gray-800 flex items-center gap-2">
-                            <input
-                                type="text"
-                                placeholder="Symbol..."
-                                value={filterSymbol}
-                                onChange={(e) => setFilterSymbol(e.target.value)}
-                                className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs text-white w-24 focus:outline-none focus:border-blue-500"
-                            />
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs text-white focus:outline-none focus:border-blue-500"
-                            >
-                                <option value="">All Status</option>
-                                <option value="submitted">Submitted</option>
-                                <option value="filled">Filled</option>
-                                <option value="canceled">Canceled</option>
-                            </select>
-                            <button onClick={fetchOrders} className="p-1 hover:bg-gray-800 rounded ml-auto">
-                                <RefreshCw size={14} className={`text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-                            </button>
-                        </div>
-                    )}
+    return (
+        <BlotterPanel orders={filtered} filterSymbol={filterSymbol} setFilterSymbol={setFilterSymbol}
+            filterStatus={filterStatus} setFilterStatus={setFilterStatus} loading={loading}
+            fetch={fetchOrders} selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder}
+            sortField={sortField} toggleSort={toggleSort} sortAsc={sortAsc}
+            fmtTime={fmtTime} fmtPrice={fmtPrice} inp={inp} sel={sel}/>
+    );
+}
 
-                    {/* Legacy Filter Bar (only if not embedded, because embedded uses toolbar above) */}
-                    {!embedded && (
-                        <div className="p-3 border-b border-gray-700 flex items-center gap-3">
-                            <Filter size={14} className="text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Symbol..."
-                                value={filterSymbol}
-                                onChange={(e) => setFilterSymbol(e.target.value)}
-                                className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-xs text-white w-24"
-                            />
-                            {/* ... existing select ... */}
-                            <span className="ml-auto text-xs text-gray-400">{filteredOrders.length} orders</span>
-                        </div>
-                    )}
+interface BlotterProps {
+    orders:Order[]; filterSymbol:string; setFilterSymbol:(v:string)=>void;
+    filterStatus:string; setFilterStatus:(v:string)=>void; loading:boolean;
+    fetch:()=>void; selectedOrder:Order|null; setSelectedOrder:(o:Order|null)=>void;
+    sortField:'submitted_at'|'symbol'; toggleSort:(f:'submitted_at'|'symbol')=>void; sortAsc:boolean;
+    onClose?:()=>void; fmtTime:(iso:string)=>string; fmtPrice:(v?:number)=>string;
+    inp:React.CSSProperties; sel:React.CSSProperties;
+}
 
-                    {/* Table */}
-                    <div className="flex-1 overflow-auto" data-testid="orders-blotter-table">
-                        <table className="w-full text-xs">
-                            <thead className="bg-gray-800 sticky top-0">
-                                <tr className="text-gray-400 text-left">
-                                    <th className="p-2 cursor-pointer hover:text-white" onClick={() => toggleSort('submitted_at')}>
-                                        Time {sortField === 'submitted_at' && (sortAsc ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
-                                    </th>
-                                    <th className="p-2 cursor-pointer hover:text-white" onClick={() => toggleSort('symbol')}>
-                                        Symbol {sortField === 'symbol' && (sortAsc ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
-                                    </th>
-                                    <th className="p-2">Side</th>
-                                    <th className="p-2">Type</th>
-                                    <th className="p-2 text-right">Qty</th>
-                                    <th className="p-2 text-right">Filled</th>
-                                    <th className="p-2 text-right">Price</th>
-                                    <th className="p-2">Status</th>
+function BlotterPanel({orders,filterSymbol,setFilterSymbol,filterStatus,setFilterStatus,loading,
+    fetch: doFetch,selectedOrder,setSelectedOrder,sortField,toggleSort,sortAsc,onClose,fmtTime,fmtPrice,inp,sel}:BlotterProps){
+    const S:React.CSSProperties={display:'flex',flexDirection:'column' as const,background:BG,
+        border:`1px solid ${BORDER}`,height:'100%',fontFamily:MONO,color:TEXT}
+    const HDR:React.CSSProperties={display:'flex',alignItems:'center',gap:8,padding:'6px 10px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}
+    const sortIco=(f:string)=>sortField===f?(sortAsc?'â–²':'â–¼'):'â‡…'
+
+    return (
+        <div style={S} data-testid="orders-blotter-panel">
+            <div style={HDR}>
+                <span style={{fontSize:10,color:BLUE,letterSpacing:'0.1em'}}>OB</span>
+                <span style={{fontSize:11,color:TEXT,fontWeight:700}}>ORDERS BLOTTER</span>
+                <span style={{fontSize:10,color:SUBTLE}}>{orders.length} orders</span>
+                <input placeholder="Symbol..." value={filterSymbol} onChange={e=>setFilterSymbol(e.target.value)} style={{...inp,width:80}}/>
+                <select style={sel} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+                    <option value="">ALL</option>
+                    <option value="submitted">SUBMITTED</option>
+                    <option value="filled">FILLED</option>
+                    <option value="partial">PARTIAL</option>
+                    <option value="canceled">CANCELED</option>
+                    <option value="rejected">REJECTED</option>
+                </select>
+                <button onClick={doFetch} style={{...inp,cursor:'pointer',color:loading?SUBTLE:BLUE,border:`1px solid ${BORDER}`}}>
+                    {loading?'...':'â†»'}
+                </button>
+                {onClose&&<button onClick={onClose} style={{...inp,cursor:'pointer',marginLeft:'auto',color:SUBTLE}}>âœ•</button>}
+            </div>
+            <div style={{flex:1,overflowY:'auto' as const}} data-testid="orders-blotter-table">
+                {orders.length===0&&(
+                    <div style={{padding:24,textAlign:'center' as const,fontSize:11,color:SUBTLE}}>
+                        {loading?'LOADING...':'NO ORDERS'}
+                    </div>
+                )}
+                {orders.length>0&&(
+                    <table style={{width:'100%',borderCollapse:'collapse'}}>
+                        <thead style={{position:'sticky' as const,top:0,background:PANEL}}>
+                            <tr>
+                                <Th ch={<span onClick={()=>toggleSort('submitted_at')}>TIME {sortIco('submitted_at')}</span>}/>
+                                <Th ch={<span onClick={()=>toggleSort('symbol')}>SYMBOL {sortIco('symbol')}</span>}/>
+                                <Th ch="SIDE"/>
+                                <Th ch="TYPE"/>
+                                <Th c={{textAlign:'right'}} ch="QTY"/>
+                                <Th c={{textAlign:'right'}} ch="FILLED"/>
+                                <Th c={{textAlign:'right'}} ch="PRICE"/>
+                                <Th ch="STATUS"/>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {orders.map(o=>(
+                                <tr key={o.id} data-testid={`order-row-${o.id}`}
+                                    onClick={()=>setSelectedOrder(selectedOrder?.id===o.id?null:o)}
+                                    style={{cursor:'pointer',background:selectedOrder?.id===o.id?`${AMBER}11`:'transparent'}}>
+                                    <Td c={{fontSize:10,color:SUBTLE}} ch={fmtTime(o.submitted_at)}/>
+                                    <Td c={{fontWeight:700}} ch={o.symbol}/>
+                                    <Td c={{color:o.side==='buy'?GREEN:RED}} ch={o.side?.toUpperCase()||'â€”'}/>
+                                    <Td c={{color:SUBTLE,fontSize:10}} ch={o.order_type?.toUpperCase()||'â€”'}/>
+                                    <Td c={{textAlign:'right'}} ch={o.quantity}/>
+                                    <Td c={{textAlign:'right',color:o.filled_qty===o.quantity?GREEN:AMBER}} ch={o.filled_qty}/>
+                                    <Td c={{textAlign:'right',color:GREEN}} ch={fmtPrice(o.avg_fill_price||o.limit_price)}/>
+                                    <Td ch={<SBadge status={o.status}/>}/>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {filteredOrders.map((order) => (
-                                    <tr
-                                        key={order.id}
-                                        data-testid={`order-row-${order.id}`}
-                                        onClick={() => setSelectedOrder(order)}
-                                        className="border-b border-gray-800 hover:bg-gray-800 cursor-pointer transition-colors"
-                                    >
-                                        <td className="p-2 text-gray-400">{formatTime(order.submitted_at)}</td>
-                                        <td className="p-2 font-medium text-gray-200">{order.symbol}</td>
-                                        <td className={`p-2 font-medium ${getSideColor(order.side)}`}>{order.side?.toUpperCase() ?? '-'}</td>
-                                        <td className="p-2 text-gray-400">{order.order_type}</td>
-                                        <td className="p-2 text-right text-gray-300">{order.quantity}</td>
-                                        <td className="p-2 text-right text-gray-300">{order.filled_qty}</td>
-                                        <td className="p-2 text-right text-gray-300">
-                                            {order.avg_fill_price ? `$${order.avg_fill_price.toFixed(2)}` : order.limit_price ? `$${order.limit_price.toFixed(2)}` : '-'}
-                                        </td>
-                                        <td className="p-2">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] ${getStatusColor(order.status)}`}>
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+            {selectedOrder&&(
+                <div style={{borderTop:`1px solid ${BORDER}`,background:PANEL,padding:'8px 10px',
+                    fontSize:10,fontFamily:MONO,display:'flex',gap:16,flexWrap:'wrap' as const}}>
+                    <span style={{color:BLUE}}>{selectedOrder.id}</span>
+                    <span style={{color:TEXT}}>{selectedOrder.symbol}</span>
+                    <span style={{color:selectedOrder.side==='buy'?GREEN:RED}}>{selectedOrder.side?.toUpperCase()}</span>
+                    <SBadge status={selectedOrder.status}/>
+                    {selectedOrder.rejected_reason&&<span style={{color:RED}}>REJ: {selectedOrder.rejected_reason}</span>}
+                    <span style={{color:SUBTLE}}>STRAT: {selectedOrder.strategy_id||'N/A'}</span>
+                    <button onClick={()=>setSelectedOrder(null)} style={{marginLeft:'auto',background:'none',
+                        border:'none',color:SUBTLE,cursor:'pointer',fontFamily:MONO,fontSize:9}}>DISMISS</button>
                 </div>
             )}
-
-            {/* Order Details Drawer via Portal or Absolute if not embedded */}
-            {selectedOrder && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50" onClick={() => setSelectedOrder(null)}>
-                    <div className="w-96 bg-gray-800 border border-gray-700 rounded-lg shadow-xl" onClick={e => e.stopPropagation()}>
-                        <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-white">Order Details</h3>
-                            <button onClick={() => setSelectedOrder(null)} className="p-1 hover:bg-gray-700 rounded">
-                                <X size={14} className="text-gray-400" />
-                            </button>
-                        </div>
-                        <div className="p-4 space-y-3 text-xs">
-                            {/* ... details ... */}
-                            <div className="flex justify-between"><span className="text-gray-400">ID</span><span className="text-white mono">{selectedOrder.id}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-400">Symbol</span><span className="text-white">{selectedOrder.symbol}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-400">Status</span><span className={`${getStatusColor(selectedOrder.status)} px-1 rounded`}>{selectedOrder.status}</span></div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </>
+        </div>
     );
 }

@@ -1,230 +1,382 @@
-/**
- * CorporateActionsUI2 — W16: Corporate Actions
- * Corporate actions ingestion, adjustment, and audit trail
- *
- * Production-grade terminal interface using ui2 design system.
- * Tabs: Overview | Data | Analytics | Configuration
- */
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// CorporateActionsUI2 â€” Bloomberg CACT-grade corporate actions terminal
+// Dividends, splits, mergers, spin-offs, rights issues, tender offers
+// Tabs: UPCOMING ACTIONS | DIVIDENDS | CORPORATE EVENTS | M&A | PROCESSING
+// APIs: /api/v4/corporate-actions/upcoming, /dividends, /events, /ma, /processing
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  PageHeader, Tabs, Panel, DataTable, StatusBadge, KPIStrip, Button, EmptyState, Skeleton,
-} from '../components';
-import type { ColumnDef, KPIItem } from '../components';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
-const API = '/api/v4/corporate-actions';
-
-const TABS = [
-  { id: 'overview',  label: 'Overview' },
-  { id: 'data',      label: 'Data' },
-  { id: 'analytics', label: 'Analytics' },
-  { id: 'config',    label: 'Configuration' },
-];
-
-const S = {
-  page:    { height: '100%', display: 'flex', flexDirection: 'column' as const, overflow: 'hidden' },
-  content: { flex: 1, overflow: 'auto', padding: '0 16px 16px 16px' },
-  gap:     { display: 'flex', flexDirection: 'column' as const, gap: 'var(--ui2-space-4)' },
-  grid2:   { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--ui2-space-3)' },
-  grid3:   { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--ui2-space-3)' },
-  surface: { background: 'var(--ui2-bg-surface)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', padding: 'var(--ui2-space-3)' } as React.CSSProperties,
-  mono:    { fontFamily: 'var(--ui2-font-mono)', fontSize: '11px', color: 'var(--ui2-text-tertiary)' } as React.CSSProperties,
-  dimText: { fontSize: '11px', color: 'var(--ui2-text-muted)' } as React.CSSProperties,
-  label:   { fontSize: '11px', fontWeight: 600, color: 'var(--ui2-text-secondary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '4px', display: 'block' } as React.CSSProperties,
-  errorBox:  { background: 'var(--ui2-danger-bg)', border: '1px solid var(--ui2-danger-border)', borderRadius: 'var(--ui2-radius-sm)', padding: 'var(--ui2-space-3)', color: 'var(--ui2-danger)', fontSize: '13px' } as React.CSSProperties,
-};
-
-interface DataItem { [key: string]: unknown }
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={S.dimText}>{label}</span>
-      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ui2-text-primary)' }}>{value}</span>
-    </div>
-  );
+interface UpcomingAction {
+  id: string
+  symbol: string
+  actionType: 'dividend' | 'split' | 'merger' | 'spinoff' | 'rights_issue' | 'tender_offer' | 'name_change' | 'delisting'
+  exDate: string
+  payDate: string
+  recordDate: string
+  daysUntilEx: number
+  description: string
+  amount?: number
+  currency?: string
+  ratio?: string
+  status: 'confirmed' | 'announced' | 'pending' | 'completed'
 }
 
-function MetricCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={S.surface}>
-      <div style={S.dimText}>{label}</div>
-      <div style={{ fontSize: '16px', fontWeight: 700, fontFamily: 'var(--ui2-font-mono)', color: 'var(--ui2-text-primary)', marginTop: '2px' }}>{value}</div>
-    </div>
-  );
+interface DividendRecord {
+  symbol: string
+  exDate: string
+  payDate: string
+  recordDate: string
+  amount: number
+  currency: string
+  frequency: string
+  yieldPct: number
+  payoutRatioPct: number
+  dividendType: 'regular' | 'special' | 'stock'
+  exAdjustedPrice: number
 }
+
+interface CorporateEvent {
+  id: string
+  symbol: string
+  eventType: string
+  eventDate: string
+  description: string
+  impact: 'positive' | 'negative' | 'neutral'
+  magnitude: 'high' | 'medium' | 'low'
+  processing: 'auto' | 'manual' | 'pending'
+}
+
+interface MaRecord {
+  acquirer: string
+  target: string
+  dealType: string
+  dealValue: number
+  currency: string
+  expectedClose: string
+  dealStatus: 'announced' | 'pending_approval' | 'closing' | 'terminated' | 'completed'
+  premiumPct: number
+  synergiesEstUsd: number
+}
+
+interface ProcessingStatus {
+  actionId: string
+  symbol: string
+  actionType: string
+  status: 'processed' | 'pending' | 'failed' | 'manual_review'
+  processedAt: string
+  adjustmentsApplied: string[]
+  errors: string[]
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+
+function ActionTypeBadge({ t }: { t: string }) {
+  const m: Record<string, string> = {
+    dividend: GREEN, split: BLUE, merger: AMBER, spinoff: PURPLE, rights_issue: ORANGE,
+    tender_offer: RED, name_change: SUBTLE, delisting: RED,
+  }
+  const c = m[t] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 6px' }}>{t.replace(/_/g, ' ').toUpperCase()}</span>
+}
+
+function StatusBadgeCA({ s }: { s: string }) {
+  const m: Record<string, string> = { confirmed: GREEN, announced: BLUE, pending: AMBER, completed: SUBTLE }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 6px' }}>{s.toUpperCase()}</span>
+}
+
+function ImpactBadge({ imp }: { imp: string }) {
+  const m: Record<string, string> = { positive: GREEN, negative: RED, neutral: SUBTLE }
+  const c = m[imp] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c }}>{'â–²' === 'positive' ? 'â–²' : imp === 'positive' ? 'â–²' : imp === 'negative' ? 'â–¼' : 'â€”'} {imp.toUpperCase()}</span>
+}
+
+function DealStatusBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { announced: BLUE, pending_approval: AMBER, closing: GREEN, terminated: RED, completed: SUBTLE }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 6px' }}>{s.replace(/_/g, ' ').toUpperCase()}</span>
+}
+
+function DteCountdown({ days }: { days: number }) {
+  const c = days <= 3 ? RED : days <= 7 ? ORANGE : days <= 30 ? AMBER : GREEN
+  return <span style={{ fontFamily: MONO, fontSize: 10, color: c, fontWeight: days <= 7 ? 700 : 400 }}>{days}d</span>
+}
+
 
 export function CorporateActionsUI2() {
-  const [tab, setTab] = useState('overview');
-  const [data, setData] = useState<DataItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [stats, setStats] = useState<Record<string, any>>({ });
+  const [tab, setTab] = useState<'upcoming' | 'dividends' | 'events' | 'ma' | 'processing'>('upcoming')
+  const [upcoming, setUpcoming] = useState<UpcomingAction[]>([])
+  const [dividends, setDividends] = useState<DividendRecord[]>([])
+  const [events, setEvents] = useState<CorporateEvent[]>([])
+  const [maRecords, setMaRecords] = useState<MaRecord[]>([])
+  const [processing, setProcessing] = useState<ProcessingStatus[]>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+  const [typeFilter, setTypeFilter] = useState<string>('all')
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const fetchAll = useCallback(async () => {
     try {
-      const r = await fetch(`${API}/events` );
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const json = await r.json();
-      setData(Array.isArray(json.data) ? json.data : []);
-      setStats(json.metadata || {});
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  }, []);
+      const [rU, rD, rE, rM, rP] = await Promise.allSettled([
+        fetch('/api/v4/corporate-actions/upcoming').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/corporate-actions/dividends').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/corporate-actions/events').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/corporate-actions/ma').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/corporate-actions/processing').then(r => r.ok ? r.json() : []),
+      ])
+      if (rU.status === 'fulfilled') {
+        const raw = Array.isArray(rU.value) ? rU.value : rU.value.actions ?? rU.value.data ?? []
+        setUpcoming(raw.map((a: any) => ({
+          id: a.id ?? '', symbol: a.symbol ?? '', actionType: a.action_type ?? a.actionType ?? 'dividend',
+          exDate: a.ex_date ?? a.exDate ?? '', payDate: a.pay_date ?? a.payDate ?? '',
+          recordDate: a.record_date ?? a.recordDate ?? '', daysUntilEx: Number(a.days_until_ex ?? a.daysUntilEx ?? 0),
+          description: a.description ?? '', amount: a.amount !== undefined ? Number(a.amount) : undefined,
+          currency: a.currency, ratio: a.ratio, status: a.status ?? 'pending',
+        })))
+        setErr(null)
+      } else setErr('Failed to load upcoming actions')
+      if (rD.status === 'fulfilled') {
+        const raw = Array.isArray(rD.value) ? rD.value : rD.value.dividends ?? rD.value.data ?? []
+        setDividends(raw.map((d: any) => ({
+          symbol: d.symbol ?? '', exDate: d.ex_date ?? d.exDate ?? '', payDate: d.pay_date ?? d.payDate ?? '',
+          recordDate: d.record_date ?? d.recordDate ?? '', amount: Number(d.amount ?? 0), currency: d.currency ?? 'USD',
+          frequency: d.frequency ?? '', yieldPct: Number(d.yield_pct ?? d.yieldPct ?? 0),
+          payoutRatioPct: Number(d.payout_ratio_pct ?? d.payoutRatioPct ?? 0), dividendType: d.dividend_type ?? d.dividendType ?? 'regular',
+          exAdjustedPrice: Number(d.ex_adjusted_price ?? d.exAdjustedPrice ?? 0),
+        })))
+      }
+      if (rE.status === 'fulfilled') {
+        const raw = Array.isArray(rE.value) ? rE.value : rE.value.events ?? rE.value.data ?? []
+        setEvents(raw.map((e: any) => ({
+          id: e.id ?? '', symbol: e.symbol ?? '', eventType: e.event_type ?? e.eventType ?? '',
+          eventDate: e.event_date ?? e.eventDate ?? '', description: e.description ?? '',
+          impact: e.impact ?? 'neutral', magnitude: e.magnitude ?? 'low', processing: e.processing ?? 'auto',
+        })))
+      }
+      if (rM.status === 'fulfilled') {
+        const raw = Array.isArray(rM.value) ? rM.value : rM.value.deals ?? rM.value.data ?? []
+        setMaRecords(raw.map((m: any) => ({
+          acquirer: m.acquirer ?? '', target: m.target ?? '', dealType: m.deal_type ?? m.dealType ?? '',
+          dealValue: Number(m.deal_value ?? m.dealValue ?? 0), currency: m.currency ?? 'USD',
+          expectedClose: m.expected_close ?? m.expectedClose ?? '', dealStatus: m.deal_status ?? m.dealStatus ?? 'announced',
+          premiumPct: Number(m.premium_pct ?? m.premiumPct ?? 0), synergiesEstUsd: Number(m.synergies_est_usd ?? m.synergiesEstUsd ?? 0),
+        })))
+      }
+      if (rP.status === 'fulfilled') {
+        const raw = Array.isArray(rP.value) ? rP.value : rP.value.processing ?? rP.value.data ?? []
+        setProcessing(raw.map((p: any) => ({
+          actionId: p.action_id ?? p.actionId ?? '', symbol: p.symbol ?? '', actionType: p.action_type ?? p.actionType ?? '',
+          status: p.status ?? 'pending', processedAt: p.processed_at ?? p.processedAt ?? '',
+          adjustmentsApplied: Array.isArray(p.adjustments_applied) ? p.adjustments_applied : p.adjustmentsApplied ?? [],
+          errors: Array.isArray(p.errors) ? p.errors : [],
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
-  const columns: ColumnDef<DataItem>[] = [
-    { key: 'id', label: 'ID', width: '120px', render: (_v, row) => <span style={S.mono}>{String(row.id || '—')}</span> },
-    { key: 'name', label: 'Name', width: '200px' },
-    { key: 'status', label: 'Status', width: '100px', render: (_v, row) => <StatusBadge variant={String(row.status) === 'active' ? 'success' : 'neutral'}>{String(row.status || 'pending')}</StatusBadge> },
-    { key: 'updated', label: 'Updated', width: '140px', render: (_v, row) => <span style={{ fontSize: '12px' }}>{String(row.updated || '—')}</span> },
-  ];
+  const filteredUpcoming = upcoming.filter(a => typeFilter === 'all' || a.actionType === typeFilter)
+  const imminent = upcoming.filter(a => a.daysUntilEx <= 7).length
+  const failedProc = processing.filter(p => p.status === 'failed' || p.status === 'manual_review').length
+  const activeDeals = maRecords.filter(m => m.dealStatus !== 'completed' && m.dealStatus !== 'terminated').length
 
-  const kpiItems: KPIItem[] = [
-    { id: 'total', label: 'Total Items', value: String(data.length), status: 'neutral', icon: <span style={{ fontSize: '16px' }}>📊</span> },
-    { id: 'active', label: 'Active', value: String(data.filter((d: any) => d.status === 'active').length), status: 'success', icon: <span style={{ fontSize: '16px' }}>✅</span> },
-    { id: 'week', label: 'Week', value: 'W16', status: 'neutral', icon: <span style={{ fontSize: '16px' }}>📋</span> },
-    { id: 'version', label: 'API Version', value: 'v4', status: 'neutral', icon: <span style={{ fontSize: '16px' }}>🔗</span> },
-  ];
+  const TABS = [
+    { id: 'upcoming' as const, label: 'UPCOMING ACTIONS' },
+    { id: 'dividends' as const, label: 'DIVIDENDS' },
+    { id: 'events' as const, label: 'CORP EVENTS' },
+    { id: 'ma' as const, label: 'M&A' },
+    { id: 'processing' as const, label: 'PROCESSING' },
+  ]
+
+  const ACTION_TYPES = ['all', 'dividend', 'split', 'merger', 'spinoff', 'rights_issue', 'tender_offer']
 
   return (
-    <div data-testid="corporate-actions-page" data-ready="true" style={S.page}>
-      <div style={{ padding: '12px 16px 0 16px' }}>
-        <PageHeader title="Corporate Actions" subtitle="Corporate actions ingestion, adjustment, and audit trail" testId="corporate-actions-header" />
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      {/* HEADER */}
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CACT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CORPORATE ACTIONS â€” DIVIDENDS + SPLITS + M&A + RIGHTS + TENDER OFFERS + PROCESSING</span>
+        {imminent > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {imminent} EX IN â‰¤7 DAYS</span>}
+        {failedProc > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš  {failedProc} FAILED PROCESSING</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
       </div>
-      <div style={{ padding: '0 16px 8px 16px' }}>
-        <Tabs items={TABS} activeTab={tab} onTabChange={setTab} testId="corporate-actions-tabs" />
-      </div>
-      <div style={S.content}>
-        {error && <div style={S.errorBox}>{error}</div>}
 
-        {tab === 'overview' && (
-          <div style={S.gap}>
-            <KPIStrip items={kpiItems} variant="hero" testId="corporate-actions-kpi" />
-            <div style={S.grid2}>
-              <Panel title="Service Status" variant="elevated" padding="md" testId="corporate-actions-status"
-                status={<StatusBadge variant="success">Operational</StatusBadge>}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <InfoRow label="Feature" value="Corporate Actions" />
-                  <InfoRow label="Week" value="W16" />
-                  <InfoRow label="API Prefix" value="/api/v4/corporate-actions" />
-                  <InfoRow label="Endpoints" value="5" />
-                  <InfoRow label="Version" value="v4" />
-                </div>
-              </Panel>
-              <Panel title="Quick Actions" variant="elevated" padding="md" testId="corporate-actions-actions">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ui2-space-2)' }}>
-                  <Button variant="primary" fullWidth onClick={fetchData} loading={loading} testId="corporate-actions-refresh">
-                    Refresh Data
-                  </Button>
-                  <Button variant="secondary" fullWidth testId="corporate-actions-export">
-                    Export Report
-                  </Button>
-                  <Button variant="ghost" fullWidth testId="corporate-actions-docs">
-                    View Documentation
-                  </Button>
-                </div>
-              </Panel>
+      {/* STATS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Upcoming" value={upcoming.length} sub="total actions" />
+        <StatCard label="Imminent (â‰¤7d)" value={imminent} col={imminent > 0 ? ORANGE : GREEN} />
+        <StatCard label="Active M&A Deals" value={activeDeals} col={AMBER} />
+        <StatCard label="Failed Processing" value={failedProc} col={failedProc > 0 ? RED : GREEN} />
+        <StatCard label="Dividends Tracked" value={dividends.length} col={BLUE} />
+      </div>
+
+      {/* TABS */}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE,
+              background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`,
+              padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+
+        {/* UPCOMING */}
+        {tab === 'upcoming' && (
+          <div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+              {ACTION_TYPES.map(t => (
+                <button key={t} onClick={() => setTypeFilter(t)}
+                  style={{ fontFamily: MONO, fontSize: 10, color: typeFilter === t ? AMBER : SUBTLE, background: typeFilter === t ? AMBER + '22' : 'transparent', border: `1px solid ${typeFilter === t ? AMBER + '55' : BORDER}`, borderRadius: 3, padding: '4px 10px', cursor: 'pointer' }}>
+                  {t === 'all' ? 'ALL' : t.replace(/_/g, ' ').toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><Th>Symbol</Th><Th>Action</Th><Th>Status</Th><Th>Ex Date</Th><Th right>Ex In</Th><Th>Pay Date</Th><Th right>Amount</Th><Th>Description</Th></tr></thead>
+                <tbody>
+                  {filteredUpcoming.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No upcoming actions â€” check /api/v4/corporate-actions/upcoming</td></tr>}
+                  {filteredUpcoming.sort((a, b) => a.daysUntilEx - b.daysUntilEx).map((a, i) => (
+                    <tr key={i} style={{ background: a.daysUntilEx <= 3 ? RED + '0a' : a.daysUntilEx <= 7 ? ORANGE + '08' : 'transparent' }}>
+                      <Td mono col={AMBER}>{a.symbol}</Td>
+                      <Td><ActionTypeBadge t={a.actionType} /></Td>
+                      <Td><StatusBadgeCA s={a.status} /></Td>
+                      <Td mono col={SUBTLE}>{a.exDate}</Td>
+                      <Td right><DteCountdown days={a.daysUntilEx} /></Td>
+                      <Td mono col={SUBTLE}>{a.payDate}</Td>
+                      <Td right mono col={GREEN}>{a.amount !== undefined ? `${a.currency ?? 'USD'} ${a.amount.toFixed(4)}` : a.ratio ?? 'â€”'}</Td>
+                      <Td><span style={{ fontSize: 10, color: SUBTLE }}>{a.description}</span></Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {tab === 'data' && (
-          <div style={S.gap}>
-            {loading ? <Skeleton height={300} /> : data.length > 0 ? (
-              <Panel title="Corporate Actions Data" variant="default" padding="none" testId="corporate-actions-data-panel">
-                <DataTable columns={columns} data={data} keyField="id" density="compact" testId="corporate-actions-table" />
-              </Panel>
-            ) : (
-              <EmptyState title="No data available" description="Run a refresh or check the API connection to load data." />
-            )}
+        {/* DIVIDENDS */}
+        {tab === 'dividends' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Symbol</Th><Th>Type</Th><Th>Ex Date</Th><Th right>Amount</Th><Th>Frequency</Th><Th right>Yield %</Th><Th right>Payout %</Th><Th right>Ex-Adj Price</Th></tr></thead>
+              <tbody>
+                {dividends.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No dividend data â€” check /api/v4/corporate-actions/dividends</td></tr>}
+                {dividends.map((d, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{d.symbol}</Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.dividendType === 'special' ? ORANGE : d.dividendType === 'stock' ? PURPLE : GREEN }}>{d.dividendType.toUpperCase()}</span></Td>
+                    <Td mono col={SUBTLE}>{d.exDate}</Td>
+                    <Td right mono col={GREEN}>{d.currency} {d.amount.toFixed(4)}</Td>
+                    <Td mono col={SUBTLE}>{d.frequency}</Td>
+                    <Td right mono col={d.yieldPct > 5 ? GREEN : TEXT}>{d.yieldPct.toFixed(2)}%</Td>
+                    <Td right mono col={d.payoutRatioPct > 100 ? RED : TEXT}>{d.payoutRatioPct.toFixed(1)}%</Td>
+                    <Td right mono>{d.exAdjustedPrice.toFixed(4)}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'analytics' && (
-          <div style={S.gap}>
-            <Panel title="Analytics Overview" variant="elevated" padding="md" testId="corporate-actions-analytics">
-              <div style={S.grid3}>
-                <MetricCell label="Data Points" value={String(data.length)} />
-                <MetricCell label="API Calls" value="—" />
-                <MetricCell label="Latency (p99)" value="—" />
-                <MetricCell label="Error Rate" value="0%" />
-                <MetricCell label="Throughput" value="—" />
-                <MetricCell label="Cache Hit" value="—" />
-              </div>
-            </Panel>
-            <Panel title="Recent Activity" variant="bordered" padding="md" testId="corporate-actions-activity">
-              <EmptyState title="No recent activity" description="Analytics data will populate as the service processes requests." />
-            </Panel>
+        {/* EVENTS */}
+        {tab === 'events' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Symbol</Th><Th>Event Type</Th><Th>Date</Th><Th>Impact</Th><Th>Magnitude</Th><Th>Processing</Th><Th>Description</Th></tr></thead>
+              <tbody>
+                {events.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events â€” check /api/v4/corporate-actions/events</td></tr>}
+                {events.map((e, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{e.symbol}</Td>
+                    <Td mono col={BLUE}>{e.eventType}</Td>
+                    <Td mono col={SUBTLE}>{e.eventDate}</Td>
+                    <Td><ImpactBadge imp={e.impact} /></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: e.magnitude === 'high' ? RED : e.magnitude === 'medium' ? AMBER : SUBTLE }}>{e.magnitude.toUpperCase()}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: e.processing === 'manual' ? ORANGE : e.processing === 'pending' ? AMBER : GREEN }}>{e.processing.toUpperCase()}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: SUBTLE }}>{e.description}</span></Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'config' && (
-          <div style={S.gap}>
-            <Panel title="Service Configuration" variant="elevated" padding="md" testId="corporate-actions-config">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <InfoRow label="API Endpoint" value="/api/v4/corporate-actions" />
-                <InfoRow label="Week" value="W16" />
-                <InfoRow label="Section" value="tools" />
-                <InfoRow label="Auto-refresh" value="Enabled" />
-                <InfoRow label="Cache TTL" value="60s" />
-              </div>
-            </Panel>
-            <Panel title="Endpoints" variant="bordered" padding="md" testId="corporate-actions-endpoints">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/events
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>List corporate action events</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/events/{symbol}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Get events for specific symbol</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/adjustments
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>List price adjustments applied</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="warning">POST</StatusBadge>
-                      {' '}/ingest
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Trigger corporate actions ingestion</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/audit-trail
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Get adjustment audit trail</div>
-                </div>
-              </div>
-            </Panel>
+        {/* M&A */}
+        {tab === 'ma' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Acquirer</Th><Th>Target</Th><Th>Deal Type</Th><Th>Status</Th><Th right>Deal Value</Th><Th right>Premium %</Th><Th right>Synergies</Th><Th>Expected Close</Th></tr></thead>
+              <tbody>
+                {maRecords.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No M&A data â€” check /api/v4/corporate-actions/ma</td></tr>}
+                {maRecords.map((m, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{m.acquirer}</Td>
+                    <Td mono col={BLUE}>{m.target}</Td>
+                    <Td mono col={SUBTLE}>{m.dealType}</Td>
+                    <Td><DealStatusBadge s={m.dealStatus} /></Td>
+                    <Td right mono col={ORANGE}>{m.currency} {(m.dealValue / 1e9).toFixed(2)}B</Td>
+                    <Td right mono col={m.premiumPct > 30 ? GREEN : TEXT}>{m.premiumPct.toFixed(1)}%</Td>
+                    <Td right mono col={GREEN}>{m.currency} {(m.synergiesEstUsd / 1e6).toFixed(0)}M</Td>
+                    <Td mono col={SUBTLE}>{m.expectedClose}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* PROCESSING */}
+        {tab === 'processing' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Symbol</Th><Th>Action Type</Th><Th>Status</Th><Th>Processed At</Th><Th>Adjustments Applied</Th><Th>Errors</Th></tr></thead>
+              <tbody>
+                {processing.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No processing data â€” check /api/v4/corporate-actions/processing</td></tr>}
+                {processing.sort((a, b) => { const o: Record<string, number> = { failed: 0, manual_review: 1, pending: 2, processed: 3 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) }).map((p, i) => (
+                  <tr key={i} style={{ background: p.status === 'failed' ? RED + '0a' : p.status === 'manual_review' ? ORANGE + '08' : 'transparent' }}>
+                    <Td mono col={AMBER}>{p.symbol}</Td>
+                    <Td><ActionTypeBadge t={p.actionType} /></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: p.status === 'processed' ? GREEN : p.status === 'pending' ? AMBER : RED }}>{p.status.replace(/_/g, ' ').toUpperCase()}</span></Td>
+                    <Td mono col={SUBTLE}>{p.processedAt}</Td>
+                    <Td><span style={{ fontSize: 10, color: GREEN }}>{p.adjustmentsApplied.join(', ') || 'â€”'}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: p.errors.length > 0 ? RED : SUBTLE }}>{p.errors.join(', ') || 'â€”'}</span></Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }

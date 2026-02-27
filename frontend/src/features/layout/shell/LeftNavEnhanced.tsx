@@ -1,23 +1,9 @@
-/**
- * Enhanced Left Navigation
- * 
- * Navigation items:
- * - Dashboard
- * - Portfolio
- * - Orders
- * - Runs / Audit Log
- * - Strategies & Rules
- * - Settings
- */
+const BG='#0a0a0a'; const PANEL='#111111'; const BORDER='#1e1e1e';
+const AMBER='#f5a623'; const GREEN='#26a69a'; const RED='#ef5350';
+const BLUE='#42a5f5'; const PURPLE='#ab47bc'; const SUBTLE='#555';
+const TEXT='#d1d4dc'; const MONO='"Roboto Mono","Courier New",monospace';
 
-import {
-    LayoutDashboard, Wallet, History, Layers, Settings,
-    ChevronLeft, ChevronRight, BarChart3, ListOrdered, Bot, 
-    AlertTriangle, TrendingUp, Activity, Clock, FlaskConical, Database,
-    Search, Cpu, List, Grid3X3, BookOpen, Bell, Shield, PieChart,
-    Zap, BarChart, GitCompare, HeartPulse
-} from 'lucide-react';
-import { cn } from '../../../ui/utils';
+import React, { useState } from 'react';
 import { useAppStore } from '../../../state/appStore';
 
 export type ViewId = 
@@ -66,80 +52,124 @@ interface NavItemProps {
     expanded: boolean;
 }
 
-// Primary navigation items as per acceptance checklist
-const primaryNavItems: { id: ViewId; icon: React.ReactNode; label: string; shortcut: string; badge?: number }[] = [
-    { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard', shortcut: '⌘D' },
-    { id: 'portfolio', icon: <Wallet size={20} />, label: 'Portfolio', shortcut: '⌘P' },
-    { id: 'orders', icon: <ListOrdered size={20} />, label: 'Orders', shortcut: '⌘O' },
-    { id: 'runs', icon: <History size={20} />, label: 'Runs / Audit Log', shortcut: '⌘R' },
-    { id: 'strategies', icon: <Layers size={20} />, label: 'Strategies & Rules', shortcut: '⌘S' },
+// Bloomberg icon characters map
+const ICONS: Record<string, string> = {
+    dashboard: '⊞', portfolio: '◈', orders: '≡', runs: '⏳', strategies: '⊛',
+    settings: '⚙', monitor: '◷', options: '⧖', backtest: '⊡', autopilot: '◉',
+    replay: '↺', alerts: '⚠', reports: '▤', automation: '⟲', incidents: '◐',
+    cache: '⊙', search: '⌕', agents: '⊕', watchlist: '☰', correlation: '⊞',
+    journal: '▦', notifications: '◻', audit: '⊟', attribution: '◑',
+    'risk-scenarios': '⚡', 'data-quality': '◫', 'strategy-compare': '⇄',
+    'platform-health': '♥',
+};
+
+const primaryNavItems: { id: ViewId; label: string; shortcut: string; badge?: number }[] = [
+    { id: 'dashboard', label: 'Dashboard', shortcut: '⌘D' },
+    { id: 'portfolio', label: 'Portfolio', shortcut: '⌘P' },
+    { id: 'orders', label: 'Orders', shortcut: '⌘O' },
+    { id: 'runs', label: 'Runs / Audit Log', shortcut: '⌘R' },
+    { id: 'strategies', label: 'Strategies & Rules', shortcut: '⌘S' },
 ];
 
-// Secondary navigation items
-const secondaryNavItems: { id: ViewId; icon: React.ReactNode; label: string; shortcut: string }[] = [
-    { id: 'monitor', icon: <BarChart3 size={20} />, label: 'Chart', shortcut: '⌘1' },
-    { id: 'options', icon: <TrendingUp size={20} />, label: 'Options', shortcut: '⌘2' },
-    { id: 'backtest', icon: <FlaskConical size={20} />, label: 'Backtests', shortcut: '⌘B' },
-    { id: 'autopilot', icon: <Bot size={20} />, label: 'Autopilot', shortcut: '⌘A' },
-    { id: 'replay', icon: <Clock size={20} />, label: 'Replay', shortcut: '⌘3' },
-    { id: 'alerts', icon: <AlertTriangle size={20} />, label: 'Alerts', shortcut: '⌘4' },
-    { id: 'incidents', icon: <Activity size={20} />, label: 'Incidents', shortcut: '⌘I' },
-    { id: 'search', icon: <Search size={20} />, label: 'Search', shortcut: '⌘F' },
-    { id: 'agents', icon: <Cpu size={20} />, label: 'Agents', shortcut: '⌘G' },
-    { id: 'cache', icon: <Database size={20} />, label: 'Cache', shortcut: '⌘C' },
-    { id: 'watchlist', icon: <List size={20} />, label: 'Watchlist', shortcut: '⌘W' },
-    { id: 'correlation', icon: <Grid3X3 size={20} />, label: 'Correlation', shortcut: '⌘5' },
-    { id: 'journal', icon: <BookOpen size={20} />, label: 'Journal', shortcut: '⌘J' },
-    { id: 'notifications', icon: <Bell size={20} />, label: 'Notifications', shortcut: '⌘N' },
-    { id: 'audit', icon: <Shield size={20} />, label: 'Audit Log', shortcut: '⌘6' },
-    { id: 'attribution', icon: <PieChart size={20} />, label: 'Attribution', shortcut: '⌘7' },
-    { id: 'risk-scenarios', icon: <Zap size={20} />, label: 'Risk Scenarios', shortcut: '⌘8' },
-    { id: 'data-quality', icon: <BarChart size={20} />, label: 'Data Quality', shortcut: '⌘9' },
-    { id: 'strategy-compare', icon: <GitCompare size={20} />, label: 'Strategy Compare', shortcut: '⌘0' },
-    { id: 'platform-health', icon: <HeartPulse size={20} />, label: 'Platform Health', shortcut: '⌘H' },
+const secondaryNavItems: { id: ViewId; label: string; shortcut: string }[] = [
+    { id: 'monitor', label: 'Chart', shortcut: '⌘1' },
+    { id: 'options', label: 'Options', shortcut: '⌘2' },
+    { id: 'backtest', label: 'Backtests', shortcut: '⌘B' },
+    { id: 'autopilot', label: 'Autopilot', shortcut: '⌘A' },
+    { id: 'replay', label: 'Replay', shortcut: '⌘3' },
+    { id: 'alerts', label: 'Alerts', shortcut: '⌘4' },
+    { id: 'incidents', label: 'Incidents', shortcut: '⌘I' },
+    { id: 'search', label: 'Search', shortcut: '⌘F' },
+    { id: 'agents', label: 'Agents', shortcut: '⌘G' },
+    { id: 'cache', label: 'Cache', shortcut: '⌘C' },
+    { id: 'watchlist', label: 'Watchlist', shortcut: '⌘W' },
+    { id: 'correlation', label: 'Correlation', shortcut: '⌘5' },
+    { id: 'journal', label: 'Journal', shortcut: '⌘J' },
+    { id: 'notifications', label: 'Notifications', shortcut: '⌘N' },
+    { id: 'audit', label: 'Audit Log', shortcut: '⌘6' },
+    { id: 'attribution', label: 'Attribution', shortcut: '⌘7' },
+    { id: 'risk-scenarios', label: 'Risk Scenarios', shortcut: '⌘8' },
+    { id: 'data-quality', label: 'Data Quality', shortcut: '⌘9' },
+    { id: 'strategy-compare', label: 'Strategy Compare', shortcut: '⌘0' },
+    { id: 'platform-health', label: 'Platform Health', shortcut: '⌘H' },
 ];
 
-function NavItem({ id, icon, label, shortcut, badge, activeView, onViewChange, expanded }: NavItemProps) {
+function NavItem({
+    id, label, shortcut, badge, activeView, onViewChange, expanded,
+}: {
+    id: ViewId; label: string; shortcut?: string; badge?: number | string;
+    activeView: ViewId; onViewChange: (v: ViewId) => void; expanded: boolean;
+}) {
     const isActive = activeView === id;
+    const [hovered, setHovered] = useState(false);
+    const icon = ICONS[id] || '▸';
 
     return (
         <button
             onClick={() => onViewChange(id)}
-            title={!expanded ? `${label} ${shortcut}` : undefined}
+            title={!expanded ? `${label} ${shortcut ?? ''}` : undefined}
             data-testid={`nav-item-${id}`}
-            className={cn(
-                "relative flex items-center gap-3 rounded-lg transition-all w-full group",
-                expanded ? "px-3 py-2" : "w-12 h-12 justify-center",
-                isActive
-                    ? "nav-item-active bg-brand/10"
-                    : "text-text-secondary hover:text-text-primary hover:bg-hover"
-            )}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                width: expanded ? '100%' : 44,
+                height: 36,
+                justifyContent: expanded ? 'flex-start' : 'center',
+                padding: expanded ? '0 10px' : 0,
+                margin: '1px 0',
+                border: 'none',
+                borderRadius: 3,
+                cursor: 'pointer',
+                background: isActive ? 'rgba(66,165,245,0.12)' : hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
+                transition: 'background 0.1s',
+                fontFamily: MONO,
+            }}
         >
-            {/* Active indicator - gradient pill */}
             {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-gradient-to-b from-blue-400 to-blue-600" />
+                <div style={{
+                    position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                    width: 3, height: 20, borderRadius: '0 2px 2px 0',
+                    background: `linear-gradient(to bottom, ${BLUE}, #1565c0)`,
+                }} />
             )}
-
-            <span className={cn("shrink-0 transition-colors", isActive ? "text-brand" : "group-hover:text-text-primary")}>{icon}</span>
-
+            <span style={{
+                fontSize: 14, color: isActive ? BLUE : hovered ? TEXT : SUBTLE,
+                flexShrink: 0, width: 18, textAlign: 'center', transition: 'color 0.1s',
+            }}>{icon}</span>
             {expanded && (
                 <>
-                    <span className="text-[13px] font-medium flex-1 text-left tracking-tight">{label}</span>
+                    <span style={{
+                        fontSize: 11, fontFamily: MONO,
+                        color: isActive ? TEXT : hovered ? TEXT : '#888',
+                        flex: 1, textAlign: 'left', letterSpacing: '0.02em',
+                        textTransform: 'uppercase', fontWeight: isActive ? 600 : 400,
+                        transition: 'color 0.1s',
+                    }}>{label}</span>
                     {badge !== undefined && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-brand/15 text-brand-400 ring-1 ring-brand/20">
-                            {badge}
-                        </span>
+                        <span style={{
+                            fontSize: 9, fontFamily: MONO, fontWeight: 700,
+                            padding: '1px 4px', borderRadius: 2,
+                            background: 'rgba(66,165,245,0.2)', color: BLUE,
+                            border: `1px solid rgba(66,165,245,0.3)`,
+                        }}>{badge}</span>
                     )}
-                    {shortcut && !badge && (
-                        <span className="text-xxs text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">{shortcut}</span>
+                    {shortcut && badge === undefined && hovered && (
+                        <span style={{ fontSize: 9, color: SUBTLE, fontFamily: MONO }}>{shortcut}</span>
                     )}
                 </>
             )}
-
             {!expanded && badge !== undefined && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 text-[9px] font-bold rounded-full bg-brand text-white flex items-center justify-center px-1">
-                    {badge}
-                </span>
+                <span style={{
+                    position: 'absolute', top: 2, right: 2,
+                    minWidth: 14, height: 14, fontSize: 8, fontWeight: 700,
+                    borderRadius: '50%', background: BLUE, color: BG,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0 2px', fontFamily: MONO,
+                }}>{badge}</span>
             )}
         </button>
     );
@@ -149,80 +179,74 @@ export function LeftNavEnhanced({ activeView, onViewChange }: LeftNavEnhancedPro
     const { leftNavExpanded, toggleLeftNav } = useAppStore();
 
     return (
-        <nav 
-            className={cn(
-                "bg-panel-bg border-r border-border/80 flex flex-col py-3 shrink-0 z-dock transition-all duration-200",
-                leftNavExpanded ? "w-56 px-2" : "w-16 items-center"
-            )}
+        <nav
             data-testid="left-nav"
+            style={{
+                background: PANEL, borderRight: `1px solid ${BORDER}`,
+                display: 'flex', flexDirection: 'column',
+                padding: '8px 0',
+                width: leftNavExpanded ? 200 : 52,
+                flexShrink: 0, zIndex: 40,
+                transition: 'width 0.15s ease', overflow: 'hidden',
+            }}
         >
-            {/* Primary navigation */}
-            <div className="flex flex-col gap-0.5">
+            {/* Primary nav */}
+            <div style={{ padding: leftNavExpanded ? '0 6px' : '0 4px' }}>
                 {leftNavExpanded && (
-                    <div className="px-3 py-1.5 mb-1 text-[10px] uppercase tracking-widest text-text-muted/70 font-semibold flex items-center gap-2">
-                        <span className="w-3 h-px bg-border" />
-                        Main
-                    </div>
+                    <div style={{
+                        padding: '4px 8px 6px', fontSize: 9, fontFamily: MONO,
+                        color: SUBTLE, letterSpacing: '0.1em', textTransform: 'uppercase',
+                        borderBottom: `1px solid ${BORDER}`, marginBottom: 4,
+                    }}>MAIN</div>
                 )}
                 {primaryNavItems.map(item => (
-                    <NavItem
-                        key={item.id}
-                        {...item}
-                        activeView={activeView}
-                        onViewChange={onViewChange}
-                        expanded={leftNavExpanded}
-                    />
+                    <NavItem key={item.id} {...item} activeView={activeView} onViewChange={onViewChange} expanded={leftNavExpanded} />
                 ))}
             </div>
 
             {/* Divider */}
-            <div className={cn("my-2", leftNavExpanded ? "mx-3 border-t border-border/60" : "w-8 border-t border-border/60")} />
+            <div style={{ margin: '6px 10px', height: 1, background: BORDER }} />
 
-            {/* Secondary navigation */}
-            <div className="flex flex-col gap-0.5 overflow-y-auto scrollbar-hide">
+            {/* Secondary nav — scrollable */}
+            <div style={{
+                flex: 1, overflowY: 'auto',
+                padding: leftNavExpanded ? '0 6px' : '0 4px',
+                scrollbarWidth: 'none',
+            }}>
                 {leftNavExpanded && (
-                    <div className="px-3 py-1.5 mb-1 text-[10px] uppercase tracking-widest text-text-muted/70 font-semibold flex items-center gap-2">
-                        <span className="w-3 h-px bg-border" />
-                        Tools
-                    </div>
+                    <div style={{
+                        padding: '4px 8px 6px', fontSize: 9, fontFamily: MONO,
+                        color: SUBTLE, letterSpacing: '0.1em', textTransform: 'uppercase',
+                        borderBottom: `1px solid ${BORDER}`, marginBottom: 4,
+                    }}>TOOLS</div>
                 )}
                 {secondaryNavItems.map(item => (
-                    <NavItem
-                        key={item.id}
-                        {...item}
-                        activeView={activeView}
-                        onViewChange={onViewChange}
-                        expanded={leftNavExpanded}
-                    />
+                    <NavItem key={item.id} {...item} activeView={activeView} onViewChange={onViewChange} expanded={leftNavExpanded} />
                 ))}
             </div>
 
-            <div className="flex-1" />
-
-            {/* Settings at bottom */}
-            <div className="flex flex-col gap-1">
+            {/* Bottom: Settings + collapse toggle */}
+            <div style={{
+                padding: leftNavExpanded ? '6px 6px 0' : '6px 4px 0',
+                borderTop: `1px solid ${BORDER}`, marginTop: 4,
+            }}>
                 <NavItem
-                    id="settings"
-                    icon={<Settings size={20} />}
-                    label="Settings"
-                    shortcut=""
-                    activeView={activeView}
-                    onViewChange={onViewChange}
-                    expanded={leftNavExpanded}
+                    id="settings" label="Settings" shortcut=""
+                    activeView={activeView} onViewChange={onViewChange} expanded={leftNavExpanded}
                 />
-
-                {/* Collapse toggle */}
                 <button
                     onClick={toggleLeftNav}
-                    className={cn(
-                        "flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-hover rounded-lg transition-colors mt-2 border border-transparent hover:border-border/50",
-                        leftNavExpanded ? "py-2" : "w-12 h-10"
-                    )}
-                    title={leftNavExpanded ? "Collapse" : "Expand"}
                     data-testid="nav-toggle"
-                >
-                    {leftNavExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-                </button>
+                    title={leftNavExpanded ? 'Collapse' : 'Expand'}
+                    style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: leftNavExpanded ? '100%' : 44, height: 28, marginTop: 4,
+                        border: `1px solid ${BORDER}`, borderRadius: 3,
+                        background: 'transparent', color: SUBTLE,
+                        cursor: 'pointer', fontSize: 10, fontFamily: MONO,
+                        letterSpacing: '0.05em',
+                    }}
+                >{leftNavExpanded ? '« COLLAPSE' : '»'}</button>
             </div>
         </nav>
     );

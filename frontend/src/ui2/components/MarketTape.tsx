@@ -1,217 +1,131 @@
 /**
- * v1.56 — MarketTape Component
- * Scrolling ticker tape with live prices from backend API.
- * Falls back to streamSimulator if API unavailable.
+ * MarketTape — Bloomberg Terminal Edition
+ * Scrolling ticker tape with live prices from backend API + simulator fallback
  */
+// ─── Bloomberg palette ───────────────────────────────────────────────────────
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350'
+const SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
 
 import { useState, useEffect, useRef } from 'react';
 import { streamSimulator, type StreamTick } from '../stores/streamSimulator';
 
-const SYMBOLS = ['AAPL', 'MSFT', 'NVDA', 'SPY', 'TSLA'];
-const QUOTE_INTERVAL_MS = 15_000; // refresh every 15 s
+const SYMBOLS = ['AAPL', 'MSFT', 'NVDA', 'SPY', 'TSLA', 'AMZN', 'GOOG', 'META', 'BTC', 'ETH'];
+const QUOTE_INTERVAL_MS = 15_000;
 
-async function fetchQuote(symbol: string): Promise<number | null> {
+async function fetchQuote(symbol: string): Promise<number|null> {
   try {
     const res = await fetch('/api/v1/market-data/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbol }),
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({symbol})
     });
-    if (!res.ok) return null;
-    const d = await res.json();
-    return typeof d.price === 'number' && d.price > 0 ? d.price : null;
-  } catch {
-    return null;
-  }
+    if(!res.ok) return null;
+    const d=await res.json();
+    return typeof d.price==='number'&&d.price>0?d.price:null;
+  } catch { return null; }
 }
 
-interface MarketTapeProps {
-  testId?: string;
-}
+interface MarketTapeProps { testId?: string; }
 
-export function MarketTape({ testId = 'ui2-market-tape' }: MarketTapeProps) {
+export function MarketTape({ testId='ui2-market-tape' }: MarketTapeProps) {
   const [ticks, setTicks] = useState<StreamTick[]>([]);
-  const [status, setStatus] = useState<'live' | 'replay' | 'offline' | 'disconnected'>('disconnected');
-  const prevPricesRef = useRef<Record<string, number>>({});
+  const [status, setStatus] = useState<'live'|'replay'|'offline'|'disconnected'>('disconnected');
+  const prevPricesRef = useRef<Record<string,number>>({});
 
   useEffect(() => {
-    let cancelled = false;
-
-    // Merge a real price into ticks, computing change vs previous
-    function applyRealPrice(symbol: string, price: number) {
-      if (cancelled) return;
-      const prev = prevPricesRef.current[symbol] ?? price;
-      const change = Math.round((price - prev) * 100) / 100;
-      const changePct = prev > 0 ? Math.round(((price - prev) / prev) * 10000) / 100 : 0;
-      prevPricesRef.current[symbol] = price;
-
-      const tick: StreamTick = {
-        symbol,
-        price,
-        change,
-        changePct,
-        volume: 0,
-        timestamp: Date.now(),
-        sequence: 0,
-      };
-      setTicks(prev => {
-        const updated = [...prev];
-        const idx = updated.findIndex(t => t.symbol === symbol);
-        if (idx >= 0) updated[idx] = tick; else updated.push(tick);
-        return updated.sort((a, b) => a.symbol.localeCompare(b.symbol));
-      });
+    let cancelled=false;
+    function applyRealPrice(symbol:string, price:number) {
+      if(cancelled) return;
+      const prev=prevPricesRef.current[symbol]??price;
+      const change=Math.round((price-prev)*100)/100;
+      const changePct=prev>0?Math.round(((price-prev)/prev)*10000)/100:0;
+      prevPricesRef.current[symbol]=price;
+      const tick:StreamTick={symbol,price,change,changePct,volume:0,timestamp:Date.now(),sequence:0};
+      setTicks(p=>{const u=[...p];const i=u.findIndex(t=>t.symbol===symbol);
+        if(i>=0)u[i]=tick;else u.push(tick);
+        return u.sort((a,b)=>a.symbol.localeCompare(b.symbol));});
     }
-
-    // Fetch all symbols from real API
     async function fetchAll() {
-      let anySuccess = false;
-      await Promise.all(
-        SYMBOLS.map(async sym => {
-          const price = await fetchQuote(sym);
-          if (price !== null) {
-            anySuccess = true;
-            applyRealPrice(sym, price);
-          }
-        })
-      );
-      if (!cancelled) {
-        setStatus(anySuccess ? 'live' : 'offline');
-      }
-      return anySuccess;
+      let ok=false;
+      await Promise.all(SYMBOLS.map(async s=>{
+        const p=await fetchQuote(s); if(p!==null){ok=true;applyRealPrice(s,p);}
+      }));
+      if(!cancelled) setStatus(ok?'live':'offline');
+      return ok;
     }
-
-    // Initial fetch; fall back to simulator if backend unavailable
-    fetchAll().then(ok => {
-      if (cancelled) return;
-      if (!ok) {
-        // Backend quotes unavailable — use simulator
-        streamSimulator.reset();
-        streamSimulator.start(2000);
-        setStatus(streamSimulator.status as any);
-        try { (window as any).__streamSimulator = streamSimulator; } catch { /* no-op */ }
+    fetchAll().then(ok=>{
+      if(cancelled) return;
+      if(!ok){ streamSimulator.reset(); streamSimulator.start(2000);
+        setStatus(streamSimulator.status as 'live'|'replay'|'offline'|'disconnected');
+        try{(window as any).__streamSimulator=streamSimulator;}catch{/**/}
       }
     });
-
-    // Subscribe to simulator for fast updates between real fetches
-    const unsub = streamSimulator.subscribe(tick => {
-      if (cancelled) return;
-      // Only apply simulator updates for symbols that don't yet have real data
-      setTicks(prev => {
-        const hasPrev = prev.some(t => t.symbol === tick.symbol);
-        if (hasPrev) {
-          // If we have a real price (non-zero prev), don't overwrite with sim
-          if (prevPricesRef.current[tick.symbol]) return prev;
-        }
-        const updated = [...prev];
-        const idx = updated.findIndex(t => t.symbol === tick.symbol);
-        if (idx >= 0) updated[idx] = tick; else updated.push(tick);
-        return updated.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    const unsub=streamSimulator.subscribe(tick=>{
+      if(cancelled) return;
+      setTicks(p=>{
+        if(prevPricesRef.current[tick.symbol]) return p;
+        const u=[...p];const i=u.findIndex(t=>t.symbol===tick.symbol);
+        if(i>=0)u[i]=tick;else u.push(tick);
+        return u.sort((a,b)=>a.symbol.localeCompare(b.symbol));
       });
     });
+    const poll=setInterval(fetchAll,QUOTE_INTERVAL_MS);
+    try{(window as any).__streamSimulator=streamSimulator;}catch{/**/}
+    return ()=>{cancelled=true;unsub();clearInterval(poll);streamSimulator.stop();
+      try{delete(window as any).__streamSimulator;}catch{/**/}};
+  },[]);
 
-    // Poll real API every 15 s
-    const pollTimer = setInterval(fetchAll, QUOTE_INTERVAL_MS);
-
-    // Expose simulator on window for E2E determinism checks
-    try { (window as any).__streamSimulator = streamSimulator; } catch { /* no-op */ }
-
-    return () => {
-      cancelled = true;
-      unsub();
-      clearInterval(pollTimer);
-      streamSimulator.stop();
-      try { delete (window as any).__streamSimulator; } catch { /* no-op */ }
-    };
-  }, []);
+  const statusColor=status==='live'?GREEN:status==='replay'?AMBER:SUBTLE;
 
   return (
-    <div
-      data-testid={testId}
-      data-stream-status={status}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        padding: '4px 16px',
-        background: 'var(--ui2-bg-elevated)',
-        borderBottom: '1px solid var(--ui2-border)',
-        fontSize: '12px',
-        fontFamily: 'var(--ui2-font-mono, monospace)',
-        overflow: 'hidden',
-        height: '28px',
-      }}
-    >
-      {/* Connection status badge */}
-      <div
-        data-testid={`${testId}-status`}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          padding: '2px 8px',
-          borderRadius: 'var(--ui2-radius-sm)',
-          background: status === 'live' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-          color: status === 'live' ? 'var(--ui2-success)' : 'var(--ui2-text-muted)',
-          fontWeight: 600,
-          fontSize: '10px',
-          textTransform: 'uppercase',
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: status === 'live' ? 'var(--ui2-success)' : 'var(--ui2-text-muted)' }} />
-        {status === 'live' ? 'LIVE' : status === 'replay' ? 'REPLAY' : 'OFFLINE'}
+    <div data-testid={testId} data-stream-status={status}
+      style={{display:'flex',alignItems:'center',gap:4,padding:'3px 12px',
+        background:PANEL,borderBottom:`1px solid ${BORDER}`,
+        fontFamily:MONO,overflow:'hidden',height:28,flexShrink:0}}>
+
+      {/* Status badge */}
+      <div data-testid={`${testId}-status`}
+        style={{display:'flex',alignItems:'center',gap:4,padding:'2px 7px',
+          border:`1px solid ${statusColor}44`,background:`${statusColor}18`,
+          borderRadius:2,flexShrink:0}}>
+        <span style={{width:5,height:5,borderRadius:'50%',background:statusColor,display:'inline-block'}}/>
+        <span style={{fontSize:9,color:statusColor,letterSpacing:'0.1em',fontWeight:700}}>
+          {status==='live'?'LIVE':status==='replay'?'REPLAY':'OFFLINE'}
+        </span>
       </div>
 
-      {/* Ticker symbols */}
-      <div style={{ display: 'flex', gap: '16px', flex: 1, overflow: 'hidden' }}>
-        {ticks.map(tick => (
-          <div
-            key={tick.symbol}
-            data-testid={`${testId}-tick-${tick.symbol}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-              {tick.symbol}
-            </span>
-            <span style={{ color: 'var(--ui2-text-secondary)' }}>
-              {tick.price.toFixed(2)}
-            </span>
-            <span
-              data-testid={`${testId}-change-${tick.symbol}`}
-              style={{
-                color: tick.change >= 0 ? 'var(--ui2-success)' : 'var(--ui2-danger)',
-                fontWeight: 500,
-              }}
-            >
-              {tick.change >= 0 ? '+' : ''}{tick.changePct.toFixed(2)}%
+      {/* Separator */}
+      <span style={{color:BORDER,fontSize:12,flexShrink:0}}>│</span>
+
+      {/* Ticks */}
+      <div style={{display:'flex',gap:14,flex:1,overflow:'hidden',alignItems:'center'}}>
+        {ticks.map(tick=>(
+          <div key={tick.symbol} data-testid={`${testId}-tick-${tick.symbol}`}
+            style={{display:'flex',alignItems:'center',gap:5,flexShrink:0}}>
+            <span style={{fontSize:10,color:TEXT,fontWeight:700,letterSpacing:'0.06em'}}>{tick.symbol}</span>
+            <span style={{fontSize:11,color:TEXT,fontFamily:MONO}}>{tick.price.toFixed(2)}</span>
+            <span data-testid={`${testId}-change-${tick.symbol}`}
+              style={{fontSize:10,color:tick.change>=0?GREEN:RED,fontFamily:MONO}}>
+              {tick.change>=0?'+':''}{tick.changePct.toFixed(2)}%
             </span>
           </div>
         ))}
       </div>
 
-      {/* Hidden latest-tick snapshots (exposed for E2E checks) */}
-      <div aria-hidden="true" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 }}>
-        {ticks.map(t => (
+      {/* Hidden snapshot for E2E */}
+      <div aria-hidden="true" style={{position:'absolute',width:1,height:1,overflow:'hidden',opacity:0}}>
+        {ticks.map(t=>(
           <span key={t.symbol} data-testid={`ui2-stream-latest-${t.symbol}`}>{t.price.toFixed(2)}</span>
         ))}
       </div>
 
-      {/* Sequence counter for determinism verification */}
-      <div
-        data-testid={`${testId}-sequence`}
-        style={{
-          color: 'var(--ui2-text-muted)',
-          fontSize: '10px',
-          flexShrink: 0,
-        }}
-      >
-        seq:{ticks.length > 0 ? Math.max(...ticks.map(t => t.sequence)) : 0}
+      {/* Sequence */}
+      <div data-testid={`${testId}-sequence`}
+        style={{color:SUBTLE,fontSize:9,flexShrink:0,marginLeft:6}}>
+        SEQ:{ticks.length>0?Math.max(...ticks.map(t=>t.sequence)):0}
       </div>
     </div>
   );
 }
+

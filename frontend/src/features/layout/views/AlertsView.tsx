@@ -1,376 +1,285 @@
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const Th=({c}:{c:string})=><th style={{padding:'5px 10px',fontSize:9,letterSpacing:'0.1em',color:SUBTLE,
+  textAlign:'left' as const,borderBottom:`1px solid ${BORDER}`,background:PANEL,fontFamily:MONO}}>{c}</th>
+const Td=({children,mono,color}:{children:React.ReactNode,mono?:boolean,color?:string})=>(
+  <td style={{padding:'6px 10px',fontSize:11,color:color||TEXT,fontFamily:mono?MONO:'inherit',
+    borderBottom:`1px solid ${BORDER}33`}}>{children}</td>
+)
+const StatusDot=({s}:{s:string})=>{
+  const c=s==='ACTIVE'?GREEN:s==='PAUSED'?AMBER:SUBTLE;
+  return<span style={{display:'inline-block',width:7,height:7,borderRadius:'50%',background:c,marginRight:5}}/>
+}
+const StatCard=({label,value,color}:{label:string,value:string|number,color?:string})=>(
+  <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 12px',minWidth:80}}>
+    <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:3}}>{label}</div>
+    <div style={{fontSize:16,color:color||TEXT,fontFamily:MONO,fontWeight:700}}>{value}</div>
+  </div>
+)
+
 import { useState, useEffect, useCallback } from 'react';
-import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import {
-    Bell, Plus, Search, MoreVertical, Trash2,
-    Clock, BellRing
-} from 'lucide-react';
-import { Button } from '../../../ui/Button';
-import { Badge } from '../../../ui/Badge';
-import { IconButton } from '../../../ui/IconButton';
-import { EmptyState } from '../../../ui/EmptyState';
-import { Drawer } from '../../../ui/Drawer';
-import { Input } from '../../../ui/Input';
-import { PageHeader } from '../../../ui/PageHeader';
-import { cn } from '../../../ui/utils';
+import React from 'react';
 import { ApiClient } from '../../../data/ApiClient';
-import { useToast } from '../../../ui/Toast';
 
-function AlertList({
-    alerts,
-    selectedId,
-    onSelect,
-    onNew
-}: {
-    alerts: any[];
-    selectedId: string | null;
-    onSelect: (id: string) => void;
-    onNew: () => void;
-}) {
-    const statusColors: Record<string, string> = {
-        ACTIVE: 'bg-up',
-        PAUSED: 'bg-warn',
-        INACTIVE: 'bg-text-secondary',
-    };
-
-    return (
-        <div className="h-full flex flex-col bg-panel-bg border-r border-border">
-            {/* Header */}
-            <div className="p-3 border-b border-border flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                    <BellRing size={14} className="text-brand" />
-                    <h2 className="text-sm font-semibold text-text">Alerts</h2>
-                    <Badge size="sm" variant="outline">{alerts.length}</Badge>
-                </div>
-                <Button size="sm" variant="primary" className="gap-1" onClick={onNew}>
-                    <Plus size={14} /> Create
-                </Button>
-            </div>
-
-            {/* Search */}
-            <div className="p-2 border-b border-border shrink-0">
-                <div className="flex items-center gap-2 px-2 py-1.5 bg-element-bg rounded">
-                    <Search size={14} className="text-text-secondary" />
-                    <input
-                        type="text"
-                        placeholder="Search alerts..."
-                        className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-muted"
-                    />
-                </div>
-            </div>
-
-            {/* List */}
-            <div className="flex-1 overflow-auto">
-                {alerts.length > 0 ? (
-                    alerts.map(alert => (
-                        <button
-                            key={alert.id}
-                            onClick={() => onSelect(alert.id)}
-                            data-testid={`alert-item-${alert.id}`}
-                            className={cn(
-                                'w-full text-left p-3 border-b border-border/50 transition-all',
-                                selectedId === alert.id
-                                    ? 'bg-brand/10 border-l-2 border-l-brand'
-                                    : 'hover:bg-element-bg border-l-2 border-l-transparent'
-                            )}
-                        >
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className={`w-2 h-2 rounded-full ${statusColors[alert.status] || 'bg-text-muted'}`} />
-                                <span className="text-sm font-medium text-text">{alert.name}</span>
-                            </div>
-                            <div className="text-xs text-text-secondary mb-1">{alert.condition}</div>
-                            <div className="flex items-center gap-2 text-xxs text-text-muted">
-                                <span>{alert.symbol}</span>
-                            </div>
-                        </button>
-                    ))
-                ) : (
-                    <div className="p-8 text-center">
-                        <p className="text-xs text-text-muted">No alerts found.</p>
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            className="mt-2 text-brand"
-                            onClick={onNew}
-                        >
-                            Create your first alert
-                        </Button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+interface AlertRecord {
+  id: string;
+  name: string;
+  symbol: string;
+  condition: string;
+  status: 'ACTIVE'|'INACTIVE'|'PAUSED';
+  delivery?: string[];
+  throttle?: string;
+  created_at?: string;
 }
 
-function AlertDetail({ alert, onDelete, onClose }: { alert: any | null, onDelete: (id: string) => void, onClose: () => void }) {
-    if (!alert) {
-        return (
-            <EmptyState
-                icon={<Bell size={48} />}
-                title="Select an alert"
-                description="Choose an alert from the list to view details and history."
-                className="h-full"
-            />
-        );
-    }
-
-    const isActive = alert.status === 'ACTIVE';
-
-    return (
-        <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-                <div>
-                    <h2 className="text-lg font-semibold text-text">{alert.name}</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={isActive ? 'success' : 'warning'}>
-                            {alert.status}
-                        </Badge>
-                        <span className="text-xs text-text-secondary">{alert.symbol}</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button size="sm" variant={isActive ? 'secondary' : 'success'}>
-                        {isActive ? 'Pause' : 'Activate'}
-                    </Button>
-                    <IconButton
-                        icon={<Trash2 size={16} />}
-                        tooltip="Delete"
-                        variant="danger"
-                        onClick={() => onDelete(alert.id)}
-                    />
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-text-secondary hover:text-text px-2"
-                        onClick={onClose}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                    </Button>
-                    <IconButton icon={<MoreVertical size={16} />} tooltip="More" variant="ghost" />
-                </div>
-            </div>
-
-            {/* Condition */}
-            <div className="p-4 border-b border-border">
-                <h3 className="text-xxs text-text-secondary uppercase tracking-wider mb-2">Condition</h3>
-                <div className="p-3 bg-element-bg rounded font-mono text-sm text-text">
-                    {alert.condition}
-                </div>
-            </div>
-
-            {/* Settings */}
-            <div className="grid grid-cols-2 gap-4 p-4 border-b border-border">
-                <div>
-                    <h3 className="text-xxs text-text-secondary uppercase tracking-wider mb-2">Throttle</h3>
-                    <div className="flex items-center gap-2 text-text">
-                        <Clock size={14} className="text-text-secondary" />
-                        <span className="text-sm">{alert.throttle || 'None'}</span>
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-xxs text-text-secondary uppercase tracking-wider mb-2">Delivery</h3>
-                    <div className="flex items-center gap-2">
-                        {(alert.delivery || []).map((ch: string) => (
-                            <Badge key={ch} size="sm">{ch}</Badge>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* History */}
-            <div className="flex-1 overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
-                    <h3 className="text-xs font-medium text-text-secondary uppercase tracking-wider">Trigger History</h3>
-                    <span className="text-xxs text-text-muted">0 total</span>
-                </div>
-                <div className="flex-1 overflow-auto p-4 text-center text-text-secondary text-xs">
-                    No history available.
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Alert Builder Form
-function AlertBuilderForm({ onSubmit }: { onSubmit: (data: any) => void }) {
-    const [name, setName] = useState('');
-    const [symbol, setSymbol] = useState('');
-    const [value, setValue] = useState('');
-
-    return (
-        <div className="space-y-6">
-            <div className="space-y-1">
-                <label className="text-xs font-medium text-text-secondary">Alert Name</label>
-                <Input
-                    placeholder="e.g. Price Breakout"
-                    autoFocus
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                />
-            </div>
-
-            <div className="space-y-1">
-                <label className="text-xs font-medium text-text-secondary">Symbol</label>
-                <Input
-                    placeholder="AAPL"
-                    value={symbol}
-                    onChange={(e) => setSymbol(e.target.value)}
-                />
-            </div>
-
-            <div className="space-y-1">
-                <label className="text-xs font-medium text-text-secondary">Trigger Condition</label>
-                <div className="p-3 rounded bg-element-bg border border-border">
-                    <div className="grid grid-cols-3 gap-2 mb-2">
-                        <select className="bg-panel-bg text-text text-xs border border-border rounded px-2 py-1.5 focus:border-brand focus:outline-none">
-                            <option>Price</option>
-                        </select>
-                        <select className="bg-panel-bg text-text text-xs border border-border rounded px-2 py-1.5 focus:border-brand focus:outline-none">
-                            <option>Greater Than</option>
-                        </select>
-                        <Input
-                            placeholder="Value"
-                            className="h-[28px]"
-                            value={value}
-                            onChange={(e) => setValue(e.target.value)}
-                        />
-                    </div>
-                    <p className="text-xxs text-text-muted italic">Example: Price &gt; 190.00</p>
-                </div>
-            </div>
-
-            <div className="pt-4 border-t border-border">
-                <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => onSubmit({
-                        name,
-                        symbol,
-                        condition: `Price > ${value}`,
-                        value: parseFloat(value),
-                        delivery: ['webhook']
-                    })}
-                    disabled={!name || !symbol || !value}
-                >
-                    Create Alert
-                </Button>
-            </div>
-        </div>
-    );
-}
+type AlView = 'list'|'detail'|'create';
 
 export function AlertsView() {
-    const [alerts, setAlerts] = useState<any[]>([
-        { id: 'a-1', name: 'Sample AAPL Price', symbol: 'AAPL', condition: 'Price > 190.00', status: 'ACTIVE', delivery: ['webhook'] },
-        { id: 'a-2', name: 'Sample TSLA Volume', symbol: 'TSLA', condition: 'Volume > 1M', status: 'INACTIVE', delivery: ['email'] }
-    ]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [isBuilderOpen, setIsBuilderOpen] = useState(false);
-    const { addToast } = useToast();
+  const [alerts, setAlerts] = useState<AlertRecord[]>([
+    {id:'a-1',name:'AAPL Price Alert',symbol:'AAPL',condition:'Price > 190.00',status:'ACTIVE',delivery:['webhook']},
+    {id:'a-2',name:'TSLA Volume Alert',symbol:'TSLA',condition:'Volume > 1M',status:'INACTIVE',delivery:['email']},
+  ]);
+  const [view, setView] = useState<AlView>('list');
+  const [selected, setSelected] = useState<AlertRecord|null>(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [toast, setToast] = useState<{msg:string,ok:boolean}|null>(null);
+  // Create form state
+  const [cName, setCName] = useState('');
+  const [cSymbol, setCSymbol] = useState('');
+  const [cValue, setCValue] = useState('');
+  const [cField, setCField] = useState('Price');
+  const [cOp, setCOp] = useState('Greater Than');
+  const [cDelivery, setCDelivery] = useState('webhook');
 
-    const fetchAlerts = useCallback(async () => {
-        try {
-            const data = await ApiClient.listAlerts();
-            if (data.length > 0) {
-                setAlerts(data);
-                // Don't auto-select
-                // setSelectedId(prev => prev || data[0].id);
-            }
-        } catch (error) {
-            console.error('Failed to list alerts', error);
-            addToast({ message: 'Failed to load alerts', variant: 'error' });
-        }
-    }, [addToast]);
+  const showToast=(msg:string,ok=true)=>{setToast({msg,ok});setTimeout(()=>setToast(null),2800);}
 
-    useEffect(() => {
-        fetchAlerts();
-    }, [fetchAlerts]);
+  const fetchAlerts = useCallback(async () => {
+    try {
+      const data = await ApiClient.listAlerts();
+      if(data.length>0) setAlerts(data);
+    } catch { console.error('Failed to list alerts'); }
+  },[]);
 
-    const handleCreate = async (data: any) => {
-        try {
-            await ApiClient.createAlert(data);
-            addToast({ message: 'Alert created', variant: 'success' });
-            setIsBuilderOpen(false);
-            fetchAlerts();
-        } catch {
-            addToast({ message: 'Failed to create alert', variant: 'error' });
-        }
-    };
+  useEffect(()=>{fetchAlerts();},[fetchAlerts]);
 
-    const handleDelete = async (id: string) => {
-        try {
-            await ApiClient.deleteAlert(id);
-            addToast({ message: 'Alert deleted', variant: 'success' });
-            if (selectedId === id) setSelectedId(null);
-            fetchAlerts();
-        } catch {
-            addToast({ message: 'Failed to delete alert', variant: 'error' });
-        }
-    };
+  const handleCreate = async () => {
+    try {
+      await ApiClient.createAlert({name:cName,symbol:cSymbol.toUpperCase(),
+        condition:`${cField} ${cOp==='Greater Than'?'>':'<'} ${cValue}`,
+        value:parseFloat(cValue),delivery:[cDelivery]});
+      showToast('Alert created');
+      setView('list'); setCName(''); setCSymbol(''); setCValue('');
+      fetchAlerts();
+    } catch { showToast('Failed to create alert',false); }
+  };
 
-    const selectedAlert = alerts.find(a => a.id === selectedId) || null;
+  const handleDelete = async (id: string) => {
+    try {
+      await ApiClient.deleteAlert(id);
+      showToast('Alert deleted');
+      if(selected?.id===id){setSelected(null);setView('list');}
+      fetchAlerts();
+    } catch { showToast('Failed to delete alert',false); }
+  };
 
-    return (
-        <div className="h-full bg-background flex flex-col" data-testid="alerts-view">
-            {/* Page Header visible when no alert selected */}
-            {!selectedId && (
-                <PageHeader
-                    title="Alerts"
-                    subtitle="Configure price & volume alerts with delivery options"
-                    icon={<Bell size={20} />}
-                    badge={<Badge variant="brand">{alerts.filter(a => a.status === 'ACTIVE').length} active</Badge>}
-                    actions={
-                        <Button size="sm" variant="primary" onClick={() => setIsBuilderOpen(true)}>
-                            <Plus size={14} /> New Alert
-                        </Button>
-                    }
-                    data-testid="alerts-header"
-                />
-            )}
-            {!selectedId ? (
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    <AlertList
-                        alerts={alerts}
-                        selectedId={selectedId}
-                        onSelect={setSelectedId}
-                        onNew={() => setIsBuilderOpen(true)}
-                    />
-                </div>
-            ) : (
-                <PanelGroup orientation="horizontal" className="flex-1">
-                    <Panel defaultSize={35} minSize={25} maxSize={45} className="flex flex-col">
-                        <AlertList
-                            alerts={alerts}
-                            selectedId={selectedId}
-                            onSelect={setSelectedId}
-                            onNew={() => setIsBuilderOpen(true)}
-                        />
-                    </Panel>
-                    <PanelResizeHandle className="w-1 bg-border hover:bg-brand transition-colors cursor-col-resize flex items-center justify-center">
-                        <div className="w-px h-8 bg-border-strong group-hover:bg-brand/50" />
-                    </PanelResizeHandle>
-                    <Panel defaultSize={65} minSize={40} className="flex flex-col h-full overflow-hidden">
-                        <div className="flex-1 h-full overflow-hidden">
-                            <AlertDetail
-                                alert={selectedAlert}
-                                onDelete={handleDelete}
-                                onClose={() => setSelectedId(null)}
-                            />
-                        </div>
-                    </Panel>
-                </PanelGroup>
-            )}
+  const handleSelect=(a:AlertRecord)=>{setSelected(a);setView('detail');}
 
-            {/* Alert Builder Drawer */}
-            <Drawer
-                open={isBuilderOpen}
-                onClose={() => setIsBuilderOpen(false)}
-                title="Create Alert"
-                description="Configure trigger conditions and delivery methods."
-                size="md"
-            >
-                <AlertBuilderForm onSubmit={handleCreate} />
-            </Drawer>
+  const filteredAlerts=alerts.filter(a=>{
+    if(statusFilter!=='all'&&a.status!==statusFilter) return false;
+    if(search&&!a.name.toLowerCase().includes(search.toLowerCase())&&
+      !a.symbol.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const INP:React.CSSProperties={background:BG,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,
+    fontSize:11,padding:'5px 8px',borderRadius:2,outline:'none',width:'100%',boxSizing:'border-box' as const}
+  const SEL:React.CSSProperties={...INP,appearance:'none' as const}
+  const tbtn=(a:boolean,col?:string):React.CSSProperties=>({padding:'6px 14px',fontSize:10,fontFamily:MONO,
+    letterSpacing:'0.08em',cursor:'pointer',background:'none',border:'none',
+    borderBottom:a?`2px solid ${col||GREEN}`:'2px solid transparent',
+    color:a?(col||GREEN):SUBTLE,textTransform:'uppercase' as const})
+
+  return (
+    <div data-testid="alerts-view"
+      style={{height:'100%',display:'flex',flexDirection:'column' as const,background:BG,fontFamily:MONO}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'6px 14px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0,flexWrap:'wrap' as const}}>
+        <span style={{fontSize:11,color:AMBER,letterSpacing:'0.1em'}}>AL</span>
+        <span style={{fontSize:12,color:TEXT,fontWeight:700}}>ALERTS MANAGER</span>
+        <div style={{flex:1}}/>
+        <input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)}
+          style={{...INP,width:180}}/>
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{...SEL,width:120}}>
+          <option value="all">ALL</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="INACTIVE">INACTIVE</option>
+          <option value="PAUSED">PAUSED</option>
+        </select>
+        <button onClick={fetchAlerts}
+          style={{background:PANEL,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,
+            fontSize:10,padding:'4px 10px',cursor:'pointer',borderRadius:2}}>REFRESH</button>
+      </div>
+
+      {/* Stats */}
+      <div style={{display:'flex',gap:8,padding:'8px 14px',borderBottom:`1px solid ${BORDER}`,background:PANEL}}>
+        <StatCard label="TOTAL" value={alerts.length}/>
+        <StatCard label="ACTIVE" value={alerts.filter(a=>a.status==='ACTIVE').length} color={GREEN}/>
+        <StatCard label="INACTIVE" value={alerts.filter(a=>a.status==='INACTIVE').length} color={SUBTLE}/>
+        <StatCard label="PAUSED" value={alerts.filter(a=>a.status==='PAUSED').length} color={AMBER}/>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:'flex',borderBottom:`1px solid ${BORDER}`,background:PANEL}}>
+        <button style={tbtn(view==='list',AMBER)} onClick={()=>{setView('list');setSelected(null);}}>
+          LIST ({filteredAlerts.length})
+        </button>
+        <button style={tbtn(view==='detail',BLUE)} onClick={()=>{if(selected)setView('detail');}}>
+          DETAIL
+        </button>
+        <button style={tbtn(view==='create',GREEN)} onClick={()=>setView('create')}>
+          + CREATE ALERT
+        </button>
+      </div>
+
+      {/* Toast */}
+      {toast&&(
+        <div style={{padding:'6px 14px',background:toast.ok?`${GREEN}22`:`${RED}22`,
+          borderBottom:`1px solid ${toast.ok?GREEN:RED}`,fontSize:10,color:toast.ok?GREEN:RED}}>
+          {toast.msg}
         </div>
-    );
+      )}
+
+      {/* Content */}
+      <div style={{flex:1,overflow:'auto'}}>
+        {view==='list'&&(
+          <table style={{width:'100%',borderCollapse:'collapse' as const}}>
+            <thead><tr>
+              <Th c="NAME"/><Th c="SYMBOL"/><Th c="CONDITION"/><Th c="STATUS"/><Th c="DELIVERY"/><Th c="ACTIONS"/>
+            </tr></thead>
+            <tbody>
+              {filteredAlerts.length===0&&(
+                <tr><td colSpan={6} style={{padding:24,textAlign:'center' as const,color:SUBTLE,fontSize:11}}>No alerts found</td></tr>
+              )}
+              {filteredAlerts.map(a=>(
+                <tr key={a.id} onClick={()=>handleSelect(a)}
+                  style={{cursor:'pointer',background:selected?.id===a.id?`${BORDER}99`:'transparent'}}
+                  onMouseEnter={e=>{if(selected?.id!==a.id)(e.currentTarget.style.background=`${BORDER}66`)}}
+                  onMouseLeave={e=>{if(selected?.id!==a.id)(e.currentTarget.style.background='transparent')}}>
+                  <Td><StatusDot s={a.status}/>{a.name}</Td>
+                  <Td mono color={BLUE}>{a.symbol}</Td>
+                  <Td mono color={AMBER}>{a.condition}</Td>
+                  <Td><span style={{fontSize:9,padding:'2px 6px',
+                    border:`1px solid ${a.status==='ACTIVE'?GREEN:a.status==='PAUSED'?AMBER:SUBTLE}`,
+                    color:a.status==='ACTIVE'?GREEN:a.status==='PAUSED'?AMBER:SUBTLE,borderRadius:2}}>
+                    {a.status}
+                  </span></Td>
+                  <Td>{(a.delivery||[]).join(', ')}</Td>
+                  <Td>
+                    <button onClick={e=>{e.stopPropagation();handleDelete(a.id);}}
+                      style={{fontSize:9,padding:'2px 7px',fontFamily:MONO,cursor:'pointer',border:`1px solid ${RED}`,
+                        background:`${RED}22`,color:RED,borderRadius:2}}>DELETE</button>
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {view==='detail'&&selected&&(
+          <div style={{padding:14}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+              <StatusDot s={selected.status}/>
+              <span style={{fontSize:14,color:TEXT,fontWeight:700}}>{selected.name}</span>
+              <span style={{fontSize:11,color:BLUE,fontFamily:MONO}}>{selected.symbol}</span>
+              <span style={{fontSize:9,padding:'2px 6px',border:`1px solid ${selected.status==='ACTIVE'?GREEN:AMBER}`,
+                color:selected.status==='ACTIVE'?GREEN:AMBER,borderRadius:2}}>{selected.status}</span>
+              <div style={{flex:1}}/>
+              <button onClick={()=>handleDelete(selected.id)}
+                style={{fontSize:10,padding:'4px 12px',fontFamily:MONO,cursor:'pointer',
+                  border:`1px solid ${RED}`,background:`${RED}22`,color:RED,borderRadius:2}}>DELETE</button>
+            </div>
+            <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'10px 14px',marginBottom:10}}>
+              <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:4}}>CONDITION</div>
+              <div style={{fontSize:13,color:AMBER,fontFamily:MONO}}>{selected.condition}</div>
+            </div>
+            <div style={{display:'flex',gap:8,marginBottom:10}}>
+              <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 12px',flex:1}}>
+                <div style={{fontSize:9,color:SUBTLE,marginBottom:3}}>DELIVERY</div>
+                <div style={{fontSize:12,color:TEXT}}>{(selected.delivery||[]).join(', ')||'â€”'}</div>
+              </div>
+              <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 12px',flex:1}}>
+                <div style={{fontSize:9,color:SUBTLE,marginBottom:3}}>THROTTLE</div>
+                <div style={{fontSize:12,color:TEXT}}>{selected.throttle||'NONE'}</div>
+              </div>
+            </div>
+            <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'10px 14px'}}>
+              <div style={{fontSize:9,color:SUBTLE,marginBottom:6}}>TRIGGER HISTORY</div>
+              <div style={{fontSize:10,color:SUBTLE}}>No history available for this alert.</div>
+            </div>
+          </div>
+        )}
+        {view==='detail'&&!selected&&(
+          <div style={{padding:32,textAlign:'center' as const,color:SUBTLE,fontSize:11}}>
+            Select an alert from the list to view details.
+          </div>
+        )}
+        {view==='create'&&(
+          <div style={{maxWidth:480,margin:'20px auto',padding:'0 14px'}}>
+            <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:18}}>
+              <div style={{fontSize:12,color:TEXT,fontWeight:700,marginBottom:14,letterSpacing:'0.05em'}}>CREATE ALERT</div>
+              {[['ALERT NAME',cName,(v:string)=>setCName(v),'e.g. Price Breakout'],
+                ['SYMBOL',cSymbol,(v:string)=>setCSymbol(v),'AAPL'],
+                ['TARGET VALUE',cValue,(v:string)=>setCValue(v),'190.00'],
+              ].map(([label,val,cb,ph])=>(
+                <div key={label as string} style={{marginBottom:10}}>
+                  <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:4}}>{label}</div>
+                  <input value={val as string} onChange={e=>(cb as (v:string)=>void)(e.target.value)}
+                    placeholder={ph as string} style={INP}/>
+                </div>
+              ))}
+              <div style={{display:'flex',gap:8,marginBottom:10}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:4}}>FIELD</div>
+                  <select value={cField} onChange={e=>setCField(e.target.value)} style={SEL}>
+                    <option>Price</option><option>Volume</option><option>RSI(14)</option><option>SMA(20)</option>
+                  </select>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:4}}>OPERATOR</div>
+                  <select value={cOp} onChange={e=>setCOp(e.target.value)} style={SEL}>
+                    <option>Greater Than</option><option>Less Than</option><option>Crosses Above</option><option>Crosses Below</option>
+                  </select>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:4}}>DELIVERY</div>
+                  <select value={cDelivery} onChange={e=>setCDelivery(e.target.value)} style={SEL}>
+                    <option value="webhook">WEBHOOK</option><option value="email">EMAIL</option><option value="sms">SMS</option>
+                  </select>
+                </div>
+              </div>
+              {cField&&cOp&&cValue&&(
+                <div style={{fontSize:10,color:AMBER,fontFamily:MONO,marginBottom:10,
+                  background:BG,border:`1px solid ${AMBER}33`,borderRadius:2,padding:'6px 10px'}}>
+                  PREVIEW: {cField} {cOp==='Greater Than'?'> ':'< '}{cValue}
+                </div>
+              )}
+              <button onClick={handleCreate} disabled={!cName||!cSymbol||!cValue}
+                style={{width:'100%',padding:'8px 0',fontFamily:MONO,fontSize:11,letterSpacing:'0.08em',
+                  cursor:!cName||!cSymbol||!cValue?'not-allowed':'pointer',border:`1px solid ${GREEN}`,
+                  background:`${GREEN}22`,color:GREEN,borderRadius:2,fontWeight:700,
+                  opacity:!cName||!cSymbol||!cValue?0.4:1}}>
+                CREATE ALERT
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

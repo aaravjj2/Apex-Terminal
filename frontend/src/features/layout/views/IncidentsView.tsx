@@ -1,11 +1,29 @@
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+const Th=({c}:{c:string})=><th style={{padding:'5px 10px',fontSize:9,letterSpacing:'0.1em',color:SUBTLE,
+  textAlign:'left' as const,borderBottom:`1px solid ${BORDER}`,background:PANEL,fontFamily:MONO}}>{c}</th>
+const Td=({children,mono,color,colSpan}:{children:React.ReactNode,mono?:boolean,color?:string,colSpan?:number})=>(
+  <td colSpan={colSpan} style={{padding:'6px 10px',fontSize:11,color:color||TEXT,fontFamily:mono?MONO:'inherit',
+    borderBottom:`1px solid ${BORDER}33`}}>{children}</td>
+)
+const SevBadge=({s}:{s:string})=>{
+  const c=s==='critical'?RED:s==='error'?RED:s==='warning'?AMBER:BLUE
+  return<span style={{fontSize:9,padding:'2px 6px',border:`1px solid ${c}`,color:c,borderRadius:2}}>{s.toUpperCase()}</span>
+}
+const StatCard=({label,value,color}:{label:string,value:string|number,color?:string})=>(
+  <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 12px',minWidth:80}}>
+    <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:3}}>{label}</div>
+    <div style={{fontSize:16,color:color||TEXT,fontFamily:MONO,fontWeight:700}}>{value}</div>
+  </div>
+)
+
 import { useState, useEffect } from 'react';
-import { Play, FileText, Database, Download, CheckCircle, ShieldAlert } from 'lucide-react';
+import React from 'react';
 import { API_BASE } from '../../../config/api';
-import { Button } from '../../../ui/Button';
-import { Badge } from '../../../ui/Badge';
-import { Panel } from '../../../ui/Panel';
-import { PageHeader } from '../../../ui/PageHeader';
-import { cn } from '../../../ui/utils';
 
 // ==========================================
 // TYPES
@@ -49,314 +67,317 @@ const mockBundles: IncidentBundle[] = [
 ];
 
 export function IncidentsView() {
-    const [activeTab, setActiveTab] = useState<'alerts' | 'bundles'>('alerts');
+  const [tab, setTab] = useState<'alerts'|'bundles'|'replay'>('alerts');
+  const [alerts, setAlerts] = useState<SystemAlert[]>([]);
+  const [bundles, setBundles] = useState<IncidentBundle[]>(mockBundles);
+  const [loading, setLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [selected, setSelected] = useState<IncidentBundle|null>(null);
+  const [recTime, setRecTime] = useState(0);
+  const [sevFilter, setSevFilter] = useState('all');
+  const [resolvedFilter, setResolvedFilter] = useState('unresolved');
+  const [toast, setToast] = useState<{msg:string,ok:boolean}|null>(null);
 
-    // Alert State
-    const [alerts, setAlerts] = useState<SystemAlert[]>([]);
-    const [alertsLoading, setAlertsLoading] = useState(false);
+  const showToast=(msg:string,ok=true)=>{setToast({msg,ok});setTimeout(()=>setToast(null),2800);}
 
-    // Bundle State
-    const [bundles, setBundles] = useState<IncidentBundle[]>(mockBundles);
-    const [isRecording, setIsRecording] = useState(false);
-    const [selectedBundle, setSelectedBundle] = useState<IncidentBundle | null>(null);
+  const fetchAlerts = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/alerts?limit=50`);
+      if(res.ok) setAlerts(await res.json());
+    } catch { console.error('Failed to fetch alerts'); }
+    finally { setLoading(false); }
+  };
 
-    // ==========================================
-    // ALERTS LOGIC
-    // ==========================================
+  useEffect(()=>{
+    if(tab==='alerts'){
+      fetchAlerts();
+      const iv=setInterval(fetchAlerts,10000);
+      return()=>clearInterval(iv);
+    }
+  },[tab]);
 
-    const fetchAlerts = async () => {
-        setAlertsLoading(true);
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/alerts?limit=50`);
-            if (res.ok) {
-                const data = await res.json();
-                setAlerts(data);
-            }
-        } catch (err) {
-            console.error('Failed to fetch alerts:', err);
-        } finally {
-            setAlertsLoading(false);
-        }
-    };
+  useEffect(()=>{
+    if(!isRecording){setRecTime(0);return;}
+    const iv=setInterval(()=>setRecTime(t=>t+1),1000);
+    return()=>clearInterval(iv);
+  },[isRecording]);
 
-    useEffect(() => {
-        if (activeTab === 'alerts') {
-            fetchAlerts();
-            const interval = setInterval(fetchAlerts, 10000);
-            return () => clearInterval(interval);
-        }
-    }, [activeTab]);
+  const handleResolve = async(id:string)=>{
+    try {
+      await fetch(`${API_BASE}/api/v1/alerts/${id}/resolve?note=Manual+resolution`,{method:'POST'});
+      showToast('Alert resolved'); fetchAlerts();
+    } catch { showToast('Failed to resolve',false); }
+  };
 
-    const handleResolveAlert = async (id: string) => {
-        try {
-            await fetch(`${API_BASE}/api/v1/alerts/${id}/resolve?note=Manual resolution`, { method: 'POST' });
-            fetchAlerts();
-        } catch (err) {
-            console.error('Failed to resolve alert:', err);
-        }
-    };
+  const handleStartRec=()=>setIsRecording(true);
+  const handleStopRec=()=>{
+    setIsRecording(false);
+    const nb:IncidentBundle={id:`bundle_${Date.now()}`,name:`Recording_${new Date().toISOString().slice(0,10)}`,
+      recordedAt:new Date().toISOString(),durationSeconds:recTime,tickCount:0,
+      hash:'pending...',status:'completed',symbols:['AAPL']};
+    setBundles(p=>[nb,...p]);
+    showToast('Recording stopped â€” bundle created');
+  };
 
-    // ==========================================
-    // BUNDLE LOGIC
-    // ==========================================
+  const fmtDur=(s:number)=>`${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
+  const fmtRecTime=(s:number)=>{
+    const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+    return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
 
-    const formatDuration = (seconds: number) => {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        return `${hours}h ${minutes}m`;
-    };
+  const filteredAlerts=alerts.filter(a=>{
+    if(sevFilter!=='all'&&a.severity!==sevFilter)return false;
+    if(resolvedFilter==='unresolved'&&a.resolved)return false;
+    if(resolvedFilter==='resolved'&&!a.resolved)return false;
+    return true;
+  });
 
-    const handleStartRecording = () => {
-        setIsRecording(true);
-        // In real implementation: POST /api/v1/incidents/start
-    };
+  const INP:React.CSSProperties={background:BG,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,
+    fontSize:11,padding:'5px 8px',borderRadius:2,outline:'none',appearance:'none' as const}
+  const tbtn=(a:boolean,col?:string):React.CSSProperties=>({padding:'6px 14px',fontSize:10,fontFamily:MONO,
+    letterSpacing:'0.08em',cursor:'pointer',background:'none',border:'none',
+    borderBottom:a?`2px solid ${col||GREEN}`:'2px solid transparent',
+    color:a?(col||GREEN):SUBTLE,textTransform:'uppercase' as const})
 
-    const handleStopRecording = () => {
-        setIsRecording(false);
-        // In real implementation: POST /api/v1/incidents/{run_id}/stop
-        const newBundle: IncidentBundle = {
-            id: `bundle_${Date.now()}`,
-            name: `Recording_${new Date().toISOString().slice(0, 10)}`,
-            recordedAt: new Date().toISOString(),
-            durationSeconds: 0,
-            tickCount: 0,
-            hash: 'pending...',
-            status: 'completed',
-            symbols: ['AAPL'],
-        };
-        setBundles(prev => [newBundle, ...prev]);
-    };
+  const unresolved=alerts.filter(a=>!a.resolved).length;
 
-    return (
-        <div className="h-full overflow-auto bg-background flex flex-col" data-testid="incidents-view">
-            {/* Header */}
-            <div className="p-6 pb-0">
-                <PageHeader
-                    title="Incidents & Forensics"
-                    subtitle="Monitor system health alerts and manage replay bundles"
-                    icon={<ShieldAlert size={20} />}
-                    badge={
-                        alerts.filter(a => !a.resolved).length > 0 ? (
-                            <Badge variant="error" dot>{alerts.filter(a => !a.resolved).length} unresolved</Badge>
-                        ) : (
-                            <Badge variant="success" dot>All Clear</Badge>
-                        )
-                    }
-                    actions={
-                        activeTab === 'bundles' ? (
-                            <Button
-                                variant={isRecording ? 'danger' : 'primary'}
-                                onClick={isRecording ? handleStopRecording : handleStartRecording}
-                                className="gap-2"
-                            >
-                                {isRecording ? (
-                                    <>
-                                        <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                                        Stop Recording
-                                    </>
-                                ) : (
-                                    <>
-                                        <Database size={16} />
-                                        Start Recording
-                                    </>
-                                )}
-                            </Button>
-                        ) : undefined
-                    }
-                    data-testid="incidents-header"
-                />
+  return (
+    <div data-testid="incidents-view"
+      style={{height:'100%',display:'flex',flexDirection:'column' as const,background:BG,fontFamily:MONO}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'6px 14px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}}>
+        <span style={{fontSize:11,color:RED,letterSpacing:'0.1em'}}>IF</span>
+        <span style={{fontSize:12,color:TEXT,fontWeight:700}}>INCIDENTS &amp; FORENSICS</span>
+        {unresolved>0&&(
+          <span style={{fontSize:9,padding:'2px 8px',background:`${RED}22`,border:`1px solid ${RED}`,
+            color:RED,borderRadius:2}}>{unresolved} UNRESOLVED</span>
+        )}
+        <div style={{flex:1}}/>
+        {tab==='alerts'&&(
+          <>
+            <select value={sevFilter} onChange={e=>setSevFilter(e.target.value)} style={{...INP,width:110}}>
+              <option value="all">ALL SEV</option>
+              <option value="critical">CRITICAL</option>
+              <option value="error">ERROR</option>
+              <option value="warning">WARNING</option>
+              <option value="info">INFO</option>
+            </select>
+            <select value={resolvedFilter} onChange={e=>setResolvedFilter(e.target.value)} style={{...INP,width:120}}>
+              <option value="all">ALL</option>
+              <option value="unresolved">UNRESOLVED</option>
+              <option value="resolved">RESOLVED</option>
+            </select>
+          </>
+        )}
+        {tab==='bundles'&&(
+          <button onClick={isRecording?handleStopRec:handleStartRec}
+            style={{fontSize:10,padding:'4px 12px',fontFamily:MONO,cursor:'pointer',
+              border:`1px solid ${isRecording?RED:GREEN}`,background:`${isRecording?RED:GREEN}22`,
+              color:isRecording?RED:GREEN,borderRadius:2,letterSpacing:'0.08em'}}>
+            {isRecording?'â–  STOP RECORDING':'â— START RECORDING'}
+          </button>
+        )}
+        <button onClick={fetchAlerts}
+          style={{background:PANEL,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,
+            fontSize:10,padding:'4px 10px',cursor:'pointer',borderRadius:2}}>REFRESH</button>
+      </div>
 
-                {/* Tab Switcher */}
-                <div className="pro-tab-bar">
-                    <button
-                        onClick={() => setActiveTab('alerts')}
-                        aria-selected={activeTab === 'alerts'}
-                        className={cn(
-                            "pro-tab flex items-center gap-2",
-                            activeTab === 'alerts' && "active"
-                        )}
-                    >
-                        <ShieldAlert size={14} />
-                        System Alerts
-                        {alerts.filter(a => !a.resolved).length > 0 && (
-                            <Badge variant="error" className="ml-1 h-5 px-1.5">
-                                {alerts.filter(a => !a.resolved).length}
-                            </Badge>
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('bundles')}
-                        aria-selected={activeTab === 'bundles'}
-                        className={cn(
-                            "pro-tab flex items-center gap-2",
-                            activeTab === 'bundles' && "active"
-                        )}
-                    >
-                        <Database size={14} />
-                        Replay Bundles
-                    </button>
-                </div>
-            </div>
+      {/* Stats */}
+      <div style={{display:'flex',gap:8,padding:'8px 14px',borderBottom:`1px solid ${BORDER}`,background:PANEL}}>
+        <StatCard label="TOTAL ALERTS" value={alerts.length}/>
+        <StatCard label="UNRESOLVED" value={unresolved} color={unresolved>0?RED:GREEN}/>
+        <StatCard label="CRITICAL" value={alerts.filter(a=>a.severity==='critical'&&!a.resolved).length} color={RED}/>
+        <StatCard label="WARNING" value={alerts.filter(a=>a.severity==='warning'&&!a.resolved).length} color={AMBER}/>
+        <StatCard label="BUNDLES" value={bundles.length} color={BLUE}/>
+        <StatCard label="RECORDING" value={isRecording?fmtRecTime(recTime):'OFF'} color={isRecording?RED:SUBTLE}/>
+      </div>
 
-            {/* Content Area */}
-            <div className="flex-1 p-6 overflow-hidden">
-                {activeTab === 'alerts' ? (
-                    <div className="h-full overflow-auto space-y-4">
-                        {alertsLoading && alerts.length === 0 ? (
-                            <div className="text-center py-12 text-text-secondary">Loading alerts...</div>
-                        ) : alerts.length === 0 ? (
-                            <div className="text-center py-12 text-text-secondary">
-                                <CheckCircle size={48} className="mx-auto mb-4 text-green-500/50" />
-                                <h3 className="text-lg font-medium text-text">All Clear</h3>
-                                <p>No active system incidents or alerts.</p>
-                            </div>
-                        ) : (
-                            alerts.map(alert => (
-                                <Panel
-                                    key={alert.id}
-                                    className={cn(
-                                        "p-4 border-l-4",
-                                        alert.resolved ? "border-l-border" :
-                                            alert.severity === 'critical' || alert.severity === 'error' ? "border-l-red-500" :
-                                                alert.severity === 'warning' ? "border-l-yellow-500" : "border-l-blue-500"
-                                    )}
-                                >
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Badge variant={
-                                                    alert.resolved ? 'default' :
-                                                        alert.severity === 'critical' || alert.severity === 'error' ? 'error' :
-                                                            alert.severity === 'warning' ? 'warning' : 'outline'
-                                                }>
-                                                    {alert.severity.toUpperCase()}
-                                                </Badge>
-                                                <span className="font-medium text-text">{alert.title}</span>
-                                                <span className="text-text-muted text-xs mx-2">
-                                                    {new Date(alert.created_at).toLocaleString()}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-text-secondary mt-1">{alert.description}</p>
-                                            {alert.run_id && (
-                                                <div className="mt-2 text-xs font-mono text-text-muted bg-element-bg inline-block px-1.5 py-0.5 rounded">
-                                                    Run: {alert.run_id}
-                                                </div>
-                                            )}
-                                        </div>
-                                        {!alert.resolved ? (
-                                            <Button
-                                                size="sm"
-                                                variant="secondary"
-                                                onClick={() => handleResolveAlert(alert.id)}
-                                            >
-                                                Resolve
-                                            </Button>
-                                        ) : (
-                                            <div className="text-xs text-text-muted flex items-center gap-1">
-                                                <CheckCircle size={12} />
-                                                Resolved
-                                            </div>
-                                        )}
-                                    </div>
-                                </Panel>
-                            ))
-                        )}
-                    </div>
-                ) : (
-                    <div className="h-full overflow-auto space-y-6">
-                        {/* Recording Status */}
-                        {isRecording && (
-                            <Panel className="bg-red-500/10 border-red-500/50 p-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                                    <div>
-                                        <p className="font-semibold text-red-400">Recording in progress...</p>
-                                        <p className="text-sm text-red-300/70">Capturing live market data for replay bundle</p>
-                                    </div>
-                                    <div className="ml-auto text-sm text-red-300 font-mono">
-                                        00:05:32
-                                    </div>
-                                </div>
-                            </Panel>
-                        )}
+      {/* Tabs */}
+      <div style={{display:'flex',borderBottom:`1px solid ${BORDER}`,background:PANEL}}>
+        <button style={tbtn(tab==='alerts',RED)} onClick={()=>setTab('alerts')}>
+          ALERTS {unresolved>0?`(${unresolved})`:''}
+        </button>
+        <button style={tbtn(tab==='bundles',BLUE)} onClick={()=>setTab('bundles')}>
+          REPLAY BUNDLES ({bundles.length})
+        </button>
+        <button style={tbtn(tab==='replay',AMBER)} onClick={()=>setTab('replay')}>
+          REPLAY PLAYER
+        </button>
+      </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Bundle List */}
-                            <div className="space-y-4">
-                                {bundles.map(bundle => (
-                                    <Panel
-                                        key={bundle.id}
-                                        className={cn(
-                                            "p-4 cursor-pointer hover:bg-element-bg transition-colors",
-                                            selectedBundle?.id === bundle.id && "ring-2 ring-brand"
-                                        )}
-                                        onClick={() => setSelectedBundle(bundle)}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-element-bg rounded flex items-center justify-center">
-                                                    <FileText size={16} className="text-text-secondary" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-medium text-text text-sm">{bundle.name}</h3>
-                                                    <div className="text-xs text-text-muted mt-0.5 flex items-center gap-2">
-                                                        <span>{new Date(bundle.recordedAt).toLocaleDateString()}</span>
-                                                        <span>•</span>
-                                                        <span>{formatDuration(bundle.durationSeconds)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <Badge variant="outline">{bundle.status}</Badge>
-                                        </div>
-                                    </Panel>
-                                ))}
-                            </div>
-
-                            {/* Bundle Details */}
-                            {selectedBundle ? (
-                                <Panel className="p-6 h-fit bg-surface-elevated">
-                                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                        <Database size={18} />
-                                        Bundle Details
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <label className="text-text-secondary text-xs">ID</label>
-                                                <div className="font-mono">{selectedBundle.id}</div>
-                                            </div>
-                                            <div>
-                                                <label className="text-text-secondary text-xs">Tick Count</label>
-                                                <div>{selectedBundle.tickCount.toLocaleString()}</div>
-                                            </div>
-                                            <div className="col-span-2">
-                                                <label className="text-text-secondary text-xs">Content Hash</label>
-                                                <div className="font-mono text-xs break-all bg-element-bg p-2 rounded mt-1">
-                                                    {selectedBundle.hash}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-4 border-t border-border flex gap-2">
-                                            <Button className="flex-1" variant="primary">
-                                                <Play size={16} className="mr-2" /> Load Replay
-                                            </Button>
-                                            <Button variant="secondary">
-                                                <Download size={16} />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </Panel>
-                            ) : (
-                                <div className="hidden lg:flex items-center justify-center text-text-secondary h-64 border-2 border-dashed border-border rounded-lg">
-                                    Select a bundle to view details
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
+      {/* Toast */}
+      {toast&&(
+        <div style={{padding:'6px 14px',background:toast.ok?`${GREEN}22`:`${RED}22`,
+          borderBottom:`1px solid ${toast.ok?GREEN:RED}`,fontSize:10,color:toast.ok?GREEN:RED}}>
+          {toast.msg}
         </div>
-    );
-}
+      )}
 
+      {/* Recording banner */}
+      {isRecording&&(
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'8px 14px',
+          background:`${RED}11`,borderBottom:`1px solid ${RED}33`}}>
+          <span style={{width:8,height:8,borderRadius:'50%',background:RED,display:'inline-block',
+            animation:'pulse 1s infinite'}}/>
+          <span style={{fontSize:11,color:RED}}>RECORDING ACTIVE â€” {fmtRecTime(recTime)}</span>
+          <span style={{fontSize:10,color:SUBTLE}}>Capturing live market data for replay bundle</span>
+        </div>
+      )}
+
+      {/* Content */}
+      <div style={{flex:1,overflow:'auto'}}>
+        {/* ALERTS TAB */}
+        {tab==='alerts'&&(
+          loading&&alerts.length===0?(
+            <div style={{padding:32,textAlign:'center' as const,color:SUBTLE,fontSize:11}}>Loading alerts...</div>
+          ):filteredAlerts.length===0?(
+            <div style={{padding:32,textAlign:'center' as const,color:GREEN,fontSize:11}}>
+              <div style={{fontSize:24,marginBottom:8}}>âœ“</div>
+              <div>ALL CLEAR â€” No active incidents</div>
+            </div>
+          ):(
+            <table style={{width:'100%',borderCollapse:'collapse' as const}}>
+              <thead><tr>
+                <Th c="SEVERITY"/><Th c="TITLE"/><Th c="CATEGORY"/>
+                <Th c="CREATED"/><Th c="RUN ID"/><Th c="STATUS"/><Th c="ACTIONS"/>
+              </tr></thead>
+              <tbody>
+                {filteredAlerts.map(a=>(
+                  <tr key={a.id}
+                    style={{background:a.resolved?'transparent':(a.severity==='critical'||a.severity==='error')?`${RED}08`:`${AMBER}06`}}
+                    onMouseEnter={e=>{e.currentTarget.style.background=`${BORDER}88`}}
+                    onMouseLeave={e=>{e.currentTarget.style.background=a.resolved?'transparent':(a.severity==='critical'||a.severity==='error')?`${RED}08`:`${AMBER}06`}}>
+                    <Td><SevBadge s={a.severity}/></Td>
+                    <Td color={a.resolved?SUBTLE:TEXT}>{a.title}</Td>
+                    <Td color={SUBTLE}>{a.category}</Td>
+                    <Td mono color={SUBTLE}>{new Date(a.created_at).toLocaleString()}</Td>
+                    <Td mono color={BLUE}>{a.run_id||'â€”'}</Td>
+                    <Td>{a.resolved?
+                      <span style={{fontSize:9,color:GREEN}}>âœ“ RESOLVED</span>:
+                      <span style={{fontSize:9,color:RED}}>OPEN</span>}
+                    </Td>
+                    <Td>{!a.resolved&&(
+                      <button onClick={()=>handleResolve(a.id)}
+                        style={{fontSize:9,padding:'2px 7px',fontFamily:MONO,cursor:'pointer',
+                          border:`1px solid ${GREEN}`,background:`${GREEN}22`,color:GREEN,borderRadius:2}}>RESOLVE</button>
+                    )}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
+
+        {/* BUNDLES TAB */}
+        {tab==='bundles'&&(
+          <div style={{display:'flex',height:'100%'}}>
+            {/* List */}
+            <div style={{width:320,borderRight:`1px solid ${BORDER}`,overflow:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse' as const}}>
+                <thead><tr><Th c="NAME"/><Th c="STATUS"/></tr></thead>
+                <tbody>
+                  {bundles.map(b=>(
+                    <tr key={b.id} onClick={()=>setSelected(b)}
+                      style={{cursor:'pointer',background:selected?.id===b.id?`${BLUE}18`:'transparent'}}
+                      onMouseEnter={e=>{if(selected?.id!==b.id)e.currentTarget.style.background=`${BORDER}66`}}
+                      onMouseLeave={e=>{if(selected?.id!==b.id)e.currentTarget.style.background='transparent'}}>
+                      <td style={{padding:'8px 10px',borderBottom:`1px solid ${BORDER}33`}}>
+                        <div style={{fontSize:11,color:TEXT}}>{b.name}</div>
+                        <div style={{fontSize:9,color:SUBTLE,marginTop:2}}>{new Date(b.recordedAt).toLocaleDateString()}</div>
+                      </td>
+                      <Td><span style={{fontSize:9,padding:'2px 5px',
+                        border:`1px solid ${b.status==='verified'?GREEN:b.status==='recording'?RED:AMBER}`,
+                        color:b.status==='verified'?GREEN:b.status==='recording'?RED:AMBER,borderRadius:2}}>
+                        {b.status.toUpperCase()}
+                      </span></Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Detail */}
+            {selected?(
+              <div style={{flex:1,padding:16,overflow:'auto'}}>
+                <div style={{fontSize:13,color:TEXT,fontWeight:700,marginBottom:12}}>{selected.name}</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+                  {[['ID',selected.id],['STATUS',selected.status.toUpperCase()],
+                    ['DURATION',fmtDur(selected.durationSeconds)],['TICK COUNT',selected.tickCount.toLocaleString()],
+                    ['SYMBOLS',selected.symbols.join(', ')],['RECORDED',new Date(selected.recordedAt).toLocaleString()],
+                  ].map(([k,v])=>(
+                    <div key={k} style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 10px'}}>
+                      <div style={{fontSize:9,color:SUBTLE,marginBottom:3}}>{k}</div>
+                      <div style={{fontSize:11,color:TEXT,fontFamily:MONO}}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 10px',marginBottom:12}}>
+                  <div style={{fontSize:9,color:SUBTLE,marginBottom:3}}>CONTENT HASH</div>
+                  <div style={{fontSize:10,color:AMBER,fontFamily:MONO,wordBreak:'break-all' as const}}>{selected.hash}</div>
+                </div>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>setTab('replay')}
+                    style={{flex:1,padding:'8px 0',fontFamily:MONO,fontSize:10,letterSpacing:'0.08em',
+                      cursor:'pointer',border:`1px solid ${GREEN}`,background:`${GREEN}22`,color:GREEN,borderRadius:2}}>
+                    â–¶ LOAD REPLAY
+                  </button>
+                  <button style={{padding:'8px 12px',fontFamily:MONO,fontSize:10,cursor:'pointer',
+                    border:`1px solid ${BORDER}`,background:PANEL,color:TEXT,borderRadius:2}}>â¬‡ DL</button>
+                </div>
+              </div>
+            ):(
+              <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:SUBTLE,fontSize:11}}>
+                Select a bundle to view details
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* REPLAY TAB */}
+        {tab==='replay'&&(
+          <div style={{padding:20}}>
+            <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:16,marginBottom:12}}>
+              <div style={{fontSize:12,color:TEXT,fontWeight:700,marginBottom:10}}>REPLAY PLAYER</div>
+              <div style={{display:'flex',gap:8,marginBottom:10}}>
+                <select style={{...INP,flex:1}}>
+                  <option value="">Select bundle...</option>
+                  {bundles.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+                <select style={{...INP,width:120}}>
+                  <option>1x SPEED</option><option>2x SPEED</option><option>4x SPEED</option><option>8x SPEED</option>
+                </select>
+              </div>
+              {/* Timeline */}
+              <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:2,padding:'20px 14px',marginBottom:10}}>
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:SUBTLE,marginBottom:4}}>
+                  <span>09:30:00</span><span>12:00:00</span><span>16:00:00</span>
+                </div>
+                <div style={{height:8,background:`${BORDER}`,borderRadius:4,overflow:'hidden',cursor:'pointer',position:'relative'}}>
+                  <div style={{width:'35%',height:'100%',background:AMBER,borderRadius:4}}/>
+                </div>
+                <div style={{fontSize:9,color:SUBTLE,marginTop:4}}>35% complete â€” 11:01:30 / 16:00:00</div>
+              </div>
+              {/* Controls */}
+              <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+                {['â® RESET','âª -10s','â¯ PLAY','â© +10s','â­ END'].map(lbl=>(
+                  <button key={lbl} style={{padding:'6px 12px',fontFamily:MONO,fontSize:10,cursor:'pointer',
+                    border:`1px solid ${BORDER}`,background:lbl.includes('PLAY')?`${GREEN}22`:PANEL,
+                    color:lbl.includes('PLAY')?GREEN:TEXT,borderRadius:2}}>{lbl}</button>
+                ))}
+              </div>
+            </div>
+            {/* Events */}
+            <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'10px 14px'}}>
+              <div style={{fontSize:9,color:SUBTLE,marginBottom:8}}>REPLAY EVENT STREAM</div>
+              {['09:30:01 AAPL TRADE 189.50 x 100','09:30:02 AAPL BID 189.48 x 200','09:30:02 AAPL ASK 189.52 x 150'].map((e,i)=>(
+                <div key={i} style={{fontSize:10,fontFamily:MONO,color:i===2?AMBER:TEXT,
+                  padding:'3px 0',borderBottom:`1px solid ${BORDER}33`}}>{e}</div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

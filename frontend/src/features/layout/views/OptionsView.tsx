@@ -1,5 +1,10 @@
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',BLUE='#42a5f5'
+const PURPLE='#ab47bc',ORANGE='#ff8a65',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
 import { useState, useEffect } from 'react';
-import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { OptionsChain } from '../../options/OptionsChain';
 import { IVSkewChart } from '../../options/IVSkewChart';
 import { IVTermStructure } from '../../options/IVTermStructure';
@@ -12,10 +17,23 @@ import { QuickActions } from '../../options/QuickActions';
 import { IndicatorManager } from '../../indicators/IndicatorManager';
 import { useAppStore } from '../../../state/appStore';
 import { useOptionsStore } from '../../options/store';
-import { cn } from '../../../ui/utils';
 
 type OptionsTab = 'chain' | 'iv-skew' | 'iv-term' | 'strategy' | 'fundamentals';
 type MainTab = 'analytics' | 'risk-desk' | 'strategy-lab' | 'runs';
+
+const MAIN_TABS:{id:MainTab,label:string}[]=[
+  {id:'analytics',label:'ANALYTICS'},
+  {id:'risk-desk',label:'RISK DESK'},
+  {id:'strategy-lab',label:'STRATEGY LAB'},
+  {id:'runs',label:'RUNS'},
+]
+const ANALYTICS_TABS:{id:OptionsTab,label:string}[]=[
+  {id:'chain',label:'OPTIONS CHAIN'},
+  {id:'iv-skew',label:'IV SKEW'},
+  {id:'iv-term',label:'IV TERM STRUCTURE'},
+  {id:'strategy',label:'STRATEGY BUILDER'},
+  {id:'fundamentals',label:'FUNDAMENTALS'},
+]
 
 export function OptionsView() {
   const { symbol: appSymbol } = useAppStore();
@@ -27,210 +45,118 @@ export function OptionsView() {
     chainLoading
   } = useOptionsStore();
 
-  // Check if navigated here via Risk Desk quick action
   const initialTab = (window as any).__navigateToRiskDesk ? 'risk-desk' : 'analytics';
-  if ((window as any).__navigateToRiskDesk) {
-    delete (window as any).__navigateToRiskDesk;
-  }
+  if ((window as any).__navigateToRiskDesk) delete (window as any).__navigateToRiskDesk;
 
   const [mainTab, setMainTab] = useState<MainTab>(initialTab as MainTab);
   const [activeTab, setActiveTab] = useState<OptionsTab>('chain');
   const [indicatorManagerOpen, setIndicatorManagerOpen] = useState(false);
   const [, setIndicators] = useState<unknown[]>([]);
 
-  // Listen for navigate-risk-desk event from Shell
   useEffect(() => {
     const handler = () => setMainTab('risk-desk');
     window.addEventListener('navigate-risk-desk', handler);
     return () => window.removeEventListener('navigate-risk-desk', handler);
   }, []);
 
-  // Fetch all data when app-wide symbol changes
   useEffect(() => {
-    if (appSymbol) {
-      fetchAll(appSymbol);
-    }
+    if (appSymbol) fetchAll(appSymbol);
   }, [appSymbol, fetchAll]);
 
-  const handleIndicatorUpdate = (newIndicators: any[]) => {
-    setIndicators(newIndicators);
-  };
+  const handleIndicatorUpdate = (newIndicators: unknown[]) => setIndicators(newIndicators);
+  const handleStartDemo = () => setMainTab('risk-desk');
+  const handleRunBacktest = () => window.dispatchEvent(new CustomEvent('navigate-view', {detail:'backtest'}));
+  const handleExportLastRun = async () => { console.log('Export last run bundle'); };
 
-  const handleStartDemo = () => {
-    setMainTab('risk-desk');
-    // Additional logic to trigger demo can be added here
-  };
+  const S:React.CSSProperties={height:'100%',display:'flex',flexDirection:'column' as const,
+    background:BG,fontFamily:MONO}
+  const HDR:React.CSSProperties={display:'flex',alignItems:'center',gap:8,padding:'8px 14px',
+    borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0,flexWrap:'wrap' as const}
+  const TABBAR:React.CSSProperties={display:'flex',gap:2,padding:'0 14px',borderBottom:`1px solid ${BORDER}`,
+    background:PANEL,flexShrink:0,overflowX:'auto' as const}
 
-  const handleRunBacktest = () => {
-    // Navigate to standalone Backtest view via custom event
-    window.dispatchEvent(new CustomEvent('navigate-view', { detail: 'backtest' }));
-  };
-
-  const handleExportLastRun = async () => {
-    // Logic to export last run bundle
-    console.log('Export last run bundle');
-  };
-
-  const mainTabs = [
-    { id: 'analytics' as const, label: 'Analytics' },
-    { id: 'risk-desk' as const, label: 'Risk Desk' },
-    { id: 'strategy-lab' as const, label: 'Strategy Lab' },
-    { id: 'runs' as const, label: 'Runs' },
-  ];
-
-  const tabs = [
-    { id: 'chain' as const, label: 'Options Chain' },
-    { id: 'iv-skew' as const, label: 'IV Skew' },
-    { id: 'iv-term' as const, label: 'IV Term Structure' },
-    { id: 'strategy' as const, label: 'Strategy Builder' },
-    { id: 'fundamentals' as const, label: 'Fundamentals' },
-  ];
+  const mtbtn=(a:boolean,id:string):React.CSSProperties=>({padding:'4px 10px',fontSize:10,fontFamily:MONO,
+    letterSpacing:'0.08em',cursor:'pointer',border:`1px solid ${a?AMBER:BORDER}`,background:a?`${AMBER}22`:PANEL,
+    color:a?AMBER:SUBTLE,borderRadius:2,textTransform:'uppercase' as const})
+  const tbtn=(a:boolean):React.CSSProperties=>({padding:'7px 12px',fontSize:10,fontFamily:MONO,letterSpacing:'0.08em',
+    cursor:'pointer',background:'none',border:'none',borderBottom:a?`2px solid ${BLUE}`:'2px solid transparent',
+    color:a?BLUE:SUBTLE,textTransform:'uppercase' as const,whiteSpace:'nowrap' as const})
 
   return (
-    <div className="h-full w-full flex flex-col bg-background" data-testid="options-view">
-      {/* Header with main tabs */}
-      <div className="view-header-bar">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-text tracking-tight" data-testid="options-heading">Options — {appSymbol}</h1>
-
-          {/* Main tab switcher - pill style */}
-          <div className="flex gap-1.5" role="tablist" aria-label="Options main tabs">
-            {mainTabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setMainTab(tab.id)}
-                data-testid={`options-main-tab-${tab.id}`}
-                role="tab"
-                aria-selected={mainTab === tab.id}
-                tabIndex={mainTab === tab.id ? 0 : -1}
-                className={cn(
-                  "pill-tab",
-                  mainTab === tab.id && "active"
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Expiration selector (only in Analytics mode) */}
-          {mainTab === 'analytics' && chain && chain.expirations.length > 0 && (activeTab === 'chain' || activeTab === 'iv-skew' || activeTab === 'iv-term') && (
-            <select
-              value={selectedExpiration || ''}
-              onChange={(e) => setSelectedExpiration(e.target.value)}
-              className="px-3 py-1.5 bg-element-bg border border-border rounded text-sm text-text focus:outline-none focus:ring-1 focus:ring-brand"
-            >
-              {chain.expirations.map(exp => (
-                <option key={exp} value={exp}>{exp}</option>
-              ))}
-            </select>
-          )}
-
-          {chainLoading && <span className="text-xs text-text-muted animate-pulse">Loading...</span>}
-
-          {/* Quick Actions Strip */}
-          <QuickActions
-            onStartDemo={handleStartDemo}
-            onRunBacktest={handleRunBacktest}
-            onExportLastRun={handleExportLastRun}
-          />
+    <div style={S} data-testid="options-view">
+      {/* Main header */}
+      <div style={HDR}>
+        <span style={{fontSize:11,color:GREEN,letterSpacing:'0.1em'}}>OV</span>
+        <span style={{fontSize:12,color:TEXT,fontWeight:700}} data-testid="options-heading">
+          OPTIONS â€” {appSymbol}
+        </span>
+        <div style={{display:'flex',gap:4,marginLeft:8}}>
+          {MAIN_TABS.map(t=>(
+            <button key={t.id} onClick={()=>setMainTab(t.id)}
+              style={mtbtn(mainTab===t.id,t.id)}
+              data-testid={`options-main-tab-${t.id}`}>{t.label}</button>
+          ))}
         </div>
-
-        {/* Indicator Manager Toggle (only in Analytics mode) */}
-        {mainTab === 'analytics' && (
-          <button
-            onClick={() => setIndicatorManagerOpen(!indicatorManagerOpen)}
-            className="px-3 py-1.5 bg-brand/10 hover:bg-brand/20 text-brand rounded text-sm font-medium transition-colors"
-          >
-            {indicatorManagerOpen ? 'Hide Indicators' : 'Show Indicators'}
+        {/* Expiration selector */}
+        {mainTab==='analytics'&&chain&&chain.expirations.length>0&&
+         (activeTab==='chain'||activeTab==='iv-skew'||activeTab==='iv-term')&&(
+          <select value={selectedExpiration||''}
+            onChange={e=>setSelectedExpiration(e.target.value)}
+            style={{background:BG,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,fontSize:10,
+              padding:'4px 8px',borderRadius:2,outline:'none',marginLeft:8}}>
+            {chain.expirations.map(exp=><option key={exp} value={exp}>{exp}</option>)}
+          </select>
+        )}
+        {chainLoading&&<span style={{fontSize:10,color:AMBER}}>LOADING</span>}
+        <div style={{flex:1}}/>
+        <QuickActions onStartDemo={handleStartDemo} onRunBacktest={handleRunBacktest} onExportLastRun={handleExportLastRun}/>
+        {mainTab==='analytics'&&(
+          <button onClick={()=>setIndicatorManagerOpen(!indicatorManagerOpen)}
+            style={{fontSize:10,fontFamily:MONO,background:indicatorManagerOpen?`${PURPLE}33`:PANEL,
+              border:`1px solid ${indicatorManagerOpen?PURPLE:BORDER}`,color:indicatorManagerOpen?PURPLE:SUBTLE,
+              padding:'4px 10px',cursor:'pointer',borderRadius:2,marginLeft:6}}>
+            {indicatorManagerOpen?'HIDE INDICATORS':'INDICATORS'}
           </button>
         )}
       </div>
 
-      {/* Secondary tabs (only show in Analytics mode) */}
-      {mainTab === 'analytics' && (
-        <div className="pro-tab-bar" role="tablist" aria-label="Analytics tabs">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              data-testid={`options-tab-${tab.id}`}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              tabIndex={activeTab === tab.id ? 0 : -1}
-              className={cn(
-                "pro-tab",
-                activeTab === tab.id && "active"
-              )}
-            >
-              {tab.label}
-            </button>
+      {/* Analytics secondary tabs */}
+      {mainTab==='analytics'&&(
+        <div style={TABBAR}>
+          {ANALYTICS_TABS.map(t=>(
+            <button key={t.id} style={tbtn(activeTab===t.id)} onClick={()=>setActiveTab(t.id)}
+              data-testid={`options-tab-${t.id}`}>{t.label}</button>
           ))}
         </div>
       )}
 
-      {/* Main content area */}
-      <div className="flex-1 overflow-hidden">
-        {mainTab === 'analytics' ? (
-          <PanelGroup orientation="horizontal">
-            <Panel defaultSize={indicatorManagerOpen ? 75 : 100} minSize={50}>
-              <div className="h-full overflow-auto" data-testid="analytics-panel">
-                {activeTab === 'chain' && (
-                  <OptionsChain
-                    symbol={appSymbol}
-                    expiration={selectedExpiration || ''}
-                    underlyingPrice={chain?.underlyingPrice}
-                  />
-                )}
-
-                {activeTab === 'iv-skew' && (
-                  <IVSkewChart
-                    symbol={appSymbol}
-                    expiration={selectedExpiration || ''}
-                    underlyingPrice={chain?.underlyingPrice}
-                  />
-                )}
-
-                {activeTab === 'iv-term' && (
-                  <IVTermStructure symbol={appSymbol} />
-                )}
-
-                {activeTab === 'strategy' && (
-                  <StrategyBuilder
-                    symbol={appSymbol}
-                    underlyingPrice={chain?.underlyingPrice || 0}
-                  />
-                )}
-
-                {activeTab === 'fundamentals' && (
-                  <FundamentalsPanel symbol={appSymbol} />
-                )}
+      {/* Main content */}
+      <div style={{flex:1,overflow:'hidden',display:'flex'}}>
+        {mainTab==='analytics'&&(
+          <>
+            <div style={{flex:1,overflowY:'auto' as const}} data-testid="analytics-panel">
+              {activeTab==='chain'&&(
+                <OptionsChain symbol={appSymbol} expiration={selectedExpiration||''} underlyingPrice={chain?.underlyingPrice}/>
+              )}
+              {activeTab==='iv-skew'&&(
+                <IVSkewChart symbol={appSymbol} expiration={selectedExpiration||''} underlyingPrice={chain?.underlyingPrice}/>
+              )}
+              {activeTab==='iv-term'&&<IVTermStructure symbol={appSymbol}/>}
+              {activeTab==='strategy'&&<StrategyBuilder symbol={appSymbol} underlyingPrice={chain?.underlyingPrice||0}/>}
+              {activeTab==='fundamentals'&&<FundamentalsPanel symbol={appSymbol}/>}
+            </div>
+            {indicatorManagerOpen&&(
+              <div style={{width:280,borderLeft:`1px solid ${BORDER}`,flexShrink:0}}>
+                <IndicatorManager symbol={appSymbol} onIndicatorUpdate={handleIndicatorUpdate}/>
               </div>
-            </Panel>
-
-            {indicatorManagerOpen && (
-              <>
-                <PanelResizeHandle className="w-1 bg-border hover:bg-brand transition-colors cursor-col-resize" />
-                <Panel defaultSize={25} minSize={15} maxSize={40}>
-                  <IndicatorManager
-                    symbol={appSymbol}
-                    onIndicatorUpdate={handleIndicatorUpdate}
-                  />
-                </Panel>
-              </>
             )}
-          </PanelGroup>
-        ) : mainTab === 'risk-desk' ? (
-          /* Risk Desk main tab */
-          <RiskDeskPanel />
-        ) : mainTab === 'strategy-lab' ? (
-          /* Strategy Lab main tab */
-          <StrategyLabPanel />
-        ) : mainTab === 'runs' ? (
-          /* Unified Run Ledger */
-          <RunsPanel />
-        ) : null}
+          </>
+        )}
+        {mainTab==='risk-desk'&&<div style={{flex:1,overflow:'hidden'}}><RiskDeskPanel/></div>}
+        {mainTab==='strategy-lab'&&<div style={{flex:1,overflow:'hidden'}}><StrategyLabPanel/></div>}
+        {mainTab==='runs'&&<div style={{flex:1,overflow:'hidden'}}><RunsPanel/></div>}
       </div>
     </div>
   );
 }
+

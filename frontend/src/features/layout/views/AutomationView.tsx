@@ -1,781 +1,377 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Bot, Play, Square, Shield, AlertTriangle, DollarSign, TrendingUp, Activity, RefreshCw, BarChart3, Zap } from 'lucide-react';
-import { Button } from '../../../ui/Button';
-import { Badge } from '../../../ui/Badge';
-import { Panel } from '../../../ui/Panel';
-import { PageHeader } from '../../../ui/PageHeader';
-import { cn } from '../../../ui/utils';
+﻿const BG='#0a0a0a'; const PANEL='#111111'; const BORDER='#1e1e1e';
+const AMBER='#f5a623'; const GREEN='#26a69a'; const RED='#ef5350';
+const BLUE='#42a5f5'; const PURPLE='#ab47bc'; const SUBTLE='#555';
+const TEXT='#d1d4dc'; const MONO='"Roboto Mono","Courier New",monospace';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { ApiClient } from '../../../data/ApiClient';
 import type { AutopilotStatus, ForecastConfig, ForecastStatus } from '../../../data/ApiClient';
 import { UncertaintyConeContent } from '../../trading/tiles/UncertaintyCone';
 
 interface BudgetConfig {
-    maxTotalNotional: number;
-    maxDailySpend: number;
-    maxPerTrade: number;
-    maxConcurrentPositions: number;
-    maxLeverage: number;
-    hardDrawdownStop: number;
+  maxTotalNotional: number; maxDailySpend: number; maxPerTrade: number;
+  maxConcurrentPositions: number; maxLeverage: number; hardDrawdownStop: number;
 }
-
 interface LocalForecastConfig {
-    enabled: boolean;
-    confidenceLevel: number;
-    useForFiltering: boolean;
-    useForSizing: boolean;
-    maxVolatilityThreshold: number;
+  enabled: boolean; confidenceLevel: number; useForFiltering: boolean;
+  useForSizing: boolean; maxVolatilityThreshold: number;
 }
 
-// Convert API response to local format
-function apiStatusToLocal(api: AutopilotStatus): {
-    armed: boolean;
-    mode: 'paper' | 'live';
-    currentSpentToday: number;
-    activeStrategies: string[];
-    killSwitchTriggered: boolean;
-} {
-    return {
-        armed: api.armed,
-        mode: api.mode,
-        currentSpentToday: api.current_spent_today,
-        activeStrategies: api.active_strategies,
-        killSwitchTriggered: api.kill_switch_triggered,
-    };
+function apiStatusToLocal(api: AutopilotStatus) {
+  return { armed: api.armed, mode: api.mode as 'paper' | 'live', currentSpentToday: api.current_spent_today, activeStrategies: api.active_strategies, killSwitchTriggered: api.kill_switch_triggered };
 }
-
 function apiBudgetToLocal(api: AutopilotStatus['budget']): BudgetConfig {
-    return {
-        maxTotalNotional: api.max_total_notional,
-        maxDailySpend: api.max_daily_spend,
-        maxPerTrade: api.max_per_trade,
-        maxConcurrentPositions: api.max_concurrent_positions,
-        maxLeverage: api.max_leverage,
-        hardDrawdownStop: api.hard_drawdown_stop,
-    };
+  return { maxTotalNotional: api.max_total_notional, maxDailySpend: api.max_daily_spend, maxPerTrade: api.max_per_trade, maxConcurrentPositions: api.max_concurrent_positions, maxLeverage: api.max_leverage, hardDrawdownStop: api.hard_drawdown_stop };
 }
-
 function apiForecastConfigToLocal(api?: ForecastConfig): LocalForecastConfig {
-    return {
-        enabled: api?.enabled ?? true,
-        confidenceLevel: api?.confidence_level ?? 0.68,
-        useForFiltering: api?.use_for_filtering ?? true,
-        useForSizing: api?.use_for_sizing ?? true,
-        maxVolatilityThreshold: api?.max_volatility_threshold ?? 0.5,
-    };
+  return { enabled: api?.enabled ?? true, confidenceLevel: api?.confidence_level ?? 0.68, useForFiltering: api?.use_for_filtering ?? true, useForSizing: api?.use_for_sizing ?? true, maxVolatilityThreshold: api?.max_volatility_threshold ?? 0.5 };
 }
-
-// Activity Log Section Component
-function ActivityLogSection({ armed }: { armed: boolean }) {
-    const [logs, setLogs] = useState<Array<{
-        id: string;
-        timestamp: string;
-        type: string;
-        message: string;
-        symbol?: string;
-        details?: Record<string, unknown>;
-    }>>([]);
-    const [loading, setLoading] = useState(false);
-
-    const fetchLogs = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await fetch('/api/v1/autopilot/status');
-            if (!res.ok) throw new Error('Failed to fetch');
-            const data = await res.json();
-
-            // Convert last cycle data to log entries
-            const newLogs: typeof logs = [];
-            const lastCycle = data.last_cycle;
-
-            if (lastCycle) {
-                newLogs.push({
-                    id: `${lastCycle.cycle_id}-start`,
-                    timestamp: lastCycle.started_at,
-                    type: 'CYCLE',
-                    message: `Cycle ${lastCycle.cycle_id} started`,
-                });
-
-                if (lastCycle.candidates?.generated > 0) {
-                    newLogs.push({
-                        id: `${lastCycle.cycle_id}-candidates`,
-                        timestamp: lastCycle.started_at,
-                        type: 'CANDIDATES',
-                        message: `Generated ${lastCycle.candidates.generated} candidates`,
-                        details: lastCycle.candidates.by_template,
-                    });
-                }
-
-                if (lastCycle.selection?.selected > 0) {
-                    newLogs.push({
-                        id: `${lastCycle.cycle_id}-selected`,
-                        timestamp: lastCycle.started_at,
-                        type: 'SELECTION',
-                        message: `Selected ${lastCycle.selection.selected} trades, rejected ${lastCycle.selection.rejected}`,
-                    });
-                }
-
-                if (lastCycle.execution?.filled > 0) {
-                    newLogs.push({
-                        id: `${lastCycle.cycle_id}-filled`,
-                        timestamp: lastCycle.completed_at,
-                        type: 'FILL',
-                        message: `Filled ${lastCycle.execution.filled} orders`,
-                    });
-                }
-
-                newLogs.push({
-                    id: `${lastCycle.cycle_id}-complete`,
-                    timestamp: lastCycle.completed_at,
-                    type: lastCycle.success ? 'SUCCESS' : 'ERROR',
-                    message: lastCycle.success
-                        ? `Cycle complete in ${lastCycle.duration_ms.toFixed(0)}ms`
-                        : `Cycle failed: ${lastCycle.error}`,
-                });
-            }
-
-            setLogs(newLogs.reverse());
-        } catch (e) {
-            console.error('Failed to fetch activity:', e);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchLogs();
-        const interval = setInterval(fetchLogs, 5000);
-        return () => clearInterval(interval);
-    }, [fetchLogs, armed]);
-
-    const typeColors: Record<string, string> = {
-        'CYCLE': 'text-blue-400',
-        'CANDIDATES': 'text-purple-400',
-        'SELECTION': 'text-yellow-400',
-        'FILL': 'text-green-400',
-        'SUCCESS': 'text-green-500',
-        'ERROR': 'text-red-500',
-    };
-
-    const formatTime = (iso: string) => new Date(iso).toLocaleTimeString();
-
-    if (logs.length === 0) {
-        return (
-            <div className="text-center py-6 text-text-secondary">
-                {loading ? (
-                    <RefreshCw className="mx-auto animate-spin" size={20} />
-                ) : (
-                    <>
-                        <Activity size={24} className="mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No activity yet. Run a cycle to see logs.</p>
-                    </>
-                )}
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-1 max-h-64 overflow-y-auto font-mono text-xs">
-            {logs.map(log => (
-                <div key={log.id} className="flex items-start gap-2 p-2 bg-element-bg/50 rounded">
-                    <span className="text-text-muted shrink-0">{formatTime(log.timestamp)}</span>
-                    <span className={`shrink-0 w-16 uppercase font-semibold ${typeColors[log.type] || 'text-text-secondary'}`}>
-                        {log.type}
-                    </span>
-                    <span className="text-text flex-1">{log.message}</span>
-                    {log.details && (
-                        <span className="text-text-muted shrink-0">
-                            {JSON.stringify(log.details)}
-                        </span>
-                    )}
-                </div>
-            ))}
-        </div>
-    );
-}
-
-
 const isMarketOpen = () => {
-    // Basic EST 9:30-16:00 check
-    const now = new Date();
-    // Convert to ET
-    const etNow = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-    const day = etNow.getDay(); // 0 is Sun, 6 is Sat
-    const hour = etNow.getHours();
-    const minute = etNow.getMinutes();
-
-    // Weekend check
-    if (day === 0 || day === 6) return false;
-
-    // Time check (9:30 - 16:00)
-    const time = hour * 100 + minute;
-    return time >= 930 && time < 1600;
+  const et = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const d = et.getDay(); if (d === 0 || d === 6) return false;
+  const t = et.getHours() * 100 + et.getMinutes(); return t >= 930 && t < 1600;
 };
 
+const inputStyle = (disabled = false): React.CSSProperties => ({
+  width: '100%', background: disabled ? BORDER : PANEL, color: disabled ? SUBTLE : TEXT,
+  border: `1px solid ${BORDER}`, borderRadius: 2, padding: '5px 8px', fontSize: 11,
+  fontFamily: MONO, boxSizing: 'border-box' as const,
+});
+
+function PanelCard({ children, accent, testId }: { children: React.ReactNode; accent?: string; testId?: string }) {
+  return (
+    <div data-testid={testId} style={{ background: PANEL, border: `1px solid ${accent || BORDER}`, borderRadius: 3, padding: '14px 16px', marginBottom: 10 }}>
+      {children}
+    </div>
+  );
+}
+function CardTitle({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 10, letterSpacing: '0.04em' }}><span style={{ fontSize: 15 }}>{icon}</span>{children}</div>;
+}
+function ToggleBtn({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button onClick={() => onChange(!value)} style={{ fontSize: 10, padding: '2px 10px', background: value ? GREEN + '22' : BORDER, color: value ? GREEN : SUBTLE, border: `1px solid ${value ? GREEN + '44' : BORDER}`, borderRadius: 2, cursor: 'pointer', fontFamily: MONO, fontWeight: 700, letterSpacing: '0.06em' }}>
+      {value ? 'ON' : 'OFF'}
+    </button>
+  );
+}
+
+function ActivityLogSection({ armed }: { armed: boolean }) {
+  const [logs, setLogs] = useState<Array<{ id: string; timestamp: string; type: string; message: string; details?: Record<string, unknown> }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [spinAngle, setSpinAngle] = useState(0);
+  useEffect(() => { if (loading) { const t = setInterval(() => setSpinAngle(a => (a + 20) % 360), 50); return () => clearInterval(t); } }, [loading]);
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/v1/autopilot/status');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      const newLogs: typeof logs = [];
+      const lc = data.last_cycle;
+      if (lc) {
+        newLogs.push({ id: `${lc.cycle_id}-start`, timestamp: lc.started_at, type: 'CYCLE', message: `Cycle ${lc.cycle_id} started` });
+        if (lc.candidates?.generated > 0) newLogs.push({ id: `${lc.cycle_id}-candidates`, timestamp: lc.started_at, type: 'CANDIDATES', message: `Generated ${lc.candidates.generated} candidates`, details: lc.candidates.by_template });
+        if (lc.selection?.selected > 0) newLogs.push({ id: `${lc.cycle_id}-selected`, timestamp: lc.started_at, type: 'SELECTION', message: `Selected ${lc.selection.selected} trades, rejected ${lc.selection.rejected}` });
+        if (lc.execution?.filled > 0) newLogs.push({ id: `${lc.cycle_id}-filled`, timestamp: lc.completed_at, type: 'FILL', message: `Filled ${lc.execution.filled} orders` });
+        newLogs.push({ id: `${lc.cycle_id}-complete`, timestamp: lc.completed_at, type: lc.success ? 'SUCCESS' : 'ERROR', message: lc.success ? `Cycle complete in ${lc.duration_ms.toFixed(0)}ms` : `Cycle failed: ${lc.error}` });
+      }
+      setLogs(newLogs.reverse());
+    } catch (e) { console.error('Failed to fetch activity:', e); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchLogs(); const t = setInterval(fetchLogs, 5000); return () => clearInterval(t); }, [fetchLogs, armed]);
+
+  const typeColor: Record<string, string> = { CYCLE: BLUE, CANDIDATES: PURPLE, SELECTION: AMBER, FILL: GREEN, SUCCESS: GREEN, ERROR: RED };
+
+  if (logs.length === 0) return (
+    <div style={{ textAlign: 'center', padding: '20px 0', color: SUBTLE, fontSize: 11 }}>
+      {loading ? <span style={{ display: 'inline-block', transform: `rotate(${spinAngle}deg)` }}></span> : <><div style={{ fontSize: 20, marginBottom: 4 }}></div>No activity yet. Run a cycle to see logs.</>}
+    </div>
+  );
+
+  return (
+    <div style={{ maxHeight: 220, overflowY: 'auto', fontSize: 10, fontFamily: MONO }}>
+      {logs.map(log => (
+        <div key={log.id} style={{ display: 'flex', gap: 8, padding: '3px 6px', borderBottom: `1px solid ${BORDER}`, alignItems: 'flex-start' }}>
+          <span style={{ color: SUBTLE, flexShrink: 0 }}>{new Date(log.timestamp).toLocaleTimeString()}</span>
+          <span style={{ color: typeColor[log.type] || SUBTLE, width: 72, flexShrink: 0, fontWeight: 700, textTransform: 'uppercase' }}>{log.type}</span>
+          <span style={{ color: TEXT, flex: 1 }}>{log.message}</span>
+          {log.details && <span style={{ color: SUBTLE }}>{JSON.stringify(log.details)}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AutomationView() {
-    const [status, setStatus] = useState({
-        armed: false,
-        mode: 'paper' as 'paper' | 'live',
-        currentSpentToday: 0,
-        activeStrategies: [] as string[],
-        killSwitchTriggered: false,
-    });
+  const [status, setStatus] = useState({ armed: false, mode: 'paper' as 'paper' | 'live', currentSpentToday: 0, activeStrategies: [] as string[], killSwitchTriggered: false });
+  const [budget, setBudget] = useState<BudgetConfig>({ maxTotalNotional: 10000, maxDailySpend: 1000, maxPerTrade: 500, maxConcurrentPositions: 5, maxLeverage: 1, hardDrawdownStop: 0.1 });
+  const [forecastConfig, setForecastConfig] = useState<LocalForecastConfig>({ enabled: true, confidenceLevel: 0.68, useForFiltering: true, useForSizing: true, maxVolatilityThreshold: 0.5 });
+  const [forecastStatus, setForecastStatus] = useState<ForecastStatus | null>(null);
+  const [confirmArm, setConfirmArm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [spinAngle, setSpinAngle] = useState(0);
+  useEffect(() => { if (loading) { const t = setInterval(() => setSpinAngle(a => (a + 20) % 360), 50); return () => clearInterval(t); } }, [loading]);
 
-    const [budget, setBudget] = useState<BudgetConfig>({
-        maxTotalNotional: 10000,
-        maxDailySpend: 1000,
-        maxPerTrade: 500,
-        maxConcurrentPositions: 5,
-        maxLeverage: 1,
-        hardDrawdownStop: 0.1,
-    });
+  const updateForecast = (cfg: LocalForecastConfig) => {
+    ApiClient.updateForecastConfig({ enabled: cfg.enabled, confidence_level: cfg.confidenceLevel, use_for_filtering: cfg.useForFiltering, use_for_sizing: cfg.useForSizing, max_volatility_threshold: cfg.maxVolatilityThreshold }).catch(console.error);
+  };
 
-    const [forecastConfig, setForecastConfig] = useState<LocalForecastConfig>({
-        enabled: true,
-        confidenceLevel: 0.68,
-        useForFiltering: true,
-        useForSizing: true,
-        maxVolatilityThreshold: 0.5,
-    });
+  const fetchStatus = useCallback(async () => {
+    try {
+      const api = await ApiClient.getAutomationStatus();
+      setStatus(apiStatusToLocal(api)); setBudget(apiBudgetToLocal(api.budget));
+      if (api.forecast_config) setForecastConfig(apiForecastConfigToLocal(api.forecast_config));
+      try { setForecastStatus(await ApiClient.getForecastStatus('AAPL')); } catch {}
+      setError(null);
+    } catch (e) { setError((e as Error).message); }
+  }, []);
 
-    const [forecastStatus, setForecastStatus] = useState<ForecastStatus | null>(null);
+  useEffect(() => { fetchStatus(); const t = setInterval(() => { if (status.armed) fetchStatus(); }, 5000); return () => clearInterval(t); }, [fetchStatus, status.armed]);
 
-    const [confirmArm, setConfirmArm] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const handleArmPaper = async () => {
+    setLoading(true); setError(null);
+    try { const api = await ApiClient.armAutomation('paper'); setStatus(apiStatusToLocal(api)); setBudget(apiBudgetToLocal(api.budget)); setConfirmArm(false); }
+    catch (e) { setError((e as Error).message); } finally { setLoading(false); }
+  };
+  const handleArmLive = async () => {
+    if (!confirmArm) { setConfirmArm(true); return; }
+    setLoading(true); setError(null);
+    try { const api = await ApiClient.armAutomation('live', true); setStatus(apiStatusToLocal(api)); setBudget(apiBudgetToLocal(api.budget)); setConfirmArm(false); }
+    catch (e) { setError((e as Error).message); } finally { setLoading(false); }
+  };
+  const handleDisarm = async () => {
+    setLoading(true); setError(null);
+    try { const api = await ApiClient.disarmAutomation(); setStatus(apiStatusToLocal(api)); setConfirmArm(false); }
+    catch (e) { setError((e as Error).message); } finally { setLoading(false); }
+  };
+  const handleKillSwitch = async () => {
+    setLoading(true); setError(null);
+    try { const api = await ApiClient.killAutomation(); setStatus(apiStatusToLocal(api)); }
+    catch (e) { setError((e as Error).message); } finally { setLoading(false); }
+  };
+  const handleReset = async () => {
+    setLoading(true); setError(null);
+    try { const api = await ApiClient.resetAutomation(); setStatus(apiStatusToLocal(api)); }
+    catch (e) { setError((e as Error).message); } finally { setLoading(false); }
+  };
 
-    // Fetch status on mount
-    const fetchStatus = useCallback(async () => {
-        try {
-            const apiStatus = await ApiClient.getAutomationStatus();
-            setStatus(apiStatusToLocal(apiStatus));
-            setBudget(apiBudgetToLocal(apiStatus.budget));
-            if (apiStatus.forecast_config) {
-                setForecastConfig(apiForecastConfigToLocal(apiStatus.forecast_config));
-            }
-            // Fetch forecast status for a default symbol
-            try {
-                const fsStatus = await ApiClient.getForecastStatus('AAPL');
-                setForecastStatus(fsStatus);
-            } catch {
-                // Forecast status fetch failed, non-critical
-            }
-            setError(null);
-        } catch (e) {
-            setError((e as Error).message);
-        }
-    }, []);
+  const spendPct = Math.min(100, (status.currentSpentToday / budget.maxDailySpend) * 100);
+  const spendColor = spendPct > 80 ? RED : spendPct > 50 ? AMBER : GREEN;
+  const mktOpen = isMarketOpen();
 
-    useEffect(() => {
-        fetchStatus();
-        // Poll every 5 seconds if armed
-        const interval = setInterval(() => {
-            if (status.armed) {
-                fetchStatus();
-            }
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [fetchStatus, status.armed]);
+  return (
+    <div style={{ height: '100%', overflowY: 'auto', background: BG, padding: '16px 20px', fontFamily: MONO }} data-testid="automation-view">
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
-    const handleArmPaper = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const apiStatus = await ApiClient.armAutomation('paper');
-            setStatus(apiStatusToLocal(apiStatus));
-            setBudget(apiBudgetToLocal(apiStatus.budget));
-            setConfirmArm(false);
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setLoading(false);
-        }
-    };
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 16, color: AMBER }}></span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: TEXT, letterSpacing: '0.04em' }}>AUTOMATION</span>
+            <span style={{ fontSize: 10, color: SUBTLE }}>One-click Autopilot with budget controls</span>
+            <span style={{ fontSize: 9, padding: '2px 8px', background: status.armed ? (status.mode === 'live' ? RED + '22' : GREEN + '22') : BORDER, color: status.armed ? (status.mode === 'live' ? RED : GREEN) : SUBTLE, border: `1px solid ${status.armed ? (status.mode === 'live' ? RED : GREEN) : BORDER}44`, borderRadius: 2, fontWeight: 700, letterSpacing: '0.06em' }}>
+              {status.armed ? `${status.mode.toUpperCase()} ARMED` : 'DISARMED'}
+            </span>
+          </div>
+          <button onClick={fetchStatus} disabled={loading}
+            style={{ fontSize: 14, background: 'none', border: `1px solid ${BORDER}`, color: SUBTLE, width: 28, height: 28, borderRadius: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ display: 'inline-block', transform: `rotate(${spinAngle}deg)` }}></span>
+          </button>
+        </div>
 
-    const handleArmLive = async () => {
-        if (!confirmArm) {
-            setConfirmArm(true);
-            return;
-        }
-        setLoading(true);
-        setError(null);
-        try {
-            const apiStatus = await ApiClient.armAutomation('live', true);
-            setStatus(apiStatusToLocal(apiStatus));
-            setBudget(apiBudgetToLocal(apiStatus.budget));
-            setConfirmArm(false);
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setLoading(false);
-        }
-    };
+        {/* Error */}
+        {error && (
+          <div style={{ background: RED + '22', border: `1px solid ${RED}44`, borderRadius: 2, padding: '8px 12px', marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ color: RED, fontSize: 14 }}></span>
+            <span style={{ fontSize: 11, color: RED }}>{error}</span>
+          </div>
+        )}
 
-    const handleDisarm = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const apiStatus = await ApiClient.disarmAutomation();
-            setStatus(apiStatusToLocal(apiStatus));
-            setConfirmArm(false);
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setLoading(false);
-        }
-    };
+        {/* Kill Switch Warning */}
+        {status.killSwitchTriggered && (
+          <div style={{ background: RED + '22', border: `1px solid ${RED}44`, borderRadius: 2, padding: '10px 12px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <span style={{ color: RED, fontSize: 18 }}></span>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: RED }}>KILL SWITCH TRIGGERED</div>
+                <div style={{ fontSize: 10, color: '#ff8a80', marginTop: 2 }}>All automation stopped. Review incidents before restarting.</div>
+              </div>
+            </div>
+            <button onClick={handleReset} disabled={loading}
+              style={{ fontSize: 10, background: PANEL, border: `1px solid ${BORDER}`, color: TEXT, padding: '4px 10px', borderRadius: 2, cursor: 'pointer', fontFamily: MONO, letterSpacing: '0.06em' }}>
+              RESET KILL SWITCH
+            </button>
+          </div>
+        )}
 
-    const handleKillSwitch = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const apiStatus = await ApiClient.killAutomation();
-            setStatus(apiStatusToLocal(apiStatus));
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleReset = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const apiStatus = await ApiClient.resetAutomation();
-            setStatus(apiStatusToLocal(apiStatus));
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="h-full overflow-auto bg-background p-6" data-testid="automation-view">
-            <div className="max-w-5xl mx-auto space-y-6">
-                {/* Header */}
-                <PageHeader
-                    title="Automation"
-                    subtitle="One-click Autopilot with budget controls"
-                    icon={<Bot size={20} />}
-                    badge={
-                        <Badge variant={status.armed ? (status.mode === 'live' ? 'error' : 'success') : 'default'} dot>
-                            {status.armed ? `${status.mode.toUpperCase()} ARMED` : 'DISARMED'}
-                        </Badge>
-                    }
-                    actions={
-                        <Button variant="ghost" size="sm" onClick={fetchStatus} disabled={loading}>
-                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                        </Button>
-                    }
-                    data-testid="automation-header"
-                />
-
-                {/* Error Display */}
-                {error && (
-                    <Panel className="bg-red-500/10 border-red-500">
-                        <div className="flex items-center gap-3 text-red-500">
-                            <AlertTriangle size={20} />
-                            <p className="text-sm">{error}</p>
-                        </div>
-                    </Panel>
+        {/* Forecast Intelligence */}
+        <PanelCard>
+          <CardTitle icon="">Forecast Intelligence</CardTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 10, color: SUBTLE, marginBottom: 6 }}>CURRENT FORECAST</div>
+              <div style={{ height: 180, border: `1px solid ${BORDER}`, borderRadius: 2, overflow: 'hidden', background: BG }}>
+                {forecastStatus ? (
+                  <UncertaintyConeContent symbol={forecastStatus.symbol} showControls={false} />
+                ) : (
+                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: SUBTLE }}>
+                    <span style={{ display: 'inline-block', marginRight: 6, transform: `rotate(${spinAngle}deg)` }}></span> Loading forecast
+                  </div>
                 )}
-
-                {/* Kill Switch Warning */}
-                {status.killSwitchTriggered && (
-                    <Panel className="bg-red-500/10 border-red-500">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 text-red-500">
-                                <AlertTriangle size={24} />
-                                <div>
-                                    <p className="font-semibold">Kill Switch Triggered</p>
-                                    <p className="text-sm opacity-80">All automation has been stopped. Review incidents before restarting.</p>
-                                </div>
-                            </div>
-                            <Button variant="secondary" size="sm" onClick={handleReset} disabled={loading}>
-                                Reset Kill Switch
-                            </Button>
-                        </div>
-                    </Panel>
-                )}
-
-                {/* Forecast Intelligence Panel */}
-                <Panel>
-                    <div className="flex items-center gap-2 mb-4">
-                        <BarChart3 className="text-blue-400" size={20} />
-                        <h2 className="text-lg font-semibold text-text">Forecast Intelligence</h2>
-                        {forecastConfig.enabled && (
-                            <Badge variant="success" className="ml-2">
-                                <Zap size={12} className="mr-1" />
-                                Active
-                            </Badge>
-                        )}
+              </div>
+              {forecastStatus && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 8 }}>
+                  {[
+                    { label: 'Bias', value: forecastStatus.bias?.toUpperCase() || 'N/A', color: forecastStatus.bias === 'bullish' ? GREEN : forecastStatus.bias === 'bearish' ? RED : SUBTLE },
+                    { label: 'Size Mult.', value: `${(forecastStatus.size_multiplier || 1).toFixed(2)}x` },
+                    { label: '30D Lower', value: `$${forecastStatus.lower_bound_30d?.toFixed(2) || '--'}` },
+                    { label: '30D Upper', value: `$${forecastStatus.upper_bound_30d?.toFixed(2) || '--'}` },
+                  ].map(item => (
+                    <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, padding: '2px 0', borderBottom: `1px solid ${BORDER}` }}>
+                      <span style={{ color: SUBTLE }}>{item.label}</span>
+                      <span style={{ color: item.color || TEXT, fontFamily: MONO }}>{item.value}</span>
                     </div>
-
-                    {/* Forecast Chart & Status */}
-                    <div className="bg-surface-secondary rounded-lg p-4 flex flex-col gap-4">
-                        <h3 className="text-sm font-medium text-text-secondary">Current Forecast</h3>
-                        <div className="h-48 w-full border border-border/50 rounded bg-background/50 overflow-hidden">
-                            {forecastStatus ? (
-                                <UncertaintyConeContent symbol={forecastStatus.symbol} showControls={false} />
-                            ) : (
-                                <div className="h-full flex items-center justify-center text-text-secondary italic">
-                                    <RefreshCw className="animate-spin mr-2" size={16} />
-                                    Loading forecast visual...
-                                </div>
-                            )}
-                        </div>
-
-                        {forecastStatus && (
-                            <div className="grid grid-cols-2 gap-2 text-sm border-t border-border pt-4">
-                                <div className="flex justify-between">
-                                    <span className="text-text-secondary">Bias</span>
-                                    <Badge variant={
-                                        forecastStatus.bias === 'bullish' ? 'success' :
-                                            forecastStatus.bias === 'bearish' ? 'error' : 'default'
-                                    }>
-                                        {forecastStatus.bias?.toUpperCase() || 'N/A'}
-                                    </Badge>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-text-secondary">Size Mult.</span>
-                                    <span className="text-text font-mono">{forecastStatus.size_multiplier?.toFixed(2) || '1.00'}x</span>
-                                </div>
-                                <div className="col-span-2 flex justify-between">
-                                    <span className="text-text-secondary">30D Range</span>
-                                    <span className="text-text font-mono text-xs">
-                                        ${forecastStatus.lower_bound_30d?.toFixed(2)} - ${forecastStatus.upper_bound_30d?.toFixed(2)}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Forecast Config */}
-                    <div className="bg-surface-secondary rounded-lg p-4">
-                        <h3 className="text-sm font-medium text-text-secondary mb-3">Configuration</h3>
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-text-secondary">Enabled</span>
-                                <button
-                                    onClick={() => {
-                                        const newConfig = { ...forecastConfig, enabled: !forecastConfig.enabled };
-                                        setForecastConfig(newConfig);
-                                        ApiClient.updateForecastConfig({
-                                            enabled: newConfig.enabled,
-                                            confidence_level: newConfig.confidenceLevel,
-                                            use_for_filtering: newConfig.useForFiltering,
-                                            use_for_sizing: newConfig.useForSizing,
-                                            max_volatility_threshold: newConfig.maxVolatilityThreshold,
-                                        }).catch(console.error);
-                                    }}
-                                    className={cn(
-                                        "px-3 py-1 rounded text-xs font-medium transition",
-                                        forecastConfig.enabled
-                                            ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                                            : "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30"
-                                    )}
-                                >
-                                    {forecastConfig.enabled ? 'ON' : 'OFF'}
-                                </button>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-text-secondary">Confidence</span>
-                                <select
-                                    value={forecastConfig.confidenceLevel}
-                                    onChange={(e) => {
-                                        const level = parseFloat(e.target.value);
-                                        const newConfig = { ...forecastConfig, confidenceLevel: level };
-                                        setForecastConfig(newConfig);
-                                        ApiClient.updateForecastConfig({
-                                            enabled: newConfig.enabled,
-                                            confidence_level: level,
-                                            use_for_filtering: newConfig.useForFiltering,
-                                            use_for_sizing: newConfig.useForSizing,
-                                            max_volatility_threshold: newConfig.maxVolatilityThreshold,
-                                        }).catch(console.error);
-                                    }}
-                                    className="bg-surface text-text text-xs rounded px-2 py-1 border border-border"
-                                >
-                                    <option value={0.68}>68%</option>
-                                    <option value={0.95}>95%</option>
-                                    <option value={0.99}>99%</option>
-                                </select>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-text-secondary">Filter Trades</span>
-                                <button
-                                    onClick={() => {
-                                        const newConfig = { ...forecastConfig, useForFiltering: !forecastConfig.useForFiltering };
-                                        setForecastConfig(newConfig);
-                                        ApiClient.updateForecastConfig({
-                                            enabled: newConfig.enabled,
-                                            confidence_level: newConfig.confidenceLevel,
-                                            use_for_filtering: newConfig.useForFiltering,
-                                            use_for_sizing: newConfig.useForSizing,
-                                            max_volatility_threshold: newConfig.maxVolatilityThreshold,
-                                        }).catch(console.error);
-                                    }}
-                                    className={cn(
-                                        "px-3 py-1 rounded text-xs font-medium transition",
-                                        forecastConfig.useForFiltering
-                                            ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                                            : "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30"
-                                    )}
-                                >
-                                    {forecastConfig.useForFiltering ? 'YES' : 'NO'}
-                                </button>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-text-secondary">Size by Vol</span>
-                                <button
-                                    onClick={() => {
-                                        const newConfig = { ...forecastConfig, useForSizing: !forecastConfig.useForSizing };
-                                        setForecastConfig(newConfig);
-                                        ApiClient.updateForecastConfig({
-                                            enabled: newConfig.enabled,
-                                            confidence_level: newConfig.confidenceLevel,
-                                            use_for_filtering: newConfig.useForFiltering,
-                                            use_for_sizing: newConfig.useForSizing,
-                                            max_volatility_threshold: newConfig.maxVolatilityThreshold,
-                                        }).catch(console.error);
-                                    }}
-                                    className={cn(
-                                        "px-3 py-1 rounded text-xs font-medium transition",
-                                        forecastConfig.useForSizing
-                                            ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                                            : "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30"
-                                    )}
-                                >
-                                    {forecastConfig.useForSizing ? 'YES' : 'NO'}
-                                </button>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-text-secondary">Max Vol</span>
-                                <span className="text-text font-mono">{(forecastConfig.maxVolatilityThreshold * 100).toFixed(0)}%</span>
-                            </div>
-                        </div>
-                    </div>
-                </Panel>
-
-                {/* Main Controls */}
-                {/* Visual helper for market status */}
-                {!isMarketOpen() && (
-                    <div className="col-span-3 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-center text-sm text-blue-400 mb-2">
-                        Market is currently closed. Live trading is disabled. (Open 9:30 AM - 4:00 PM ET)
-                    </div>
-                )}
-
-                <div className="grid grid-cols-3 gap-4">
-                    <Panel className="p-6">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                            <Play size={18} className="text-green-500" />
-                            Run Autopilot (Paper)
-                        </h3>
-                        <p className="text-sm text-text-secondary mb-4">
-                            Start automated trading in paper mode. No real money at risk.
-                        </p>
-                        <Button
-                            variant={status.armed && status.mode === 'paper' ? 'secondary' : 'primary'}
-                            className="w-full"
-                            onClick={status.armed ? handleDisarm : handleArmPaper}
-                            disabled={status.killSwitchTriggered || loading}
-                        >
-                            {status.armed && status.mode === 'paper' ? 'Stop Paper Trading' : 'Start Paper Trading'}
-                        </Button>
-                    </Panel>
-
-                    <Panel className="p-6 border-orange-500/30">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                            <Shield size={18} className="text-orange-500" />
-                            Arm Live Autopilot
-                        </h3>
-                        <p className="text-sm text-text-secondary mb-4">
-                            {confirmArm
-                                ? '⚠️ Click again to confirm LIVE trading activation.'
-                                : 'Enable real trading. Requires two-step confirmation.'}
-                        </p>
-                        <Button
-                            variant={confirmArm ? 'danger' : 'secondary'}
-                            className={cn("w-full", confirmArm && "animate-pulse")}
-                            onClick={status.armed && status.mode === 'live' ? handleDisarm : handleArmLive}
-                            disabled={status.killSwitchTriggered || loading || !isMarketOpen()}
-                            title={!isMarketOpen() ? "Market is closed" : "Enable Live Trading"}
-                        >
-                            {!isMarketOpen() ? 'Market Closed' :
-                                status.armed && status.mode === 'live' ? 'Disarm Live Mode' :
-                                    confirmArm ? 'Confirm Live Mode' : 'Arm Live Trading'}
-                        </Button>
-                    </Panel>
-
-                    <Panel className="p-6 border-red-500/30">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                            <Square size={18} className="text-red-500" />
-                            Emergency Kill Switch
-                        </h3>
-                        <p className="text-sm text-text-secondary mb-4">
-                            Immediately stop all automation and optionally close positions.
-                        </p>
-                        <Button
-                            variant="danger"
-                            className="w-full"
-                            onClick={handleKillSwitch}
-                            disabled={!status.armed || loading}
-                        >
-                            Kill All Automation
-                        </Button>
-                    </Panel>
+                  ))}
                 </div>
+              )}
+            </div>
+            <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: AMBER, letterSpacing: '0.1em', marginBottom: 8 }}>CONFIG</div>
+              {[
+                { label: 'Enabled', node: <ToggleBtn value={forecastConfig.enabled} onChange={v => { const c = { ...forecastConfig, enabled: v }; setForecastConfig(c); updateForecast(c); }} /> },
+                { label: 'Confidence', node: <select value={forecastConfig.confidenceLevel} onChange={e => { const c = { ...forecastConfig, confidenceLevel: parseFloat(e.target.value) }; setForecastConfig(c); updateForecast(c); }} style={{ background: BG, color: TEXT, border: `1px solid ${BORDER}`, fontSize: 10, padding: '2px 4px', fontFamily: MONO }}><option value={0.68}>68%</option><option value={0.95}>95%</option><option value={0.99}>99%</option></select> },
+                { label: 'Filter Trades', node: <ToggleBtn value={forecastConfig.useForFiltering} onChange={v => { const c = { ...forecastConfig, useForFiltering: v }; setForecastConfig(c); updateForecast(c); }} /> },
+                { label: 'Size by Vol', node: <ToggleBtn value={forecastConfig.useForSizing} onChange={v => { const c = { ...forecastConfig, useForSizing: v }; setForecastConfig(c); updateForecast(c); }} /> },
+                { label: 'Max Vol', node: <span style={{ fontSize: 10, color: TEXT, fontFamily: MONO }}>{(forecastConfig.maxVolatilityThreshold * 100).toFixed(0)}%</span> },
+              ].map(row => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: `1px solid ${BORDER}` }}>
+                  <span style={{ fontSize: 10, color: SUBTLE }}>{row.label}</span>
+                  {row.node}
+                </div>
+              ))}
+            </div>
+          </div>
+        </PanelCard>
 
-                {/* Budget Controls */}
-                <Panel className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <DollarSign size={18} className="text-brand" />
-                        Budget & Risk Controls
-                    </h3>
-                    <div className="grid grid-cols-3 gap-6">
-                        <div>
-                            <label className="text-sm text-text-secondary">Max Total Notional</label>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-text-muted">$</span>
-                                <input
-                                    type="number"
-                                    value={budget.maxTotalNotional}
-                                    onChange={e => setBudget(prev => ({ ...prev, maxTotalNotional: Number(e.target.value) }))}
-                                    className="bg-element-bg border border-border rounded px-3 py-2 text-text w-full"
-                                    disabled={status.armed}
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-sm text-text-secondary">Max Daily Spend</label>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-text-muted">$</span>
-                                <input
-                                    type="number"
-                                    value={budget.maxDailySpend}
-                                    onChange={e => setBudget(prev => ({ ...prev, maxDailySpend: Number(e.target.value) }))}
-                                    className="bg-element-bg border border-border rounded px-3 py-2 text-text w-full"
-                                    disabled={status.armed}
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-sm text-text-secondary">Max Per Trade</label>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-text-muted">$</span>
-                                <input
-                                    type="number"
-                                    value={budget.maxPerTrade}
-                                    onChange={e => setBudget(prev => ({ ...prev, maxPerTrade: Number(e.target.value) }))}
-                                    className="bg-element-bg border border-border rounded px-3 py-2 text-text w-full"
-                                    disabled={status.armed}
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-sm text-text-secondary">Max Concurrent Positions</label>
-                            <input
-                                type="number"
-                                value={budget.maxConcurrentPositions}
-                                onChange={e => setBudget(prev => ({ ...prev, maxConcurrentPositions: Number(e.target.value) }))}
-                                className="bg-element-bg border border-border rounded px-3 py-2 text-text w-full mt-1"
-                                disabled={status.armed}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm text-text-secondary">Max Leverage</label>
-                            <input
-                                type="number"
-                                value={budget.maxLeverage}
-                                onChange={e => setBudget(prev => ({ ...prev, maxLeverage: Number(e.target.value) }))}
-                                className="bg-element-bg border border-border rounded px-3 py-2 text-text w-full mt-1"
-                                step="0.5"
-                                min="1"
-                                max="4"
-                                disabled={status.armed}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm text-text-secondary">Hard Drawdown Stop (%)</label>
-                            <input
-                                type="number"
-                                value={budget.hardDrawdownStop * 100}
-                                onChange={e => setBudget(prev => ({ ...prev, hardDrawdownStop: Number(e.target.value) / 100 }))}
-                                className="bg-element-bg border border-border rounded px-3 py-2 text-text w-full mt-1"
-                                step="1"
-                                min="1"
-                                max="50"
-                                disabled={status.armed}
-                            />
-                        </div>
-                    </div>
+        {/* Market Status */}
+        {!mktOpen && (
+          <div style={{ background: BLUE + '11', border: `1px solid ${BLUE}44`, borderRadius: 2, padding: '8px 12px', textAlign: 'center', fontSize: 11, color: BLUE, marginBottom: 10 }}>
+            Market is currently closed. Live trading is disabled. (Open 9:30 AM - 4:00 PM ET)
+          </div>
+        )}
 
-                    {/* Spend Progress */}
-                    <div className="mt-6 pt-6 border-t border-border">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-text-secondary">Today's Spend</span>
-                            <span className="text-sm font-mono">${status.currentSpentToday.toLocaleString()} / ${budget.maxDailySpend.toLocaleString()}</span>
-                        </div>
-                        <div className="h-2 bg-element-bg rounded-full overflow-hidden">
-                            <div
-                                className={cn(
-                                    "h-full rounded-full transition-all",
-                                    status.currentSpentToday / budget.maxDailySpend > 0.8 ? "bg-red-500" :
-                                        status.currentSpentToday / budget.maxDailySpend > 0.5 ? "bg-yellow-500" : "bg-green-500"
-                                )}
-                                style={{ width: `${Math.min(100, (status.currentSpentToday / budget.maxDailySpend) * 100)}%` }}
-                            />
-                        </div>
-                    </div>
-                </Panel>
+        {/* Controls */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
+          <PanelCard>
+            <CardTitle icon="">Run Autopilot (Paper)</CardTitle>
+            <div style={{ fontSize: 10, color: SUBTLE, marginBottom: 10 }}>Start automated trading in paper mode. No real money at risk.</div>
+            <button onClick={status.armed ? handleDisarm : handleArmPaper} disabled={status.killSwitchTriggered || loading}
+              style={{ width: '100%', padding: '7px', fontSize: 11, fontWeight: 700, background: status.armed && status.mode === 'paper' ? BORDER : GREEN, color: status.armed && status.mode === 'paper' ? TEXT : '#000', border: 'none', borderRadius: 2, cursor: status.killSwitchTriggered || loading ? 'not-allowed' : 'pointer', fontFamily: MONO, letterSpacing: '0.06em', opacity: status.killSwitchTriggered || loading ? 0.5 : 1 }}>
+              {status.armed && status.mode === 'paper' ? 'STOP PAPER TRADING' : 'START PAPER TRADING'}
+            </button>
+          </PanelCard>
 
-                {/* Active Strategies */}
-                <Panel className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <TrendingUp size={18} className="text-brand" />
-                        Active Strategies
-                    </h3>
-                    {status.activeStrategies.length === 0 ? (
-                        <div className="text-center py-8 text-text-secondary">
-                            <Activity size={32} className="mx-auto mb-2 opacity-50" />
-                            <p>No active strategies</p>
-                            <p className="text-sm">Arm autopilot to activate strategies</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {status.activeStrategies.map(strat => (
-                                <div key={strat} className="flex items-center justify-between p-3 bg-element-bg rounded">
-                                    <span>{strat}</span>
-                                    <Badge variant="success">Running</Badge>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </Panel>
+          <PanelCard accent={AMBER + '44'}>
+            <CardTitle icon="">Arm Live Autopilot</CardTitle>
+            <div style={{ fontSize: 10, color: SUBTLE, marginBottom: 10 }}>
+              {confirmArm ? ' Click again to confirm LIVE trading activation.' : 'Enable real trading. Requires two-step confirmation.'}
+            </div>
+            <button onClick={status.armed && status.mode === 'live' ? handleDisarm : handleArmLive}
+              disabled={status.killSwitchTriggered || loading || !mktOpen}
+              title={!mktOpen ? 'Market is closed' : 'Enable Live Trading'}
+              style={{ width: '100%', padding: '7px', fontSize: 11, fontWeight: 700, background: confirmArm ? RED : AMBER, color: '#000', border: 'none', borderRadius: 2, cursor: status.killSwitchTriggered || loading || !mktOpen ? 'not-allowed' : 'pointer', fontFamily: MONO, letterSpacing: '0.06em', opacity: status.killSwitchTriggered || loading || !mktOpen ? 0.5 : 1 }}>
+              {!mktOpen ? 'MARKET CLOSED' : status.armed && status.mode === 'live' ? 'DISARM LIVE MODE' : confirmArm ? 'CONFIRM LIVE MODE' : 'ARM LIVE TRADING'}
+            </button>
+          </PanelCard>
 
-                {/* Activity Log */}
-                <Panel className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2">
-                            <Activity size={18} className="text-brand" />
-                            Activity Log
-                        </h3>
-                        <Button variant="ghost" size="sm" onClick={fetchStatus} disabled={loading}>
-                            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        </Button>
-                    </div>
-                    <ActivityLogSection armed={status.armed} />
-                </Panel>
+          <PanelCard accent={RED + '44'}>
+            <CardTitle icon="">Emergency Kill Switch</CardTitle>
+            <div style={{ fontSize: 10, color: SUBTLE, marginBottom: 10 }}>Immediately stop all automation and optionally close positions.</div>
+            <button onClick={handleKillSwitch} disabled={!status.armed || loading}
+              style={{ width: '100%', padding: '7px', fontSize: 11, fontWeight: 700, background: !status.armed || loading ? BORDER : RED, color: '#fff', border: 'none', borderRadius: 2, cursor: !status.armed || loading ? 'not-allowed' : 'pointer', fontFamily: MONO, letterSpacing: '0.06em', opacity: !status.armed || loading ? 0.5 : 1 }}>
+              KILL ALL AUTOMATION
+            </button>
+          </PanelCard>
+        </div>
 
-                {/* Strategy Selection Note */}
-                <Panel className="p-4 bg-blue-500/10 border-blue-500/30">
-                    <p className="text-sm text-blue-400">
-                        <strong>Strategy Selection:</strong> Autopilot selects strategies based on long-horizon backtests,
-                        robustness suite results, and current regime classification. It will never "invent a strategy and trade immediately."
-                    </p>
-                </Panel>
-            </div >
-        </div >
-    );
+        {/* Budget Controls */}
+        <PanelCard>
+          <CardTitle icon="$">Budget & Risk Controls</CardTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+            {[
+              { label: 'Max Total Notional', key: 'maxTotalNotional', prefix: '$' },
+              { label: 'Max Daily Spend', key: 'maxDailySpend', prefix: '$' },
+              { label: 'Max Per Trade', key: 'maxPerTrade', prefix: '$' },
+              { label: 'Max Concurrent Positions', key: 'maxConcurrentPositions' },
+              { label: 'Max Leverage', key: 'maxLeverage', step: '0.5' },
+              { label: 'Hard Drawdown Stop (%)', key: 'hardDrawdownStop', isPercent: true, step: '1' },
+            ].map(f => (
+              <div key={f.key}>
+                <div style={{ fontSize: 10, color: SUBTLE, marginBottom: 3 }}>{f.label}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {f.prefix && <span style={{ fontSize: 11, color: SUBTLE }}>{f.prefix}</span>}
+                  <input type="number" disabled={status.armed}
+                    value={f.isPercent ? (budget[f.key as keyof BudgetConfig] as number) * 100 : budget[f.key as keyof BudgetConfig]}
+                    step={f.step}
+                    onChange={e => setBudget(prev => ({ ...prev, [f.key]: f.isPercent ? Number(e.target.value) / 100 : Number(e.target.value) }))}
+                    style={inputStyle(status.armed)} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${BORDER}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+              <span style={{ color: SUBTLE }}>Today's Spend</span>
+              <span style={{ color: TEXT, fontFamily: MONO }}>${status.currentSpentToday.toLocaleString()} / ${budget.maxDailySpend.toLocaleString()}</span>
+            </div>
+            <div style={{ height: 6, background: BORDER, borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${spendPct}%`, background: spendColor, transition: 'width 0.3s, background 0.3s' }} />
+            </div>
+          </div>
+        </PanelCard>
+
+        {/* Active Strategies */}
+        <PanelCard>
+          <CardTitle icon="">Active Strategies</CardTitle>
+          {status.activeStrategies.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: SUBTLE, fontSize: 11 }}>
+              <div style={{ fontSize: 24, marginBottom: 6, opacity: 0.4 }}></div>
+              No active strategies  Arm autopilot to activate strategies
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {status.activeStrategies.map(strat => (
+                <div key={strat} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: BG, border: `1px solid ${BORDER}`, borderRadius: 2 }}>
+                  <span style={{ fontSize: 11, color: TEXT }}>{strat}</span>
+                  <span style={{ fontSize: 9, color: GREEN, background: GREEN + '22', border: `1px solid ${GREEN}44`, borderRadius: 2, padding: '1px 6px', fontFamily: MONO }}>RUNNING</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </PanelCard>
+
+        {/* Activity Log */}
+        <PanelCard>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <CardTitle icon="">Activity Log</CardTitle>
+            <button onClick={fetchStatus} disabled={loading}
+              style={{ fontSize: 12, background: 'none', border: `1px solid ${BORDER}`, color: SUBTLE, width: 24, height: 24, borderRadius: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ display: 'inline-block', transform: `rotate(${spinAngle}deg)` }}></span>
+            </button>
+          </div>
+          <ActivityLogSection armed={status.armed} />
+        </PanelCard>
+
+        {/* Note */}
+        <div style={{ background: BLUE + '11', border: `1px solid ${BLUE}44`, borderRadius: 2, padding: '8px 12px', fontSize: 10, color: BLUE }}>
+          <strong>Strategy Selection:</strong> Autopilot selects strategies based on long-horizon backtests, robustness suite results, and current regime classification. It will never "invent a strategy and trade immediately."
+        </div>
+      </div>
+    </div>
+  );
 }

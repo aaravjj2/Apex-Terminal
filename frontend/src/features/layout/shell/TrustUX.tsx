@@ -1,306 +1,161 @@
+﻿// Bloomberg TrustUX â€” data provenance badge
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
 import { useEffect, useState } from 'react';
-import { Activity, AlertCircle, CheckCircle, Clock, Database, WifiOff } from 'lucide-react';
+import React from 'react';
 import { useAppStore, type AppMode, type ProviderName } from '../../../state/appStore';
-import { cn } from '../../../ui/utils';
 
-interface DataSource {
-    symbol: string;
-    provider: string;
-    type: 'bars' | 'options' | 'fundamentals';
-    status: 'live' | 'cached' | 'unavailable';
-}
+interface DataSource { symbol: string; provider: string; type: 'bars' | 'options' | 'fundamentals'; status: 'live' | 'cached' | 'unavailable' }
+interface TrustMetrics { mode: AppMode; primaryProvider: ProviderName | null; providerHealth: 'healthy' | 'degraded' | 'offline'; lastTickTime: number | null; dataSources: DataSource[]; alpacaKeysConfigured: boolean }
 
-interface TrustMetrics {
-    mode: AppMode;
-    primaryProvider: ProviderName | null;
-    providerHealth: 'healthy' | 'degraded' | 'offline';
-    lastTickTime: number | null;
-    dataSources: DataSource[];
-    alpacaKeysConfigured: boolean;
-}
-
-const API_BASE = '';
+function modeColor(m: AppMode) { return m === 'LIVE' ? GREEN : m === 'PAPER' ? AMBER : m === 'REPLAY' ? BLUE : SUBTLE; }
+function healthColor(h: string) { return h === 'healthy' ? GREEN : h === 'degraded' ? AMBER : RED; }
+function srcColor(s: string) { return s === 'live' ? GREEN : s === 'cached' ? BLUE : RED; }
 
 export function TrustUX() {
-    const { mode, symbol, providers } = useAppStore();
-    const [metrics, setMetrics] = useState<TrustMetrics>({
-        mode,
-        primaryProvider: null,
-        providerHealth: 'offline',
-        lastTickTime: null,
-        dataSources: [],
-        alpacaKeysConfigured: false,
-    });
-    const [showDetails, setShowDetails] = useState(false);
-    const [isStale, setIsStale] = useState(false);
+  const { mode, symbol, providers } = useAppStore();
+  const [metrics, setMetrics] = useState<TrustMetrics>({ mode, primaryProvider: null, providerHealth: 'offline', lastTickTime: null, dataSources: [], alpacaKeysConfigured: false });
+  const [showDetails, setShowDetails] = useState(false);
+  const [isStale, setIsStale] = useState(false);
 
-    // Fetch provider health and data provenance
-    useEffect(() => {
-        const fetchHealth = async () => {
-            try {
-                // Fetch actual data sources from health endpoint
-                const healthRes = await fetch(`${API_BASE}/health`);
-                const healthData = await healthRes.json();
-                
-                // Check Alpaca keys from health endpoint
-                const alpacaConfigured = healthData.alpaca_configured || false;
-                const alpacaConnected = healthData.alpaca_connected || false;
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const healthRes = await fetch('/health');
+        const healthData = await healthRes.json();
+        const alpacaConfigured = healthData.alpaca_configured || false;
+        const alpacaConnected = healthData.alpaca_connected || false;
+        const ingestRes = await fetch('/api/v1/ingest/status');
+        const ingestData = await ingestRes.json();
 
-                // Get ingestion status
-                const ingestRes = await fetch(`${API_BASE}/api/v1/ingest/status`);
-                const ingestData = await ingestRes.json();
+        let primaryProvider: ProviderName | null = null;
+        if (providers.alpaca.status === 'connected') primaryProvider = 'alpaca';
+        else if (providers.finnhub.status === 'connected') primaryProvider = 'finnhub';
+        else if (providers.yahoo.status === 'connected') primaryProvider = 'yahoo';
 
-                // Determine primary provider
-                let primaryProvider: ProviderName | null = null;
-                if (providers.alpaca.status === 'connected') primaryProvider = 'alpaca';
-                else if (providers.finnhub.status === 'connected') primaryProvider = 'finnhub';
-                else if (providers.yahoo.status === 'connected') primaryProvider = 'yahoo';
+        const providerHealth = primaryProvider && providers[primaryProvider]?.status === 'connected' ? 'healthy' : primaryProvider && providers[primaryProvider]?.status === 'error' ? 'offline' : 'degraded';
 
-                // Provider health
-                const providerHealth =
-                    primaryProvider && providers[primaryProvider]?.status === 'connected'
-                        ? 'healthy'
-                        : primaryProvider && providers[primaryProvider]?.status === 'error'
-                        ? 'offline'
-                        : 'degraded';
+        const dataSources: DataSource[] = [
+          { symbol, provider: alpacaConnected ? 'Alpaca (LIVE)' : alpacaConfigured ? 'Alpaca (configured)' : 'Mock CSV', type: 'bars', status: alpacaConnected ? 'live' : 'cached' },
+          { symbol, provider: healthData.options_provider === 'tradier' ? 'Tradier' : 'yfinance', type: 'options', status: healthData.tradier_connected ? 'live' : 'cached' },
+        ];
 
-                // Build data sources
-                let dataSources: DataSource[] = [];
-                try {
-                    
-                    // Bars source - use healthData values
-                    dataSources.push({
-                        symbol,
-                        provider: alpacaConnected ? 'Alpaca (LIVE)' : (alpacaConfigured ? 'Alpaca (configured)' : 'Mock CSV'),
-                        type: 'bars',
-                        status: alpacaConnected ? 'live' : 'cached',
-                    });
-                    
-                    // Options source
-                    const optionsProvider = healthData.options_provider || 'yfinance';
-                    const optionsLive = healthData.tradier_connected || false;
-                    dataSources.push({
-                        symbol,
-                        provider: optionsProvider === 'tradier' ? 'Tradier' : 'yfinance',
-                        type: 'options',
-                        status: optionsLive ? 'live' : 'cached',
-                    });
-                } catch (e) {
-                    // Fallback to basic sources
-                    dataSources = [
-                        {
-                            symbol,
-                            provider: alpacaConfigured ? 'Alpaca' : 'Mock CSV',
-                            type: 'bars',
-                            status: alpacaConfigured ? 'live' : 'cached',
-                        },
-                        {
-                            symbol,
-                            provider: 'yfinance',
-                            type: 'options',
-                            status: 'cached',
-                        },
-                    ];
-                }
-
-                setMetrics({
-                    mode,
-                    primaryProvider,
-                    providerHealth,
-                    lastTickTime: ingestData.last_tick_time || null,
-                    dataSources,
-                    alpacaKeysConfigured: alpacaConfigured,
-                });
-            } catch (error) {
-                console.error('Trust UX: Failed to fetch health', error);
-                setMetrics(prev => ({ ...prev, providerHealth: 'offline' }));
-            }
-        };
-
-        fetchHealth();
-        const interval = setInterval(fetchHealth, 15000); // Poll every 15s
-        return () => clearInterval(interval);
-    }, [mode, symbol, providers]);
-
-    // Check for stale data (>5s since last tick in LIVE mode)
-    useEffect(() => {
-        if (mode === 'LIVE' && metrics.lastTickTime) {
-            const checkStale = () => {
-                const age = Date.now() - metrics.lastTickTime!;
-                setIsStale(age > 5000);
-            };
-            checkStale();
-            const interval = setInterval(checkStale, 1000);
-            return () => clearInterval(interval);
-        } else {
-            setIsStale(false);
-        }
-    }, [mode, metrics.lastTickTime]);
-
-    const getModeIcon = () => {
-        switch (mode) {
-            case 'LIVE':
-                return <Activity size={12} className="animate-pulse" />;
-            case 'REPLAY':
-                return <Clock size={12} />;
-            case 'BACKTEST':
-                return <Database size={12} />;
-            case 'PAPER':
-                return <Activity size={12} />;
-        }
+        setMetrics({ mode, primaryProvider, providerHealth, lastTickTime: ingestData.last_tick_time || null, dataSources, alpacaKeysConfigured: alpacaConfigured });
+      } catch { setMetrics(prev => ({ ...prev, providerHealth: 'offline' })); }
     };
+    fetchHealth();
+    const i = setInterval(fetchHealth, 15000);
+    return () => clearInterval(i);
+  }, [mode, symbol, providers]);
 
-    const getModeColor = () => {
-        switch (mode) {
-            case 'LIVE':
-                return 'bg-green-500/10 text-green-400 border-green-500/30';
-            case 'PAPER':
-                return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
-            case 'REPLAY':
-                return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-            case 'BACKTEST':
-                return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
-        }
-    };
+  useEffect(() => {
+    if (mode === 'LIVE' && metrics.lastTickTime) {
+      const check = () => setIsStale(Date.now() - metrics.lastTickTime! > 5000);
+      check();
+      const i = setInterval(check, 1000);
+      return () => clearInterval(i);
+    } else { setIsStale(false); }
+  }, [mode, metrics.lastTickTime]);
 
-    const getHealthIcon = () => {
-        switch (metrics.providerHealth) {
-            case 'healthy':
-                return <CheckCircle size={12} className="text-green-400" />;
-            case 'degraded':
-                return <AlertCircle size={12} className="text-yellow-400" />;
-            case 'offline':
-                return <WifiOff size={12} className="text-red-400" />;
-        }
-    };
+  const formatLastTick = () => {
+    if (!metrics.lastTickTime) return 'NO DATA';
+    const age = Date.now() - metrics.lastTickTime;
+    if (age < 1000) return 'JUST NOW';
+    if (age < 60000) return `${Math.floor(age / 1000)}S AGO`;
+    return `${Math.floor(age / 60000)}M AGO`;
+  };
 
-    const formatLastTick = () => {
-        if (!metrics.lastTickTime) return 'No data';
-        const age = Date.now() - metrics.lastTickTime;
-        if (age < 1000) return 'Just now';
-        if (age < 60000) return `${Math.floor(age / 1000)}s ago`;
-        return `${Math.floor(age / 60000)}m ago`;
-    };
+  const mc = modeColor(mode);
 
-    return (
-        <div className="fixed bottom-4 right-4 z-[100]">
-            {/* Compact Trust Badge */}
-            <button
-                onClick={() => setShowDetails(!showDetails)}
-                className={cn(
-                    'flex items-center gap-2 px-3 py-1.5 rounded-lg border backdrop-blur-sm transition-all',
-                    getModeColor(),
-                    'hover:scale-105 shadow-lg'
-                )}
-            >
-                {getModeIcon()}
-                <span className="font-semibold text-xs tracking-wide uppercase">{mode}</span>
-                <div className="h-3 w-px bg-white/20" />
-                {getHealthIcon()}
-                {isStale && mode === 'LIVE' && (
-                    <>
-                        <div className="h-3 w-px bg-white/20" />
-                        <AlertCircle size={12} className="text-orange-400 animate-pulse" />
-                    </>
-                )}
-            </button>
+  return (
+    <div style={{ position: 'fixed', bottom: 16, right: 16, zIndex: 9100, fontFamily: MONO }}>
+      {/* Badge */}
+      <button onClick={() => setShowDetails(!showDetails)}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: mc + '22', border: `1px solid ${mc}`, borderRadius: 2, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: mc }} />
+        <span style={{ color: mc, fontSize: 9, fontWeight: 700, letterSpacing: 1 }}>{mode}</span>
+        <div style={{ width: 1, height: 12, background: mc + '44' }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: healthColor(metrics.providerHealth) }} />
+        {isStale && mode === 'LIVE' && <span style={{ color: AMBER, fontSize: 9 }}>âš </span>}
+      </button>
 
-            {/* Details Panel */}
-            {showDetails && (
-                <div className="absolute bottom-12 right-0 w-96 bg-panel-bg border border-border rounded-lg shadow-2xl p-4 space-y-3 backdrop-blur-md">
-                    {/* Header */}
-                    <div className="flex items-center justify-between border-b border-border pb-2">
-                        <h3 className="font-semibold text-sm text-white">Trust & Provenance</h3>
-                        <button
-                            onClick={() => setShowDetails(false)}
-                            className="text-text-secondary hover:text-white text-xs"
-                        >
-                            Close
-                        </button>
-                    </div>
+      {/* Details panel */}
+      {showDetails && (
+        <div style={{ position: 'absolute', bottom: 36, right: 0, width: 340, background: PANEL, border: `1px solid ${AMBER}`, borderRadius: 2, padding: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${BORDER}`, paddingBottom: 8, marginBottom: 10 }}>
+            <span style={{ color: AMBER, fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>TRUST & PROVENANCE</span>
+            <button onClick={() => setShowDetails(false)} style={{ background: 'none', border: 'none', color: SUBTLE, cursor: 'pointer', fontSize: 10 }}>CLOSE âœ•</button>
+          </div>
 
-                    {/* Mode */}
-                    <div>
-                        <div className="text-xs text-text-secondary mb-1">Mode</div>
-                        <div className={cn('inline-flex items-center gap-2 px-2 py-1 rounded border text-xs font-medium', getModeColor())}>
-                            {getModeIcon()}
-                            {mode}
-                        </div>
-                    </div>
+          {/* Mode */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 8, color: SUBTLE, letterSpacing: 0.5, marginBottom: 3 }}>MODE</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px', background: mc + '22', border: `1px solid ${mc}`, borderRadius: 2, fontSize: 9, color: mc, fontWeight: 700 }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: mc }} />
+              {mode}
+            </div>
+          </div>
 
-                    {/* Provider Health */}
-                    <div>
-                        <div className="text-xs text-text-secondary mb-1">Provider Health</div>
-                        <div className="flex items-center gap-2">
-                            {getHealthIcon()}
-                            <span className="text-xs text-text capitalize">{metrics.providerHealth}</span>
-                            {metrics.primaryProvider && (
-                                <span className="text-xs text-text-secondary">
-                                    ({metrics.primaryProvider})
-                                </span>
-                            )}
-                        </div>
-                    </div>
+          {/* Provider health */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 8, color: SUBTLE, letterSpacing: 0.5, marginBottom: 3 }}>PROVIDER HEALTH</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: healthColor(metrics.providerHealth) }} />
+              <span style={{ color: healthColor(metrics.providerHealth), fontWeight: 700 }}>{metrics.providerHealth.toUpperCase()}</span>
+              {metrics.primaryProvider && <span style={{ color: SUBTLE, fontSize: 9 }}>({metrics.primaryProvider})</span>}
+            </div>
+          </div>
 
-                    {/* Last Tick */}
-                    {mode === 'LIVE' && (
-                        <div>
-                            <div className="text-xs text-text-secondary mb-1">Last Tick</div>
-                            <div className="flex items-center gap-2">
-                                <Clock size={12} className={isStale ? 'text-orange-400' : 'text-green-400'} />
-                                <span className="text-xs text-text">{formatLastTick()}</span>
-                                {isStale && (
-                                    <span className="text-[10px] text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded">
-                                        Stale
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    )}
+          {/* Last tick */}
+          {mode === 'LIVE' && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 8, color: SUBTLE, letterSpacing: 0.5, marginBottom: 3 }}>LAST TICK</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10 }}>
+                <span style={{ color: isStale ? AMBER : GREEN }}>â±</span>
+                <span style={{ color: isStale ? AMBER : GREEN }}>{formatLastTick()}</span>
+                {isStale && <span style={{ fontSize: 8, color: AMBER, background: AMBER + '22', border: `1px solid ${AMBER}`, padding: '1px 4px', borderRadius: 2 }}>STALE</span>}
+              </div>
+            </div>
+          )}
 
-                    {/* Data Sources */}
-                    <div>
-                        <div className="text-xs text-text-secondary mb-2">Data Sources</div>
-                        <div className="space-y-1.5">
-                            {metrics.dataSources.map((source, i) => (
-                                <div key={i} className="flex items-center justify-between text-xs bg-element-bg px-2 py-1.5 rounded">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-text-secondary capitalize">{source.type}:</span>
-                                        <span className="text-text">{source.provider}</span>
-                                    </div>
-                                    <span
-                                        className={cn('text-[10px] px-1.5 py-0.5 rounded font-medium', {
-                                            'bg-green-400/10 text-green-400': source.status === 'live',
-                                            'bg-blue-400/10 text-blue-400': source.status === 'cached',
-                                            'bg-red-400/10 text-red-400': source.status === 'unavailable',
-                                        })}
-                                    >
-                                        {source.status}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Alpaca Status */}
-                    <div>
-                        <div className="text-xs text-text-secondary mb-1">Alpaca API</div>
-                        <div className="flex items-center gap-2">
-                            {metrics.alpacaKeysConfigured ? (
-                                <>
-                                    <CheckCircle size={12} className="text-green-400" />
-                                    <span className="text-xs text-text">Keys configured</span>
-                                </>
-                            ) : (
-                                <>
-                                    <AlertCircle size={12} className="text-orange-400" />
-                                    <span className="text-xs text-text">No keys - using mock data</span>
-                                </>
-                            )}
-                        </div>
-                    </div>
+          {/* Data sources */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 8, color: SUBTLE, letterSpacing: 0.5, marginBottom: 6 }}>DATA SOURCES</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {metrics.dataSources.map((src, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: BG, border: `1px solid ${BORDER}`, borderRadius: 2 }}>
+                  <div style={{ display: 'flex', gap: 6, fontSize: 9 }}>
+                    <span style={{ color: SUBTLE }}>{src.type.toUpperCase()}:</span>
+                    <span style={{ color: TEXT }}>{src.provider}</span>
+                  </div>
+                  <span style={{ fontSize: 8, padding: '1px 5px', background: srcColor(src.status) + '22', border: `1px solid ${srcColor(src.status)}`, color: srcColor(src.status), borderRadius: 2 }}>{src.status.toUpperCase()}</span>
                 </div>
-            )}
+              ))}
+            </div>
+          </div>
+
+          {/* Alpaca API */}
+          <div>
+            <div style={{ fontSize: 8, color: SUBTLE, letterSpacing: 0.5, marginBottom: 3 }}>ALPACA API</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: metrics.alpacaKeysConfigured ? GREEN : AMBER }} />
+              <span style={{ color: metrics.alpacaKeysConfigured ? GREEN : AMBER }}>
+                {metrics.alpacaKeysConfigured ? 'KEYS CONFIGURED' : 'NO KEYS â€” USING MOCK DATA'}
+              </span>
+            </div>
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 }

@@ -1,5 +1,18 @@
-import { useState, useEffect } from 'react';
-import { History, X, ArrowRight, Circle } from 'lucide-react';
+﻿// Bloomberg Palette
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const PURPLE = '#ab47bc';
+const ORANGE = '#ff8a65';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface AuditEvent {
     id: string;
@@ -11,125 +24,187 @@ interface AuditEvent {
 
 const API_BASE = '/api/v1';
 
+const typeColor: Record<string, string> = {
+    signal: BLUE, order: PURPLE, fill: GREEN, portfolio: AMBER, risk: ORANGE,
+};
+
+const MOCK_EVENTS: AuditEvent[] = [
+    { id: '1', timestamp: new Date(Date.now() - 300000).toISOString(), type: 'signal', symbol: 'AAPL', details: { action: 'BUY', indicator: 'SMA crossover', price: 175.00 } },
+    { id: '2', timestamp: new Date(Date.now() - 299000).toISOString(), type: 'risk', symbol: 'AAPL', details: { check: 'position_limit', result: 'PASSED', current: 5000, max: 10000 } },
+    { id: '3', timestamp: new Date(Date.now() - 298000).toISOString(), type: 'order', symbol: 'AAPL', details: { side: 'buy', qty: 100, type: 'market', order_id: 'ORD-001' } },
+    { id: '4', timestamp: new Date(Date.now() - 295000).toISOString(), type: 'fill', symbol: 'AAPL', details: { qty: 100, price: 175.25, order_id: 'ORD-001' } },
+    { id: '5', timestamp: new Date(Date.now() - 294000).toISOString(), type: 'portfolio', symbol: 'AAPL', details: { action: 'position_opened', qty: 100, avg_cost: 175.25, market_value: 17525 } },
+    { id: '6', timestamp: new Date(Date.now() - 60000).toISOString(), type: 'signal', symbol: 'AAPL', details: { action: 'SELL', indicator: 'SMA crossover', price: 178.50 } },
+    { id: '7', timestamp: new Date(Date.now() - 59000).toISOString(), type: 'order', symbol: 'AAPL', details: { side: 'sell', qty: 100, type: 'market', order_id: 'ORD-002' } },
+    { id: '8', timestamp: new Date(Date.now() - 56000).toISOString(), type: 'fill', symbol: 'AAPL', details: { qty: 100, price: 178.40, order_id: 'ORD-002' } },
+    { id: '9', timestamp: new Date(Date.now() - 55000).toISOString(), type: 'portfolio', symbol: 'AAPL', details: { action: 'position_closed', realized_pnl: 315, return_pct: 1.80 } },
+    { id: '10', timestamp: new Date(Date.now() - 10000).toISOString(), type: 'signal', symbol: 'MSFT', details: { action: 'BUY', indicator: 'RSI oversold', price: 412.00 } },
+    { id: '11', timestamp: new Date(Date.now() - 9500).toISOString(), type: 'risk', symbol: 'MSFT', details: { check: 'max_drawdown', result: 'PASSED', current: 1.2, threshold: 5.0 } },
+    { id: '12', timestamp: new Date(Date.now() - 9000).toISOString(), type: 'order', symbol: 'MSFT', details: { side: 'buy', qty: 50, type: 'limit', price: 412.50, order_id: 'ORD-003' } },
+];
+
 export function AuditTrail({ onClose }: { onClose: () => void }) {
     const [events, setEvents] = useState<AuditEvent[]>([]);
-    const [_loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [filter, setFilter] = useState<'ALL' | 'signal' | 'order' | 'fill' | 'portfolio' | 'risk'>('ALL');
+    const [search, setSearch] = useState('');
+    const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
 
-    useEffect(() => {
-        const fetchEvents = async () => {
-            setLoading(true);
-            try {
-                const res = await fetch(`${API_BASE}/audit`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                setEvents(data);
-            } catch (e) {
-                // Mock data showing a complete trade lifecycle
-                setEvents([
-                    { id: '1', timestamp: new Date(Date.now() - 300000).toISOString(), type: 'signal', symbol: 'AAPL', details: { action: 'BUY', indicator: 'SMA crossover', price: 175.00 } },
-                    { id: '2', timestamp: new Date(Date.now() - 299000).toISOString(), type: 'risk', symbol: 'AAPL', details: { check: 'position_limit', result: 'PASSED', current: 5000, max: 10000 } },
-                    { id: '3', timestamp: new Date(Date.now() - 298000).toISOString(), type: 'order', symbol: 'AAPL', details: { side: 'buy', qty: 100, type: 'market', order_id: 'ORD-001' } },
-                    { id: '4', timestamp: new Date(Date.now() - 295000).toISOString(), type: 'fill', symbol: 'AAPL', details: { qty: 100, price: 175.25, order_id: 'ORD-001' } },
-                    { id: '5', timestamp: new Date(Date.now() - 294000).toISOString(), type: 'portfolio', symbol: 'AAPL', details: { action: 'position_opened', qty: 100, avg_cost: 175.25, market_value: 17525 } },
-                    { id: '6', timestamp: new Date(Date.now() - 60000).toISOString(), type: 'signal', symbol: 'AAPL', details: { action: 'SELL', indicator: 'SMA crossover', price: 178.50 } },
-                    { id: '7', timestamp: new Date(Date.now() - 59000).toISOString(), type: 'order', symbol: 'AAPL', details: { side: 'sell', qty: 100, type: 'market', order_id: 'ORD-002' } },
-                    { id: '8', timestamp: new Date(Date.now() - 56000).toISOString(), type: 'fill', symbol: 'AAPL', details: { qty: 100, price: 178.40, order_id: 'ORD-002' } },
-                    { id: '9', timestamp: new Date(Date.now() - 55000).toISOString(), type: 'portfolio', symbol: 'AAPL', details: { action: 'position_closed', realized_pnl: 315, return_pct: 1.80 } },
-                ]);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchEvents();
+    const fetchEvents = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_BASE}/audit`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            setEvents(data);
+        } catch {
+            setEvents(MOCK_EVENTS);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const getTypeStyle = (type: string) => {
-        switch (type) {
-            case 'signal': return { color: 'text-blue-400', bg: 'bg-blue-500/20' };
-            case 'order': return { color: 'text-purple-400', bg: 'bg-purple-500/20' };
-            case 'fill': return { color: 'text-green-400', bg: 'bg-green-500/20' };
-            case 'portfolio': return { color: 'text-yellow-400', bg: 'bg-yellow-500/20' };
-            case 'risk': return { color: 'text-orange-400', bg: 'bg-orange-500/20' };
-            default: return { color: 'text-gray-400', bg: 'bg-gray-500/20' };
-        }
-    };
+    useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
     const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const formatDate = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-    const formatDetails = (details: Record<string, unknown>) => {
-        return Object.entries(details).map(([k, v]) => (
-            <span key={k} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-700 rounded text-[10px] mr-1 mb-1">
-                <span className="text-gray-400">{k}:</span>
-                <span className="text-white">{typeof v === 'number' ? (Number.isInteger(v) ? v : (v as number).toFixed(2)) : String(v)}</span>
-            </span>
-        ));
-    };
+    const filtered = events.filter(e =>
+        (filter === 'ALL' || e.type === filter) &&
+        (!search || e.symbol?.includes(search.toUpperCase()) || JSON.stringify(e.details).toLowerCase().includes(search.toLowerCase()))
+    );
+
+    const counts: Record<string, number> = events.reduce((acc, e) => ({ ...acc, [e.type]: (acc[e.type] || 0) + 1 }), {} as Record<string, number>);
+
+    const btnStyle = (active: boolean, color: string): React.CSSProperties => ({
+        fontSize: 9, padding: '2px 7px', background: active ? color + '22' : 'transparent',
+        border: `1px solid ${active ? color : BORDER}`, color: active ? color : SUBTLE,
+        borderRadius: 2, cursor: 'pointer', fontFamily: MONO,
+    });
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="w-[700px] h-[550px] bg-gray-800 border border-gray-700 rounded-lg shadow-xl flex flex-col">
-                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <History size={20} />
-                        Audit Trail
-                    </h2>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded">
-                        <X size={18} className="text-gray-400" />
-                    </button>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.72)' }}>
+            <div style={{ width: 780, height: 580, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.7)', fontFamily: MONO, color: TEXT }}>
+                {/* Header */}
+                <div style={{ padding: '0 16px', height: 42, borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: BG, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: AMBER, letterSpacing: '0.1em' }}>AT</span>
+                        <span style={{ color: SUBTLE, fontSize: 10 }}>|</span>
+                        <span style={{ fontSize: 10, color: TEXT, letterSpacing: '0.06em' }}>AUDIT TRAIL</span>
+                        <span style={{ fontSize: 9, color: SUBTLE }}>â€” Signal â€º Risk â€º Order â€º Fill â€º Portfolio</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button onClick={fetchEvents} style={{ ...btnStyle(false, AMBER), padding: '2px 10px' }}>âŸ³ REFRESH</button>
+                        <button onClick={onClose} onMouseEnter={e => (e.currentTarget.style.color = RED)} onMouseLeave={e => (e.currentTarget.style.color = SUBTLE)} style={{ background: 'none', border: 'none', color: SUBTLE, cursor: 'pointer', fontSize: 14 }}>âœ•</button>
+                    </div>
                 </div>
 
-                <div className="p-3 border-b border-gray-700 text-xs text-gray-400">
-                    Signal → Risk Check → Order → Fill → Portfolio Update
+                {/* Filter bar */}
+                <div style={{ padding: '6px 12px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 6, background: PANEL, flexShrink: 0 }}>
+                    {(['ALL', 'signal', 'order', 'fill', 'portfolio', 'risk'] as const).map(f => (
+                        <button key={f} onClick={() => setFilter(f)} style={btnStyle(filter === f, typeColor[f] || AMBER)}>
+                            {f.toUpperCase()}{f !== 'ALL' && counts[f] ? ` (${counts[f]})` : ''}
+                        </button>
+                    ))}
+                    <div style={{ flex: 1 }} />
+                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH..." style={{ background: BG, border: `1px solid ${BORDER}`, color: TEXT, borderRadius: 2, padding: '2px 8px', fontSize: 9, fontFamily: MONO, width: 100 }} />
+                    <span style={{ fontSize: 9, color: SUBTLE }}>{filtered.length} EVT</span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4">
-                    <div className="relative">
-                        {/* Timeline line */}
-                        <div className="absolute left-[72px] top-0 bottom-0 w-0.5 bg-gray-700" />
-
-                        {events.map((event, idx) => {
-                            const style = getTypeStyle(event.type);
+                {/* Main content */}
+                <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                    {/* Timeline */}
+                    <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px' }}>
+                        {loading && <div style={{ color: SUBTLE, fontSize: 11, textAlign: 'center', padding: 20 }}>LOADING AUDIT LOG...</div>}
+                        {!loading && filtered.length === 0 && <div style={{ color: SUBTLE, fontSize: 11, textAlign: 'center', padding: 20 }}>NO EVENTS MATCH FILTER</div>}
+                        {!loading && filtered.map((event, idx) => {
+                            const color = typeColor[event.type] || SUBTLE;
+                            const isSelected = selectedEvent?.id === event.id;
                             return (
-                                <div key={event.id} className="relative flex items-start gap-4 mb-4">
-                                    {/* Time */}
-                                    <div className="w-16 text-right text-xs text-gray-500 pt-0.5 shrink-0">
-                                        {formatTime(event.timestamp)}
-                                    </div>
-
-                                    {/* Dot */}
-                                    <div className={`relative z-10 w-4 h-4 rounded-full ${style.bg} flex items-center justify-center shrink-0`}>
-                                        <Circle size={8} className={style.color} fill="currentColor" />
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.color}`}>
-                                                {event.type.toUpperCase()}
-                                            </span>
-                                            {event.symbol && (
-                                                <span className="text-sm font-medium text-white">{event.symbol}</span>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-wrap">
-                                            {formatDetails(event.details)}
-                                        </div>
-                                    </div>
-
-                                    {/* Arrow to next */}
-                                    {idx < events.length - 1 && (
-                                        <ArrowRight size={12} className="absolute left-[68px] top-6 text-gray-600" />
+                                <div key={event.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10, position: 'relative' }}>
+                                    {/* Timeline line */}
+                                    {idx < filtered.length - 1 && (
+                                        <div style={{ position: 'absolute', left: 77, top: 20, bottom: -10, width: 1, background: BORDER }} />
                                     )}
+                                    {/* Time */}
+                                    <div style={{ width: 66, flexShrink: 0, textAlign: 'right' }}>
+                                        <div style={{ fontSize: 9, color: SUBTLE }}>{formatTime(event.timestamp)}</div>
+                                        <div style={{ fontSize: 8, color: BORDER }}>{formatDate(event.timestamp)}</div>
+                                    </div>
+                                    {/* Dot */}
+                                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: color + '22', border: `2px solid ${color}`, flexShrink: 0, marginTop: 2, position: 'relative', zIndex: 1 }} />
+                                    {/* Content */}
+                                    <div
+                                        onClick={() => setSelectedEvent(isSelected ? null : event)}
+                                        onMouseEnter={e => (e.currentTarget.style.background = BG)}
+                                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                        style={{ flex: 1, cursor: 'pointer', padding: '5px 8px', borderRadius: 3, background: isSelected ? BG : 'transparent', border: `1px solid ${isSelected ? BORDER : 'transparent'}` }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                            <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 2, background: color + '22', color, fontWeight: 700, letterSpacing: '0.06em' }}>{event.type.toUpperCase()}</span>
+                                            {event.symbol && <span style={{ fontSize: 11, fontWeight: 700, color: TEXT }}>{event.symbol}</span>}
+                                            <span style={{ fontSize: 9, color: SUBTLE }}>#{event.id}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {Object.entries(event.details).map(([k, v]) => (
+                                                <span key={k} style={{ fontSize: 9, padding: '1px 6px', background: BG, border: `1px solid ${BORDER}`, borderRadius: 2 }}>
+                                                    <span style={{ color: SUBTLE }}>{k}:</span>
+                                                    <span style={{ color: TEXT, marginLeft: 3 }}>{typeof v === 'number' && !Number.isInteger(v) ? (v as number).toFixed(2) : String(v)}</span>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })}
                     </div>
+
+                    {/* Detail panel */}
+                    {selectedEvent && (
+                        <div style={{ width: 220, flexShrink: 0, borderLeft: `1px solid ${BORDER}`, padding: 14, overflow: 'auto' }}>
+                            <div style={{ marginBottom: 12 }}>
+                                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 4 }}>EVENT ID</div>
+                                <div style={{ fontSize: 11, fontFamily: MONO, color: TEXT }}>#{selectedEvent.id}</div>
+                            </div>
+                            <div style={{ marginBottom: 12 }}>
+                                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 4 }}>TYPE</div>
+                                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 2, background: (typeColor[selectedEvent.type] || SUBTLE) + '22', color: typeColor[selectedEvent.type] || SUBTLE }}>{selectedEvent.type.toUpperCase()}</span>
+                            </div>
+                            <div style={{ marginBottom: 12 }}>
+                                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 4 }}>TIMESTAMP</div>
+                                <div style={{ fontSize: 10, fontFamily: MONO, color: TEXT }}>{new Date(selectedEvent.timestamp).toLocaleString()}</div>
+                            </div>
+                            {selectedEvent.symbol && (
+                                <div style={{ marginBottom: 12 }}>
+                                    <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 4 }}>SYMBOL</div>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: AMBER }}>{selectedEvent.symbol}</div>
+                                </div>
+                            )}
+                            <div>
+                                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 6 }}>DETAILS</div>
+                                {Object.entries(selectedEvent.details).map(([k, v]) => (
+                                    <div key={k} style={{ marginBottom: 6 }}>
+                                        <div style={{ fontSize: 8, color: SUBTLE, letterSpacing: '0.06em' }}>{k.toUpperCase()}</div>
+                                        <div style={{ fontSize: 11, fontFamily: MONO, color: TEXT }}>{typeof v === 'number' && !Number.isInteger(v) ? (v as number).toFixed(2) : String(v)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                <div className="p-3 border-t border-gray-700 text-xs text-gray-500">
-                    Showing {events.length} events
+                {/* Footer */}
+                <div style={{ padding: '6px 16px', borderTop: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 9, color: SUBTLE, flexShrink: 0 }}>
+                    <span>{filtered.length} of {events.length} EVENTS</span>
+                    <span>CLICK EVENT TO EXPAND DETAIL</span>
                 </div>
             </div>
         </div>
     );
+}
+    id: string;
+    timestamp: string;
+    type: 'signal' | 'order' | 'fill' | 'portfolio' | 'risk';
+    symbol?: string;
+    details: Record<string, unknown>;
 }

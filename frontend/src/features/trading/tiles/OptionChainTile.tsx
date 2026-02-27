@@ -1,5 +1,17 @@
-import { useMemo, useEffect } from 'react';
-import { cn } from '../../../ui/utils';
+// Bloomberg OCH — Option Chain Terminal Tile
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
+import { useMemo, useEffect, useState } from 'react';
+import React from 'react';
 import { useOptionsStore } from '../../options/store';
 import { useAppStore } from '../../../state/appStore';
 import type { OptionContract } from '../../options/types';
@@ -20,6 +32,9 @@ export function OptionChainTile({ }: TileProps) {
         setSelectedExpiration,
         fetchAll
     } = useOptionsStore();
+
+    const [hoveredStrike, setHoveredStrike] = useState<number | null>(null);
+    const [showGreeks, setShowGreeks] = useState(false);
 
     // Sync with app symbol
     useEffect(() => {
@@ -48,7 +63,6 @@ export function OptionChainTile({ }: TileProps) {
             }
         });
 
-        // Return ATM +/- 10 strikes for better visibility in tile
         const underlying = chain.underlyingPrice;
         return Array.from(strikesMap.values())
             .sort((a, b) => a.strike - b.strike)
@@ -57,110 +71,139 @@ export function OptionChainTile({ }: TileProps) {
 
     if (chainLoading && chainData.length === 0) {
         return (
-            <div className="h-full flex items-center justify-center text-text-muted text-xs">
-                Loading options...
+            <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', background:BG, color:SUBTLE, fontFamily:MONO, fontSize:11 }}>
+                LOADING OPTIONS…
             </div>
         );
     }
 
     if (!appSymbol) {
         return (
-            <div className="h-full flex items-center justify-center text-text-muted text-xs">
-                Select a symbol to view options
+            <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', background:BG, color:SUBTLE, fontFamily:MONO, fontSize:11 }}>
+                SELECT A SYMBOL TO VIEW OPTIONS
             </div>
         );
     }
 
+    const underlying = chain?.underlyingPrice ?? 0;
+
     return (
-        <div className="h-full flex flex-col text-xs bg-background overflow-hidden">
+        <div style={{ height:'100%', display:'flex', flexDirection:'column', background:BG, fontFamily:MONO, fontSize:11, color:TEXT }}>
+            {/* Header */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'4px 8px', background:PANEL, borderBottom:`1px solid ${BORDER}`, flexShrink:0 }}>
+                <span style={{ color:AMBER, fontWeight:700, fontSize:11, letterSpacing:2 }}>OCH — OPTION CHAIN</span>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <span style={{ color:BLUE, fontSize:10 }}>{appSymbol}</span>
+                    <span style={{ color:TEXT, fontFamily:MONO }}>${underlying.toFixed(2)}</span>
+                    <button onClick={() => setShowGreeks(g => !g)}
+                        style={{ background: showGreeks ? AMBER : 'transparent', border:`1px solid ${showGreeks ? AMBER : BORDER}`, color: showGreeks ? BG : SUBTLE, fontFamily:MONO, fontSize:8, padding:'1px 5px', cursor:'pointer', borderRadius:2 }}>
+                        GREEKS
+                    </button>
+                </div>
+            </div>
+
             {/* Expiry selector */}
-            <div className="flex items-center gap-2 p-2 border-b border-border bg-panel-bg/50">
-                <span className="text-xxs text-text-secondary uppercase font-bold">Expiry:</span>
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'3px 8px', borderBottom:`1px solid ${BORDER}`, background:'#0d0d0d', flexShrink:0 }}>
+                <span style={{ color:SUBTLE, fontSize:9 }}>EXPIRY</span>
                 <select
                     value={selectedExpiration || ''}
                     onChange={(e) => setSelectedExpiration(e.target.value)}
-                    className="bg-element-bg text-text rounded px-2 py-0.5 border border-border text-xs focus:outline-none"
                     disabled={!chain}
+                    style={{ background:PANEL, color:TEXT, border:`1px solid ${BORDER}`, fontFamily:MONO, fontSize:9, padding:'2px 4px', outline:'none', cursor:'pointer' }}
                 >
                     {chain?.expirations.map(exp => (
                         <option key={exp} value={exp}>{exp}</option>
                     ))}
                 </select>
-                <div className="ml-auto text-xxs font-mono">
-                    <span className="text-text-secondary">{appSymbol}</span>
-                    <span className="text-text ml-1 px-1 bg-brand/10 rounded">${chain?.underlyingPrice?.toFixed(2) || '0.00'}</span>
-                </div>
+                <span style={{ marginLeft:'auto', color:SUBTLE, fontSize:9 }}>{chainData.length} STRIKES</span>
             </div>
 
-            {/* Header */}
-            <div className="grid grid-cols-9 gap-1 px-2 py-1 text-xxs text-text-secondary border-b border-border bg-element-bg/30 font-bold uppercase tracking-tighter">
-                <div className="text-center">Bid</div>
-                <div className="text-center">Ask</div>
-                <div className="text-center">Vol</div>
-                <div className="text-center">IV</div>
-                <div className="text-center font-bold text-text bg-brand/5 border-x border-brand/10">Strike</div>
-                <div className="text-center">IV</div>
-                <div className="text-center">Vol</div>
-                <div className="text-center">Bid</div>
-                <div className="text-center">Ask</div>
+            {/* Column headers */}
+            <div style={{ display:'grid', gridTemplateColumns: showGreeks ? '45px 45px 40px 36px 36px 55px 36px 36px 40px 45px 45px' : '50px 50px 45px 40px 55px 40px 45px 50px 50px', gap:2, padding:'2px 6px', borderBottom:`1px solid ${BORDER}`, background:'#0d0d0d', flexShrink:0 }}>
+                {/* Calls side */}
+                <div style={{ color:GREEN, fontSize:8, textAlign:'right' }}>BID</div>
+                <div style={{ color:GREEN, fontSize:8, textAlign:'right' }}>ASK</div>
+                <div style={{ color:GREEN, fontSize:8, textAlign:'right' }}>VOL</div>
+                {showGreeks && <div style={{ color:GREEN, fontSize:8, textAlign:'right' }}>IV</div>}
+                {showGreeks && <div style={{ color:GREEN, fontSize:8, textAlign:'right' }}>Δ</div>}
+                {/* Strike */}
+                <div style={{ color:AMBER, fontSize:8, textAlign:'center', fontWeight:700 }}>STRIKE</div>
+                {/* Puts side */}
+                {showGreeks && <div style={{ color:RED, fontSize:8, textAlign:'left' }}>IV</div>}
+                {showGreeks && <div style={{ color:RED, fontSize:8, textAlign:'left' }}>Δ</div>}
+                <div style={{ color:RED, fontSize:8, textAlign:'left' }}>VOL</div>
+                <div style={{ color:RED, fontSize:8, textAlign:'left' }}>BID</div>
+                <div style={{ color:RED, fontSize:8, textAlign:'left' }}>ASK</div>
             </div>
 
-            {/* Chain */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {/* Chain rows */}
+            <div style={{ flex:1, overflowY:'auto' }}>
                 {chainData.length === 0 ? (
-                    <div className="py-8 text-center text-text-muted opacity-50">No data found</div>
+                    <div style={{ padding:16, textAlign:'center', color:SUBTLE, fontSize:9 }}>NO DATA FOUND</div>
                 ) : (
                     chainData.map((row) => {
                         const call = row.call;
                         const put = row.put;
-                        const underlying = chain?.underlyingPrice || 0;
                         const isITMCall = row.strike < underlying;
                         const isITMPut = row.strike > underlying;
                         const isATM = Math.abs(row.strike - underlying) < (underlying * 0.01);
+                        const isHov = hoveredStrike === row.strike;
+
+                        const cols = showGreeks ? '45px 45px 40px 36px 36px 55px 36px 36px 40px 45px 45px' : '50px 50px 45px 40px 55px 40px 45px 50px 50px';
 
                         return (
-                            <div
-                                key={row.strike}
-                                className={cn(
-                                    "grid grid-cols-9 gap-1 px-2 py-1.5 border-b border-border/30 hover:bg-element-bg/50 transition-colors",
-                                    isATM && "bg-brand/5 shadow-inner"
-                                )}
+                            <div key={row.strike}
+                                onMouseEnter={() => setHoveredStrike(row.strike)}
+                                onMouseLeave={() => setHoveredStrike(null)}
+                                style={{
+                                    display:'grid', gridTemplateColumns:cols, gap:2,
+                                    padding:'2px 6px',
+                                    background: isATM ? '#1a1500' : isHov ? '#141414' : 'transparent',
+                                    borderBottom:`1px solid ${BORDER}`,
+                                    borderLeft: isATM ? `2px solid ${AMBER}` : '2px solid transparent',
+                                }}
                             >
                                 {/* Calls */}
-                                <div className={cn("text-right font-mono", isITMCall ? "text-green-500 font-bold" : "text-text-secondary")}>
+                                <div style={{ textAlign:'right', color: isITMCall ? GREEN : SUBTLE, fontFamily:MONO, fontSize:10, fontWeight: isITMCall ? 700 : 400 }}>
                                     {call?.bid?.toFixed(2) || '-'}
                                 </div>
-                                <div className={cn("text-right font-mono", isITMCall ? "text-green-400" : "text-text-secondary")}>
+                                <div style={{ textAlign:'right', color: isITMCall ? '#81c784' : SUBTLE, fontFamily:MONO, fontSize:10 }}>
                                     {call?.ask?.toFixed(2) || '-'}
                                 </div>
-                                <div className="text-center text-xxs text-text-muted tabular-nums">{call?.volume || '0'}</div>
-                                <div className="text-center text-xxs text-text-muted">
-                                    {call?.impliedVolatility ? (call.impliedVolatility * 100).toFixed(0) + '%' : '-'}
+                                <div style={{ textAlign:'right', color:SUBTLE, fontSize:9 }}>
+                                    {call?.volume != null ? (call.volume > 1000 ? `${(call.volume/1000).toFixed(0)}K` : call.volume) : '0'}
                                 </div>
+                                {showGreeks && <div style={{ textAlign:'right', color:SUBTLE, fontSize:9 }}>{call?.impliedVolatility ? `${(call.impliedVolatility*100).toFixed(0)}%` : '-'}</div>}
+                                {showGreeks && <div style={{ textAlign:'right', color:GREEN, fontSize:9 }}>{call?.delta?.toFixed(2) ?? '-'}</div>}
 
                                 {/* Strike */}
-                                <div className={cn(
-                                    "text-center font-bold border-x border-border/20 bg-brand/5 tabular-nums",
-                                    isATM ? "text-brand" : "text-text"
-                                )}>
+                                <div style={{ textAlign:'center', color: isATM ? AMBER : TEXT, fontWeight: isATM ? 700 : 400, fontSize:10, borderLeft:`1px solid ${BORDER}`, borderRight:`1px solid ${BORDER}` }}>
                                     {row.strike.toFixed(1)}
                                 </div>
 
                                 {/* Puts */}
-                                <div className="text-center text-xxs text-text-muted">
-                                    {put?.impliedVolatility ? (put.impliedVolatility * 100).toFixed(0) + '%' : '-'}
+                                {showGreeks && <div style={{ textAlign:'left', color:SUBTLE, fontSize:9 }}>{put?.impliedVolatility ? `${(put.impliedVolatility*100).toFixed(0)}%` : '-'}</div>}
+                                {showGreeks && <div style={{ textAlign:'left', color:RED, fontSize:9 }}>{put?.delta?.toFixed(2) ?? '-'}</div>}
+                                <div style={{ textAlign:'left', color:SUBTLE, fontSize:9 }}>
+                                    {put?.volume != null ? (put.volume > 1000 ? `${(put.volume/1000).toFixed(0)}K` : put.volume) : '0'}
                                 </div>
-                                <div className="text-center text-xxs text-text-muted tabular-nums">{put?.volume || '0'}</div>
-                                <div className={cn("text-right font-mono", isITMPut ? "text-red-400" : "text-text-secondary")}>
+                                <div style={{ textAlign:'left', color: isITMPut ? '#ef9a9a' : SUBTLE, fontFamily:MONO, fontSize:10 }}>
                                     {put?.bid?.toFixed(2) || '-'}
                                 </div>
-                                <div className={cn("text-right font-mono", isITMPut ? "text-red-500 font-bold" : "text-text-secondary")}>
+                                <div style={{ textAlign:'left', color: isITMPut ? RED : SUBTLE, fontFamily:MONO, fontSize:10, fontWeight: isITMPut ? 700 : 400 }}>
                                     {put?.ask?.toFixed(2) || '-'}
                                 </div>
                             </div>
                         );
                     })
                 )}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding:'3px 8px', background:'#0d0d0d', borderTop:`1px solid ${BORDER}`, display:'flex', justifyContent:'space-between', flexShrink:0 }}>
+                <span style={{ color:GREEN, fontSize:9 }}>CALLS ▲ = ITM</span>
+                <span style={{ color:AMBER, fontSize:9 }}>ATM ${underlying.toFixed(2)}</span>
+                <span style={{ color:RED, fontSize:9 }}>PUTS ▼ = ITM</span>
             </div>
         </div>
     );

@@ -1,27 +1,25 @@
+// Bloomberg IVTS — IV Term Structure
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
 import { useMemo } from 'react';
+import React from 'react';
 import { Line } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
+  Chart as ChartJS, CategoryScale, LinearScale,
+  PointElement, LineElement, Title, Tooltip, Legend,
 } from 'chart.js';
 import type { ChartOptions } from 'chart.js';
 import { useOptionsStore } from './store';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface IVTermStructureProps {
   symbol: string;
@@ -32,24 +30,20 @@ export const IVTermStructure = ({ symbol }: IVTermStructureProps) => {
   const { termStructure, termStructureLoading } = useOptionsStore();
 
   const chartData = useMemo(() => {
-    if (!termStructure || !termStructure.daysToExpiration || termStructure.daysToExpiration.length === 0) {
-      return { labels: [], datasets: [] };
-    }
-
+    if (!termStructure?.daysToExpiration?.length) return { labels: [], datasets: [] };
     return {
       labels: termStructure.daysToExpiration.map(dte => `${dte}d`),
-      datasets: [
-        {
-          label: 'ATM IV',
-          data: termStructure.ivs.map(iv => iv * 100),
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.3,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          fill: true,
-        },
-      ],
+      datasets: [{
+        label: 'ATM IV',
+        data: termStructure.ivs.map(iv => iv * 100),
+        borderColor: GREEN,
+        backgroundColor: GREEN + '22',
+        tension: 0.3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        borderWidth: 1.5,
+      }],
     };
   }, [termStructure]);
 
@@ -57,82 +51,52 @@ export const IVTermStructure = ({ symbol }: IVTermStructureProps) => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       title: {
         display: true,
-        text: `${symbol} IV Term Structure`,
-        color: '#f3f4f6',
-        font: {
-          size: 13,
-        },
+        text: `${symbol} IV TERM STRUCTURE`,
+        color: AMBER,
+        font: { size: 10, family: MONO, weight: 'bold' },
       },
       tooltip: {
-        mode: 'index',
-        intersect: false,
-        backgroundColor: 'rgba(17, 24, 39, 0.95)',
-        titleColor: '#f3f4f6',
-        bodyColor: '#d1d5db',
-        borderColor: '#374151',
-        borderWidth: 1,
-        callbacks: {
-          label: (context) => {
-            const value = context.parsed.y !== null ? context.parsed.y.toFixed(2) : '0.00';
-            return `ATM IV: ${value}%`;
-          },
-        },
+        mode: 'index', intersect: false,
+        backgroundColor: PANEL, titleColor: AMBER, bodyColor: TEXT,
+        borderColor: BORDER, borderWidth: 1,
+        callbacks: { label: ctx => `ATM IV: ${ctx.parsed.y?.toFixed(2) ?? '0.00'}%` },
       },
     },
     scales: {
       x: {
-        title: {
-          display: true,
-          text: 'Days to Expiration',
-          color: '#9ca3af',
-        },
-        grid: {
-          color: '#374151',
-        },
-        ticks: {
-          color: '#9ca3af',
-        },
+        title: { display: true, text: 'DAYS TO EXPIRY', color: SUBTLE, font: { size: 8, family: MONO } },
+        grid: { color: BORDER },
+        ticks: { color: SUBTLE, font: { size: 8, family: MONO } },
       },
       y: {
-        title: {
-          display: true,
-          text: 'Implied Volatility (%)',
-          color: '#9ca3af',
-        },
-        grid: {
-          color: '#374151',
-        },
-        ticks: {
-          color: '#9ca3af',
-          callback: (value) => `${value}%`,
-        },
+        title: { display: true, text: 'IV (%)', color: SUBTLE, font: { size: 8, family: MONO } },
+        grid: { color: BORDER },
+        ticks: { color: SUBTLE, callback: v => `${v}%`, font: { size: 8, family: MONO } },
       },
     },
   };
 
-  if (termStructureLoading && chartData.labels.length === 0) {
+  if (termStructureLoading && !chartData.labels.length) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-900">
-        <div className="text-gray-400 text-sm">Loading term structure...</div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', background:BG, fontFamily:MONO }}>
+        <span style={{ color:SUBTLE, fontSize:10 }}>LOADING TERM STRUCTURE...</span>
       </div>
     );
   }
 
-  if (!termStructureLoading && chartData.labels.length === 0) {
+  if (!termStructureLoading && !chartData.labels.length) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-900">
-        <div className="text-gray-400 text-sm">No term structure data available</div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', background:BG, fontFamily:MONO }}>
+        <span style={{ color:SUBTLE, fontSize:10 }}>NO TERM STRUCTURE DATA AVAILABLE</span>
       </div>
     );
   }
 
   return (
-    <div className="h-full bg-gray-900 p-4">
+    <div style={{ height:'100%', background:BG, padding:12, boxSizing:'border-box' }}>
       <Line data={chartData} options={options} />
     </div>
   );

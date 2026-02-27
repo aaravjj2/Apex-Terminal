@@ -1,230 +1,384 @@
-/**
- * MarketplaceUI2 — W82: Marketplace
- * Extension marketplace with listing, review, and discovery workflows
- *
- * Production-grade terminal interface using ui2 design system.
- * Tabs: Overview | Data | Analytics | Configuration
- */
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// MarketplaceUI2 â€” Bloomberg MKTX extension marketplace terminal
+// Listing discovery, reviews, publishers, featured rankings, audit
+// Tabs: LISTINGS | DISCOVERY | REVIEWS | PUBLISHERS | AUDIT
+// APIs: /api/v4/marketplace/listings, /discovery, /reviews, /publishers, /audit
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  PageHeader, Tabs, Panel, DataTable, StatusBadge, KPIStrip, Button, EmptyState, Skeleton,
-} from '../components';
-import type { ColumnDef, KPIItem } from '../components';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
-const API = '/api/v4/marketplace';
-
-const TABS = [
-  { id: 'overview',  label: 'Overview' },
-  { id: 'data',      label: 'Data' },
-  { id: 'analytics', label: 'Analytics' },
-  { id: 'config',    label: 'Configuration' },
-];
-
-const S = {
-  page:    { height: '100%', display: 'flex', flexDirection: 'column' as const, overflow: 'hidden' },
-  content: { flex: 1, overflow: 'auto', padding: '0 16px 16px 16px' },
-  gap:     { display: 'flex', flexDirection: 'column' as const, gap: 'var(--ui2-space-4)' },
-  grid2:   { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--ui2-space-3)' },
-  grid3:   { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--ui2-space-3)' },
-  surface: { background: 'var(--ui2-bg-surface)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', padding: 'var(--ui2-space-3)' } as React.CSSProperties,
-  mono:    { fontFamily: 'var(--ui2-font-mono)', fontSize: '11px', color: 'var(--ui2-text-tertiary)' } as React.CSSProperties,
-  dimText: { fontSize: '11px', color: 'var(--ui2-text-muted)' } as React.CSSProperties,
-  label:   { fontSize: '11px', fontWeight: 600, color: 'var(--ui2-text-secondary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '4px', display: 'block' } as React.CSSProperties,
-  errorBox:  { background: 'var(--ui2-danger-bg)', border: '1px solid var(--ui2-danger-border)', borderRadius: 'var(--ui2-radius-sm)', padding: 'var(--ui2-space-3)', color: 'var(--ui2-danger)', fontSize: '13px' } as React.CSSProperties,
-};
-
-interface DataItem { [key: string]: unknown }
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={S.dimText}>{label}</span>
-      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ui2-text-primary)' }}>{value}</span>
-    </div>
-  );
+interface MarketListing {
+  listingId: string
+  name: string
+  description: string
+  publisher: string
+  category: string
+  version: string
+  price: number
+  pricingModel: 'free' | 'freemium' | 'paid' | 'subscription'
+  downloads: number
+  rating: number
+  reviews: number
+  featured: boolean
+  status: 'active' | 'deprecated' | 'beta' | 'suspended'
+  publishedAt: string
+  updatedAt: string
 }
 
-function MetricCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={S.surface}>
-      <div style={S.dimText}>{label}</div>
-      <div style={{ fontSize: '16px', fontWeight: 700, fontFamily: 'var(--ui2-font-mono)', color: 'var(--ui2-text-primary)', marginTop: '2px' }}>{value}</div>
-    </div>
-  );
+interface DiscoveryEntry {
+  discoveryId: string
+  listingId: string
+  name: string
+  recommendationScore: number
+  reason: string
+  category: string
+  trending: boolean
+  newlyAdded: boolean
+  rankChange: number
+  compatibilityScore: number
 }
+
+interface MarketReview {
+  reviewId: string
+  listingId: string
+  listingName: string
+  reviewer: string
+  rating: number
+  title: string
+  body: string
+  helpfulVotes: number
+  verified: boolean
+  status: 'published' | 'pending' | 'rejected' | 'flagged'
+  createdAt: string
+}
+
+interface PublisherEntry {
+  publisherId: string
+  name: string
+  verified: boolean
+  totalListings: number
+  totalDownloads: number
+  avgRating: number
+  trustLevel: 'gold' | 'silver' | 'bronze' | 'standard' | 'suspended'
+  joinedAt: string
+  activeListings: number
+  revenue: number
+}
+
+interface MarketAuditEntry {
+  auditId: string
+  listingId: string
+  action: string
+  actor: string
+  previousStatus: string
+  newStatus: string
+  outcome: 'pass' | 'fail' | 'warn'
+  notes: string
+  timestamp: string
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function PricingBadge({ p }: { p: string }) {
+  const m: Record<string, string> = { free: GREEN, freemium: BLUE, paid: AMBER, subscription: PURPLE }
+  const c = m[p] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{p.toUpperCase()}</span>
+}
+function StatusBadge2({ s }: { s: string }) {
+  const m: Record<string, string> = { active: GREEN, deprecated: SUBTLE, beta: BLUE, suspended: RED, published: GREEN, pending: AMBER, rejected: RED, flagged: ORANGE, pass: GREEN, fail: RED, warn: AMBER }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.toUpperCase()}</span>
+}
+function TrustBadge({ t }: { t: string }) {
+  const m: Record<string, string> = { gold: AMBER, silver: TEXT, bronze: ORANGE, standard: SUBTLE, suspended: RED }
+  const c = m[t] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{t.toUpperCase()}</span>
+}
+function StarRating({ r }: { r: number }) {
+  const filled = Math.round(r)
+  return <span style={{ fontFamily: MONO, fontSize: 11, color: AMBER }}>{'â˜…'.repeat(filled)}{'â˜†'.repeat(5 - filled)} <span style={{ color: SUBTLE, fontSize: 9 }}>{r.toFixed(1)}</span></span>
+}
+function ScoreBar({ score, col }: { score: number; col?: string }) {
+  const c = col ?? (score >= 80 ? GREEN : score >= 60 ? AMBER : RED)
+  return (
+    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      <div style={{ width: 50, height: 4, background: BORDER, borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${score}%`, background: c }} />
+      </div>
+      <span style={{ fontFamily: MONO, fontSize: 10, color: c }}>{score}</span>
+    </div>
+  )
+}
+
 
 export function MarketplaceUI2() {
-  const [tab, setTab] = useState('overview');
-  const [data, setData] = useState<DataItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [stats, setStats] = useState<Record<string, any>>({ });
+  const [tab, setTab] = useState<'listings' | 'discovery' | 'reviews' | 'publishers' | 'audit'>('listings')
+  const [listings, setListings] = useState<MarketListing[]>([])
+  const [discovery, setDiscovery] = useState<DiscoveryEntry[]>([])
+  const [reviews, setReviews] = useState<MarketReview[]>([])
+  const [publishers, setPublishers] = useState<PublisherEntry[]>([])
+  const [auditLog, setAuditLog] = useState<MarketAuditEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const fetchAll = useCallback(async () => {
     try {
-      const r = await fetch(`${API}/listings` );
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const json = await r.json();
-      setData(Array.isArray(json.data) ? json.data : []);
-      setStats(json.metadata || {});
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  }, []);
+      const [rL, rD, rR, rP, rA] = await Promise.allSettled([
+        fetch('/api/v4/marketplace/listings').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/marketplace/discovery').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/marketplace/reviews').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/marketplace/publishers').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/marketplace/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rL.status === 'fulfilled') {
+        const raw = Array.isArray(rL.value) ? rL.value : rL.value.listings ?? rL.value.data ?? []
+        setListings(raw.map((l: any) => ({
+          listingId: l.listing_id ?? l.listingId ?? '', name: l.name ?? '', description: l.description ?? '',
+          publisher: l.publisher ?? '', category: l.category ?? '', version: l.version ?? '',
+          price: Number(l.price ?? 0), pricingModel: l.pricing_model ?? l.pricingModel ?? 'free',
+          downloads: Number(l.downloads ?? 0), rating: Number(l.rating ?? 0), reviews: Number(l.reviews ?? 0),
+          featured: Boolean(l.featured ?? false), status: l.status ?? 'active',
+          publishedAt: l.published_at ?? l.publishedAt ?? '', updatedAt: l.updated_at ?? l.updatedAt ?? '',
+        })))
+        setErr(null)
+      } else setErr('Failed to load listings')
+      if (rD.status === 'fulfilled') {
+        const raw = Array.isArray(rD.value) ? rD.value : rD.value.discovery ?? rD.value.data ?? []
+        setDiscovery(raw.map((d: any) => ({
+          discoveryId: d.discovery_id ?? d.discoveryId ?? '', listingId: d.listing_id ?? d.listingId ?? '',
+          name: d.name ?? '', recommendationScore: Number(d.recommendation_score ?? d.recommendationScore ?? 0),
+          reason: d.reason ?? '', category: d.category ?? '', trending: Boolean(d.trending ?? false),
+          newlyAdded: Boolean(d.newly_added ?? d.newlyAdded ?? false),
+          rankChange: Number(d.rank_change ?? d.rankChange ?? 0),
+          compatibilityScore: Number(d.compatibility_score ?? d.compatibilityScore ?? 0),
+        })))
+      }
+      if (rR.status === 'fulfilled') {
+        const raw = Array.isArray(rR.value) ? rR.value : rR.value.reviews ?? rR.value.data ?? []
+        setReviews(raw.map((r: any) => ({
+          reviewId: r.review_id ?? r.reviewId ?? '', listingId: r.listing_id ?? r.listingId ?? '',
+          listingName: r.listing_name ?? r.listingName ?? '', reviewer: r.reviewer ?? '',
+          rating: Number(r.rating ?? 0), title: r.title ?? '', body: r.body ?? '',
+          helpfulVotes: Number(r.helpful_votes ?? r.helpfulVotes ?? 0),
+          verified: Boolean(r.verified ?? false), status: r.status ?? 'published',
+          createdAt: r.created_at ?? r.createdAt ?? '',
+        })))
+      }
+      if (rP.status === 'fulfilled') {
+        const raw = Array.isArray(rP.value) ? rP.value : rP.value.publishers ?? rP.value.data ?? []
+        setPublishers(raw.map((p: any) => ({
+          publisherId: p.publisher_id ?? p.publisherId ?? '', name: p.name ?? '',
+          verified: Boolean(p.verified ?? false), totalListings: Number(p.total_listings ?? p.totalListings ?? 0),
+          totalDownloads: Number(p.total_downloads ?? p.totalDownloads ?? 0),
+          avgRating: Number(p.avg_rating ?? p.avgRating ?? 0),
+          trustLevel: p.trust_level ?? p.trustLevel ?? 'standard',
+          joinedAt: p.joined_at ?? p.joinedAt ?? '', activeListings: Number(p.active_listings ?? p.activeListings ?? 0),
+          revenue: Number(p.revenue ?? 0),
+        })))
+      }
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.audit ?? rA.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '', listingId: a.listing_id ?? a.listingId ?? '',
+          action: a.action ?? '', actor: a.actor ?? '',
+          previousStatus: a.previous_status ?? a.previousStatus ?? '', newStatus: a.new_status ?? a.newStatus ?? '',
+          outcome: a.outcome ?? 'pass', notes: a.notes ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 20000); return () => clearInterval(id) }, [fetchAll])
 
-  const columns: ColumnDef<DataItem>[] = [
-    { key: 'id', label: 'ID', width: '120px', render: (_v, row) => <span style={S.mono}>{String(row.id || '—')}</span> },
-    { key: 'name', label: 'Name', width: '200px' },
-    { key: 'status', label: 'Status', width: '100px', render: (_v, row) => <StatusBadge variant={String(row.status) === 'active' ? 'success' : 'neutral'}>{String(row.status || 'pending')}</StatusBadge> },
-    { key: 'updated', label: 'Updated', width: '140px', render: (_v, row) => <span style={{ fontSize: '12px' }}>{String(row.updated || '—')}</span> },
-  ];
+  const activeListings = listings.filter(l => l.status === 'active').length
+  const suspended = listings.filter(l => l.status === 'suspended').length
+  const totalDownloads = listings.reduce((s, l) => s + l.downloads, 0)
+  const flaggedReviews = reviews.filter(r => r.status === 'flagged').length
 
-  const kpiItems: KPIItem[] = [
-    { id: 'total', label: 'Total Items', value: String(data.length), status: 'neutral', icon: <span style={{ fontSize: '16px' }}>📊</span> },
-    { id: 'active', label: 'Active', value: String(data.filter((d: any) => d.status === 'active').length), status: 'success', icon: <span style={{ fontSize: '16px' }}>✅</span> },
-    { id: 'week', label: 'Week', value: 'W82', status: 'neutral', icon: <span style={{ fontSize: '16px' }}>🏪</span> },
-    { id: 'version', label: 'API Version', value: 'v4', status: 'neutral', icon: <span style={{ fontSize: '16px' }}>🔗</span> },
-  ];
+  const TABS2 = [
+    { id: 'listings' as const, label: 'LISTINGS' },
+    { id: 'discovery' as const, label: 'DISCOVERY' },
+    { id: 'reviews' as const, label: 'REVIEWS' },
+    { id: 'publishers' as const, label: 'PUBLISHERS' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <div data-testid="marketplace-page" data-ready="true" style={S.page}>
-      <div style={{ padding: '12px 16px 0 16px' }}>
-        <PageHeader title="Marketplace" subtitle="Extension marketplace with listing, review, and discovery workflows" testId="marketplace-header" />
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>MKTX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EXTENSION MARKETPLACE â€” LISTING + DISCOVERY + REVIEWS + PUBLISHER MANAGEMENT</span>
+        {suspended > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {suspended} SUSPENDED</span>}
+        {flaggedReviews > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {flaggedReviews} FLAGGED REVIEWS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
       </div>
-      <div style={{ padding: '0 16px 8px 16px' }}>
-        <Tabs items={TABS} activeTab={tab} onTabChange={setTab} testId="marketplace-tabs" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Active Listings" value={activeListings} col={BLUE} />
+        <StatCard label="Suspended" value={suspended} col={suspended > 0 ? RED : GREEN} />
+        <StatCard label="Total Downloads" value={totalDownloads.toLocaleString()} col={GREEN} />
+        <StatCard label="Publishers" value={publishers.length} col={PURPLE} />
+        <StatCard label="Flagged Reviews" value={flaggedReviews} col={flaggedReviews > 0 ? AMBER : GREEN} />
       </div>
-      <div style={S.content}>
-        {error && <div style={S.errorBox}>{error}</div>}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
 
-        {tab === 'overview' && (
-          <div style={S.gap}>
-            <KPIStrip items={kpiItems} variant="hero" testId="marketplace-kpi" />
-            <div style={S.grid2}>
-              <Panel title="Service Status" variant="elevated" padding="md" testId="marketplace-status"
-                status={<StatusBadge variant="success">Operational</StatusBadge>}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <InfoRow label="Feature" value="Marketplace" />
-                  <InfoRow label="Week" value="W82" />
-                  <InfoRow label="API Prefix" value="/api/v4/marketplace" />
-                  <InfoRow label="Endpoints" value="5" />
-                  <InfoRow label="Version" value="v4" />
-                </div>
-              </Panel>
-              <Panel title="Quick Actions" variant="elevated" padding="md" testId="marketplace-actions">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ui2-space-2)' }}>
-                  <Button variant="primary" fullWidth onClick={fetchData} loading={loading} testId="marketplace-refresh">
-                    Refresh Data
-                  </Button>
-                  <Button variant="secondary" fullWidth testId="marketplace-export">
-                    Export Report
-                  </Button>
-                  <Button variant="ghost" fullWidth testId="marketplace-docs">
-                    View Documentation
-                  </Button>
-                </div>
-              </Panel>
-            </div>
+        {tab === 'listings' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Name</Th><Th>Publisher</Th><Th>Category</Th><Th>Status</Th><Th>Pricing</Th><Th right>Price</Th><Th right>Downloads</Th><Th>Rating</Th><Th right>Reviews</Th><Th>Featured</Th><Th>Version</Th><Th>Updated</Th></tr></thead>
+              <tbody>
+                {listings.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No listings â€” check /api/v4/marketplace/listings</td></tr>}
+                {listings.sort((a, b) => b.downloads - a.downloads).map((l, i) => (
+                  <tr key={i} style={{ background: l.status === 'suspended' ? RED + '0a' : l.featured ? AMBER + '05' : 'transparent' }}>
+                    <Td mono col={AMBER}>{l.name}</Td>
+                    <Td mono col={BLUE}>{l.publisher}</Td>
+                    <Td mono col={PURPLE}>{l.category}</Td>
+                    <Td><StatusBadge2 s={l.status} /></Td>
+                    <Td><PricingBadge p={l.pricingModel} /></Td>
+                    <Td right mono col={l.price > 0 ? AMBER : SUBTLE}>{l.price > 0 ? `$${l.price.toFixed(2)}` : 'FREE'}</Td>
+                    <Td right mono col={SUBTLE}>{l.downloads.toLocaleString()}</Td>
+                    <Td><StarRating r={l.rating} /></Td>
+                    <Td right mono col={SUBTLE}>{l.reviews.toLocaleString()}</Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: l.featured ? AMBER : SUBTLE }}>{l.featured ? 'â˜… FEATURED' : 'â€”'}</span></Td>
+                    <Td mono col={SUBTLE}>{l.version}</Td>
+                    <Td mono col={SUBTLE}>{l.updatedAt}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'data' && (
-          <div style={S.gap}>
-            {loading ? <Skeleton height={300} /> : data.length > 0 ? (
-              <Panel title="Marketplace Data" variant="default" padding="none" testId="marketplace-data-panel">
-                <DataTable columns={columns} data={data} keyField="id" density="compact" testId="marketplace-table" />
-              </Panel>
-            ) : (
-              <EmptyState title="No data available" description="Run a refresh or check the API connection to load data." />
-            )}
+        {tab === 'discovery' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Name</Th><Th>Category</Th><Th>Score</Th><Th>Compatibility</Th><Th>Trending</Th><Th>New</Th><Th right>Rank Change</Th><Th>Reason</Th></tr></thead>
+              <tbody>
+                {discovery.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No discovery data â€” check /api/v4/marketplace/discovery</td></tr>}
+                {discovery.sort((a, b) => b.recommendationScore - a.recommendationScore).map((d, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{d.name}</Td>
+                    <Td mono col={PURPLE}>{d.category}</Td>
+                    <Td><ScoreBar score={d.recommendationScore} col={BLUE} /></Td>
+                    <Td><ScoreBar score={d.compatibilityScore} /></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.trending ? ORANGE : SUBTLE }}>{d.trending ? 'â–² TRENDING' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.newlyAdded ? GREEN : SUBTLE }}>{d.newlyAdded ? 'â˜… NEW' : 'â€”'}</span></Td>
+                    <Td right mono col={d.rankChange > 0 ? GREEN : d.rankChange < 0 ? RED : SUBTLE}>{d.rankChange > 0 ? `+${d.rankChange}` : d.rankChange}</Td>
+                    <Td mono col={SUBTLE}>{d.reason}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'analytics' && (
-          <div style={S.gap}>
-            <Panel title="Analytics Overview" variant="elevated" padding="md" testId="marketplace-analytics">
-              <div style={S.grid3}>
-                <MetricCell label="Data Points" value={String(data.length)} />
-                <MetricCell label="API Calls" value="—" />
-                <MetricCell label="Latency (p99)" value="—" />
-                <MetricCell label="Error Rate" value="0%" />
-                <MetricCell label="Throughput" value="—" />
-                <MetricCell label="Cache Hit" value="—" />
-              </div>
-            </Panel>
-            <Panel title="Recent Activity" variant="bordered" padding="md" testId="marketplace-activity">
-              <EmptyState title="No recent activity" description="Analytics data will populate as the service processes requests." />
-            </Panel>
+        {tab === 'reviews' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Review ID</Th><Th>Listing</Th><Th>Reviewer</Th><Th>Rating</Th><Th>Status</Th><Th>Verified</Th><Th right>Helpful</Th><Th>Title</Th><Th>Created</Th></tr></thead>
+              <tbody>
+                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews â€” check /api/v4/marketplace/reviews</td></tr>}
+                {reviews.sort((a, b) => {
+                  const p: Record<string, number> = { flagged: 0, pending: 1, rejected: 2, published: 3 }
+                  return (p[a.status] ?? 4) - (p[b.status] ?? 4)
+                }).map((r, i) => (
+                  <tr key={i} style={{ background: r.status === 'flagged' ? AMBER + '0a' : 'transparent' }}>
+                    <Td mono col={AMBER}>{r.reviewId}</Td>
+                    <Td mono col={BLUE}>{r.listingName}</Td>
+                    <Td mono col={TEXT}>{r.reviewer}</Td>
+                    <Td><StarRating r={r.rating} /></Td>
+                    <Td><StatusBadge2 s={r.status} /></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.verified ? GREEN : SUBTLE }}>{r.verified ? 'âœ“ VERIFIED' : 'â€”'}</span></Td>
+                    <Td right mono col={r.helpfulVotes > 0 ? GREEN : SUBTLE}>{r.helpfulVotes}</Td>
+                    <Td mono col={TEXT}>{r.title ? r.title.slice(0, 35) + (r.title.length > 35 ? 'â€¦' : '') : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.createdAt}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'config' && (
-          <div style={S.gap}>
-            <Panel title="Service Configuration" variant="elevated" padding="md" testId="marketplace-config">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <InfoRow label="API Endpoint" value="/api/v4/marketplace" />
-                <InfoRow label="Week" value="W82" />
-                <InfoRow label="Section" value="tools" />
-                <InfoRow label="Auto-refresh" value="Enabled" />
-                <InfoRow label="Cache TTL" value="60s" />
-              </div>
-            </Panel>
-            <Panel title="Endpoints" variant="bordered" padding="md" testId="marketplace-endpoints">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/listings
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>List marketplace listings</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/listings/{id}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Get listing details</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="warning">POST</StatusBadge>
-                      {' '}/submit
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Submit listing for review</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/reviews/{id}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>List listing reviews</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/categories
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>List marketplace categories</div>
-                </div>
-              </div>
-            </Panel>
+        {tab === 'publishers' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Publisher ID</Th><Th>Name</Th><Th>Trust</Th><Th>Verified</Th><Th right>Listings</Th><Th right>Active</Th><Th right>Downloads</Th><Th>Rating</Th><Th right>Revenue</Th><Th>Joined</Th></tr></thead>
+              <tbody>
+                {publishers.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No publishers â€” check /api/v4/marketplace/publishers</td></tr>}
+                {publishers.sort((a, b) => b.totalDownloads - a.totalDownloads).map((p, i) => (
+                  <tr key={i} style={{ background: p.trustLevel === 'suspended' ? RED + '0a' : 'transparent' }}>
+                    <Td mono col={AMBER}>{p.publisherId}</Td>
+                    <Td mono col={BLUE}>{p.name}</Td>
+                    <Td><TrustBadge t={p.trustLevel} /></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: p.verified ? GREEN : SUBTLE }}>{p.verified ? 'âœ“ YES' : 'NO'}</span></Td>
+                    <Td right mono col={SUBTLE}>{p.totalListings}</Td>
+                    <Td right mono col={GREEN}>{p.activeListings}</Td>
+                    <Td right mono col={SUBTLE}>{p.totalDownloads.toLocaleString()}</Td>
+                    <Td><StarRating r={p.avgRating} /></Td>
+                    <Td right mono col={p.revenue > 0 ? GREEN : SUBTLE}>{p.revenue > 0 ? `$${p.revenue.toLocaleString()}` : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.joinedAt}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Listing</Th><Th>Action</Th><Th>Actor</Th><Th>From</Th><Th>To</Th><Th>Outcome</Th><Th>Notes</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/marketplace/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={BLUE}>{a.listingId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td mono col={SUBTLE}>{a.previousStatus}</Td>
+                    <Td mono col={TEXT}>{a.newStatus}</Td>
+                    <Td><StatusBadge2 s={a.outcome} /></Td>
+                    <Td mono col={SUBTLE}>{a.notes || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }

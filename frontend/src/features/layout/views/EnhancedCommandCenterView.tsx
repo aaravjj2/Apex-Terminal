@@ -1,299 +1,130 @@
-/**
- * Enhanced Command Center View
- * 
- * Unified dashboard combining:
- * - Financial Intelligence Dashboard
- * - Multi-Agent Finance Analysis
- * - Real-Time P&L Analytics
- * - Risk Assessment
- * - Portfolio Overview
- */
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+const StatPill=({label,value,color}:{label:string,value:string,color?:string})=>(
+  <div style={{display:'flex',flexDirection:'column' as const,alignItems:'center',
+    padding:'6px 12px',background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,minWidth:80}}>
+    <span style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:2}}>{label}</span>
+    <span style={{fontSize:12,color:color||TEXT,fontFamily:MONO,fontWeight:700}}>{value}</span>
+  </div>
+)
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-    Activity, Brain, Bot, BarChart2, Wallet, TrendingUp,
-    TrendingDown, RefreshCw, Globe, Target, FileText
-} from 'lucide-react';
-import { cn } from '../../../ui/utils';
-import { Badge } from '../../../ui/Badge';
-import { Button } from '../../../ui/Button';
-import { PageHeader } from '../../../ui/PageHeader';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../ui/Tabs';
+import React from 'react';
+import { useAutopilotStore } from '../../autopilot/store';
+import { API_BASE } from '../../../config/api';
 import { FinancialIntelligenceDashboard } from '../../dashboard/FinancialIntelligenceDashboard';
 import { MultiAgentFinancePanel } from '../../dashboard/MultiAgentFinancePanel';
 import { RealTimePnLAnalytics } from '../../dashboard/RealTimePnLAnalytics';
-import { useAutopilotStore } from '../../autopilot/store';
-import { API_BASE } from '../../../config/api';
 
-// Types
 interface QuickStats {
-    total_equity: number;
-    open_pnl: number;
-    day_pnl: number;
-    buying_power: number;
-    position_count: number;
-    active_orders: number;
-    win_rate: number;
+  total_equity: number; open_pnl: number; day_pnl: number;
+  buying_power: number; position_count: number; active_orders: number; win_rate: number;
 }
 
-interface MarketStatus {
-    status: 'open' | 'closed' | 'pre' | 'post';
-    next_open?: string;
-    next_close?: string;
-}
+const fmtUSD=(v:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v)
+const fmtPct=(v:number)=>`${(v*100).toFixed(1)}%`
+const fmtPnl=(v:number)=>(v>=0?'+':'')+fmtUSD(v)
 
-// Format helpers
-const formatCurrency = (v: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
-
-// Quick Stat Pill - Professional Bloomberg-style
-function StatPill({ icon: Icon, label, value, trend, compact = false }: {
-    icon: React.ElementType;
-    label: string;
-    value: string;
-    trend?: 'up' | 'down' | 'neutral';
-    compact?: boolean;
-}) {
-    return (
-        <div className={cn(
-            "flex items-center gap-2.5 px-3.5 py-2 rounded-lg border transition-colors",
-            compact ? "gap-1.5 px-2.5 py-1.5" : "gap-2.5",
-            trend === 'up' ? 'bg-green-500/5 border-green-500/15' :
-            trend === 'down' ? 'bg-red-500/5 border-red-500/15' :
-            'bg-element-bg/80 border-border/50'
-        )}>
-            <div className={cn(
-                "flex items-center justify-center w-7 h-7 rounded-md",
-                trend === 'up' ? 'bg-green-500/10' :
-                trend === 'down' ? 'bg-red-500/10' :
-                'bg-brand/10'
-            )}>
-                <Icon size={compact ? 12 : 14} className={cn(
-                    trend === 'up' ? 'text-up' :
-                    trend === 'down' ? 'text-down' :
-                    'text-brand'
-                )} />
-            </div>
-            <div className="flex flex-col">
-                {!compact && <span className="text-[10px] text-text-muted uppercase tracking-wider leading-none mb-0.5">{label}</span>}
-                <span className={cn(
-                    "text-sm font-semibold tabular-nums leading-none",
-                    trend === 'up' ? 'text-up' :
-                    trend === 'down' ? 'text-down' :
-                    'text-text'
-                )}>
-                    {value}
-                </span>
-            </div>
-        </div>
-    );
-}
-
-// Market Status Badge
-function MarketStatusBadge({ status }: { status: MarketStatus | null }) {
-    if (!status) return null;
-
-    const colors = {
-        open: 'bg-up/20 text-up border-up',
-        closed: 'bg-down/20 text-down border-down',
-        pre: 'bg-warn/20 text-warn border-warn',
-        post: 'bg-brand/20 text-brand border-brand'
-    };
-
-    const labels = {
-        open: '🟢 Market Open',
-        closed: '🔴 Market Closed',
-        pre: '🟡 Pre-Market',
-        post: '🟣 After Hours'
-    };
-
-    return (
-        <span className={cn(
-            "px-2 py-0.5 rounded text-[10px] font-bold uppercase border",
-            colors[status.status]
-        )}>
-            {labels[status.status]}
-        </span>
-    );
-}
-
-// Main Component
 export function EnhancedCommandCenterView() {
-    const [stats, setStats] = useState<QuickStats | null>(null);
-    const [marketStatus] = useState<MarketStatus | null>({ status: 'open' });
-    const [loading, setLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState('overview');
+  const [stats, setStats] = useState<QuickStats|null>(null);
+  const [tab, setTab] = useState('overview');
+  const [loading, setLoading] = useState(false);
+  const { status: apStatus, fetchStatus } = useAutopilotStore();
 
-    const { status: autopilotStatus, fetchStatus } = useAutopilotStore();
+  const fetchData = useCallback(async()=>{
+    setLoading(true);
+    try {
+      const res=await fetch(`${API_BASE}/api/v1/portfolio/unified`);
+      if(res.ok){
+        const d=await res.json();
+        setStats({total_equity:d.stats?.total_equity??0,open_pnl:d.stats?.open_pnl??0,
+          day_pnl:d.stats?.day_pnl??0,buying_power:d.stats?.buying_power??0,
+          position_count:d.stats?.position_count??0,active_orders:d.stats?.order_count??0,win_rate:0.65});
+      }
+    } catch { console.error('Failed to fetch stats'); }
+    setLoading(false);
+  },[]);
 
-    // Fetch data
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/portfolio/unified`);
-            if (res.ok) {
-                const data = await res.json();
-                setStats({
-                    total_equity: data.stats?.total_equity ?? 0,
-                    open_pnl: data.stats?.open_pnl ?? 0,
-                    day_pnl: data.stats?.day_pnl ?? 0,
-                    buying_power: data.stats?.buying_power ?? 0,
-                    position_count: data.stats?.position_count ?? 0,
-                    active_orders: data.stats?.order_count ?? 0,
-                    win_rate: 0.65 // Would come from analytics
-                });
-            }
-        } catch (e) {
-            console.error('Failed to fetch stats:', e);
-        }
-        setLoading(false);
-    }, []);
+  useEffect(()=>{
+    fetchData(); fetchStatus();
+    const iv=setInterval(()=>{fetchData();fetchStatus();},30000);
+    return()=>clearInterval(iv);
+  },[fetchData,fetchStatus]);
 
-    useEffect(() => {
-        let mounted = true;
-        const load = async () => {
-            if (mounted) {
-                await fetchData();
-                await fetchStatus();
-            }
-        };
-        load();
-        const interval = setInterval(load, 30000);
-        return () => {
-            mounted = false;
-            clearInterval(interval);
-        };
-    }, [fetchData, fetchStatus]);
+  const pnlPos=(stats?.open_pnl??0)>=0;
+  const apState=apStatus?.kill_switch?'KILLED':apStatus?.state?.toUpperCase()||'IDLE';
+  const apColor=apStatus?.state==='running'?GREEN:apStatus?.state==='paused'?AMBER:apStatus?.kill_switch?RED:SUBTLE;
+  const mktSentScore=apStatus?.sentiment?.sentiment_scores?.MARKET??0;
+  const mktSentLabel=mktSentScore>0.3?'BULLISH':mktSentScore<-0.3?'BEARISH':'NEUTRAL';
+  const mktSentColor=mktSentScore>0.3?GREEN:mktSentScore<-0.3?RED:SUBTLE;
 
-    const isPnlPositive = (stats?.open_pnl ?? 0) >= 0;
+  const tabs=['overview','agents','analytics'] as const;
+  const tbtn=(t:string):React.CSSProperties=>({padding:'6px 16px',fontSize:10,fontFamily:MONO,
+    cursor:'pointer',background:'none',border:'none',letterSpacing:'0.08em',
+    borderBottom:tab===t?`2px solid ${AMBER}`:'2px solid transparent',
+    color:tab===t?AMBER:SUBTLE,textTransform:'uppercase' as const})
 
-    return (
-        <div className="h-full flex flex-col bg-background overflow-hidden" data-testid="command-center-view">
-            {/* Enhanced Header with PageHeader */}
-            <PageHeader
-                title="Command Center"
-                subtitle="Real-time portfolio intelligence &amp; analytics"
-                icon={<Activity size={20} />}
-                badge={
-                    <div className="flex items-center gap-2">
-                        <MarketStatusBadge status={marketStatus} />
-                        <Badge
-                            variant={autopilotStatus?.state === 'running' ? 'success' :
-                                    autopilotStatus?.state === 'paused' ? 'warning' :
-                                    autopilotStatus?.kill_switch ? 'error' : 'default'}
-                            dot
-                        >
-                            <Bot size={10} className="mr-0.5" />
-                            AP: {autopilotStatus?.kill_switch ? 'KILLED' : autopilotStatus?.state?.toUpperCase() || 'IDLE'}
-                        </Badge>
-                    </div>
-                }
-                actions={
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="success"
-                            size="sm"
-                            onClick={() => {
-                                window.dispatchEvent(new CustomEvent('navigate-risk-desk', { detail: { loadDemo: true } }));
-                            }}
-                            data-testid="start-risk-desk-demo-btn"
-                        >
-                            <TrendingUp size={14} />
-                            Risk Desk Demo
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={fetchData}
-                            disabled={loading}
-                        >
-                            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        </Button>
-                    </div>
-                }
-                data-testid="command-center-header"
-            />
+  return (
+    <div data-testid="command-center-view"
+      style={{height:'100%',display:'flex',flexDirection:'column' as const,background:BG,fontFamily:MONO}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'6px 14px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0,flexWrap:'wrap' as const}}>
+        <span style={{fontSize:11,color:AMBER,letterSpacing:'0.1em'}}>CC</span>
+        <span style={{fontSize:12,color:TEXT,fontWeight:700}}>COMMAND CENTER</span>
+        <span style={{fontSize:9,padding:'2px 6px',border:`1px solid ${apColor}`,
+          color:apColor,borderRadius:2}}>AP: {apState}</span>
+        {apStatus?.sentiment&&(
+          <span style={{fontSize:9,padding:'2px 6px',border:`1px solid ${mktSentColor}`,
+            color:mktSentColor,borderRadius:2}}>MKT: {mktSentLabel}</span>
+        )}
+        <div style={{flex:1}}/>
+        <button onClick={()=>{window.dispatchEvent(new CustomEvent('navigate-risk-desk',{detail:{loadDemo:true}}));}}
+          data-testid="start-risk-desk-demo-btn"
+          style={{fontSize:10,padding:'4px 10px',fontFamily:MONO,cursor:'pointer',
+            border:`1px solid ${GREEN}`,background:`${GREEN}22`,color:GREEN,borderRadius:2}}>
+          RISK DESK DEMO
+        </button>
+        <button onClick={()=>{fetchData();fetchStatus();}} disabled={loading}
+          style={{background:PANEL,border:`1px solid ${BORDER}`,color:loading?SUBTLE:TEXT,fontFamily:MONO,
+            fontSize:10,padding:'4px 10px',cursor:'pointer',borderRadius:2}}>
+          {loading?'...':'REFRESH'}
+        </button>
+      </div>
 
-            {/* Quick Stats Ribbon */}
-            <div className="shrink-0 px-5 py-2.5 flex items-center gap-2.5 bg-gradient-to-r from-panel-bg/80 to-panel-bg/40 border-b border-border/50 overflow-x-auto">
-                <StatPill
-                    icon={Wallet}
-                    label="Equity"
-                    value={stats ? formatCurrency(stats.total_equity) : '---'}
-                />
-                <StatPill
-                    icon={isPnlPositive ? TrendingUp : TrendingDown}
-                    label="P&L"
-                    value={stats ? formatCurrency(stats.open_pnl) : '---'}
-                    trend={isPnlPositive ? 'up' : 'down'}
-                />
-                <StatPill
-                    icon={Target}
-                    label="Win Rate"
-                    value={stats ? `${(stats.win_rate * 100).toFixed(0)}%` : '---'}
-                    trend={(stats?.win_rate ?? 0) >= 0.5 ? 'up' : 'down'}
-                />
-                <StatPill
-                    icon={BarChart2}
-                    label="Positions"
-                    value={stats?.position_count?.toString() ?? '---'}
-                />
-                <StatPill
-                    icon={FileText}
-                    label="Orders"
-                    value={stats?.active_orders?.toString() ?? '---'}
-                />
-                <div className="flex-1" />
-                {autopilotStatus?.sentiment && (
-                    <div className={cn(
-                        "flex items-center gap-2 px-3 py-1 rounded-md text-xs border border-border/50",
-                        (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) > 0.3 ? 'bg-up/5 text-up' :
-                        (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) < -0.3 ? 'bg-down/5 text-down' :
-                        'bg-element-bg text-text-secondary'
-                    )}>
-                        <Globe size={12} />
-                        <span>
-                            {(autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) > 0.3 ? '🐂 Bullish' :
-                             (autopilotStatus.sentiment.sentiment_scores?.MARKET ?? 0) < -0.3 ? '🐻 Bearish' :
-                             '⚖️ Neutral'}
-                        </span>
-                    </div>
-                )}
-            </div>
+      {/* Stats ribbon */}
+      <div style={{display:'flex',gap:8,padding:'8px 14px',borderBottom:`1px solid ${BORDER}`,
+        background:PANEL,overflowX:'auto' as const,flexShrink:0}}>
+        <StatPill label="EQUITY" value={stats?fmtUSD(stats.total_equity):'â€”'}/>
+        <StatPill label="OPEN P&L" value={stats?fmtPnl(stats.open_pnl):'â€”'} color={pnlPos?GREEN:RED}/>
+        <StatPill label="DAY P&L" value={stats?fmtPnl(stats.day_pnl):'â€”'} color={(stats?.day_pnl??0)>=0?GREEN:RED}/>
+        <StatPill label="BUYING PWR" value={stats?fmtUSD(stats.buying_power):'â€”'} color={BLUE}/>
+        <StatPill label="POSITIONS" value={stats?.position_count?.toString()??'â€”'}/>
+        <StatPill label="ORDERS" value={stats?.active_orders?.toString()??'â€”'}/>
+        <StatPill label="WIN RATE" value={stats?fmtPct(stats.win_rate):'â€”'} color={(stats?.win_rate??0)>=0.5?GREEN:RED}/>
+      </div>
 
-            {/* Tabbed Content */}
-            <Tabs 
-                defaultValue="overview"
-                value={activeTab} 
-                onValueChange={setActiveTab}
-                className="flex-1 flex flex-col min-h-0"
-            >
-                <TabsList className="px-6 mt-1">
-                    <TabsTrigger value="overview" icon={<Brain size={12} />}>
-                        Intelligence
-                    </TabsTrigger>
-                    <TabsTrigger value="agents" icon={<Bot size={12} />}>
-                        AI Agents
-                    </TabsTrigger>
-                    <TabsTrigger value="analytics" icon={<BarChart2 size={12} />}>
-                        P&amp;L Analytics
-                    </TabsTrigger>
-                </TabsList>
+      {/* Tabs */}
+      <div style={{display:'flex',borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}}>
+        {tabs.map(t=>(
+          <button key={t} style={tbtn(t)} onClick={()=>setTab(t)}>
+            {t==='overview'?'INTELLIGENCE':t==='agents'?'AI AGENTS':'P&L ANALYTICS'}
+          </button>
+        ))}
+      </div>
 
-                <TabsContent value="overview" className="flex-1 overflow-hidden m-0 p-0">
-                    <FinancialIntelligenceDashboard />
-                </TabsContent>
-
-                <TabsContent value="agents" className="flex-1 overflow-hidden m-0 p-0">
-                    <MultiAgentFinancePanel />
-                </TabsContent>
-
-                <TabsContent value="analytics" className="flex-1 overflow-hidden m-0 p-0">
-                    <RealTimePnLAnalytics />
-                </TabsContent>
-            </Tabs>
-        </div>
-    );
+      {/* Content */}
+      <div style={{flex:1,overflow:'hidden'}}>
+        {tab==='overview'&&<FinancialIntelligenceDashboard/>}
+        {tab==='agents'&&<MultiAgentFinancePanel/>}
+        {tab==='analytics'&&<RealTimePnLAnalytics/>}
+      </div>
+    </div>
+  );
 }
 
 export default EnhancedCommandCenterView;

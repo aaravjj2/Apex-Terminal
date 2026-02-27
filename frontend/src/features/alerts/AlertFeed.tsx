@@ -1,5 +1,21 @@
-import { useState, useEffect } from 'react';
-import { Bell, X, Filter, Check, AlertTriangle, Clock, Trash2 } from 'lucide-react';
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',ORANGE='#ff8a65',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+function CondBadge({cond}:{cond:string}){
+  const c=cond.includes('above')||cond.includes('breakout')?GREEN:cond.includes('below')||cond.includes('rsi_below')?RED:ORANGE
+  return <span style={{fontSize:9,color:c,border:`1px solid ${c}`,padding:'1px 5px',borderRadius:2,
+    fontFamily:MONO,textTransform:'uppercase' as const,letterSpacing:'0.07em'}}>{cond.replace(/_/g,' ')}</span>
+}
+function StatPill({label,n,c}:{label:string,n:number,c:string}){
+  return <span style={{fontSize:10,fontFamily:MONO,color:c}}><span style={{color:SUBTLE}}>{label}:</span> {n}</span>
+}
+
+import React, { useState, useEffect,useRef } from 'react';
+
+const API_BASE = '/api/v1';
 
 interface AlertTrigger {
     id: string;
@@ -13,180 +29,190 @@ interface AlertTrigger {
     acknowledged: boolean;
 }
 
-const API_BASE = '/api/v1';
+type AFFilter='ALL'|'UNREAD'|'READ'
 
 export function AlertFeed() {
     const [triggers, setTriggers] = useState<AlertTrigger[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
-    const [showToast, setShowToast] = useState<AlertTrigger | null>(null);
+    const [filter, setFilter] = useState<AFFilter>('ALL');
+    const [toast, setToast] = useState<AlertTrigger|null>(null);
+    const [selected, setSelected] = useState<AlertTrigger|null>(null);
+    const prevLen = useRef(0);
 
     const fetchTriggers = async () => {
         try {
             const res = await fetch(`${API_BASE}/alerts/triggers`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-
-            // Check for new triggers
-            if (data.length > triggers.length) {
+            const data:AlertTrigger[] = await res.json();
+            if (data.length > prevLen.current) {
                 const newest = data[0];
-                if (!newest.acknowledged) {
-                    setShowToast(newest);
-                    setTimeout(() => setShowToast(null), 5000);
-                }
+                if (!newest.acknowledged) { setToast(newest); setTimeout(()=>setToast(null),5000); }
             }
-
+            prevLen.current = data.length;
             setTriggers(data);
         } catch (e) {
             console.error('Failed to fetch triggers:', e);
-            // Mock data
-            setTriggers([
-                { id: '1', alert_id: 'A1', alert_name: 'AAPL Above 180', symbol: 'AAPL', condition: 'price_above', target_value: 180, triggered_value: 182.41, timestamp: new Date().toISOString(), acknowledged: false },
-                { id: '2', alert_id: 'A2', alert_name: 'TSLA Below 250', symbol: 'TSLA', condition: 'price_below', target_value: 250, triggered_value: 218.77, timestamp: new Date(Date.now() - 3600000).toISOString(), acknowledged: true },
-                { id: '3', alert_id: 'A3', alert_name: 'RSI Oversold', symbol: 'MSFT', condition: 'rsi_below', target_value: 30, triggered_value: 28.5, timestamp: new Date(Date.now() - 7200000).toISOString(), acknowledged: true },
-            ]);
         }
     };
 
     useEffect(() => {
         fetchTriggers();
-        const interval = setInterval(fetchTriggers, 5000);
-        return () => clearInterval(interval);
+        const i = setInterval(fetchTriggers, 5000);
+        return () => clearInterval(i);
     }, []);
 
-    const acknowledge = (id: string) => {
-        setTriggers(prev => prev.map(t => t.id === id ? { ...t, acknowledged: true } : t));
+    const acknowledge = async (id: string) => {
+        setTriggers(prev => prev.map(t => t.id===id?{...t,acknowledged:true}:t));
+        setSelected(s=>s&&s.id===id?{...s,acknowledged:true}:s);
+    };
+    const acknowledgeAll = () => setTriggers(prev => prev.map(t=>({...t,acknowledged:true})));
+    const clearAll = () => { setTriggers([]); setSelected(null); };
+
+    const unread = triggers.filter(t=>!t.acknowledged).length;
+    const display = triggers.filter(t=>filter==='UNREAD'?!t.acknowledged:filter==='READ'?t.acknowledged:true);
+
+    const fmtTime = (iso:string) => {
+        const diff=Date.now()-new Date(iso).getTime();
+        if(diff<60000) return 'just now';
+        if(diff<3600000) return `${Math.floor(diff/60000)}m ago`;
+        if(diff<86400000) return `${Math.floor(diff/3600000)}h ago`;
+        return new Date(iso).toLocaleDateString();
     };
 
-    const acknowledgeAll = () => {
-        setTriggers(prev => prev.map(t => ({ ...t, acknowledged: true })));
-    };
-
-    const clearAll = () => {
-        setTriggers([]);
-    };
-
-    const filteredTriggers = triggers.filter(t => {
-        if (filter === 'unread') return !t.acknowledged;
-        if (filter === 'read') return t.acknowledged;
-        return true;
-    });
-
-    const unreadCount = triggers.filter(t => !t.acknowledged).length;
-
-    const formatTime = (iso: string) => {
-        const d = new Date(iso);
-        const now = new Date();
-        const diff = now.getTime() - d.getTime();
-
-        if (diff < 60000) return 'Just now';
-        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-        return d.toLocaleDateString();
-    };
-
-    const formatCondition = (cond: string) => cond.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    // Outer wrapper for the toggle button (embedded usage)
+    const S_BTN:React.CSSProperties={position:'relative',display:'inline-flex',alignItems:'center',gap:6,
+        padding:'4px 10px',fontSize:10,fontFamily:MONO,background:PANEL,border:`1px solid ${ORANGE}`,
+        color:ORANGE,cursor:'pointer',borderRadius:2}
+    const S_BADGE:React.CSSProperties={position:'absolute',top:-6,right:-6,width:16,height:16,borderRadius:'50%',
+        background:RED,color:BG,fontSize:8,fontFamily:MONO,display:'flex',alignItems:'center',
+        justifyContent:'center',fontWeight:700}
 
     return (
         <>
-            {/* Toast Notification */}
-            {showToast && (
-                <div className="fixed top-4 right-4 z-[100] animate-slide-in-right">
-                    <div className="bg-orange-600 border border-orange-500 rounded-lg shadow-lg p-4 max-w-sm flex items-start gap-3">
-                        <AlertTriangle className="text-white shrink-0 mt-0.5" size={20} />
-                        <div className="flex-1">
-                            <div className="text-sm font-semibold text-white">{showToast.alert_name}</div>
-                            <div className="text-xs text-orange-100 mt-1">
-                                {showToast.symbol}: {formatCondition(showToast.condition)} @ ${showToast.triggered_value.toFixed(2)}
-                            </div>
+            {/* Toast */}
+            {toast&&(
+                <div style={{position:'fixed',top:16,right:16,zIndex:9999,background:PANEL,border:`1px solid ${ORANGE}`,
+                    borderRadius:2,padding:'10px 14px',maxWidth:320,fontFamily:MONO,boxShadow:'0 4px 24px #0008'}}>
+                    <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+                        <span style={{color:ORANGE,fontSize:14}}>âš </span>
+                        <div style={{flex:1}}>
+                            <div style={{fontSize:11,color:TEXT,fontWeight:700,marginBottom:2}}>{toast.alert_name}</div>
+                            <div style={{fontSize:10,color:SUBTLE}}>{toast.symbol} â€” triggered @ {toast.triggered_value.toFixed(2)}</div>
                         </div>
-                        <button onClick={() => setShowToast(null)} className="text-orange-200 hover:text-white">
-                            <X size={16} />
-                        </button>
+                        <button onClick={()=>setToast(null)} style={{background:'none',border:'none',color:SUBTLE,cursor:'pointer',fontSize:12}}>âœ•</button>
                     </div>
                 </div>
             )}
 
-            {/* Button */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="relative flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded transition-colors"
-            >
-                <Bell size={14} />
-                Alert Feed
-                {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center">
-                        {unreadCount}
-                    </span>
-                )}
+            {/* Toggle button */}
+            <button onClick={()=>setIsOpen(v=>!v)} style={S_BTN}>
+                ðŸ”” ALERT FEED
+                {unread>0&&<span style={S_BADGE}>{unread}</span>}
             </button>
 
             {/* Feed Panel */}
-            {isOpen && (
-                <div className="fixed right-4 top-20 z-50 w-96 max-h-[500px] bg-gray-800 border border-gray-700 rounded-lg shadow-xl flex flex-col">
-                    <div className="p-3 border-b border-gray-700 flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-white">Alert Feed</h3>
-                        <div className="flex items-center gap-2">
-                            <button onClick={acknowledgeAll} className="text-xs text-gray-400 hover:text-white">Mark all read</button>
-                            <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-gray-700 rounded">
-                                <X size={14} className="text-gray-400" />
-                            </button>
-                        </div>
+            {isOpen&&(
+                <div style={{position:'fixed',right:16,top:56,zIndex:900,width:400,maxHeight:560,
+                    background:BG,border:`1px solid ${BORDER}`,borderRadius:2,display:'flex',flexDirection:'column',
+                    fontFamily:MONO,boxShadow:'0 8px 32px #0009'}}>
+
+                    {/* Header */}
+                    <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',
+                        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}}>
+                        <span style={{fontSize:11,color:ORANGE,letterSpacing:'0.1em'}}>AF</span>
+                        <span style={{fontSize:12,color:TEXT,fontWeight:700}}>ALERT FEED</span>
+                        <div style={{flex:1}}/>
+                        <StatPill label="TOTAL" n={triggers.length} c={TEXT}/>
+                        <StatPill label="UNREAD" n={unread} c={unread>0?RED:SUBTLE}/>
+                        <button onClick={()=>setIsOpen(false)}
+                            style={{background:'none',border:'none',color:SUBTLE,cursor:'pointer',fontSize:13,marginLeft:4}}>âœ•</button>
                     </div>
 
-                    {/* Filters */}
-                    <div className="p-2 border-b border-gray-700 flex items-center gap-2">
-                        <Filter size={12} className="text-gray-400" />
-                        {(['all', 'unread', 'read'] as const).map(f => (
-                            <button
-                                key={f}
-                                onClick={() => setFilter(f)}
-                                className={`px-2 py-1 rounded text-xs ${filter === f ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}
-                            >
-                                {f.charAt(0).toUpperCase() + f.slice(1)} {f === 'unread' && unreadCount > 0 && `(${unreadCount})`}
+                    {/* Controls */}
+                    <div style={{display:'flex',gap:4,padding:'6px 12px',borderBottom:`1px solid ${BORDER}`,
+                        background:PANEL,flexShrink:0,alignItems:'center'}}>
+                        {(['ALL','UNREAD','READ'] as AFFilter[]).map(f=>(
+                            <button key={f} onClick={()=>setFilter(f)}
+                                style={{padding:'3px 8px',fontSize:9,fontFamily:MONO,cursor:'pointer',
+                                    border:`1px solid ${filter===f?AMBER:BORDER}`,borderRadius:2,
+                                    background:filter===f?`${AMBER}22`:PANEL,
+                                    color:filter===f?AMBER:SUBTLE,textTransform:'uppercase' as const}}>
+                                {f}
                             </button>
                         ))}
-                        <button onClick={clearAll} className="ml-auto p-1 hover:bg-gray-700 rounded text-gray-400">
-                            <Trash2 size={12} />
-                        </button>
+                        <div style={{flex:1}}/>
+                        <button onClick={acknowledgeAll}
+                            style={{fontSize:9,fontFamily:MONO,background:'none',border:`1px solid ${GREEN}`,color:GREEN,
+                                padding:'2px 6px',cursor:'pointer',borderRadius:2}}>ACK ALL</button>
+                        <button onClick={clearAll}
+                            style={{fontSize:9,fontFamily:MONO,background:'none',border:`1px solid ${RED}`,color:RED,
+                                padding:'2px 6px',cursor:'pointer',borderRadius:2}}>CLEAR</button>
                     </div>
 
-                    {/* Triggers List */}
-                    <div className="flex-1 overflow-y-auto">
-                        {filteredTriggers.length === 0 ? (
-                            <div className="p-6 text-center text-gray-500 text-sm">No alerts triggered</div>
-                        ) : (
-                            filteredTriggers.map(t => (
-                                <div
-                                    key={t.id}
-                                    className={`p-3 border-b border-gray-700 hover:bg-gray-750 cursor-pointer ${!t.acknowledged ? 'bg-orange-900/20' : ''}`}
-                                    onClick={() => acknowledge(t.id)}
-                                >
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-2">
-                                            {!t.acknowledged ? (
-                                                <AlertTriangle size={14} className="text-orange-400 shrink-0" />
-                                            ) : (
-                                                <Check size={14} className="text-gray-500 shrink-0" />
-                                            )}
-                                            <div>
-                                                <div className="text-sm font-medium text-white">{t.alert_name}</div>
-                                                <div className="text-xs text-gray-400 mt-0.5">
-                                                    {t.symbol}: {formatCondition(t.condition)} @ ${t.triggered_value.toFixed(2)}
-                                                </div>
-                                            </div>
+                    {/* Trigger list */}
+                    <div style={{flex:1,overflowY:'auto'}}>
+                        {display.length===0&&(
+                            <div style={{padding:30,textAlign:'center',fontSize:11,color:SUBTLE}}>NO ALERTS TRIGGERED</div>
+                        )}
+                        {display.map(t=>(
+                            <div key={t.id}
+                                onClick={()=>{ setSelected(t); acknowledge(t.id); }}
+                                style={{padding:'8px 12px',borderBottom:`1px solid ${BORDER}`,cursor:'pointer',
+                                    background:t.id===selected?.id?`${AMBER}11`:!t.acknowledged?`${ORANGE}0a`:'transparent'}}>
+                                <div style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+                                    <span style={{fontSize:13,color:t.acknowledged?SUBTLE:ORANGE,marginTop:1,flexShrink:0}}>
+                                        {t.acknowledged?'âœ“':'âš '}
+                                    </span>
+                                    <div style={{flex:1,minWidth:0}}>
+                                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+                                            <span style={{fontSize:11,color:t.acknowledged?SUBTLE:TEXT,fontWeight:700}}>{t.alert_name}</span>
+                                            <span style={{fontSize:9,color:SUBTLE}}>{fmtTime(t.timestamp)}</span>
                                         </div>
-                                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                                            <Clock size={10} />
-                                            {formatTime(t.timestamp)}
+                                        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                                            <span style={{fontSize:10,color:AMBER,fontWeight:700}}>{t.symbol}</span>
+                                            <CondBadge cond={t.condition}/>
+                                            <span style={{fontSize:10,color:SUBTLE}}>Target: {t.target_value.toFixed(2)}</span>
+                                            <span style={{fontSize:10,color:TEXT}}>â†’ {t.triggered_value.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 </div>
-                            ))
-                        )}
+                            </div>
+                        ))}
                     </div>
+
+                    {/* Detail strip */}
+                    {selected&&(
+                        <div style={{borderTop:`1px solid ${BORDER}`,background:PANEL,padding:'8px 12px',flexShrink:0}}>
+                            <div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap'}}>
+                                <div><div style={{fontSize:8,color:SUBTLE,textTransform:'uppercase' as const}}>Alert</div>
+                                    <div style={{fontSize:10,color:BLUE}}>{selected.alert_name}</div></div>
+                                <div><div style={{fontSize:8,color:SUBTLE,textTransform:'uppercase' as const}}>Symbol</div>
+                                    <div style={{fontSize:11,color:AMBER,fontWeight:700}}>{selected.symbol}</div></div>
+                                <div><div style={{fontSize:8,color:SUBTLE,textTransform:'uppercase' as const}}>Target</div>
+                                    <div style={{fontSize:10,color:TEXT}}>{selected.target_value.toFixed(4)}</div></div>
+                                <div><div style={{fontSize:8,color:SUBTLE,textTransform:'uppercase' as const}}>Triggered</div>
+                                    <div style={{fontSize:10,color:ORANGE}}>{selected.triggered_value.toFixed(4)}</div></div>
+                                <div><div style={{fontSize:8,color:SUBTLE,textTransform:'uppercase' as const}}>Time</div>
+                                    <div style={{fontSize:9,color:SUBTLE}}>{new Date(selected.timestamp).toLocaleString()}</div></div>
+                                <button onClick={()=>setSelected(null)}
+                                    style={{marginLeft:'auto',background:'none',border:'none',color:SUBTLE,cursor:'pointer',fontSize:9,fontFamily:MONO}}>CLOSE</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </>
     );
+}
+
+interface AlertTrigger {
+    id: string;
+    alert_id: string;
+    alert_name: string;
+    symbol: string;
+    condition: string;
+    target_value: number;
+    triggered_value: number;
+    timestamp: string;
+    acknowledged: boolean;
 }

@@ -1,230 +1,215 @@
-/**
- * Strategy Diff Panel (v1.30)
- * Side-by-side canonical JSON diff viewer with deterministic output.
- * All elements have data-testid selectors.
+﻿/**
+ * Strategy Diff Panel â€” Bloomberg Terminal Edition
  */
+// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+const API_BASE='/api/v1/strategy-artifacts'
 
-import { useState, useEffect, useCallback } from 'react';
-import { GitCompare, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { StrategyArtifact, DiffResult, LineageEntry } from './artifactTypes';
 
-const API_BASE = '/api/v1/strategy-artifacts';
+interface Props { artifacts: StrategyArtifact[]; }
 
-interface Props {
-  artifacts: StrategyArtifact[];
-}
+// Diff change op color
+const opColor=(op:string)=>op==='added'?GREEN:op==='removed'?RED:AMBER
 
 export function StrategyDiffPanel({ artifacts: propArtifacts }: Props) {
   const [localArtifacts, setLocalArtifacts] = useState<StrategyArtifact[]>([]);
   const [leftId, setLeftId] = useState<string>('');
   const [rightId, setRightId] = useState<string>('');
-  const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
+  const [diffResult, setDiffResult] = useState<DiffResult|null>(null);
   const [lineage, setLineage] = useState<LineageEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string|null>(null);
+  const [view, setView] = useState<'split'|'changes'|'lineage'>('split');
 
   const artifacts = propArtifacts.length > 0 ? propArtifacts : localArtifacts;
 
-  // If no artifacts passed, fetch them ourselves
   useEffect(() => {
     if (propArtifacts.length === 0) {
-      fetch(API_BASE)
-        .then((r) => r.json())
-        .then((data: StrategyArtifact[]) => setLocalArtifacts(data))
-        .catch(() => setLocalArtifacts([]));
+      fetch(API_BASE).then(r=>r.json()).then((d:StrategyArtifact[])=>setLocalArtifacts(d)).catch(()=>setLocalArtifacts([]));
     }
   }, [propArtifacts]);
 
-  // Auto-select first two artifacts
   useEffect(() => {
     if (artifacts.length >= 2 && !leftId && !rightId) {
-      setLeftId(artifacts[0].id);
-      setRightId(artifacts[1].id);
+      setLeftId(artifacts[0].id); setRightId(artifacts[1].id);
     }
   }, [artifacts, leftId, rightId]);
 
   const computeDiff = useCallback(async () => {
     if (!leftId || !rightId) return;
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const res = await fetch(`${API_BASE}/diff`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ left_id: leftId, right_id: rightId }),
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({left_id:leftId, right_id:rightId})
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: DiffResult = await res.json();
-      setDiffResult(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to compute diff');
-      setDiffResult(null);
-    } finally {
-      setLoading(false);
-    }
+      setDiffResult(await res.json());
+    } catch(e) {
+      setError(String(e)); setDiffResult(null);
+    } finally { setLoading(false); }
   }, [leftId, rightId]);
 
   const fetchLineage = useCallback(async (artifactId: string) => {
     try {
       const res = await fetch(`${API_BASE}/${artifactId}/lineage`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      // API returns { artifact_id, lineage: [...] }
-      setLineage(Array.isArray(data) ? data : (data.lineage || []));
-    } catch {
-      setLineage([]);
-    }
+      if(!res.ok) return;
+      const data=await res.json();
+      setLineage(Array.isArray(data)?data:(data.lineage||[]));
+    } catch { setLineage([]); }
   }, []);
 
-  // Auto-compute diff when both selected
   useEffect(() => {
-    if (leftId && rightId) {
-      computeDiff();
-      fetchLineage(rightId);
-    }
+    if (leftId && rightId) { computeDiff(); fetchLineage(rightId); }
   }, [leftId, rightId, computeDiff, fetchLineage]);
 
-  const ready = diffResult !== null && !loading;
+  const SEL:React.CSSProperties={background:BG,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,
+    fontSize:11,padding:'5px 8px',borderRadius:2,outline:'none',width:'100%'}
+  const LBL:React.CSSProperties={fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:4}
+  const JSONPRE:React.CSSProperties={fontSize:10,fontFamily:MONO,color:TEXT,background:BG,padding:10,
+    borderRadius:2,overflow:'auto' as const,maxHeight:320,whiteSpace:'pre-wrap' as const,
+    border:`1px solid ${BORDER}`,margin:0}
 
   return (
-    <div data-testid="strategy-diff-panel" className="space-y-4">
-      {/* Artifact selectors */}
-      <div className="flex gap-4 items-end">
-        <div className="flex-1">
-          <label className="block text-xs font-medium text-text-secondary mb-1">Left Artifact</label>
-          <select
-            value={leftId}
-            onChange={(e) => setLeftId(e.target.value)}
-            data-testid="strategy-diff-left-select"
-            className="w-full px-3 py-2 bg-element-bg border border-border rounded text-sm text-text"
-          >
-            <option value="">Select...</option>
-            {artifacts.map((a) => (
-              <option key={a.id} value={a.id}>{a.name} ({a.id.substring(0, 8)})</option>
-            ))}
+    <div data-testid="strategy-diff-panel"
+      style={{height:'100%',display:'flex',flexDirection:'column' as const,background:BG,fontFamily:MONO}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'6px 14px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0}}>
+        <span style={{fontSize:11,color:BLUE,letterSpacing:'0.1em'}}>SD</span>
+        <span style={{fontSize:12,color:TEXT,fontWeight:700}}>STRATEGY DIFF</span>
+        <div style={{flex:1}}/>
+        {loading&&<span style={{fontSize:10,color:AMBER}}>COMPUTING...</span>}
+        {diffResult&&!loading&&<span style={{fontSize:10,color:GREEN}}>DIFF READY</span>}
+      </div>
+      {/* Selector bar */}
+      <div style={{display:'flex',gap:12,alignItems:'flex-end',padding:'10px 14px',borderBottom:`1px solid ${BORDER}`,background:PANEL}}>
+        <div style={{flex:1}}>
+          <div style={LBL}>LEFT ARTIFACT</div>
+          <select value={leftId} onChange={e=>setLeftId(e.target.value)}
+            data-testid="strategy-diff-left-select" style={SEL}>
+            <option value="">â€” SELECT â€”</option>
+            {artifacts.map(a=><option key={a.id} value={a.id}>{a.name} ({a.id.slice(0,8)})</option>)}
           </select>
         </div>
-        <GitCompare size={20} className="text-text-secondary mb-2" />
-        <div className="flex-1">
-          <label className="block text-xs font-medium text-text-secondary mb-1">Right Artifact</label>
-          <select
-            value={rightId}
-            onChange={(e) => setRightId(e.target.value)}
-            data-testid="strategy-diff-right-select"
-            className="w-full px-3 py-2 bg-element-bg border border-border rounded text-sm text-text"
-          >
-            <option value="">Select...</option>
-            {artifacts.map((a) => (
-              <option key={a.id} value={a.id}>{a.name} ({a.id.substring(0, 8)})</option>
-            ))}
+        <div style={{color:SUBTLE,fontSize:14,paddingBottom:6}}>â‡„</div>
+        <div style={{flex:1}}>
+          <div style={LBL}>RIGHT ARTIFACT</div>
+          <select value={rightId} onChange={e=>setRightId(e.target.value)}
+            data-testid="strategy-diff-right-select" style={SEL}>
+            <option value="">â€” SELECT â€”</option>
+            {artifacts.map(a=><option key={a.id} value={a.id}>{a.name} ({a.id.slice(0,8)})</option>)}
           </select>
         </div>
-        <button
-          onClick={computeDiff}
-          disabled={!leftId || !rightId || loading}
+        <button onClick={computeDiff} disabled={!leftId||!rightId||loading}
           data-testid="strategy-diff-open"
-          className="px-4 py-2 bg-brand hover:bg-brand/90 disabled:opacity-50 text-white rounded text-sm font-medium"
-        >
-          {loading ? 'Computing...' : 'Compute Diff'}
+          style={{fontSize:10,padding:'6px 14px',fontFamily:MONO,cursor: !leftId||!rightId?'not-allowed':'pointer',
+            border:`1px solid ${BLUE}`,background:`${BLUE}22`,color:BLUE,borderRadius:2,
+            opacity: !leftId||!rightId?0.4:1}}>
+          â–¶ COMPUTE DIFF
         </button>
       </div>
-
-      {error && (
-        <div className="p-2 text-xs text-red-400 bg-red-500/10 rounded">{error}</div>
-      )}
-
-      {/* Ready marker for E2E */}
-      {ready && <div data-testid="strategy-diff-ready" className="hidden" />}
-
-      {/* Side-by-side canonical JSON */}
-      {diffResult && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-panel-bg border border-border rounded p-3">
-            <h4 className="text-xs font-semibold text-text-secondary mb-2">
-              Left: {diffResult.left_id.substring(0, 12)}
-            </h4>
-            <pre
-              data-testid="strategy-diff-left-json"
-              className="text-xs font-mono text-text overflow-auto max-h-96 bg-background p-2 rounded whitespace-pre-wrap"
-            >
-              {JSON.stringify(diffResult.left_canonical, null, 2)}
-            </pre>
+      {/* View tabs */}
+      <div style={{display:'flex',borderBottom:`1px solid ${BORDER}`,background:PANEL}}>
+        {(['split','changes','lineage'] as const).map(t=>(
+          <button key={t} onClick={()=>setView(t)}
+            style={{padding:'6px 14px',fontSize:10,fontFamily:MONO,letterSpacing:'0.08em',
+              cursor:'pointer',background:'none',border:'none',
+              borderBottom:view===t?`2px solid ${BLUE}`:'2px solid transparent',
+              color:view===t?BLUE:SUBTLE,textTransform:'uppercase' as const}}>
+            {t==='changes'&&diffResult?`CHANGES (${diffResult.changes.length})`:t.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      {error&&<div style={{padding:'6px 14px',fontSize:10,color:RED,borderBottom:`1px solid ${BORDER}`}}>{error}</div>}
+      {diffResult&&<div data-testid="strategy-diff-ready" style={{display:'none'}}/>}
+      {/* Content */}
+      <div style={{flex:1,overflow:'auto',padding:14}}>
+        {view==='split'&&diffResult&&(
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div>
+              <div style={{fontSize:9,color:SUBTLE,marginBottom:6,letterSpacing:'0.1em'}}>
+                LEFT: {diffResult.left_id.slice(0,16)}â€¦
+              </div>
+              <pre data-testid="strategy-diff-left-json" style={JSONPRE}>
+                {JSON.stringify(diffResult.left_canonical,null,2)}
+              </pre>
+            </div>
+            <div>
+              <div style={{fontSize:9,color:SUBTLE,marginBottom:6,letterSpacing:'0.1em'}}>
+                RIGHT: {diffResult.right_id.slice(0,16)}â€¦
+              </div>
+              <pre data-testid="strategy-diff-right-json" style={JSONPRE}>
+                {JSON.stringify(diffResult.right_canonical,null,2)}
+              </pre>
+            </div>
           </div>
-          <div className="bg-panel-bg border border-border rounded p-3">
-            <h4 className="text-xs font-semibold text-text-secondary mb-2">
-              Right: {diffResult.right_id.substring(0, 12)}
-            </h4>
-            <pre
-              data-testid="strategy-diff-right-json"
-              className="text-xs font-mono text-text overflow-auto max-h-96 bg-background p-2 rounded whitespace-pre-wrap"
-            >
-              {JSON.stringify(diffResult.right_canonical, null, 2)}
-            </pre>
+        )}
+        {view==='split'&&!diffResult&&!loading&&(
+          <div style={{padding:24,textAlign:'center' as const,color:SUBTLE,fontSize:11}}>
+            Select two artifacts and click COMPUTE DIFF.
           </div>
-        </div>
-      )}
-
-      {/* Changes list */}
-      {diffResult && (
-        <div className="bg-panel-bg border border-border rounded p-3">
-          <h4 className="text-xs font-semibold text-text-secondary mb-2">
-            Changes ({diffResult.changes.length})
-          </h4>
-          <div data-testid="strategy-diff-changes" className="space-y-1">
-            {diffResult.changes.length === 0 ? (
-              <p className="text-xs text-text-muted">No changes detected.</p>
-            ) : (
-              diffResult.changes.map((c, i) => (
-                <div
-                  key={i}
-                  className={`text-xs font-mono px-2 py-1 rounded ${
-                    c.op === 'added' ? 'bg-green-500/10 text-green-400' :
-                    c.op === 'removed' ? 'bg-red-500/10 text-red-400' :
-                    'bg-yellow-500/10 text-yellow-400'
-                  }`}
-                >
-                  <span className="font-bold">{c.op.toUpperCase()}</span>{' '}
-                  <span>{c.path}</span>
-                  {c.op === 'changed' && (
-                    <span className="ml-2 text-text-muted">
-                      {JSON.stringify(c.left_value)} → {JSON.stringify(c.right_value)}
-                    </span>
-                  )}
-                </div>
-              ))
+        )}
+        {view==='changes'&&diffResult&&(
+          <div data-testid="strategy-diff-changes">
+            {diffResult.changes.length===0?(
+              <div style={{padding:16,color:GREEN,fontSize:11}}>âœ“ No changes detected â€” artifacts are identical.</div>
+            ):(
+              <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
+                {diffResult.changes.map((c,i)=>(
+                  <div key={i} style={{padding:'7px 12px',fontFamily:MONO,fontSize:10,borderRadius:2,
+                    border:`1px solid ${opColor(c.op)}33`,background:`${opColor(c.op)}11`,color:opColor(c.op)}}>
+                    <span style={{fontWeight:700,marginRight:8}}>{c.op.toUpperCase()}</span>
+                    <span style={{color:TEXT}}>{c.path}</span>
+                    {c.op==='changed'&&(
+                      <span style={{color:SUBTLE,marginLeft:8}}>
+                        {JSON.stringify(c.left_value)} â†’ {JSON.stringify(c.right_value)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {diffResult.diff_hash&&(
+              <div style={{marginTop:12,fontSize:10,color:SUBTLE}}>
+                DIFF HASH: <span style={{fontFamily:MONO,color:PURPLE}}>{diffResult.diff_hash.slice(0,16)}</span>
+              </div>
             )}
           </div>
-          <div className="mt-2 text-xs text-text-muted">
-            Diff hash: <span className="font-mono">{diffResult.diff_hash?.substring(0, 16)}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Lineage panel */}
-      {lineage.length > 0 && (
-        <div data-testid="strategy-lineage-panel" className="bg-panel-bg border border-border rounded p-3">
-          <h4 className="text-xs font-semibold text-text-secondary mb-2">Version Lineage</h4>
-          <div className="flex items-center gap-1 flex-wrap">
-            {lineage.map((entry, i) => (
-              <div key={entry.id} className="flex items-center gap-1">
-                <div
-                  data-testid={`strategy-lineage-item-${i}`}
-                  className={`text-xs px-2 py-1 rounded border ${
-                    entry.id === rightId
-                      ? 'border-brand bg-brand/10 text-brand'
-                      : 'border-border bg-element-bg text-text-secondary'
-                  }`}
-                >
-                  {entry.name} (d{entry.depth})
-                </div>
-                {i < lineage.length - 1 && (
-                  <ChevronRight size={12} className="text-text-muted" />
-                )}
+        )}
+        {view==='lineage'&&(
+          <div data-testid="strategy-lineage-panel">
+            {lineage.length===0?(
+              <div style={{padding:16,color:SUBTLE,fontSize:11}}>No lineage data available.</div>
+            ):(
+              <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,alignItems:'center'}}>
+                {lineage.map((entry,i)=>(
+                  <React.Fragment key={entry.id}>
+                    <div data-testid={`strategy-lineage-item-${i}`}
+                      style={{padding:'5px 12px',fontSize:10,fontFamily:MONO,borderRadius:2,
+                        border:`1px solid ${entry.id===rightId?BLUE:BORDER}`,
+                        background:entry.id===rightId?`${BLUE}22`:PANEL,
+                        color:entry.id===rightId?BLUE:SUBTLE}}>
+                      {entry.name} <span style={{color:SUBTLE}}>d{entry.depth}</span>
+                    </div>
+                    {i<lineage.length-1&&<span style={{color:SUBTLE}}>â†’</span>}
+                  </React.Fragment>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
+
+interface Props {
+  artifacts: StrategyArtifact[];
+}
+

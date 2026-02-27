@@ -1,73 +1,83 @@
+// Bloomberg TB — Trading Banner
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
+
 import { useState, useEffect } from 'react';
-import { AlertTriangle, User, Wallet } from 'lucide-react';
+import React from 'react';
 
 interface AccountInfo {
-    account_id: string;
-    status: string;
-    equity: number;
-    buying_power: number;
-    is_paper: boolean;
+  account_id: string;
+  status: string;
+  equity: number;
+  buying_power: number;
+  is_paper: boolean;
 }
 
-const API_BASE = '/api/v1';
+const formatCurrency = (v: number) =>
+  new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }).format(v);
 
 export function TradingBanner() {
-    const [account, setAccount] = useState<AccountInfo | null>(null);
-    const [mode, setMode] = useState<'paper' | 'live'>('paper');
+  const [account, setAccount] = useState<AccountInfo | null>(null);
+  const [mode, setMode] = useState<'paper'|'live'>('paper');
 
-    useEffect(() => {
-        const fetchAccount = async () => {
-            try {
-                const res = await fetch(`${API_BASE}/account`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                setAccount(data);
-                setMode(data.is_paper ? 'paper' : 'live');
-            } catch (e) {
-                // No fallback — real account data only
-                setAccount(null);
-            }
-        };
-        fetchAccount();
-        const interval = setInterval(fetchAccount, 30000);
-        return () => clearInterval(interval);
-    }, []);
+  useEffect(() => {
+    const fetch_ = async () => {
+      try {
+        const res = await fetch('/api/v1/account');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setAccount(data);
+        setMode(data.is_paper ? 'paper' : 'live');
+      } catch { setAccount(null); }
+    };
+    fetch_();
+    const iv = setInterval(fetch_, 30000);
+    return () => clearInterval(iv);
+  }, []);
 
-    const formatCurrency = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+  const bannerColor = mode === 'paper' ? AMBER : RED;
+  const liveMode    = mode === 'live';
 
-    const bannerColor = mode === 'paper'
-        ? 'bg-yellow-600/90 border-yellow-500'
-        : 'bg-red-600/90 border-red-500';
+  return (
+    <div style={{
+      position:'fixed', top:0, left:0, right:0, zIndex:90,
+      height:24, display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'0 12px', fontFamily:MONO,
+      background: bannerColor + '22',
+      borderBottom:`1px solid ${bannerColor}`,
+    }}>
+      {/* Left */}
+      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <span style={{ color:bannerColor, fontSize:9, fontWeight:700, letterSpacing:1 }}>
+          {liveMode ? '● LIVE TRADING' : '▢ PAPER TRADING'}
+        </span>
+        {liveMode && (
+          <span style={{ color: RED, fontSize:8, letterSpacing:0.5 }}>⚠ REAL MONEY AT RISK</span>
+        )}
+      </div>
 
-    const modeLabel = mode === 'paper' ? '📝 PAPER TRADING' : '🔴 LIVE TRADING';
-
-    return (
-        <div className={`fixed top-0 left-0 right-0 z-[90] h-6 ${bannerColor} border-b flex items-center justify-between px-4 text-xs font-medium text-white`}>
-            <div className="flex items-center gap-4">
-                <span className="font-bold">{modeLabel}</span>
-                {mode === 'live' && (
-                    <span className="flex items-center gap-1 text-red-200">
-                        <AlertTriangle size={12} />
-                        Real money at risk
-                    </span>
-                )}
-            </div>
-
-            {account && (
-                <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1 text-white/80">
-                        <User size={12} />
-                        {account.account_id}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <Wallet size={12} />
-                        {formatCurrency(account.equity)}
-                    </span>
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${account.status === 'ACTIVE' ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'}`}>
-                        {account.status}
-                    </span>
-                </div>
-            )}
+      {/* Right */}
+      {account && (
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ color:SUBTLE, fontSize:9 }}>◦ {account.account_id}</span>
+          <span style={{ color:TEXT, fontSize:9, fontWeight:700 }}>{formatCurrency(account.equity)}</span>
+          <span style={{ color:TEXT, fontSize:8 }}>BP: {formatCurrency(account.buying_power)}</span>
+          <span style={{
+            padding:'0 5px', borderRadius:2, fontSize:8,
+            background: account.status === 'ACTIVE' ? GREEN+'22' : RED+'22',
+            border:`1px solid ${account.status === 'ACTIVE' ? GREEN : RED}`,
+            color: account.status === 'ACTIVE' ? GREEN : RED,
+          }}>{account.status}</span>
         </div>
-    );
+      )}
+    </div>
+  );
 }

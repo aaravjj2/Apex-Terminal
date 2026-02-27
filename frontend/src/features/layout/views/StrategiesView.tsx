@@ -1,468 +1,356 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import {
-    Play, Pause, Square, Settings, TrendingUp,
-    MoreVertical, Plus, Search, Filter, Zap
-} from 'lucide-react';
-import { Button } from '../../../ui/Button';
-import { Badge } from '../../../ui/Badge';
-import { IconButton } from '../../../ui/IconButton';
-import { Table, type Column } from '../../../ui/Table';
-import { EmptyState } from '../../../ui/EmptyState';
-import { Drawer } from '../../../ui/Drawer';
-import { ConfirmModal } from '../../../ui/Modal';
-import { Input } from '../../../ui/Input';
-import { PageHeader } from '../../../ui/PageHeader';
-import { cn } from '../../../ui/utils';
-import { ApiClient, type StrategyResponse } from '../../../data/ApiClient';
-import { useToast } from '../../../ui/Toast';
+﻿// Bloomberg SV â€” Strategies View
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const PURPLE = '#ab47bc';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
 
-// Mock trades still needed as API doesn't have a dedicated trades endpoint for strategies yet
-// In a full implementation, this should also be fetched
+import { useState, useEffect, useCallback } from 'react';
+import React from 'react';
+import { ApiClient, type StrategyResponse } from '../../../data/ApiClient';
+
+const STATUS_COLOR: Record<string, string> = {
+  RUNNING: GREEN, STOPPED: SUBTLE, PAUSED: AMBER, ERROR: RED, CREATED: BLUE,
+};
+
 const mockTrades = [
-    { id: 't-1', time: '09:31:42', symbol: 'AAPL', side: 'BUY', qty: 100, price: 185.42, pnl: null },
-    { id: 't-2', time: '10:15:30', symbol: 'AAPL', side: 'SELL', qty: 100, price: 186.20, pnl: 78.00 },
-    { id: 't-3', time: '11:02:15', symbol: 'AAPL', side: 'BUY', qty: 50, price: 185.80, pnl: null },
+  { id: 't-1', time: '09:31:42', symbol: 'AAPL', side: 'BUY',  qty: 100, price: 185.42, pnl: null  },
+  { id: 't-2', time: '10:15:30', symbol: 'AAPL', side: 'SELL', qty: 100, price: 186.20, pnl: 78.00 },
+  { id: 't-3', time: '11:02:15', symbol: 'AAPL', side: 'BUY',  qty: 50,  price: 185.80, pnl: null  },
 ];
 
-function StrategyList({
-    strategies,
-    selectedId,
-    onSelect,
-    onNew
-}: {
-    strategies: StrategyResponse[];
-    selectedId: string | null;
-    onSelect: (id: string) => void;
-    onNew: () => void;
-}) {
-    const statusColors: Record<string, string> = {
-        RUNNING: 'bg-up',
-        STOPPED: 'bg-text-secondary',
-        PAUSED: 'bg-warn',
-        ERROR: 'bg-down',
-        CREATED: 'bg-brand',
-    };
-
-    return (
-        <div className="h-full flex flex-col bg-panel-bg/80 border-r border-border/60">
-            {/* Header */}
-            <div className="p-3 border-b border-border/60 flex items-center justify-between shrink-0 bg-gradient-to-r from-panel-bg to-panel-bg/80">
-                <div className="flex items-center gap-2">
-                    <Zap size={14} className="text-brand" />
-                    <h2 className="text-sm font-semibold text-text">Strategies</h2>
-                    <Badge size="sm" variant="outline">{strategies.length}</Badge>
-                </div>
-                <Button size="sm" variant="primary" className="gap-1" onClick={onNew}>
-                    <Plus size={14} /> New
-                </Button>
-            </div>
-
-            {/* Search */}
-            <div className="p-2 border-b border-border shrink-0">
-                <div className="flex items-center gap-2 px-2 py-1.5 bg-element-bg rounded">
-                    <Search size={14} className="text-text-secondary" />
-                    <input
-                        type="text"
-                        placeholder="Search strategies..."
-                        className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-muted"
-                    />
-                </div>
-            </div>
-
-            {/* List */}
-            <div className="flex-1 overflow-auto">
-                {strategies.length > 0 ? (
-                    strategies.map(strat => (
-                        <button
-                            key={strat.id}
-                            onClick={() => onSelect(strat.id)}
-                            data-testid={`strategy-item-${strat.id}`}
-                            className={cn(
-                                'w-full text-left p-3 border-b border-border/50 transition-all',
-                                selectedId === strat.id
-                                    ? 'bg-brand/10 border-l-2 border-l-brand'
-                                    : 'hover:bg-element-bg border-l-2 border-l-transparent'
-                            )}
-                        >
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className={`w-2 h-2 rounded-full ${statusColors[strat.status] || 'bg-text-muted'}`} />
-                                <span className="text-sm font-medium text-text">{strat.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xxs text-text-secondary">
-                                <Badge size="sm" variant="outline">
-                                    {strat.strategy_type}
-                                </Badge>
-                                <span>{strat.symbol}</span>
-                            </div>
-                        </button>
-                    ))
-                ) : (
-                    <div className="p-8 text-center">
-                        <p className="text-xs text-text-muted">No strategies found.</p>
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            className="mt-2 text-brand"
-                            onClick={onNew}
-                        >
-                            Create your first strategy
-                        </Button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+function btn(color: string, sm?: boolean) {
+  return {
+    background: color + '22', border:`1px solid ${color}`, color,
+    fontFamily:MONO, fontSize: sm ? 8 : 9, fontWeight:700, letterSpacing:0.5,
+    padding: sm ? '2px 6px' : '4px 10px', cursor:'pointer', borderRadius:2,
+  };
 }
 
-function StrategyDetail({
-    strategy,
-    onStop,
-    onStart,
-    onDelete,
-    onClose
-}: {
-    strategy: StrategyResponse | null;
-    onStop: () => void;
-    onStart: () => void;
-    onDelete: () => void;
-    onClose: () => void;
+function StrategyList({ strategies, selectedId, onSelect, onNew }: {
+  strategies: StrategyResponse[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onNew: () => void;
 }) {
-    if (!strategy) {
-        return (
-            <EmptyState
-                icon={<TrendingUp size={48} />}
-                title="Select a strategy"
-                description="Choose a strategy from the list to view details and controls."
-                className="h-full"
-            />
-        );
-    }
+  const [search, setSearch] = useState('');
+  const filtered = strategies.filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.symbol.toLowerCase().includes(search.toLowerCase())
+  );
 
-    const isRunning = strategy.status === 'RUNNING';
-
-    return (
-        <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-                <div>
-                    <h2 className="text-lg font-semibold text-text">{strategy.name}</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline">
-                            {strategy.strategy_type}
-                        </Badge>
-                        <Badge variant={strategy.status === 'RUNNING' ? 'success' : 'default'}>
-                            {strategy.status}
-                        </Badge>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-text-secondary hover:text-text px-2"
-                        onClick={onClose}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                    </Button>
-                    {isRunning ? (
-                        <>
-                            <Button size="sm" variant="secondary" className="gap-1">
-                                <Pause size={14} /> Pause
-                            </Button>
-                            <Button size="sm" variant="danger" className="gap-1" onClick={onStop}>
-                                <Square size={14} /> Stop
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button size="sm" variant="success" className="gap-1" onClick={onStart}>
-                                <Play size={14} /> Start
-                            </Button>
-                            <IconButton icon={<Settings size={16} />} tooltip="Settings" variant="ghost" />
-                            <IconButton
-                                icon={<MoreVertical size={16} />}
-                                tooltip="Delete"
-                                variant="ghost"
-                                onClick={onDelete}
-                            />
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* Stats (Mocked for now as API response doesn't always have metrics) */}
-            <div className="grid grid-cols-4 gap-4 p-4 border-b border-border shrink-0">
-                <div>
-                    <div className="text-xxs text-text-secondary uppercase tracking-wider mb-1">P&L</div>
-                    <div className="text-xl font-semibold text-up tabular-nums">+$0.00</div>
-                </div>
-                <div>
-                    <div className="text-xxs text-text-secondary uppercase tracking-wider mb-1">Trades</div>
-                    <div className="text-xl font-semibold text-text tabular-nums">0</div>
-                </div>
-                <div>
-                    <div className="text-xxs text-text-secondary uppercase tracking-wider mb-1">Win Rate</div>
-                    <div className="text-xl font-semibold text-text tabular-nums">0%</div>
-                </div>
-                <div>
-                    <div className="text-xxs text-text-secondary uppercase tracking-wider mb-1">Symbol</div>
-                    <div className="text-sm text-text">{strategy.symbol}</div>
-                </div>
-            </div>
-
-            {/* Trades Blotter */}
-            <div className="flex-1 overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
-                    <h3 className="text-xs font-medium text-text-secondary uppercase tracking-wider">Recent Trades</h3>
-                    <IconButton icon={<Filter size={14} />} tooltip="Filter" variant="ghost" size="sm" />
-                </div>
-                <div className="flex-1 overflow-auto">
-                    <Table
-                        columns={[
-                            { key: 'time', header: 'Time', width: '100px' },
-                            { key: 'symbol', header: 'Symbol' },
-                            {
-                                key: 'side', header: 'Side', render: (row) => (
-                                    <span className={row.side === 'BUY' ? 'text-up' : 'text-down'}>{row.side}</span>
-                                )
-                            },
-                            { key: 'qty', header: 'Qty', align: 'right' },
-                            { key: 'price', header: 'Price', align: 'right', render: (row) => `$${row.price.toFixed(2)}` },
-                            {
-                                key: 'pnl', header: 'P&L', align: 'right', render: (row) =>
-                                    row.pnl !== null
-                                        ? <span className={row.pnl >= 0 ? 'text-up' : 'text-down'}>${row.pnl.toFixed(2)}</span>
-                                        : <span className="text-text-muted">—</span>
-                            },
-                        ] as Column<typeof mockTrades[0]>[]}
-                        data={mockTrades}
-                        keyExtractor={(row) => row.id}
-                        compact
-                    />
-                </div>
-            </div>
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:PANEL, borderRight:`1px solid ${BORDER}` }}>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 10px', borderBottom:`1px solid ${BORDER}`, background:BG }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ color:AMBER, fontSize:12 }}>âš¡</span>
+          <span style={{ color:AMBER, fontWeight:700, fontSize:10, letterSpacing:1 }}>STRATEGIES</span>
+          <span style={{ color:SUBTLE, fontSize:9 }}>({strategies.length})</span>
         </div>
-    );
+        <button onClick={onNew} style={btn(BLUE, true)}>+ NEW</button>
+      </div>
+
+      {/* Search */}
+      <div style={{ padding:'4px 8px', borderBottom:`1px solid ${BORDER}` }}>
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="SEARCH STRATEGIES..."
+          style={{
+            width:'100%', background:BG, border:`1px solid ${BORDER}`, color:TEXT,
+            fontFamily:MONO, fontSize:9, padding:'4px 8px', outline:'none', borderRadius:2,
+            boxSizing:'border-box',
+          }} />
+      </div>
+
+      {/* List */}
+      <div style={{ flex:1, overflowY:'auto' }}>
+        {filtered.length === 0 ? (
+          <div style={{ padding:24, textAlign:'center', color:SUBTLE, fontSize:9 }}>NO STRATEGIES FOUND</div>
+        ) : filtered.map(s => {
+          const active = selectedId === s.id;
+          const color  = STATUS_COLOR[s.status] ?? SUBTLE;
+          return (
+            <button key={s.id} onClick={() => onSelect(s.id)}
+              data-testid={`strategy-item-${s.id}`}
+              style={{
+                width:'100%', textAlign:'left', padding:'7px 10px',
+                background: active ? BLUE + '11' : 'transparent',
+                borderLeft: `2px solid ${active ? BLUE : 'transparent'}`,
+                borderBottom:`1px solid ${BORDER}`, border:'none',
+                borderLeftColor: active ? BLUE : 'transparent',
+                fontFamily:MONO, cursor:'pointer',
+              }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                <span style={{ width:6, height:6, borderRadius:'50%', background:color, flexShrink:0 }} />
+                <span style={{ color:TEXT, fontSize:10, fontWeight: active ? 700 : 400, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.name}</span>
+              </div>
+              <div style={{ display:'flex', gap:6, paddingLeft:12 }}>
+                <span style={{ color:color, fontSize:8, border:`1px solid ${color}`, padding:'0 3px', borderRadius:1 }}>{s.status}</span>
+                <span style={{ color:SUBTLE, fontSize:8 }}>{s.symbol}</span>
+                <span style={{ color:SUBTLE, fontSize:8 }}>{s.strategy_type}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
-// New Strategy Form Component
-function NewStrategyForm({ onSubmit }: { onSubmit: (data: any) => void }) {
-    const [name, setName] = useState('');
-    const [symbol, setSymbol] = useState('');
-
+function StrategyDetail({ strategy, onStop, onStart, onDelete, onClose }: {
+  strategy: StrategyResponse | null;
+  onStop: () => void;
+  onStart: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  if (!strategy) {
     return (
-        <div className="space-y-6">
-            <div className="space-y-1">
-                <label className="text-xs font-medium text-text-secondary">Strategy Name</label>
-                <Input
-                    placeholder="e.g. Mean Reversion"
-                    autoFocus
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                />
-            </div>
-
-            <div className="space-y-1">
-                <label className="text-xs font-medium text-text-secondary">Symbol</label>
-                <Input
-                    placeholder="AAPL"
-                    value={symbol}
-                    onChange={(e) => setSymbol(e.target.value)}
-                />
-            </div>
-
-            <div className="space-y-1">
-                <label className="text-xs font-medium text-text-secondary">Strategy Type</label>
-                <div className="space-y-2">
-                    <button className="w-full flex items-center gap-3 p-3 rounded bg-element-bg border border-brand text-left">
-                        <div className="w-8 h-8 rounded bg-brand/10 flex items-center justify-center text-brand">
-                            <TrendingUp size={16} />
-                        </div>
-                        <div>
-                            <div className="text-sm font-medium text-text">Standard Logic</div>
-                            <div className="text-xs text-text-secondary">Simple implementation</div>
-                        </div>
-                    </button>
-                    <button className="w-full flex items-center gap-3 p-3 rounded bg-element-bg border border-border hover:border-text-secondary transition-colors text-left">
-                        <div className="w-8 h-8 rounded bg-text-secondary/10 flex items-center justify-center text-text-secondary">
-                            <Settings size={16} />
-                        </div>
-                        <div>
-                            <div className="text-sm font-medium text-text">Custom Script</div>
-                            <div className="text-xs text-text-secondary">Advanced Python strategy</div>
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            <div className="pt-4 border-t border-border">
-                <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => onSubmit({ name, symbol, strategy_type: 'standard' })}
-                    disabled={!name || !symbol}
-                >
-                    Create Strategy
-                </Button>
-            </div>
+      <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', background:BG, fontFamily:MONO }}>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ color:SUBTLE, fontSize:24, marginBottom:8 }}>ðŸ“ˆ</div>
+          <div style={{ color:SUBTLE, fontSize:10 }}>SELECT A STRATEGY TO VIEW DETAILS</div>
         </div>
+      </div>
     );
+  }
+
+  const running = strategy.status === 'RUNNING';
+  const metrics = (strategy as typeof strategy & { metrics?: { pnl: number; trades: number; win_rate: number } }).metrics;
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:BG, fontFamily:MONO }}>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', borderBottom:`1px solid ${BORDER}`, background:PANEL }}>
+        <div>
+          <div style={{ color:TEXT, fontSize:12, fontWeight:700 }}>{strategy.name}</div>
+          <div style={{ display:'flex', gap:6, marginTop:2 }}>
+            <span style={{ color:SUBTITLE, fontSize:8, border:`1px solid ${BORDER}`, padding:'0 3px', borderRadius:1 }}>{strategy.strategy_type}</span>
+            <span style={{ color: STATUS_COLOR[strategy.status]??SUBTLE, fontSize:8, border:`1px solid ${STATUS_COLOR[strategy.status]??BORDER}`, padding:'0 3px', borderRadius:1 }}>{strategy.status}</span>
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+          {running ? (
+            <>
+              <button onClick={onStop} style={btn(RED, true)}>â–  STOP</button>
+            </>
+          ) : (
+            <>
+              <button onClick={onStart} style={btn(GREEN, true)}>â–¶ START</button>
+              <button onClick={onDelete} style={btn(RED, true)}>âœ• DELETE</button>
+            </>
+          )}
+          <button onClick={onClose} style={{ ...btn(SUBTLE, true), marginLeft:4 }}>âœ•</button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', borderBottom:`1px solid ${BORDER}` }}>
+        {[
+          { label:'P&L',     val: metrics ? (metrics.pnl >= 0 ? '+' : '') + `$${metrics.pnl.toFixed(2)}` : '+$0.00',     color: metrics && metrics.pnl < 0 ? RED : GREEN },
+          { label:'TRADES',  val: metrics ? String(metrics.trades) : '0', color:TEXT },
+          { label:'WIN RATE',val: metrics ? `${(metrics.win_rate*100).toFixed(0)}%` : '0%', color:TEXT },
+          { label:'SYMBOL',  val: strategy.symbol, color:AMBER },
+        ].map(m => (
+          <div key={m.label} style={{ padding:'8px 12px', borderRight:`1px solid ${BORDER}` }}>
+            <div style={{ color:SUBTLE, fontSize:8, letterSpacing:0.5, marginBottom:2 }}>{m.label}</div>
+            <div style={{ color:m.color, fontSize:18, fontWeight:700 }}>{m.val}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Trades table */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+        <div style={{ padding:'4px 12px', borderBottom:`1px solid ${BORDER}`, color:SUBTLE, fontSize:8, letterSpacing:0.5 }}>
+          RECENT TRADES
+        </div>
+        <div style={{ flex:1, overflow:'auto' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <thead>
+              <tr style={{ background:'#0d0d0d' }}>
+                {['TIME','SYMBOL','SIDE','QTY','PRICE','P&L'].map(h => (
+                  <th key={h} style={{ padding:'3px 8px', textAlign: h==='QTY'||h==='PRICE'||h==='P&L' ? 'right' : 'left', color:SUBTLE, fontSize:8, fontWeight:600, letterSpacing:0.5, borderBottom:`1px solid ${BORDER}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {mockTrades.map((t, i) => (
+                <tr key={t.id} style={{ background: i%2===0 ? BG : '#0d0d0d', borderBottom:`1px solid ${BORDER}` }}>
+                  <td style={{ padding:'3px 8px', color:SUBTLE, fontSize:9 }}>{t.time}</td>
+                  <td style={{ padding:'3px 8px', color:TEXT, fontSize:9 }}>{t.symbol}</td>
+                  <td style={{ padding:'3px 8px', color: t.side==='BUY' ? GREEN : RED, fontSize:9, fontWeight:700 }}>{t.side}</td>
+                  <td style={{ padding:'3px 8px', textAlign:'right', color:TEXT, fontSize:9 }}>{t.qty}</td>
+                  <td style={{ padding:'3px 8px', textAlign:'right', color:TEXT, fontSize:9 }}>${t.price.toFixed(2)}</td>
+                  <td style={{ padding:'3px 8px', textAlign:'right', color: t.pnl!=null ? (t.pnl>=0?GREEN:RED) : SUBTLE, fontSize:9 }}>{t.pnl!=null ? `$${t.pnl.toFixed(2)}` : 'â€”'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Declare SUBTITLE here to avoid TypeScript undefined reference
+const SUBTITLE = '#888';
+
+function NewStrategyModal({ onSubmit, onClose }: { onSubmit: (data: {name:string;symbol:string;strategy_type:string}) => void; onClose: () => void }) {
+  const [name, setName] = useState('');
+  const [symbol, setSymbol] = useState('');
+  const [type, setType] = useState<'standard'|'custom'>('standard');
+
+  const inp = { background:BG, border:`1px solid ${BORDER}`, color:TEXT, fontFamily:MONO, fontSize:10, padding:'5px 8px', width:'100%', outline:'none', borderRadius:2, boxSizing:'border-box' as const };
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:MONO }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.75)' }} />
+      <div style={{ position:'relative', background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, width:400, boxShadow:'0 8px 32px rgba(0,0,0,0.6)', overflow:'hidden' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 12px', background:BG, borderBottom:`1px solid ${BORDER}` }}>
+          <span style={{ color:AMBER, fontWeight:700, fontSize:10, letterSpacing:1 }}>CREATE NEW STRATEGY</span>
+          <button onClick={onClose} style={{ background:'none', border:'none', color:SUBTLE, cursor:'pointer', fontSize:12 }}>âœ•</button>
+        </div>
+        <div style={{ padding:16 }}>
+          <div style={{ marginBottom:10 }}>
+            <div style={{ color:SUBTLE, fontSize:8, letterSpacing:0.5, marginBottom:3 }}>STRATEGY NAME</div>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. MEAN REVERSION" style={inp} autoFocus />
+          </div>
+          <div style={{ marginBottom:10 }}>
+            <div style={{ color:SUBTLE, fontSize:8, letterSpacing:0.5, marginBottom:3 }}>SYMBOL</div>
+            <input value={symbol} onChange={e=>setSymbol(e.target.value)} placeholder="AAPL" style={inp} />
+          </div>
+          <div style={{ marginBottom:16 }}>
+            <div style={{ color:SUBTLE, fontSize:8, letterSpacing:0.5, marginBottom:6 }}>STRATEGY TYPE</div>
+            {([['standard','STANDARD LOGIC','Simple implementation'],['custom','CUSTOM SCRIPT','Advanced Python strategy']] as const).map(([t, label, desc]) => (
+              <button key={t} onClick={() => setType(t as 'standard'|'custom')}
+                style={{ width:'100%', textAlign:'left', padding:'7px 10px', marginBottom:4, borderRadius:2, fontFamily:MONO,
+                  background: type===t ? BLUE+'11' : BG, border:`1px solid ${type===t ? BLUE : BORDER}`, cursor:'pointer' }}>
+                <div style={{ color: type===t ? BLUE : TEXT, fontSize:9, fontWeight:700 }}>{label}</div>
+                <div style={{ color:SUBTLE, fontSize:8, marginTop:1 }}>{desc}</div>
+              </button>
+            ))}
+          </div>
+          <button onClick={() => name && symbol && onSubmit({ name, symbol, strategy_type:type })}
+            disabled={!name || !symbol}
+            style={{ ...btn(name&&symbol?BLUE:SUBTLE), width:'100%', padding:'7px 0', fontSize:9 }}>
+            CREATE STRATEGY
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function StrategiesView() {
-    const [strategies, setStrategies] = useState<StrategyResponse[]>([
-        {
-            id: 's-1', name: 'Sample Mean Reversion', symbol: 'AAPL', strategy_type: 'standard', status: 'RUNNING', created_at: new Date().toISOString(),
-            params: {}, started_at: new Date().toISOString(), metrics: { pnl: 120.50, trades: 12, win_rate: 0.65 }
-        },
-        {
-            id: 's-2', name: 'Sample Breakout', symbol: 'TSLA', strategy_type: 'standard', status: 'STOPPED', created_at: new Date().toISOString(),
-            params: {}, started_at: null, metrics: { pnl: -45.00, trades: 5, win_rate: 0.40 }
-        }
-    ]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [isNewOpen, setIsNewOpen] = useState(false);
-    const [stopConfirmId, setStopConfirmId] = useState<string | null>(null);
-    const { addToast } = useToast();
+  const [strategies, setStrategies] = useState<StrategyResponse[]>([
+    { id:'s-1', name:'Sample Mean Reversion', symbol:'AAPL', strategy_type:'standard', status:'RUNNING', created_at:new Date().toISOString(), params:{}, started_at:new Date().toISOString(), metrics:{ pnl:120.50, trades:12, win_rate:0.65 } } as StrategyResponse,
+    { id:'s-2', name:'Sample Breakout',       symbol:'TSLA', strategy_type:'standard', status:'STOPPED', created_at:new Date().toISOString(), params:{}, started_at:null, metrics:{ pnl:-45.00, trades:5,  win_rate:0.40 } } as StrategyResponse,
+  ]);
+  const [selectedId, setSelectedId] = useState<string|null>(null);
+  const [isNewOpen, setIsNewOpen] = useState(false);
+  const [toast, setToast] = useState<{msg:string;color:string}|null>(null);
 
-    const fetchStrategies = useCallback(async () => {
-        try {
-            const data = await ApiClient.listStrategies();
-            if (data.length > 0) {
-                setStrategies(data);
-                // Don't auto-select to preserve list view initially
-                // setSelectedId(prev => prev || data[0].id);
-            }
-        } catch (error) {
-            console.error('Failed to list strategies', error);
-            addToast({ message: 'Failed to load strategies', variant: 'error' });
-        }
-    }, [addToast]);
+  const showToast = (msg:string, color:string=GREEN) => {
+    setToast({msg, color});
+    setTimeout(() => setToast(null), 2500);
+  };
 
-    useEffect(() => {
-        fetchStrategies();
-    }, [fetchStrategies]);
+  const fetchStrategies = useCallback(async () => {
+    try {
+      const data = await ApiClient.listStrategies();
+      if (data.length > 0) setStrategies(data);
+    } catch { /* keep defaults */ }
+  }, []);
 
-    const handleCreate = async (data: any) => {
-        try {
-            await ApiClient.createStrategy(data);
-            addToast({ message: 'Strategy created', variant: 'success' });
-            setIsNewOpen(false);
-            fetchStrategies();
-        } catch {
-            addToast({ message: 'Failed to create strategy', variant: 'error' });
-        }
-    };
+  useEffect(() => { fetchStrategies(); }, [fetchStrategies]);
 
-    const handleStart = async (id: string) => {
-        try {
-            await ApiClient.startStrategy(id);
-            addToast({ message: 'Strategy started', variant: 'success' });
-            fetchStrategies();
-        } catch {
-            addToast({ message: 'Failed to start strategy', variant: 'error' });
-        }
-    };
+  const handleCreate = async (data: {name:string;symbol:string;strategy_type:string}) => {
+    try { await ApiClient.createStrategy(data); showToast('Strategy created'); setIsNewOpen(false); fetchStrategies(); }
+    catch { showToast('Failed to create strategy', RED); }
+  };
 
-    const handleStop = async (id: string) => {
-        try {
-            await ApiClient.stopStrategy(id);
-            addToast({ message: 'Strategy stopped', variant: 'success' });
-            setStopConfirmId(null);
-            fetchStrategies();
-        } catch {
-            addToast({ message: 'Failed to stop strategy', variant: 'error' });
-        }
-    };
+  const handleStart = async (id:string) => {
+    try { await ApiClient.startStrategy(id); showToast('Strategy started'); fetchStrategies(); }
+    catch { showToast('Failed to start strategy', RED); }
+  };
 
-    const handleDelete = async (id: string) => {
-        try {
-            await ApiClient.deleteStrategy(id);
-            addToast({ message: 'Strategy deleted', variant: 'success' });
-            if (selectedId === id) setSelectedId(null);
-            fetchStrategies();
-        } catch {
-            addToast({ message: 'Failed to delete strategy', variant: 'error' });
-        }
-    };
+  const handleStop = async (id:string) => {
+    try { await ApiClient.stopStrategy(id); showToast('Strategy stopped', AMBER); fetchStrategies(); }
+    catch { showToast('Failed to stop strategy', RED); }
+  };
 
-    const selectedStrategy = strategies.find(s => s.id === selectedId) || null;
+  const handleDelete = async (id:string) => {
+    try { await ApiClient.deleteStrategy(id); showToast('Strategy deleted', RED); if (selectedId===id) setSelectedId(null); fetchStrategies(); }
+    catch { showToast('Failed to delete strategy', RED); }
+  };
 
-    return (
-        <div className="h-full bg-background flex flex-col" data-testid="strategies-view">
-            {/* Page Header visible when no strategy selected */}
-            {!selectedId && (
-                <PageHeader
-                    title="Strategies"
-                    subtitle="Create, configure and monitor trading strategies"
-                    icon={<Zap size={20} />}
-                    badge={<Badge variant="brand">{strategies.length} active</Badge>}
-                    actions={
-                        <Button size="sm" variant="primary" onClick={() => setIsNewOpen(true)}>
-                            <Plus size={14} /> New Strategy
-                        </Button>
-                    }
-                    data-testid="strategies-header"
-                />
-            )}
-            {!selectedId ? (
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    <StrategyList
-                        strategies={strategies}
-                        selectedId={selectedId}
-                        onSelect={setSelectedId}
-                        onNew={() => setIsNewOpen(true)}
-                    />
-                </div>
-            ) : (
-                <PanelGroup orientation="horizontal" className="flex-1">
-                    <Panel defaultSize={35} minSize={25} maxSize={45} className="flex flex-col">
-                        <StrategyList
-                            strategies={strategies}
-                            selectedId={selectedId}
-                            onSelect={setSelectedId}
-                            onNew={() => setIsNewOpen(true)}
-                        />
-                    </Panel>
-                    <PanelResizeHandle className="w-1 bg-border hover:bg-brand transition-colors cursor-col-resize flex items-center justify-center">
-                        <div className="w-px h-8 bg-border-strong group-hover:bg-brand/50" />
-                    </PanelResizeHandle>
-                    <Panel defaultSize={65} minSize={40} className="flex flex-col h-full overflow-hidden">
-                        <div className="flex-1 h-full overflow-hidden">
-                            <StrategyDetail
-                                strategy={selectedStrategy}
-                                onStop={() => setStopConfirmId(selectedStrategy?.id || null)}
-                                onStart={() => selectedStrategy && handleStart(selectedStrategy.id)}
-                                onDelete={() => selectedStrategy && handleDelete(selectedStrategy.id)}
-                                onClose={() => setSelectedId(null)}
-                            />
-                        </div>
-                    </Panel>
-                </PanelGroup>
-            )}
+  const selectedStrategy = strategies.find(s => s.id === selectedId) ?? null;
 
-            {/* New Strategy Drawer */}
-            <Drawer
-                open={isNewOpen}
-                onClose={() => setIsNewOpen(false)}
-                title="Create New Strategy"
-                description="Configure the initial parameters for your trading strategy."
-                size="md"
-            >
-                <NewStrategyForm onSubmit={handleCreate} />
-            </Drawer>
+  return (
+    <div data-testid="strategies-view"
+      style={{ height:'100%', background:BG, display:'flex', flexDirection:'column', fontFamily:MONO }}>
 
-            {/* Stop Confirmation */}
-            <ConfirmModal
-                open={!!stopConfirmId}
-                onClose={() => setStopConfirmId(null)}
-                onConfirm={() => stopConfirmId && handleStop(stopConfirmId)}
-                title="Stop Strategy?"
-                message="Are you sure you want to stop this strategy? Position monitoring will cease immediately."
-                confirmLabel="Stop Strategy"
-                variant="danger"
-            />
+      {/* Page header if no selection */}
+      {!selectedId && (
+        <div data-testid="strategies-header"
+          style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 12px', background:PANEL, borderBottom:`1px solid ${BORDER}` }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ color:AMBER, fontSize:16 }}>âš¡</span>
+            <div>
+              <div style={{ color:AMBER, fontWeight:700, fontSize:11, letterSpacing:1 }}>STRATEGIES</div>
+              <div style={{ color:SUBTLE, fontSize:9 }}>CREATE, CONFIGURE AND MONITOR TRADING STRATEGIES</div>
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <span style={{ color:SUBTLE, fontSize:9 }}>{strategies.length} ACTIVE</span>
+            <button onClick={() => setIsNewOpen(true)} style={btn(BLUE)}>+ NEW STRATEGY</button>
+          </div>
         </div>
-    );
+      )}
+
+      {/* Main content */}
+      <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
+        {!selectedId ? (
+          <div style={{ width:'100%' }}>
+            <StrategyList strategies={strategies} selectedId={selectedId} onSelect={setSelectedId} onNew={() => setIsNewOpen(true)} />
+          </div>
+        ) : (
+          <>
+            <div style={{ width:300, flexShrink:0 }}>
+              <StrategyList strategies={strategies} selectedId={selectedId} onSelect={setSelectedId} onNew={() => setIsNewOpen(true)} />
+            </div>
+            <div style={{ width:4, background:BORDER, cursor:'col-resize', flexShrink:0 }} />
+            <div style={{ flex:1, overflow:'hidden' }}>
+              <StrategyDetail
+                strategy={selectedStrategy}
+                onStop={() => selectedStrategy && handleStop(selectedStrategy.id)}
+                onStart={() => selectedStrategy && handleStart(selectedStrategy.id)}
+                onDelete={() => selectedStrategy && handleDelete(selectedStrategy.id)}
+                onClose={() => setSelectedId(null)}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* New strategy modal */}
+      {isNewOpen && <NewStrategyModal onSubmit={handleCreate} onClose={() => setIsNewOpen(false)} />}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position:'fixed', bottom:20, right:20, zIndex:9999,
+          background:toast.color+'22', border:`1px solid ${toast.color}`,
+          color:toast.color, fontFamily:MONO, fontSize:9, fontWeight:700,
+          padding:'6px 14px', borderRadius:2,
+        }}>{toast.msg}</div>
+      )}
+    </div>
+  );
 }

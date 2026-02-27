@@ -1,615 +1,319 @@
-/**
- * Enhanced Top App Bar
- * 
- * Always visible with:
- * - PAPER MODE banner
- * - Broker info (Alpaca account)
- * - Autopilot toggle + kill switch
- * - Last cycle status + next scheduled run
- * - Health chips for all providers
- * - Global search
- * - Notifications bell
- */
+﻿// Bloomberg TopAppBarEnhanced
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const PURPLE = '#ab47bc';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-    Clock, Bell, Search, Power, Pause, Play, AlertTriangle,
-    CheckCircle2, XCircle, Activity, X, Loader2, Wifi, WifiOff, RefreshCw
-} from 'lucide-react';
-import { cn } from '../../../ui/utils';
-
+import React from 'react';
 import { useStore } from '../../../state/store';
 import { VoiceControl } from '../../tts/VoiceControl';
 import { DataSourceSelector } from '../../data/DataSourceSelector';
 import type { DataSourceId } from '../../data/providers';
 
-const API_BASE = '/api/v1';
-
-// Types
 interface AutopilotStatus {
-    state: 'idle' | 'running' | 'paused' | 'error';
-    mode: 'paper' | 'paused';
-    kill_switch_active: boolean;
-    last_cycle?: {
-        success: boolean;
-        timestamp: string;
-        trades_placed: number;
-        error?: string;
-    };
-    next_run?: string;
-    schedule: {
-        enabled: boolean;
-        interval_minutes: number;
-        market_hours_only: boolean;
-    };
+  state: 'idle' | 'running' | 'paused' | 'error';
+  mode: 'paper' | 'paused';
+  kill_switch_active: boolean;
+  last_cycle?: { success: boolean; timestamp: string; trades_placed: number; error?: string };
+  next_run?: string;
+  schedule: { enabled: boolean; interval_minutes: number; market_hours_only: boolean };
 }
+interface HealthStatus { provider: string; status: 'connected' | 'degraded' | 'disconnected' | 'error'; latency_ms?: number; last_check?: string; error?: string }
+interface AccountInfo { broker: string; account_id: string; label?: string }
+interface Notification { id: string; type: 'info' | 'warning' | 'error' | 'success'; title: string; message: string; timestamp: string; read: boolean }
 
-interface HealthStatus {
-    provider: string;
-    status: 'connected' | 'degraded' | 'disconnected' | 'error';
-    latency_ms?: number;
-    last_check?: string;
-    error?: string;
+function statusColor(s: string) {
+  if (s === 'connected') return GREEN;
+  if (s === 'degraded') return AMBER;
+  if (s === 'error') return RED;
+  return SUBTLE;
 }
-
-interface AccountInfo {
-    broker: string;
-    account_id: string;
-    label?: string;
-}
-
-interface Notification {
-    id: string;
-    type: 'info' | 'warning' | 'error' | 'success';
-    title: string;
-    message: string;
-    timestamp: string;
-    read: boolean;
-}
+function wsColor(s: string) { return s === 'CONNECTED' ? GREEN : s === 'CONNECTING' ? AMBER : s === 'DEGRADED' ? AMBER : RED; }
 
 export function TopAppBarEnhanced() {
-    const [autopilotStatus, setAutopilotStatus] = useState<AutopilotStatus | null>(null);
-    const [healthStatuses, setHealthStatuses] = useState<Record<string, HealthStatus>>({});
-    const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [searchOpen, setSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [notificationsOpen, setNotificationsOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [marketTime, setMarketTime] = useState(new Date());
-    const [wsReconnecting, setWsReconnecting] = useState(false);
-    const [dataSource, setDataSource] = useState<DataSourceId>('fixture');
+  const [autopilotStatus, setAutopilotStatus] = useState<AutopilotStatus | null>(null);
+  const [healthStatuses, setHealthStatuses] = useState<Record<string, HealthStatus>>({});
+  const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [marketTime, setMarketTime] = useState(new Date());
+  const [wsReconnecting, setWsReconnecting] = useState(false);
+  const [dataSource, setDataSource] = useState<DataSourceId>('fixture');
 
-    // WebSocket state from store
-    const wsState = useStore(state => state.wsState);
-    const forceReconnect = useStore(state => state.forceReconnect);
+  const wsState = useStore(state => state.wsState);
+  const forceReconnect = useStore(state => state.forceReconnect);
 
-    // Handle WS reconnect
-    const handleWsReconnect = async () => {
-        setWsReconnecting(true);
-        try {
-            forceReconnect();
-            // Give it a moment to reconnect
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        } finally {
-            setWsReconnecting(false);
-        }
-    };
+  const handleWsReconnect = async () => {
+    setWsReconnecting(true);
+    try { forceReconnect(); await new Promise(r => setTimeout(r, 2000)); } finally { setWsReconnecting(false); }
+  };
 
-    // Get WS status color and icon
-    const getWsStatusColor = () => {
-        switch (wsState) {
-            case 'CONNECTED': return 'bg-green-500';
-            case 'CONNECTING': return 'bg-yellow-500';
-            case 'DEGRADED': return 'bg-yellow-500';
-            case 'DISCONNECTED': return 'bg-red-500';
-            default: return 'bg-gray-500';
-        }
-    };
+  const fetchAutopilotStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/autopilot/status');
+      if (res.ok) {
+        const data = await res.json();
+        setAutopilotStatus({ state: data.state || 'idle', mode: data.mode || 'paper', kill_switch_active: data.kill_switch_active || false, last_cycle: data.last_cycle, next_run: data.next_run, schedule: data.schedule || { enabled: true, interval_minutes: 15, market_hours_only: true } });
+      }
+    } catch { /* ignore */ }
+  }, []);
 
-    const getWsStatusIcon = () => {
-        switch (wsState) {
-            case 'CONNECTED': return <Wifi size={14} className="text-green-400" />;
-            case 'CONNECTING': return <Loader2 size={14} className="text-yellow-400 animate-spin" />;
-            case 'DEGRADED': return <Wifi size={14} className="text-yellow-400" />;
-            case 'DISCONNECTED': return <WifiOff size={14} className="text-red-400" />;
-            default: return <WifiOff size={14} className="text-gray-400" />;
-        }
-    };
+  const fetchHealthStatuses = useCallback(async () => {
+    const statuses: Record<string, HealthStatus> = {};
+    try { const res = await fetch('/api/v1/autopilot/broker/metrics'); if (res.ok) { const d = await res.json(); statuses['alpaca_rest'] = { provider: 'Alpaca REST', status: d.connected ? 'connected' : 'disconnected', latency_ms: d.avg_latency_ms }; } } catch { statuses['alpaca_rest'] = { provider: 'Alpaca REST', status: 'disconnected' }; }
+    if (autopilotStatus) statuses['alpaca_stream'] = { provider: 'Alpaca Stream', status: autopilotStatus.state === 'running' ? 'connected' : 'degraded' };
+    try { const res = await fetch('/health'); if (res.ok) { statuses['finnhub'] = { provider: 'Finnhub', status: 'connected' }; statuses['yfinance'] = { provider: 'yfinance', status: 'connected' }; } } catch { statuses['finnhub'] = { provider: 'Finnhub', status: 'disconnected' }; statuses['yfinance'] = { provider: 'yfinance', status: 'disconnected' }; }
+    try { const res = await fetch('/api/v1/autopilot/config'); if (res.ok) { const d = await res.json(); const llm = d.config?.llm_settings?.enabled; statuses['groq'] = { provider: 'Groq', status: llm ? 'connected' : 'disconnected' }; statuses['gemini'] = { provider: 'Gemini', status: llm ? 'connected' : 'disconnected' }; } } catch { statuses['groq'] = { provider: 'Groq', status: 'disconnected' }; statuses['gemini'] = { provider: 'Gemini', status: 'disconnected' }; }
+    setHealthStatuses(statuses);
+  }, [autopilotStatus]);
 
-    // Fetch autopilot status
-    const fetchAutopilotStatus = useCallback(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/autopilot/status`);
-            if (res.ok) {
-                const data = await res.json();
-                setAutopilotStatus({
-                    state: data.state || 'idle',
-                    mode: data.mode || 'paper',
-                    kill_switch_active: data.kill_switch_active || false,
-                    last_cycle: data.last_cycle,
-                    next_run: data.next_run,
-                    schedule: data.schedule || { enabled: true, interval_minutes: 15, market_hours_only: true }
-                });
-            }
-        } catch (err) {
-            console.error('Failed to fetch autopilot status:', err);
-        }
-    }, []);
+  const fetchAccountInfo = useCallback(async () => {
+    try { const res = await fetch('/api/v1/autopilot/broker/metrics'); if (res.ok) { const d = await res.json(); setAccountInfo({ broker: 'Alpaca', account_id: d.account_id || 'PAPER-XXXX', label: 'Paper Trading' }); } }
+    catch { setAccountInfo({ broker: 'Alpaca', account_id: 'PAPER-XXXX', label: 'Paper Trading' }); }
+  }, []);
 
-    // Fetch health statuses
-    const fetchHealthStatuses = useCallback(async () => {
-        const _providers = ['alpaca_rest', 'alpaca_stream', 'finnhub', 'yfinance', 'groq', 'gemini'];
-        void _providers; // List of providers we'll check
-        const statuses: Record<string, HealthStatus> = {};
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/autopilot/logs?limit=20');
+      if (res.ok) {
+        const data = await res.json();
+        const notifs: Notification[] = (data.logs || []).slice(0, 10).map((log: any, idx: number) => ({
+          id: `notif-${idx}`, type: log.level === 'error' ? 'error' : log.level === 'warning' ? 'warning' : 'info',
+          title: log.event_type || 'Event', message: log.message || JSON.stringify(log.data || {}),
+          timestamp: log.timestamp, read: false,
+        }));
+        setNotifications(notifs);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
-        // Fetch from backend health endpoint
-        try {
-            const res = await fetch(`${API_BASE}/autopilot/broker/metrics`);
-            if (res.ok) {
-                const data = await res.json();
-                statuses['alpaca_rest'] = {
-                    provider: 'Alpaca REST',
-                    status: data.connected ? 'connected' : 'disconnected',
-                    latency_ms: data.avg_latency_ms
-                };
-            }
-        } catch {
-            statuses['alpaca_rest'] = { provider: 'Alpaca REST', status: 'disconnected' };
-        }
+  const toggleAutopilot = async () => {
+    setLoading(true);
+    try { const ep = autopilotStatus?.state === 'paused' ? 'resume' : 'pause'; await fetch(`/api/v1/autopilot/${ep}`, { method: 'POST' }); await fetchAutopilotStatus(); } catch { /* ignore */ }
+    setLoading(false);
+  };
 
-        // Check websocket via autopilot status
-        if (autopilotStatus) {
-            statuses['alpaca_stream'] = {
-                provider: 'Alpaca Stream',
-                status: autopilotStatus.state === 'running' ? 'connected' : 'degraded'
-            };
-        }
+  const activateKillSwitch = async () => {
+    if (!confirm('Activate kill switch? This will pause autopilot and cancel open orders.')) return;
+    setLoading(true);
+    try { await fetch('/api/v1/autopilot/kill_switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activate: true, close_all: false }) }); await fetchAutopilotStatus(); } catch { /* ignore */ }
+    setLoading(false);
+  };
 
-        // Check other providers via health endpoint
-        try {
-            const res = await fetch('/health');
-            if (res.ok) {
-                statuses['finnhub'] = { provider: 'Finnhub', status: 'connected' };
-                statuses['yfinance'] = { provider: 'yfinance', status: 'connected' };
-            }
-        } catch {
-            statuses['finnhub'] = { provider: 'Finnhub', status: 'disconnected' };
-            statuses['yfinance'] = { provider: 'yfinance', status: 'disconnected' };
-        }
+  useEffect(() => { const i = setInterval(() => setMarketTime(new Date()), 1000); return () => clearInterval(i); }, []);
+  useEffect(() => { fetchAutopilotStatus(); fetchAccountInfo(); fetchNotifications(); }, [fetchAutopilotStatus, fetchAccountInfo, fetchNotifications]);
+  useEffect(() => { fetchHealthStatuses(); const i = setInterval(fetchHealthStatuses, 60000); return () => clearInterval(i); }, [fetchHealthStatuses]);
 
-        // LLM providers (check via config)
-        try {
-            const res = await fetch(`${API_BASE}/autopilot/config`);
-            if (res.ok) {
-                const data = await res.json();
-                const llmEnabled = data.config?.llm_settings?.enabled;
-                statuses['groq'] = { provider: 'Groq', status: llmEnabled ? 'connected' : 'disconnected' };
-                statuses['gemini'] = { provider: 'Gemini', status: llmEnabled ? 'connected' : 'disconnected' };
-            }
-        } catch {
-            statuses['groq'] = { provider: 'Groq', status: 'disconnected' };
-            statuses['gemini'] = { provider: 'Gemini', status: 'disconnected' };
-        }
+  const formatTime = (d: Date) => d.toLocaleTimeString('en-US', { hour12: false, timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const cycleOk = autopilotStatus?.last_cycle?.success;
+  const cycleTime = autopilotStatus?.last_cycle ? new Date(autopilotStatus.last_cycle.timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : '';
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const apColor = autopilotStatus?.state === 'running' ? GREEN : autopilotStatus?.state === 'paused' ? AMBER : SUBTLE;
 
-        setHealthStatuses(statuses);
-    }, [autopilotStatus]);
+  const smallBtn = (col: string): React.CSSProperties => ({
+    display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', fontFamily: MONO, fontSize: 9,
+    letterSpacing: 0.5, cursor: 'pointer', background: col + '22', border: `1px solid ${col}`,
+    color: col, borderRadius: 2,
+  });
 
-    // Fetch account info
-    const fetchAccountInfo = useCallback(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/autopilot/broker/metrics`);
-            if (res.ok) {
-                const data = await res.json();
-                setAccountInfo({
-                    broker: 'Alpaca',
-                    account_id: data.account_id || 'PAPER-XXXX',
-                    label: 'Paper Trading'
-                });
-            }
-        } catch {
-            setAccountInfo({
-                broker: 'Alpaca',
-                account_id: 'PAPER-XXXX',
-                label: 'Paper Trading'
-            });
-        }
-    }, []);
+  return (
+    <header data-testid="top-app-bar" style={{ background: PANEL, borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+      {/* PAPER MODE Banner */}
+      <div data-testid="topbar-paper-mode-banner"
+        style={{ height: 26, background: AMBER + 'ee', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: MONO, fontSize: 10, fontWeight: 700, color: '#000', letterSpacing: 0.5 }}>
+        âš  PAPER MODE â€” ALL TRADES ARE SIMULATED âš 
+      </div>
 
-    // Fetch notifications (from activity log)
-    const fetchNotifications = useCallback(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/autopilot/logs?limit=20`);
-            if (res.ok) {
-                const data = await res.json();
-                const notifs: Notification[] = (data.logs || []).slice(0, 10).map((log: any, idx: number) => ({
-                    id: `notif-${idx}`,
-                    type: log.level === 'error' ? 'error' : log.level === 'warning' ? 'warning' : 'info',
-                    title: log.event_type || 'Event',
-                    message: log.message || JSON.stringify(log.data || {}),
-                    timestamp: log.timestamp,
-                    read: false
-                }));
-                setNotifications(notifs);
-            }
-        } catch (err) {
-            console.error('Failed to fetch notifications:', err);
-        }
-    }, []);
+      {/* Main bar */}
+      <div style={{ height: 44, display: 'flex', alignItems: 'center', padding: '0 12px', justifyContent: 'space-between', fontFamily: MONO }}>
 
-    // Toggle autopilot
-    const toggleAutopilot = async () => {
-        setLoading(true);
-        try {
-            const endpoint = autopilotStatus?.state === 'paused' ? 'resume' : 'pause';
-            await fetch(`${API_BASE}/autopilot/${endpoint}`, { method: 'POST' });
-            await fetchAutopilotStatus();
-        } catch (err) {
-            console.error('Failed to toggle autopilot:', err);
-        }
-        setLoading(false);
-    };
+        {/* Left section */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Logo */}
+          <div style={{ width: 28, height: 28, background: AMBER + '22', border: `1px solid ${AMBER}`, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: AMBER, fontWeight: 700, fontSize: 12 }}>T</div>
 
-    // Activate kill switch
-    const activateKillSwitch = async () => {
-        if (!confirm('Activate kill switch? This will pause autopilot and cancel open orders.')) return;
-        setLoading(true);
-        try {
-            await fetch(`${API_BASE}/autopilot/kill_switch`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ activate: true, close_all: false })
-            });
-            await fetchAutopilotStatus();
-        } catch (err) {
-            console.error('Failed to activate kill switch:', err);
-        }
-        setLoading(false);
-    };
+          {/* Mode badge */}
+          <span data-testid="mode-badge" style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, padding: '2px 6px', borderRadius: 2 }}>
+            {accountInfo?.label || 'DEMO'}
+          </span>
 
-    // Market time update
-    useEffect(() => {
-        const interval = setInterval(() => setMarketTime(new Date()), 1000);
-        return () => clearInterval(interval);
-    }, []);
+          {/* Symbol / Timeframe */}
+          <span data-testid="symbol-display" style={{ fontSize: 11, color: TEXT, fontWeight: 700 }}>SPY</span>
+          <span data-testid="timeframe-display" style={{ fontSize: 10, color: SUBTLE }}>1D</span>
 
-    // Initial fetch
-    useEffect(() => {
-        fetchAutopilotStatus();
-        fetchAccountInfo();
-        fetchNotifications();
-    }, [fetchAutopilotStatus, fetchAccountInfo, fetchNotifications]);
+          <div style={{ width: 1, height: 20, background: BORDER }} />
 
-    // Health status polling
-    useEffect(() => {
-        fetchHealthStatuses();
-        const interval = setInterval(fetchHealthStatuses, 60000); // Poll every 60s to reduce backend load
-        return () => clearInterval(interval);
-    }, [fetchHealthStatuses]);
+          {/* Broker info */}
+          <div data-testid="broker-info" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10 }}>
+            <span style={{ color: SUBTLE }}>BROKER:</span>
+            <span style={{ color: TEXT, fontWeight: 600 }}>{accountInfo?.broker || 'ALPACA'}</span>
+            <span style={{ color: SUBTLE }}>({accountInfo?.label} â€¢â€¢â€¢{accountInfo?.account_id?.slice(-4) || 'XXXX'})</span>
+          </div>
 
-    // Format time
-    const formatTime = (date: Date) => {
-        return date.toLocaleTimeString('en-US', {
-            hour12: false,
-            timeZone: 'America/New_York',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    };
+          <div style={{ width: 1, height: 20, background: BORDER }} />
 
-    // Get status color
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'connected': return 'bg-green-500';
-            case 'degraded': return 'bg-yellow-500';
-            case 'disconnected': return 'bg-gray-500';
-            case 'error': return 'bg-red-500';
-            default: return 'bg-gray-500';
-        }
-    };
+          {/* Autopilot toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={toggleAutopilot} disabled={loading || autopilotStatus?.kill_switch_active || false}
+              data-testid="autopilot-toggle"
+              style={{ ...smallBtn(apColor), opacity: loading ? 0.6 : 1 }}>
+              {loading ? 'âŸ³' : autopilotStatus?.state === 'running' ? 'â–¶' : 'â¸'}
+              <span>AUTOPILOT</span>
+              <span style={{ fontSize: 8, padding: '0 3px', background: apColor + '33', borderRadius: 1 }}>
+                {autopilotStatus?.state === 'running' ? 'ON' : 'OFF'}
+              </span>
+            </button>
 
-    // Get cycle status
-    const getCycleStatus = () => {
-        if (!autopilotStatus?.last_cycle) return null;
-        const { success, timestamp, error } = autopilotStatus.last_cycle;
-        return {
-            status: success ? 'success' : error ? 'failed' : 'warning',
-            time: new Date(timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
-        };
-    };
+            {/* Kill switch */}
+            <button onClick={activateKillSwitch} disabled={loading || autopilotStatus?.kill_switch_active || false}
+              data-testid="kill-switch"
+              title="Kill Switch â€” Emergency Stop"
+              style={{ background: RED + (autopilotStatus?.kill_switch_active ? '44' : '22'), border: `1px solid ${RED}`, color: RED, padding: '4px 7px', cursor: 'pointer', borderRadius: 2, fontSize: 12, fontFamily: MONO }}>
+              â»
+            </button>
+          </div>
 
-    const cycleStatus = getCycleStatus();
-    const unreadCount = notifications.filter(n => !n.read).length;
+          <div style={{ width: 1, height: 20, background: BORDER }} />
 
-    return (
-        <header className="h-auto bg-panel-bg border-b border-border shrink-0 z-header" data-testid="top-app-bar">
-            {/* PAPER MODE Banner */}
-            <div className="h-8 bg-amber-500/90 text-black flex items-center justify-center gap-2 text-sm font-bold" data-testid="topbar-paper-mode-banner">
-                <AlertTriangle size={16} />
-                PAPER MODE — All trades are simulated
-                <AlertTriangle size={16} />
+          {/* Last cycle status */}
+          {autopilotStatus?.last_cycle && (
+            <div data-testid="last-cycle-status"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '2px 7px', background: (cycleOk ? GREEN : RED) + '22', border: `1px solid ${cycleOk ? GREEN : RED}`, borderRadius: 2, fontSize: 9, color: cycleOk ? GREEN : RED }}>
+              {cycleOk ? 'âœ“' : 'âœ•'} LAST: {cycleOk ? 'OK' : 'FAIL'} <span style={{ color: SUBTLE }}>{cycleTime}</span>
             </div>
+          )}
 
-            {/* Main Bar */}
-            <div className="h-12 flex items-center px-4 justify-between">
-                {/* Left: Logo + Broker + Autopilot */}
-                <div className="flex items-center gap-3">
-                    {/* Logo */}
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-brand/10 rounded flex items-center justify-center text-brand font-bold text-sm">
-                            T
-                        </div>
-                    </div>
-
-                    {/* Mode Badge */}
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" data-testid="mode-badge">
-                        {accountInfo?.label || 'DEMO'}
-                    </span>
-
-                    {/* Symbol & Timeframe */}
-                    <span className="text-xs font-medium text-text" data-testid="symbol-display">SPY</span>
-                    <span className="text-xs text-text-secondary" data-testid="timeframe-display">1D</span>
-
-                    <div className="h-6 w-px bg-border" />
-
-                    {/* Broker Info */}
-                    <div className="flex items-center gap-2 text-xs" data-testid="broker-info">
-                        <span className="text-text-secondary">Broker:</span>
-                        <span className="font-medium text-text">
-                            {accountInfo?.broker || 'Alpaca'}
-                        </span>
-                        <span className="text-text-muted">
-                            ({accountInfo?.label} •••{accountInfo?.account_id?.slice(-4) || 'XXXX'})
-                        </span>
-                    </div>
-
-                    <div className="h-6 w-px bg-border" />
-
-                    {/* Autopilot Toggle */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={toggleAutopilot}
-                            disabled={loading || autopilotStatus?.kill_switch_active}
-                            className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                                autopilotStatus?.state === 'running'
-                                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                                    : autopilotStatus?.state === 'paused'
-                                        ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                                        : "bg-element-bg text-text-secondary border border-border"
-                            )}
-                            data-testid="autopilot-toggle"
-                        >
-                            {loading ? (
-                                <Loader2 size={14} className="animate-spin" />
-                            ) : autopilotStatus?.state === 'running' ? (
-                                <Play size={14} />
-                            ) : (
-                                <Pause size={14} />
-                            )}
-                            <span>Autopilot</span>
-                            <span className={cn(
-                                "px-1.5 py-0.5 rounded text-[10px] uppercase",
-                                autopilotStatus?.state === 'running' ? "bg-green-500/30" : "bg-gray-500/30"
-                            )}>
-                                {autopilotStatus?.state === 'running' ? 'ON' : 'OFF'}
-                            </span>
-                        </button>
-
-                        {/* Kill Switch */}
-                        <button
-                            onClick={activateKillSwitch}
-                            disabled={loading || autopilotStatus?.kill_switch_active}
-                            className={cn(
-                                "p-1.5 rounded-lg transition-all",
-                                autopilotStatus?.kill_switch_active
-                                    ? "bg-red-500/30 text-red-400"
-                                    : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                            )}
-                            title="Kill Switch - Emergency Stop"
-                            data-testid="kill-switch"
-                        >
-                            <Power size={16} />
-                        </button>
-                    </div>
-
-                    <div className="h-6 w-px bg-border" />
-
-                    {/* Last Cycle Status */}
-                    {cycleStatus && (
-                        <div
-                            className={cn(
-                                "flex items-center gap-2 px-2 py-1 rounded text-xs",
-                                cycleStatus.status === 'success' ? "bg-green-500/10 text-green-400" :
-                                    cycleStatus.status === 'failed' ? "bg-red-500/10 text-red-400" :
-                                        "bg-yellow-500/10 text-yellow-400"
-                            )}
-                            data-testid="last-cycle-status"
-                        >
-                            {cycleStatus.status === 'success' ? <CheckCircle2 size={12} /> :
-                                cycleStatus.status === 'failed' ? <XCircle size={12} /> :
-                                    <AlertTriangle size={12} />}
-                            <span>Last: {cycleStatus.status}</span>
-                            <span className="text-text-muted">{cycleStatus.time}</span>
-                        </div>
-                    )}
-
-                    {/* Next Run */}
-                    {autopilotStatus?.next_run && (
-                        <div className="flex items-center gap-1.5 text-xs text-text-secondary" data-testid="next-run">
-                            <Clock size={12} />
-                            <span>Next: {new Date(autopilotStatus.next_run).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right: Health + Search + Clock + Notifications */}
-                <div className="flex items-center gap-3">
-                    {/* Voice Control */}
-                    <VoiceControl />
-
-                    {/* Health Chips */}
-                    <div className="flex items-center gap-2" data-testid="health-chips">
-                        {Object.entries(healthStatuses).slice(0, 6).map(([key, health]) => (
-                            <div
-                                key={key}
-                                className="flex items-center gap-1.5 text-[10px]"
-                                title={`${health.provider}: ${health.status}${health.latency_ms ? ` (${health.latency_ms}ms)` : ''}`}
-                            >
-                                <div className={cn("w-1.5 h-1.5 rounded-full", getStatusColor(health.status))} />
-                                <span className="text-text-secondary hidden xl:inline">{health.provider}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="h-4 w-px bg-border" />
-
-                    {/* WebSocket Status Pill */}
-                    <div className="flex items-center gap-2">
-                        <div
-                            className={cn(
-                                "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs",
-                                wsState === 'CONNECTED' ? "bg-green-500/10 text-green-400" :
-                                    wsState === 'CONNECTING' ? "bg-yellow-500/10 text-yellow-400" :
-                                        wsState === 'DEGRADED' ? "bg-yellow-500/10 text-yellow-400" :
-                                            "bg-red-500/10 text-red-400"
-                            )}
-                            data-testid="ws-status-pill"
-                            data-ws-status={wsState}
-                        >
-                            <div className={cn("w-2 h-2 rounded-full", getWsStatusColor())} />
-                            {getWsStatusIcon()}
-                            <span className="hidden lg:inline">{wsState}</span>
-                        </div>
-
-                        {/* WebSocket Reconnect Button */}
-                        <button
-                            onClick={handleWsReconnect}
-                            disabled={wsReconnecting || wsState === 'CONNECTING'}
-                            className={cn(
-                                "p-1.5 rounded hover:bg-element-bg transition-colors disabled:opacity-50",
-                                wsReconnecting && "animate-pulse"
-                            )}
-                            title="Force WebSocket Reconnect"
-                            aria-label="Reconnect WebSocket"
-                            data-testid="ws-reconnect-btn"
-                        >
-                            <RefreshCw
-                                size={14}
-                                className={cn(
-                                    "text-text-secondary",
-                                    wsReconnecting && "animate-spin"
-                                )}
-                            />
-                        </button>
-                    </div>
-
-                    <div className="h-4 w-px bg-border" />
-
-                    {/* Data Source Selector */}
-                    <DataSourceSelector value={dataSource} onChange={setDataSource} />
-
-                    <div className="h-4 w-px bg-border" />
-
-                    {/* Global Search */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setSearchOpen(!searchOpen)}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded bg-element-bg hover:bg-border transition-colors text-xs text-text-secondary"
-                            data-testid="global-search-btn"
-                        >
-                            <Search size={14} />
-                            <span className="hidden md:inline">Search</span>
-                            <kbd className="hidden md:inline text-[10px] px-1 py-0.5 rounded bg-panel-bg text-text-muted">/</kbd>
-                        </button>
-
-                        {searchOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-80 bg-panel-bg border border-border rounded-lg shadow-lg p-2 z-dropdown">
-                                <div className="flex items-center gap-2 px-2 py-1.5 bg-element-bg rounded">
-                                    <Search size={14} className="text-text-secondary" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search symbol, order ID, run ID..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="flex-1 bg-transparent text-sm text-text outline-none"
-                                        autoFocus
-                                    />
-                                    <button onClick={() => setSearchOpen(false)}>
-                                        <X size={14} className="text-text-secondary" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="h-4 w-px bg-border" />
-
-                    {/* Market Clock */}
-                    <div className="flex items-center gap-1.5 text-xs font-mono text-text-secondary">
-                        <Clock size={12} />
-                        <span>{formatTime(marketTime)} ET</span>
-                    </div>
-
-                    <div className="h-4 w-px bg-border" />
-
-                    {/* Notifications */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setNotificationsOpen(!notificationsOpen)}
-                            className="relative p-1.5 rounded hover:bg-element-bg transition-colors"
-                            aria-label="Notifications"
-                            data-testid="notifications-btn"
-                        >
-                            <Bell size={18} className="text-text-secondary" />
-                            {unreadCount > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
-                                    {unreadCount > 9 ? '9+' : unreadCount}
-                                </span>
-                            )}
-                        </button>
-
-                        {notificationsOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-80 bg-panel-bg border border-border rounded-lg shadow-lg overflow-hidden z-dropdown">
-                                <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-                                    <span className="text-sm font-medium text-text">Notifications</span>
-                                    <span className="text-xs text-text-secondary">{unreadCount} unread</span>
-                                </div>
-                                <div className="max-h-80 overflow-y-auto">
-                                    {notifications.length === 0 ? (
-                                        <div className="p-4 text-center text-text-secondary text-sm">No notifications</div>
-                                    ) : (
-                                        notifications.map(notif => (
-                                            <div
-                                                key={notif.id}
-                                                className={cn(
-                                                    "px-3 py-2 border-b border-border hover:bg-element-bg transition-colors cursor-pointer",
-                                                    !notif.read && "bg-brand/5"
-                                                )}
-                                            >
-                                                <div className="flex items-start gap-2">
-                                                    {notif.type === 'error' ? <XCircle size={14} className="text-red-400 mt-0.5" /> :
-                                                        notif.type === 'warning' ? <AlertTriangle size={14} className="text-yellow-400 mt-0.5" /> :
-                                                            notif.type === 'success' ? <CheckCircle2 size={14} className="text-green-400 mt-0.5" /> :
-                                                                <Activity size={14} className="text-blue-400 mt-0.5" />}
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="text-xs font-medium text-text truncate">{notif.title}</div>
-                                                        <div className="text-[10px] text-text-secondary truncate">{notif.message}</div>
-                                                    </div>
-                                                    <span className="text-[10px] text-text-muted">
-                                                        {new Date(notif.timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
+          {/* Next run */}
+          {autopilotStatus?.next_run && (
+            <div data-testid="next-run" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: SUBTLE }}>
+              â° NEXT: {new Date(autopilotStatus.next_run).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
             </div>
-        </header>
-    );
+          )}
+        </div>
+
+        {/* Right section */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Voice control */}
+          <VoiceControl />
+
+          {/* Health chips */}
+          <div data-testid="health-chips" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {Object.entries(healthStatuses).slice(0, 6).map(([key, h]) => (
+              <div key={key} title={`${h.provider}: ${h.status}${h.latency_ms ? ` (${h.latency_ms}ms)` : ''}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 8, color: SUBTLE }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: statusColor(h.status) }} />
+                <span style={{ display: 'none' }}>{h.provider}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ width: 1, height: 16, background: BORDER }} />
+
+          {/* WS Status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div data-testid="ws-status-pill" data-ws-status={wsState}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 7px', background: wsColor(wsState) + '22', border: `1px solid ${wsColor(wsState)}`, borderRadius: 2, fontSize: 9, color: wsColor(wsState) }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: wsColor(wsState) }} />
+              {wsState}
+            </div>
+            <button onClick={handleWsReconnect} disabled={wsReconnecting || wsState === 'CONNECTING'}
+              data-testid="ws-reconnect-btn" aria-label="Reconnect WebSocket"
+              title="Force WebSocket Reconnect"
+              style={{ background: 'none', border: `1px solid ${BORDER}`, color: SUBTLE, padding: '3px 5px', cursor: 'pointer', borderRadius: 2, fontSize: 10, fontFamily: MONO, opacity: wsReconnecting ? 0.5 : 1 }}>â†º</button>
+          </div>
+
+          <div style={{ width: 1, height: 16, background: BORDER }} />
+
+          {/* Data source selector */}
+          <DataSourceSelector value={dataSource} onChange={setDataSource} />
+
+          <div style={{ width: 1, height: 16, background: BORDER }} />
+
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setSearchOpen(!searchOpen)}
+              data-testid="global-search-btn"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', background: BG, border: `1px solid ${BORDER}`, color: SUBTLE, cursor: 'pointer', borderRadius: 2, fontFamily: MONO, fontSize: 9 }}>
+              ðŸ” SEARCH <kbd style={{ fontSize: 8, color: SUBTLE, background: PANEL, border: `1px solid ${BORDER}`, padding: '1px 4px', borderRadius: 2 }}>/</kbd>
+            </button>
+            {searchOpen && (
+              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 280, background: PANEL, border: `1px solid ${AMBER}`, borderRadius: 2, padding: 8, zIndex: 500, boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: BG, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '4px 8px' }}>
+                  <span style={{ color: SUBTLE, fontSize: 11 }}>ðŸ”</span>
+                  <input type="text" placeholder="SEARCH SYMBOL, ORDER ID..." value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)} autoFocus
+                    style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: TEXT, fontFamily: MONO, fontSize: 10 }} />
+                  <button onClick={() => setSearchOpen(false)} style={{ background: 'none', border: 'none', color: SUBTLE, cursor: 'pointer', fontSize: 11 }}>âœ•</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ width: 1, height: 16, background: BORDER }} />
+
+          {/* Market Clock */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: SUBTLE, fontFamily: MONO }}>
+            â± <span>{formatTime(marketTime)} ET</span>
+          </div>
+
+          <div style={{ width: 1, height: 16, background: BORDER }} />
+
+          {/* Notifications */}
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setNotificationsOpen(!notificationsOpen)}
+              data-testid="notifications-btn" aria-label="Notifications"
+              style={{ position: 'relative', background: 'none', border: 'none', color: SUBTLE, cursor: 'pointer', fontSize: 16, padding: '3px 5px', fontFamily: MONO }}>
+              ðŸ””
+              {unreadCount > 0 && (
+                <span style={{ position: 'absolute', top: 0, right: 0, width: 14, height: 14, background: RED, borderRadius: '50%', fontSize: 8, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {notificationsOpen && (
+              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 300, background: PANEL, border: `1px solid ${AMBER}`, borderRadius: 2, zIndex: 500, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', borderBottom: `1px solid ${BORDER}`, background: BG }}>
+                  <span style={{ fontSize: 10, color: AMBER, fontWeight: 700, letterSpacing: 0.5 }}>NOTIFICATIONS</span>
+                  <span style={{ fontSize: 9, color: SUBTLE }}>{unreadCount} UNREAD</span>
+                </div>
+                <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: 16, textAlign: 'center', color: SUBTLE, fontSize: 10 }}>NO NOTIFICATIONS</div>
+                  ) : notifications.map(notif => (
+                    <div key={notif.id}
+                      style={{ padding: '7px 10px', borderBottom: `1px solid ${BORDER}`, background: notif.read ? 'transparent' : BLUE + '08', cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: notif.type === 'error' ? RED : notif.type === 'warning' ? AMBER : notif.type === 'success' ? GREEN : BLUE }}>
+                          {notif.type === 'error' ? 'âœ•' : notif.type === 'warning' ? 'âš ' : notif.type === 'success' ? 'âœ“' : 'â„¹'}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 10, color: TEXT, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{notif.title}</div>
+                          <div style={{ fontSize: 9, color: SUBTLE, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{notif.message}</div>
+                        </div>
+                        <span style={{ fontSize: 8, color: SUBTLE, flexShrink: 0 }}>
+                          {new Date(notif.timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
 }

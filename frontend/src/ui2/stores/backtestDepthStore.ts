@@ -107,7 +107,7 @@ function generateSweepCells(config: SweepConfig): SweepCell[] {
 
   for (const v0 of p0Values) {
     for (const v1 of p1Values) {
-      const seed = fnv32(`${config.sweep_id}:${v0}:${v1}:${new Date().toISOString()}`);
+      const seed = fnv32(`${config.sweep_id}:${v0}:${v1}`);
       const paramValues: Record<string, number> = { [p0.name]: v0 };
       if (p1) paramValues[p1.name] = v1;
 
@@ -126,7 +126,7 @@ function generateSweepCells(config: SweepConfig): SweepCell[] {
 }
 
 function generateWalkForward(symbol: string, strategyId: string): WalkForwardResult {
-  const wfId = `wf-${fnv32(`${symbol}:${strategyId}:wf:${new Date().toISOString()}`).toString(16).slice(0, 8)}`;
+  const wfId = `wf-${fnv32(`${symbol}:${strategyId}:wf`).toString(16).slice(0, 8)}`;
   const windows: WalkForwardWindow[] = [];
   const baseYear = 2024;
 
@@ -164,7 +164,7 @@ function generateWalkForward(symbol: string, strategyId: string): WalkForwardRes
 }
 
 function generateRobustness(symbol: string, strategyId: string): RobustnessResult {
-  const robId = `rob-${fnv32(`${symbol}:${strategyId}:rob:${new Date().toISOString()}`).toString(16).slice(0, 8)}`;
+  const robId = `rob-${fnv32(`${symbol}:${strategyId}:rob`).toString(16).slice(0, 8)}`;
   const baseSeed = fnv32(`${robId}:base`);
   const baseSharpe = Math.round(((baseSeed % 200) / 100 + 0.5) * 100) / 100;
   const baseReturn = Math.round(((baseSeed % 3000) / 100 + 5) * 100) / 100;

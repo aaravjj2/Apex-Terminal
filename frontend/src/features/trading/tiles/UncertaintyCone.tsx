@@ -1,263 +1,171 @@
-/**
- * Uncertainty Cone Tile
- * 
- * Displays price forecast with confidence interval cones based on historical volatility.
- */
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
 
-import { useState, useEffect, useCallback } from 'react';
-import { TrendingUp, RefreshCw, AlertCircle } from 'lucide-react';
-import { Line } from 'react-chartjs-2';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Filler,
-    Title,
-    Tooltip,
-    Legend,
-} from 'chart.js';
-import type { TooltipItem } from 'chart.js';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import React from 'react';
 import { ApiClient } from '../../../data/ApiClient';
 import type { ForecastResponse } from '../../../data/ApiClient';
-import { Panel } from '../../../ui/Panel';
-import { Button } from '../../../ui/Button';
-
-// Register Chart.js components
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Filler,
-    Title,
-    Tooltip,
-    Legend
-);
-
 import { useSymbol } from '../../../state/appStore';
 
-interface TileProps {
-    tileId: string;
-    onClose: () => void;
-    onMaximize: () => void;
-    isMaximized: boolean;
+interface TileProps { tileId: string; onClose: ()=>void; onMaximize: ()=>void; isMaximized: boolean; }
+interface UncertaintyConeContentProps { symbol: string; showControls?: boolean; }
+
+function drawCone(canvas: HTMLCanvasElement, forecast: ForecastResponse) {
+  const ctx = canvas.getContext('2d'); if(!ctx) return;
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
+  const cone95=forecast.cones['95%'], cone68=forecast.cones['68%'];
+  if(!cone95||!cone68) return;
+  const days=forecast.forecast_days;
+  const allVals=[...cone95.upper,...cone95.lower,...cone68.upper,...cone68.lower];
+  const minV=Math.min(...allVals), maxV=Math.max(...allVals);
+  const padH=32, padV=20;
+  const scaleX=(i:number)=>padH+(i/(days-1))*(W-padH*2);
+  const scaleY=(v:number)=>padV+((maxV-v)/(maxV-minV))*(H-padV*2);
+  // Grid lines
+  ctx.strokeStyle=`${BORDER}88`; ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){
+    const y=padV+i*(H-padV*2)/4;
+    ctx.beginPath(); ctx.moveTo(padH,y); ctx.lineTo(W-padH,y); ctx.stroke();
+    const v=maxV-i*(maxV-minV)/4;
+    ctx.fillStyle=SUBTLE; ctx.font=`9px ${MONO}`;
+    ctx.fillText(`$${v.toFixed(0)}`,2,y+3);
+  }
+  // 95% cone fill (outer)
+  ctx.beginPath();
+  cone95.upper.forEach((v,i)=>{i===0?ctx.moveTo(scaleX(i),scaleY(v)):ctx.lineTo(scaleX(i),scaleY(v))});
+  [...cone95.lower].reverse().forEach((v,i)=>{ctx.lineTo(scaleX(days-1-i),scaleY(v));});
+  ctx.closePath();
+  ctx.fillStyle=`${BLUE}28`; ctx.fill();
+  // 68% cone fill (inner)
+  ctx.beginPath();
+  cone68.upper.forEach((v,i)=>{i===0?ctx.moveTo(scaleX(i),scaleY(v)):ctx.lineTo(scaleX(i),scaleY(v))});
+  [...cone68.lower].reverse().forEach((v,i)=>{ctx.lineTo(scaleX(days-1-i),scaleY(v));});
+  ctx.closePath();
+  ctx.fillStyle=`${GREEN}35`; ctx.fill();
+  // 95% borders
+  ctx.strokeStyle=`${BLUE}77`; ctx.lineWidth=1;
+  ctx.beginPath(); cone95.upper.forEach((v,i)=>{i===0?ctx.moveTo(scaleX(i),scaleY(v)):ctx.lineTo(scaleX(i),scaleY(v))}); ctx.stroke();
+  ctx.beginPath(); cone95.lower.forEach((v,i)=>{i===0?ctx.moveTo(scaleX(i),scaleY(v)):ctx.lineTo(scaleX(i),scaleY(v))}); ctx.stroke();
+  // 68% borders
+  ctx.strokeStyle=`${GREEN}bb`; ctx.lineWidth=1.5;
+  ctx.beginPath(); cone68.upper.forEach((v,i)=>{i===0?ctx.moveTo(scaleX(i),scaleY(v)):ctx.lineTo(scaleX(i),scaleY(v))}); ctx.stroke();
+  ctx.beginPath(); cone68.lower.forEach((v,i)=>{i===0?ctx.moveTo(scaleX(i),scaleY(v)):ctx.lineTo(scaleX(i),scaleY(v))}); ctx.stroke();
+  // Median dashed white
+  if(cone68.median){
+    ctx.strokeStyle=TEXT; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); cone68.median.forEach((v,i)=>{i===0?ctx.moveTo(scaleX(i),scaleY(v)):ctx.lineTo(scaleX(i),scaleY(v))}); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // Current price marker
+  const cp=forecast.current_price;
+  ctx.strokeStyle=AMBER; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(padH,scaleY(cp)); ctx.lineTo(scaleX(0),scaleY(cp)); ctx.stroke();
+  ctx.setLineDash([]);
+  // X labels
+  ctx.fillStyle=SUBTLE; ctx.font=`9px ${MONO}`;
+  [0,Math.floor(days/4),Math.floor(days/2),Math.floor(days*3/4),days-1].forEach(i=>{
+    ctx.fillText(`D+${i+1}`,scaleX(i)-10,H-4);
+  });
 }
 
+export function UncertaintyConeContent({symbol,showControls=true}:UncertaintyConeContentProps) {
+  const [forecast, setForecast] = useState<ForecastResponse|null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string|null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const days=30;
 
-interface UncertaintyConeContentProps {
-    symbol: string;
-    showControls?: boolean;
-}
+  const fetchForecast = useCallback(async()=>{
+    setLoading(true); setError(null);
+    try {
+      const data=await ApiClient.getForecast(symbol,days);
+      setForecast(data);
+    } catch(e) { setError((e as Error).message); }
+    finally { setLoading(false); }
+  },[symbol,days]);
 
-export function UncertaintyConeContent({ symbol, showControls = true }: UncertaintyConeContentProps) {
-    const days = 30; // Default days for tile view
-    const [forecast, setForecast] = useState<ForecastResponse | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  useEffect(()=>{fetchForecast();},[fetchForecast]);
 
-    const fetchForecast = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const data = await ApiClient.getForecast(symbol, days);
-            setForecast(data);
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setLoading(false);
-        }
-    }, [symbol, days]);
+  useEffect(()=>{
+    if(canvasRef.current&&forecast) drawCone(canvasRef.current,forecast);
+  },[forecast]);
 
-    useEffect(() => {
-        fetchForecast();
-    }, [fetchForecast]);
+  const StatBox=({label,value,color}:{label:string,value:string,color?:string})=>(
+    <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:2,padding:'6px 10px',flex:1,textAlign:'center' as const}}>
+      <div style={{fontSize:9,color:SUBTLE,marginBottom:2}}>{label}</div>
+      <div style={{fontSize:13,color:color||TEXT,fontFamily:MONO,fontWeight:700}}>{value}</div>
+    </div>
+  );
 
-    // Generate chart data
-    const chartData = forecast ? {
-        labels: Array.from({ length: days }, (_, i) => `D+${i + 1}`),
-        datasets: [
-            // 95% confidence - outer cone (light fill)
-            forecast.cones['95%'] && {
-                label: '95% Upper',
-                data: forecast.cones['95%'].upper,
-                borderColor: 'rgba(59, 130, 246, 0.3)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                fill: '+1',
-                pointRadius: 0,
-                borderWidth: 1,
-            },
-            forecast.cones['95%'] && {
-                label: '95% Lower',
-                data: forecast.cones['95%'].lower,
-                borderColor: 'rgba(59, 130, 246, 0.3)',
-                backgroundColor: 'transparent',
-                fill: false,
-                pointRadius: 0,
-                borderWidth: 1,
-            },
-            // 68% confidence - inner cone (darker fill)
-            forecast.cones['68%'] && {
-                label: '68% Upper',
-                data: forecast.cones['68%'].upper,
-                borderColor: 'rgba(34, 197, 94, 0.5)',
-                backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                fill: '+1',
-                pointRadius: 0,
-                borderWidth: 1.5,
-            },
-            forecast.cones['68%'] && {
-                label: '68% Lower',
-                data: forecast.cones['68%'].lower,
-                borderColor: 'rgba(34, 197, 94, 0.5)',
-                backgroundColor: 'transparent',
-                fill: false,
-                pointRadius: 0,
-                borderWidth: 1.5,
-            },
-            // Median line
-            forecast.cones['68%'] && {
-                label: 'Median',
-                data: forecast.cones['68%'].median,
-                borderColor: '#fff',
-                backgroundColor: 'transparent',
-                fill: false,
-                pointRadius: 0,
-                borderWidth: 2,
-                borderDash: [4, 4],
-            },
-        ].filter(Boolean),
-    } : { labels: [], datasets: [] };
-
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false,
-            },
-            tooltip: {
-                mode: 'index' as const,
-                intersect: false,
-                callbacks: {
-                    label: (context: TooltipItem<'line'>) => {
-                        const label = context.dataset.label || '';
-                        const value = context.parsed.y;
-                        return `${label}: $${value?.toFixed(2) ?? 'N/A'}`;
-                    },
-                },
-            },
-        },
-        scales: {
-            x: {
-                grid: {
-                    color: 'rgba(255, 255, 255, 0.1)',
-                },
-                ticks: {
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    maxTicksLimit: 6,
-                },
-            },
-            y: {
-                grid: {
-                    color: 'rgba(255, 255, 255, 0.1)',
-                },
-                ticks: {
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    callback: (value: number | string) => `$${value}`,
-                },
-            },
-        },
-        interaction: {
-            mode: 'nearest' as const,
-            axis: 'x' as const,
-            intersect: false,
-        },
-    };
-
-    return (
-        <div className="h-full flex flex-col min-h-0">
-            {showControls && (
-                <div className="flex justify-end p-2">
-                    <Button variant="ghost" size="sm" onClick={fetchForecast} disabled={loading}>
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                    </Button>
-                </div>
-            )}
-
-            <div className="flex-1 p-2 min-h-0">
-                {error && (
-                    <div className="flex items-center gap-2 text-red-500 mb-4">
-                        <AlertCircle size={16} />
-                        <span className="text-sm">{error}</span>
-                    </div>
-                )}
-
-                {forecast && (
-                    <>
-                        {/* Stats */}
-                        <div className="grid grid-cols-3 gap-4 mb-4 text-center">
-                            <div>
-                                <p className="text-xs text-text-muted">Current</p>
-                                <p className="text-lg font-mono">${forecast.current_price.toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-text-muted">Ann. Vol</p>
-                                <p className="text-lg font-mono">{(forecast.historical_volatility * 100).toFixed(1)}%</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-text-muted">Days</p>
-                                <p className="text-lg font-mono">{forecast.forecast_days}</p>
-                            </div>
-                        </div>
-
-                        {/* Chart */}
-                        <div className="h-48">
-                            <Line data={chartData} options={chartOptions} />
-                        </div>
-
-                        {/* Legend */}
-                        <div className="flex items-center justify-center gap-6 mt-4 text-xs text-text-muted">
-                            <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 rounded bg-green-500/30 border border-green-500"></div>
-                                <span>68% Confidence</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 rounded bg-blue-500/20 border border-blue-500/50"></div>
-                                <span>95% Confidence</span>
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {!forecast && !error && loading && (
-                    <div className="h-48 flex items-center justify-center">
-                        <RefreshCw size={24} className="animate-spin text-brand" />
-                    </div>
-                )}
-            </div>
+  return (
+    <div style={{height:'100%',display:'flex',flexDirection:'column' as const,background:BG}}>
+      {showControls&&(
+        <div style={{display:'flex',justifyContent:'flex-end',padding:'4px 8px'}}>
+          <button onClick={fetchForecast} disabled={loading}
+            style={{background:'none',border:`1px solid ${BORDER}`,color:loading?SUBTLE:TEXT,
+              fontFamily:MONO,fontSize:9,padding:'3px 8px',cursor:'pointer',borderRadius:2}}>
+            {loading?'LOADING...':'â†» REFRESH'}
+          </button>
         </div>
-    );
+      )}
+      {error&&(
+        <div style={{padding:'6px 10px',fontSize:10,color:RED,background:`${RED}11`,borderBottom:`1px solid ${RED}33`}}>
+          âš  {error}
+        </div>
+      )}
+      {forecast?(
+        <>
+          <div style={{display:'flex',gap:6,padding:'6px 10px'}}>
+            <StatBox label="CURRENT" value={`$${forecast.current_price.toFixed(2)}`} color={AMBER}/>
+            <StatBox label="ANN. VOL" value={`${(forecast.historical_volatility*100).toFixed(1)}%`} color={PURPLE}/>
+            <StatBox label="FORECAST DAYS" value={String(forecast.forecast_days)}/>
+          </div>
+          <div style={{flex:1,padding:'0 10px 8px',minHeight:0}}>
+            <canvas ref={canvasRef} style={{width:'100%',height:'100%',display:'block'}}
+              width={600} height={280}/>
+          </div>
+          <div style={{display:'flex',gap:12,justifyContent:'center',padding:'4px 0 8px',
+            fontSize:9,color:SUBTLE,fontFamily:MONO}}>
+            <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+              <span style={{width:10,height:10,border:`1px solid ${GREEN}`,background:`${GREEN}30`,display:'inline-block'}}/>
+              68% CONFIDENCE
+            </span>
+            <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+              <span style={{width:10,height:10,border:`1px solid ${BLUE}66`,background:`${BLUE}20`,display:'inline-block'}}/>
+              95% CONFIDENCE
+            </span>
+            <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+              <span style={{width:10,height:2,background:TEXT,display:'inline-block'}}/>
+              MEDIAN
+            </span>
+          </div>
+        </>
+      ):(!error&&loading&&(
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:SUBTLE,fontSize:11}}>
+          Loading forecast...
+        </div>
+      ))}
+    </div>
+  );
 }
 
-export function UncertaintyCone({ tileId: _tileId }: TileProps) {
-    const symbol = useSymbol();
-
-    return (
-        <Panel className="h-full flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border">
-                <div className="flex items-center gap-2">
-                    <TrendingUp size={18} className="text-brand" />
-                    <h3 className="font-semibold text-text">Uncertainty Cone</h3>
-                    <span className="text-sm text-text-muted">({symbol})</span>
-                </div>
-            </div>
-
-            {/* Content */}
-            <UncertaintyConeContent symbol={symbol} />
-        </Panel>
-    );
+export function UncertaintyCone({tileId:_tileId}:TileProps) {
+  const symbol=useSymbol();
+  return (
+    <div style={{height:'100%',display:'flex',flexDirection:'column' as const,background:PANEL,
+      border:`1px solid ${BORDER}`}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',
+        borderBottom:`1px solid ${BORDER}`,background:BG}}>
+        <span style={{fontSize:10,color:AMBER,letterSpacing:'0.1em',fontFamily:MONO}}>UC</span>
+        <span style={{fontSize:11,color:TEXT,fontWeight:700,fontFamily:MONO}}>UNCERTAINTY CONE</span>
+        <span style={{fontSize:11,color:BLUE,fontFamily:MONO}}>({symbol})</span>
+      </div>
+      <UncertaintyConeContent symbol={symbol}/>
+    </div>
+  );
 }
-

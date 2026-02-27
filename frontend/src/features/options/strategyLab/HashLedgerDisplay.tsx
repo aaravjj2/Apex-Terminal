@@ -1,10 +1,16 @@
-/**
- * Hash Ledger Display (v1.36)
- * Shows the chained hash ledger from strategy → backtest → report.
- */
+// Bloomberg HLD — Hash Ledger Display
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
 
 import { useState } from 'react';
-import { Copy, Check, ShieldCheck, Link2 } from 'lucide-react';
+import React from 'react';
 
 interface LedgerEntry {
   step: string;
@@ -28,109 +34,88 @@ interface HashLedgerDisplayProps {
 export function HashLedgerDisplay({ ledger, loading }: HashLedgerDisplayProps) {
   const [copied, setCopied] = useState<string | null>(null);
 
-  if (loading) {
-    return (
-      <div data-testid="hash-ledger-loading" className="p-3 bg-gray-800 rounded border border-gray-700 animate-pulse">
-        <div className="h-4 bg-gray-700 rounded w-1/3 mb-2" />
-        <div className="space-y-2">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-8 bg-gray-700 rounded" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (!ledger) {
-    return (
-      <div data-testid="hash-ledger-empty" className="p-3 bg-gray-800 rounded border border-gray-700 text-gray-500 text-sm">
-        No hash ledger available.
-      </div>
-    );
-  }
-
   const handleCopy = async (text: string, key: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1500);
     } catch {
-      // Fallback for non-secure contexts
       const ta = document.createElement('textarea');
       ta.value = text;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1500);
     }
+    setCopied(key);
+    setTimeout(() => setCopied(null), 1500);
   };
 
+  if (loading) {
+    return (
+      <div data-testid="hash-ledger-loading"
+        style={{ padding:8, background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, fontFamily:MONO }}>
+        {[1,2,3].map(i => (
+          <div key={i} style={{ height:20, background:BG, borderRadius:2, marginBottom:4, opacity:0.6 - i*0.1 }} />
+        ))}
+      </div>
+    );
+  }
+
+  if (!ledger) {
+    return (
+      <div data-testid="hash-ledger-empty"
+        style={{ padding:12, background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, color:SUBTLE, fontSize:10, fontFamily:MONO }}>
+        NO HASH LEDGER AVAILABLE
+      </div>
+    );
+  }
+
   return (
-    <div data-testid="hash-ledger" className="bg-gray-800 rounded border border-gray-700">
+    <div data-testid="hash-ledger"
+      style={{ background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, fontFamily:MONO }}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700">
-        <ShieldCheck size={16} className="text-green-400" />
-        <span className="text-sm font-medium text-white">Hash Ledger</span>
-        <span className="text-xs text-gray-400 ml-auto" data-testid="hash-ledger-run-id">
-          {ledger.run_id}
-        </span>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 10px', borderBottom:`1px solid ${BORDER}`, background:BG }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ color:GREEN, fontSize:12 }}>⛨</span>
+          <span style={{ color:AMBER, fontWeight:700, fontSize:10, letterSpacing:1 }}>HASH LEDGER</span>
+        </div>
+        <span data-testid="hash-ledger-run-id" style={{ color:SUBTLE, fontSize:8 }}>{ledger.run_id}</span>
       </div>
 
-      {/* Chain entries */}
-      <div className="p-2 space-y-1" data-testid="hash-ledger-chain">
+      {/* Chain */}
+      <div data-testid="hash-ledger-chain" style={{ padding:6 }}>
         {ledger.chain.map((entry, idx) => (
-          <div
-            key={entry.step}
+          <div key={entry.step}
             data-testid={`hash-ledger-entry-${idx}`}
-            className="flex items-center gap-2 px-2 py-1.5 bg-gray-900 rounded text-xs group"
-          >
-            {idx > 0 && (
-              <Link2 size={10} className="text-blue-400 -ml-1 mr-0.5" />
-            )}
-            <span className="text-gray-400 w-28 truncate" title={entry.step}>
+            style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 6px', marginBottom:2, background:BG, border:`1px solid ${BORDER}`, borderRadius:2 }}>
+            {idx > 0 && <span style={{ color:BLUE, fontSize:10, flexShrink:0 }}>↳</span>}
+            <span style={{ color:SUBTLE, fontSize:8, width:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flexShrink:0 }} title={entry.step}>
               {entry.step}
             </span>
-            <code className="flex-1 text-green-300 font-mono truncate" title={entry.hash}>
+            <code style={{ flex:1, color:GREEN, fontSize:8, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:MONO }} title={entry.hash}>
               {entry.hash}
             </code>
-            <button
-              data-testid={`hash-ledger-copy-${idx}`}
+            <button data-testid={`hash-ledger-copy-${idx}`}
               onClick={() => handleCopy(entry.hash, entry.step)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
               title="Copy hash"
-            >
-              {copied === entry.step ? (
-                <Check size={12} className="text-green-400" />
-              ) : (
-                <Copy size={12} className="text-gray-500" />
-              )}
+              style={{ background:'none', border:'none', color: copied===entry.step ? GREEN : SUBTLE, cursor:'pointer', fontSize:10, padding:'0 2px', flexShrink:0 }}>
+              {copied === entry.step ? '✓' : '⧉'}
             </button>
           </div>
         ))}
       </div>
 
-      {/* Ledger checksum */}
-      <div className="px-3 py-2 border-t border-gray-700 flex items-center gap-2">
-        <span className="text-xs text-gray-400">Ledger Checksum:</span>
-        <code
-          data-testid="hash-ledger-checksum"
-          className="text-xs text-yellow-300 font-mono truncate flex-1"
-          title={ledger.ledger_checksum}
-        >
+      {/* Checksum */}
+      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 10px', borderTop:`1px solid ${BORDER}` }}>
+        <span style={{ color:SUBTLE, fontSize:8, flexShrink:0 }}>LEDGER CHECKSUM:</span>
+        <code data-testid="hash-ledger-checksum"
+          style={{ flex:1, color:AMBER, fontSize:8, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:MONO }}
+          title={ledger.ledger_checksum}>
           {ledger.ledger_checksum}
         </code>
-        <button
-          data-testid="hash-ledger-copy-checksum"
+        <button data-testid="hash-ledger-copy-checksum"
           onClick={() => handleCopy(ledger.ledger_checksum, 'checksum')}
-          className="p-0.5"
-        >
-          {copied === 'checksum' ? (
-            <Check size={12} className="text-green-400" />
-          ) : (
-            <Copy size={12} className="text-gray-500" />
-          )}
+          style={{ background:'none', border:'none', color: copied==='checksum' ? GREEN : SUBTLE, cursor:'pointer', fontSize:10, padding:'0 2px', flexShrink:0 }}>
+          {copied === 'checksum' ? '✓' : '⧉'}
         </button>
       </div>
     </div>

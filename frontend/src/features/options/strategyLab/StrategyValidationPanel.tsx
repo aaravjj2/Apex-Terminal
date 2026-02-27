@@ -1,16 +1,20 @@
-/**
- * Strategy Validation Panel (v1.29)
- * Displays deterministic validation results grouped by errors/warnings.
- * All elements have data-testid selectors.
- */
+// Bloomberg SVP — Strategy Validation Panel
+const BG = '#0a0a0a';
+const PANEL = '#111111';
+const BORDER = '#1e1e1e';
+const AMBER = '#f5a623';
+const GREEN = '#26a69a';
+const RED = '#ef5350';
+const BLUE = '#42a5f5';
+const SUBTLE = '#555';
+const TEXT = '#d1d4dc';
+const MONO = '"Roboto Mono","Courier New",monospace';
 
 import { useState, useCallback } from 'react';
-import { AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
+import React from 'react';
 import type { ValidationReport, ValidationIssue } from './artifactTypes';
-import { API_BASE } from '../../../config/api';
 
 interface ValidationPanelProps {
-  /** Current strategy spec to validate */
   specInput?: {
     name?: string;
     type?: string;
@@ -27,17 +31,15 @@ export function StrategyValidationPanel({ specInput }: ValidationPanelProps) {
 
   const runValidation = useCallback(async () => {
     if (!specInput) return;
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/strategy-artifacts/validate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch('/api/v1/strategy-artifacts/validate', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify(specInput),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: ValidationReport = await res.json();
-      setReport(data);
+      setReport(await res.json());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Validation failed');
       setReport(null);
@@ -47,90 +49,89 @@ export function StrategyValidationPanel({ specInput }: ValidationPanelProps) {
   }, [specInput]);
 
   return (
-    <div data-testid="strategy-validation-panel" className="bg-panel-bg border border-border rounded overflow-hidden">
+    <div data-testid="strategy-validation-panel"
+      style={{ background:PANEL, border:`1px solid ${BORDER}`, borderRadius:2, overflow:'hidden', fontFamily:MONO }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-element-bg">
-        <h3 className="text-sm font-semibold text-text">Validation Results</h3>
-        <button
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 10px', borderBottom:`1px solid ${BORDER}`, background:BG }}>
+        <span style={{ color:AMBER, fontWeight:700, fontSize:10, letterSpacing:1 }}>STRATEGY VALIDATION</span>
+        <button data-testid="strategy-validation-run"
           onClick={runValidation}
-          data-testid="strategy-validation-run"
           disabled={loading}
-          className="px-3 py-1 text-xs font-medium bg-brand hover:bg-brand/90 text-white rounded transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Validating…' : 'Run Validation'}
+          style={{
+            background: loading ? SUBTLE+'22' : BLUE+'22',
+            border:`1px solid ${loading ? SUBTLE : BLUE}`,
+            color: loading ? SUBTLE : BLUE,
+            fontFamily:MONO, fontSize:8, fontWeight:700, letterSpacing:0.5,
+            padding:'3px 8px', cursor: loading ? 'default' : 'pointer', borderRadius:2,
+          }}>
+          {loading ? 'VALIDATING…' : 'RUN VALIDATION'}
         </button>
       </div>
 
-      {/* Error */}
+      {/* Error strip */}
       {error && (
-        <div className="px-4 py-2 text-xs text-red-400 bg-red-500/10">
+        <div style={{ padding:'5px 10px', background: RED+'11', color:RED, fontSize:9, borderBottom:`1px solid ${BORDER}` }}>
           {error}
         </div>
       )}
 
       {/* Results */}
       {report && (
-        <div className="p-4 space-y-4">
+        <div style={{ padding:10 }}>
           {/* Summary */}
-          <div className="flex items-center gap-2">
-            {report.valid ? (
-              <CheckCircle size={16} className="text-green-400" />
-            ) : (
-              <XCircle size={16} className="text-red-400" />
-            )}
-            <span className={`text-sm font-medium ${report.valid ? 'text-green-400' : 'text-red-400'}`}>
-              {report.valid ? 'Valid' : 'Invalid'}
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, paddingBottom:6, borderBottom:`1px solid ${BORDER}` }}>
+            <span style={{ color: report.valid ? GREEN : RED, fontSize:14 }}>
+              {report.valid ? '☑' : '☒'}
             </span>
-            <span className="text-xs text-text-muted ml-2">
-              {report.errors.length} error{report.errors.length !== 1 ? 's' : ''}, {report.warnings.length} warning{report.warnings.length !== 1 ? 's' : ''}
+            <span style={{ color: report.valid ? GREEN : RED, fontSize:10, fontWeight:700 }}>
+              {report.valid ? 'VALID' : 'INVALID'}
+            </span>
+            <span style={{ color:SUBTLE, fontSize:8, marginLeft:'auto' }}>
+              {report.errors.length} ERROR{report.errors.length !== 1 ? 'S' : ''} · {report.warnings.length} WARNING{report.warnings.length !== 1 ? 'S' : ''}
             </span>
           </div>
 
-          {/* Errors Group */}
-          <div data-testid="strategy-validation-errors">
-            <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <XCircle size={12} /> Errors ({report.errors.length})
-            </h4>
+          {/* Errors */}
+          <div data-testid="strategy-validation-errors" style={{ marginBottom:8 }}>
+            <div style={{ color:RED, fontSize:8, fontWeight:700, letterSpacing:0.5, marginBottom:4 }}>
+              ✕ ERRORS ({report.errors.length})
+            </div>
             {report.errors.length === 0 ? (
-              <p className="text-xs text-text-muted pl-4">No errors</p>
+              <div style={{ color:SUBTLE, fontSize:9, paddingLeft:8 }}>NO ERRORS</div>
             ) : (
-              <ul className="space-y-1">
+              <div>
                 {report.errors.map((issue: ValidationIssue, idx: number) => (
-                  <li
-                    key={`error-${issue.rule_id}-${idx}`}
+                  <div key={`error-${issue.rule_id}-${idx}`}
                     data-testid={`strategy-validation-issue-${issue.rule_id}-${idx}`}
-                    className="flex items-start gap-2 px-3 py-2 bg-red-500/10 rounded text-xs"
-                  >
-                    <span className="font-mono text-red-300 shrink-0">{issue.rule_id}</span>
-                    <span className="text-text">{issue.message}</span>
-                    <span className="text-text-muted ml-auto shrink-0">{issue.path}</span>
-                  </li>
+                    style={{ display:'flex', gap:6, padding:'4px 8px', marginBottom:2, background: RED+'0d', border:`1px solid ${RED}33`, borderRadius:2 }}>
+                    <span style={{ color:RED, fontSize:8, flexShrink:0, fontFamily:MONO }}>{issue.rule_id}</span>
+                    <span style={{ color:TEXT, fontSize:9, flex:1 }}>{issue.message}</span>
+                    <span style={{ color:SUBTLE, fontSize:8, flexShrink:0 }}>{issue.path}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
 
-          {/* Warnings Group */}
+          {/* Warnings */}
           <div data-testid="strategy-validation-warnings">
-            <h4 className="text-xs font-semibold text-yellow-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <AlertTriangle size={12} /> Warnings ({report.warnings.length})
-            </h4>
+            <div style={{ color:AMBER, fontSize:8, fontWeight:700, letterSpacing:0.5, marginBottom:4 }}>
+              ⚠ WARNINGS ({report.warnings.length})
+            </div>
             {report.warnings.length === 0 ? (
-              <p className="text-xs text-text-muted pl-4">No warnings</p>
+              <div style={{ color:SUBTLE, fontSize:9, paddingLeft:8 }}>NO WARNINGS</div>
             ) : (
-              <ul className="space-y-1">
+              <div>
                 {report.warnings.map((issue: ValidationIssue, idx: number) => (
-                  <li
-                    key={`warning-${issue.rule_id}-${idx}`}
+                  <div key={`warning-${issue.rule_id}-${idx}`}
                     data-testid={`strategy-validation-issue-${issue.rule_id}-${idx}`}
-                    className="flex items-start gap-2 px-3 py-2 bg-yellow-500/10 rounded text-xs"
-                  >
-                    <span className="font-mono text-yellow-300 shrink-0">{issue.rule_id}</span>
-                    <span className="text-text">{issue.message}</span>
-                    <span className="text-text-muted ml-auto shrink-0">{issue.path}</span>
-                  </li>
+                    style={{ display:'flex', gap:6, padding:'4px 8px', marginBottom:2, background: AMBER+'0d', border:`1px solid ${AMBER}33`, borderRadius:2 }}>
+                    <span style={{ color:AMBER, fontSize:8, flexShrink:0, fontFamily:MONO }}>{issue.rule_id}</span>
+                    <span style={{ color:TEXT, fontSize:9, flex:1 }}>{issue.message}</span>
+                    <span style={{ color:SUBTLE, fontSize:8, flexShrink:0 }}>{issue.path}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         </div>
@@ -138,8 +139,8 @@ export function StrategyValidationPanel({ specInput }: ValidationPanelProps) {
 
       {/* Empty state */}
       {!report && !error && (
-        <div className="px-4 py-6 text-center text-xs text-text-muted">
-          Click &quot;Run Validation&quot; to validate the current strategy.
+        <div style={{ padding:'24px 12px', textAlign:'center', color:SUBTLE, fontSize:9 }}>
+          CLICK &ldquo;RUN VALIDATION&rdquo; TO VALIDATE THE CURRENT STRATEGY
         </div>
       )}
     </div>

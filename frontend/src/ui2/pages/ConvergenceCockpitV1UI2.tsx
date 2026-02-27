@@ -1,324 +1,390 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// ConvergenceCockpitV1UI2 â€” Bloomberg APEX Convergence Cockpit V1
+// Multi-scenario evidence convergence, agent trace, citation recall, ticket management
+// Tabs: SCENARIOS | RESULTS | EVIDENCE GRAPH | TICKETS | AUDIT
+// APIs: /api/v3/cockpit/scenarios, /run, /results, /evidence, /tickets, /audit
+
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
 interface SearchResult {
-  id: string;
-  title: string;
-  type: string;
-  score: number;
-  snippet: string;
+  id: string
+  title: string
+  type: string
+  score: number
+  snippet: string
 }
 
 interface EvidenceNode {
-  id: string;
-  label: string;
-  type: string;
-  relevance: number;
-  tags: string[];
+  id: string
+  label: string
+  type: string
+  relevance: number
+  tags: string[]
 }
 
 interface Citation {
-  id: string;
-  source: string;
-  relevance: number;
+  id: string
+  source: string
+  relevance: number
 }
 
 interface AgentTrace {
-  task: string;
-  steps: { step: number; action: string; duration_ms: number }[];
-  citations: Citation[];
-  total_duration_ms: number;
-  confidence: number;
+  task: string
+  steps: Array<{ step: number; action: string; durationMs: number }>
+  citations: Citation[]
+  totalDurationMs: number
+  confidence: number
 }
 
 interface ScenarioResult {
-  session_id: string;
-  scenario_id: string;
-  scenario_name: string;
-  left_pane: { query: string; results: SearchResult[]; total: number };
-  center_pane: { nodes: EvidenceNode[]; edges: unknown[]; node_count: number };
-  right_pane: { agent_trace: AgentTrace; citations: Citation[]; suggested_actions: string[] };
-  created_at: string;
+  sessionId: string
+  scenarioId: string
+  scenarioName: string
+  leftPane: { query: string; results: SearchResult[]; total: number }
+  centerPane: { nodes: EvidenceNode[]; edges: unknown[]; nodeCount: number }
+  rightPane: { agentTrace: AgentTrace; citations: Citation[]; suggestedActions: string[] }
+  createdAt: string
 }
 
 interface Ticket {
-  id: string;
-  title: string;
-  scenario_id: string;
-  status: string;
-  created_at: string;
+  id: string
+  title: string
+  scenarioId: string
+  status: 'open' | 'in_progress' | 'resolved' | 'closed'
+  priority: 'p0' | 'p1' | 'p2' | 'p3'
+  createdAt: string
+  updatedAt: string
 }
 
-const API = '/api/v3/cockpit';
-
-const SCENARIOS = [
+const SCENARIOS_DEFAULT = [
   { id: 'scen-volatility', name: 'Market Volatility Scan' },
   { id: 'scen-convergence', name: 'Strategy Convergence Check' },
   { id: 'scen-agent-health', name: 'Agent Health Audit' },
   { id: 'scen-risk', name: 'Risk Convergence' },
-];
+]
 
-const TYPE_COLOR: Record<string, string> = {
-  strategy: '#3B82F6',
-  evidence: '#8B5CF6',
-  backtest: '#10B981',
-  signal: '#F59E0B',
-  alert: '#EF4444',
-};
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function TicketStatusBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { open: AMBER, in_progress: BLUE, resolved: GREEN, closed: SUBTLE }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.replace('_', ' ').toUpperCase()}</span>
+}
+
 
 export function ConvergenceCockpitV1UI2() {
-  const [selectedScenario, setSelectedScenario] = useState(SCENARIOS[0].id);
-  const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<ScenarioResult | null>(null);
-  const [error, setError] = useState('');
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [ticketTitle, setTicketTitle] = useState('');
-  const [showTicketInput, setShowTicketInput] = useState(false);
-  const [creatingTicket, setCreatingTicket] = useState(false);
+  const [tab, setTab] = useState<'scenarios' | 'results' | 'evidence' | 'tickets' | 'audit'>('scenarios')
+  const [selectedScenario, setSelectedScenario] = useState(SCENARIOS_DEFAULT[0].id)
+  const [running, setRunning] = useState(false)
+  const [result, setResult] = useState<ScenarioResult | null>(null)
+  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [auditLog, setAuditLog] = useState<Array<{ auditId: string; action: string; actor: string; detail: string; timestamp: string }>>([])
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [ticketTitle, setTicketTitle] = useState('')
+  const [creatingTicket, setCreatingTicket] = useState(false)
+  const [ticketMsg, setTicketMsg] = useState<string | null>(null)
 
-  const fetchTickets = useCallback(async () => {
-    const r = await fetch(`${API}/tickets`);
-    const data = await r.json();
-    setTickets(data.tickets || []);
-  }, []);
-
-  const handleRunScenario = async () => {
-    setError('');
-    setRunning(true);
+  const fetchData = useCallback(async () => {
+    setLoading(true)
     try {
-      const r = await fetch(`${API}/scenarios/${selectedScenario}/run`, { method: 'POST' });
-      if (!r.ok) {
-        setError('Scenario run failed');
-        return;
+      const [rT, rA] = await Promise.allSettled([
+        fetch('/api/v3/cockpit/tickets').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/cockpit/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rT.status === 'fulfilled') {
+        const raw = Array.isArray(rT.value) ? rT.value : rT.value.tickets ?? rT.value.data ?? []
+        setTickets(raw.map((t: any) => ({
+          id: t.id ?? '', title: t.title ?? '',
+          scenarioId: t.scenario_id ?? t.scenarioId ?? '',
+          status: t.status ?? 'open', priority: t.priority ?? 'p2',
+          createdAt: t.created_at ?? t.createdAt ?? '',
+          updatedAt: t.updated_at ?? t.updatedAt ?? '',
+        })))
       }
-      const data: ScenarioResult = await r.json();
-      setResult(data);
-      await fetchTickets();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setRunning(false);
-    }
-  };
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.audit ?? rA.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '', action: a.action ?? '',
+          actor: a.actor ?? '', detail: a.detail ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
+
+  const handleRun = async () => {
+    setRunning(true); setErr(null)
+    try {
+      const r = await fetch('/api/v3/cockpit/run', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenario_id: selectedScenario }),
+      })
+      if (r.ok) {
+        const d = await r.json()
+        setResult({
+          sessionId: d.session_id ?? d.sessionId ?? '',
+          scenarioId: d.scenario_id ?? d.scenarioId ?? '',
+          scenarioName: d.scenario_name ?? d.scenarioName ?? '',
+          leftPane: {
+            query: d.left_pane?.query ?? d.leftPane?.query ?? '',
+            results: (d.left_pane?.results ?? d.leftPane?.results ?? []).map((s: any) => ({
+              id: s.id ?? '', title: s.title ?? '', type: s.type ?? '',
+              score: Number(s.score ?? 0), snippet: s.snippet ?? '',
+            })),
+            total: Number(d.left_pane?.total ?? d.leftPane?.total ?? 0),
+          },
+          centerPane: {
+            nodes: (d.center_pane?.nodes ?? d.centerPane?.nodes ?? []).map((n: any) => ({
+              id: n.id ?? '', label: n.label ?? '', type: n.type ?? '',
+              relevance: Number(n.relevance ?? 0), tags: n.tags ?? [],
+            })),
+            edges: d.center_pane?.edges ?? d.centerPane?.edges ?? [],
+            nodeCount: Number(d.center_pane?.node_count ?? d.centerPane?.nodeCount ?? 0),
+          },
+          rightPane: {
+            agentTrace: {
+              task: d.right_pane?.agent_trace?.task ?? '',
+              steps: (d.right_pane?.agent_trace?.steps ?? []).map((s: any) => ({
+                step: Number(s.step ?? 0), action: s.action ?? '',
+                durationMs: Number(s.duration_ms ?? s.durationMs ?? 0),
+              })),
+              citations: (d.right_pane?.agent_trace?.citations ?? []).map((c: any) => ({
+                id: c.id ?? '', source: c.source ?? '', relevance: Number(c.relevance ?? 0),
+              })),
+              totalDurationMs: Number(d.right_pane?.agent_trace?.total_duration_ms ?? 0),
+              confidence: Number(d.right_pane?.agent_trace?.confidence ?? 0),
+            },
+            citations: (d.right_pane?.citations ?? []).map((c: any) => ({
+              id: c.id ?? '', source: c.source ?? '', relevance: Number(c.relevance ?? 0),
+            })),
+            suggestedActions: d.right_pane?.suggested_actions ?? d.rightPane?.suggestedActions ?? [],
+          },
+          createdAt: d.created_at ?? d.createdAt ?? '',
+        })
+        setTab('results')
+      } else { const e = await r.json(); setErr(e.detail ?? 'Run failed') }
+    } catch (e: any) { setErr(e.message) }
+    finally { setRunning(false) }
+  }
 
   const handleCreateTicket = async () => {
-    if (!ticketTitle.trim() || !result) return;
-    setCreatingTicket(true);
-    const r = await fetch(`${API}/tickets`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: ticketTitle.trim(),
-        scenario_id: result.scenario_id,
-        session_id: result.session_id,
-        evidence_ids: result.center_pane.nodes.map(n => n.id),
-        actions: result.right_pane.suggested_actions,
-      }),
-    });
-    if (r.ok) {
-      setTicketTitle('');
-      setShowTicketInput(false);
-      await fetchTickets();
-    }
-    setCreatingTicket(false);
-  };
+    if (!ticketTitle.trim()) return
+    setCreatingTicket(true); setTicketMsg(null)
+    try {
+      const r = await fetch('/api/v3/cockpit/tickets', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: ticketTitle, scenario_id: result?.scenarioId ?? selectedScenario }),
+      })
+      if (r.ok) { setTicketMsg('Ticket created'); setTicketTitle(''); fetchData() }
+      else setTicketMsg('Creation failed')
+    } catch (e: any) { setTicketMsg(e.message) }
+    finally { setCreatingTicket(false) }
+  }
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const avgConfidence = result ? result.rightPane.agentTrace.confidence : null
+  const evidenceNodes = result ? result.centerPane.nodeCount : 0
+  const totalCitations = result ? result.rightPane.citations.length : 0
+
+  const TABS2 = [
+    { id: 'scenarios' as const, label: 'SCENARIOS' },
+    { id: 'results' as const, label: 'RESULTS' },
+    { id: 'evidence' as const, label: 'EVIDENCE GRAPH' },
+    { id: 'tickets' as const, label: 'TICKETS' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <div
-      data-testid="convergence-cockpit-page"
-      style={{ fontFamily: 'Inter, sans-serif', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0', padding: '16px', display: 'flex', flexDirection: 'column' }}
-    >
-      {/* Header bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>Convergence Cockpit</h1>
-        <select
-          data-testid="scenario-select"
-          value={selectedScenario}
-          onChange={e => setSelectedScenario(e.target.value)}
-          style={{ background: '#1E293B', border: '1px solid #334155', color: '#E2E8F0', borderRadius: 8, padding: '6px 12px', fontSize: 13 }}
-        >
-          {SCENARIOS.map(s => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </select>
-        <button
-          data-testid="run-scenario-btn"
-          onClick={handleRunScenario}
-          disabled={running}
-          style={{ background: running ? '#334155' : '#3B82F6', color: '#FFF', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 600, cursor: running ? 'not-allowed' : 'pointer', fontSize: 13 }}
-        >
-          {running ? 'Running…' : 'Run Scenario'}
-        </button>
-        {error && <span style={{ color: '#F87171', fontSize: 13 }}>{error}</span>}
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CONVERGENCE COCKPIT V1 â€” MULTI-SCENARIO EVIDENCE + AGENT TRACE + CITATION RECALL</span>
+        {running && <span style={{ fontSize: 10, color: AMBER }}>RUNNING SCENARIOâ€¦</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
       </div>
-
-      {/* 3-pane layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 300px', gap: 12, flex: 1, minHeight: 0 }}>
-
-        {/* LEFT PANE — Search */}
-        <div
-          data-testid="left-pane"
-          style={{ background: '#1E293B', borderRadius: 12, border: '1px solid #334155', padding: 16, overflow: 'auto' }}
-        >
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 12px 0' }}>Search Results</h2>
-          {!result ? (
-            <div style={{ color: '#475569', fontSize: 13, textAlign: 'center', marginTop: 40 }}>Run a scenario to see results</div>
-          ) : (
-            <div data-testid="search-results-list">
-              {result.left_pane.results.map((sr, i) => (
-                <div
-                  key={sr.id}
-                  data-testid={`search-result-${i}`}
-                  style={{ background: '#0F172A', borderRadius: 8, padding: '10px 12px', marginBottom: 8, border: '1px solid #1E293B' }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0' }}>{sr.title}</span>
-                    <span style={{ fontSize: 11, background: (TYPE_COLOR[sr.type] || '#475569') + '22', color: TYPE_COLOR[sr.type] || '#94A3B8', padding: '2px 7px', borderRadius: 10 }}>{sr.type}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: '#64748B' }}>{sr.snippet}</div>
-                  <div style={{ fontSize: 11, color: '#3B82F6', marginTop: 4 }}>score: {sr.score}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Agent Confidence" value={avgConfidence !== null ? `${(avgConfidence * 100).toFixed(1)}%` : 'â€”'} col={avgConfidence !== null ? (avgConfidence >= 0.7 ? GREEN : AMBER) : SUBTLE} />
+        <StatCard label="Evidence Nodes" value={evidenceNodes} col={BLUE} />
+        <StatCard label="Citations" value={totalCitations} col={PURPLE} />
+        <StatCard label="Open Tickets" value={tickets.filter(t => t.status === 'open').length} col={AMBER} />
+        <StatCard label="Search Results" value={result?.leftPane.total ?? 'â€”'} col={TEXT} />
+      </div>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {tab === 'scenarios' && (
+          <div>
+            <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+              <select value={selectedScenario} onChange={e => setSelectedScenario(e.target.value)}
+                style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, color: TEXT, padding: '6px 10px', borderRadius: 3 }}>
+                {SCENARIOS_DEFAULT.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+              <button onClick={handleRun} disabled={running}
+                style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: running ? SUBTLE : AMBER, background: (running ? SUBTLE : AMBER) + '22', border: `1px solid ${running ? SUBTLE : AMBER}44`, borderRadius: 3, padding: '6px 14px', cursor: running ? 'not-allowed' : 'pointer' }}>
+                {running ? 'RUNNINGâ€¦' : 'RUN SCENARIO'}
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+              {SCENARIOS_DEFAULT.map(s => (
+                <div key={s.id} onClick={() => setSelectedScenario(s.id)}
+                  style={{ background: selectedScenario === s.id ? AMBER + '11' : PANEL, border: `1px solid ${selectedScenario === s.id ? AMBER + '44' : BORDER}`, borderRadius: 4, padding: '12px 16px', cursor: 'pointer' }}>
+                  <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 700, color: selectedScenario === s.id ? AMBER : TEXT, marginBottom: 4 }}>{s.name}</div>
+                  <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE }}>{s.id}</div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* CENTER PANE — Evidence graph */}
-        <div
-          data-testid="center-pane"
-          style={{ background: '#1E293B', borderRadius: 12, border: '1px solid #334155', padding: 16, overflow: 'auto' }}
-        >
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 12px 0' }}>Evidence Graph</h2>
-          {!result ? (
-            <div style={{ color: '#475569', fontSize: 13, textAlign: 'center', marginTop: 60 }}>Evidence nodes will appear here</div>
-          ) : (
-            <div data-testid="evidence-graph">
-              <div style={{ marginBottom: 12, color: '#64748B', fontSize: 12 }}>
-                {result.center_pane.node_count} nodes · {(result.center_pane.edges as unknown[]).length} edges
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-                {result.center_pane.nodes.map(node => (
-                  <div
-                    key={node.id}
-                    data-testid={`evidence-node-${node.id}`}
-                    style={{
-                      background: '#0F172A', borderRadius: 10, padding: '12px',
-                      border: `1px solid ${node.relevance > 0.8 ? '#3B82F6' : '#334155'}`,
-                    }}
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0', marginBottom: 4 }}>{node.label}</div>
-                    <div style={{ fontSize: 11, color: '#64748B' }}>relevance: {node.relevance}</div>
-                    <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                      {node.tags.map(t => (
-                        <span key={t} style={{ fontSize: 10, background: '#1E3A5F', color: '#93C5FD', padding: '2px 6px', borderRadius: 8 }}>{t}</span>
+          </div>
+        )}
+        {tab === 'results' && (
+          <div>
+            {!result && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No results â€” run a scenario first</div>}
+            {result && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 10, fontFamily: MONO, color: AMBER, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Search Results ({result.leftPane.total})</div>
+                  <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead><tr><Th>Title</Th><Th>Type</Th><Th right>Score</Th></tr></thead>
+                      <tbody>
+                        {result.leftPane.results.map((r, i) => (
+                          <tr key={i}><Td mono col={TEXT}>{r.title.slice(0, 40)}</Td><Td mono col={BLUE}>{r.type}</Td><Td right mono col={r.score >= 0.8 ? GREEN : AMBER}>{r.score.toFixed(3)}</Td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontFamily: MONO, color: AMBER, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Agent Trace â€” {result.rightPane.agentTrace.totalDurationMs}ms</div>
+                  <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead><tr><Th right>Step</Th><Th>Action</Th><Th right>Duration</Th></tr></thead>
+                      <tbody>
+                        {result.rightPane.agentTrace.steps.map((s, i) => (
+                          <tr key={i}><Td right mono col={AMBER}>{s.step}</Td><Td mono col={TEXT}>{s.action.slice(0, 40)}</Td><Td right mono col={s.durationMs > 1000 ? RED : GREEN}>{s.durationMs}ms</Td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {result.rightPane.suggestedActions.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 10, fontFamily: MONO, color: AMBER, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Suggested Actions</div>
+                      {result.rightPane.suggestedActions.map((a, i) => (
+                        <div key={i} style={{ fontFamily: MONO, fontSize: 11, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, padding: '5px 10px', marginBottom: 4 }}>â†’ {a}</div>
                       ))}
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
+            )}
+          </div>
+        )}
+        {tab === 'evidence' && (
+          <div>
+            {!result && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence data â€” run a scenario first</div>}
+            {result && (
+              <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr><Th>Node ID</Th><Th>Label</Th><Th>Type</Th><Th right>Relevance</Th><Th>Tags</Th></tr></thead>
+                  <tbody>
+                    {result.centerPane.nodes.sort((a, b) => b.relevance - a.relevance).map((n, i) => (
+                      <tr key={i}>
+                        <Td mono col={AMBER}>{n.id.slice(0, 14)}</Td>
+                        <Td mono col={TEXT}>{n.label.slice(0, 36)}</Td>
+                        <Td mono col={BLUE}>{n.type}</Td>
+                        <Td right mono col={n.relevance >= 0.8 ? GREEN : n.relevance >= 0.5 ? AMBER : RED}>{n.relevance.toFixed(3)}</Td>
+                        <Td mono col={SUBTLE}>{n.tags.slice(0, 3).join(', ')}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {tab === 'tickets' && (
+          <div>
+            <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input value={ticketTitle} onChange={e => setTicketTitle(e.target.value)}
+                placeholder="New ticket titleâ€¦"
+                style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, color: TEXT, padding: '5px 10px', width: 320 }} />
+              <button onClick={handleCreateTicket} disabled={creatingTicket || !ticketTitle.trim()}
+                style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: BLUE, background: BLUE + '22', border: `1px solid ${BLUE}44`, borderRadius: 3, padding: '5px 12px', cursor: 'pointer' }}>
+                CREATE
+              </button>
+              {ticketMsg && <span style={{ fontSize: 10, fontFamily: MONO, color: GREEN }}>{ticketMsg}</span>}
             </div>
-          )}
-        </div>
-
-        {/* RIGHT PANE — Agent trace + Citations + Create ticket */}
-        <div
-          data-testid="right-pane"
-          style={{ background: '#1E293B', borderRadius: 12, border: '1px solid #334155', padding: 16, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}
-        >
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0 }}>Agent Trace</h2>
-
-          {!result ? (
-            <div style={{ color: '#475569', fontSize: 13, textAlign: 'center', marginTop: 20 }}>Agent trace will appear here</div>
-          ) : (
-            <>
-              <div data-testid="agent-trace-panel" style={{ background: '#0F172A', borderRadius: 8, padding: 12 }}>
-                <div style={{ fontSize: 12, color: '#94A3B8', marginBottom: 8 }}>
-                  Task: <strong style={{ color: '#E2E8F0' }}>{result.right_pane.agent_trace.task}</strong>
-                </div>
-                {result.right_pane.agent_trace.steps.map(s => (
-                  <div key={s.step} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '3px 0', borderBottom: '1px solid #1E293B' }}>
-                    <span style={{ color: '#E2E8F0' }}>{s.step}. {s.action}</span>
-                    <span style={{ color: '#64748B' }}>{s.duration_ms}ms</span>
-                  </div>
-                ))}
-                <div style={{ marginTop: 8, fontSize: 12, color: '#64748B' }}>
-                  confidence: <span style={{ color: '#10B981' }}>{(result.right_pane.agent_trace.confidence * 100).toFixed(0)}%</span>
-                  &nbsp;· total: {result.right_pane.agent_trace.total_duration_ms}ms
-                </div>
-              </div>
-
-              {/* Citations */}
-              <div>
-                <div style={{ fontSize: 12, color: '#94A3B8', marginBottom: 6 }}>Citations ({result.right_pane.citations.length})</div>
-                <div data-testid="citation-list">
-                  {result.right_pane.citations.map((c, i) => (
-                    <div key={c.id} data-testid={`citation-${i}`} style={{ fontSize: 11, padding: '5px 8px', background: '#0F172A', borderRadius: 6, marginBottom: 4, border: '1px solid #1E293B' }}>
-                      <span style={{ color: '#93C5FD' }}>{c.source}</span>
-                      <span style={{ color: '#64748B', marginLeft: 8 }}>{c.relevance}</span>
-                    </div>
+            <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><Th>ID</Th><Th>Title</Th><Th>Scenario</Th><Th>Status</Th><Th>Priority</Th><Th>Created</Th></tr></thead>
+                <tbody>
+                  {tickets.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No tickets â€” check /api/v3/cockpit/tickets</td></tr>}
+                  {tickets.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((t, i) => (
+                    <tr key={i}>
+                      <Td mono col={AMBER}>{t.id.slice(0, 12)}</Td>
+                      <Td mono col={TEXT}>{t.title.slice(0, 40)}</Td>
+                      <Td mono col={SUBTLE}>{t.scenarioId}</Td>
+                      <Td><TicketStatusBadge s={t.status} /></Td>
+                      <Td mono col={t.priority === 'p0' ? RED : t.priority === 'p1' ? ORANGE : AMBER}>{t.priority.toUpperCase()}</Td>
+                      <Td mono col={SUBTLE}>{t.createdAt}</Td>
+                    </tr>
                   ))}
-                </div>
-              </div>
-
-              {/* Suggested actions */}
-              <div style={{ fontSize: 11, color: '#64748B' }}>
-                Suggested: {result.right_pane.suggested_actions.join(', ')}
-              </div>
-
-              {/* Create ticket */}
-              {!showTicketInput ? (
-                <button
-                  data-testid="create-ticket-btn"
-                  onClick={() => setShowTicketInput(true)}
-                  style={{ background: '#1D4ED8', color: '#FFF', border: 'none', borderRadius: 8, padding: '8px', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
-                >
-                  + Create Ticket
-                </button>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <input
-                    data-testid="ticket-title-input"
-                    value={ticketTitle}
-                    onChange={e => setTicketTitle(e.target.value)}
-                    placeholder="Ticket title…"
-                    style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 6, padding: '7px 10px', color: '#E2E8F0', fontSize: 12 }}
-                  />
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      data-testid="submit-ticket-btn"
-                      onClick={handleCreateTicket}
-                      disabled={creatingTicket}
-                      style={{ flex: 1, background: '#1D4ED8', color: '#FFF', border: 'none', borderRadius: 6, padding: '6px', cursor: 'pointer', fontSize: 12 }}
-                    >
-                      Submit
-                    </button>
-                    <button
-                      onClick={() => setShowTicketInput(false)}
-                      style={{ background: '#334155', color: '#94A3B8', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Tickets list */}
-          {tickets.length > 0 && (
-            <div>
-              <div style={{ fontSize: 12, color: '#94A3B8', marginBottom: 6 }}>Tickets ({tickets.length})</div>
-              <div data-testid="tickets-list">
-                {tickets.map(t => (
-                  <div key={t.id} data-testid={`ticket-row-${t.id}`} style={{ fontSize: 11, padding: '6px 8px', background: '#0F172A', borderRadius: 6, marginBottom: 4, border: '1px solid #1E293B' }}>
-                    <div style={{ color: '#E2E8F0' }}>{t.title}</div>
-                    <div style={{ color: '#64748B', marginTop: 2 }}>{t.status} · {new Date(t.created_at).toLocaleTimeString()}</div>
-                  </div>
-                ))}
-              </div>
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v3/cockpit/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }

@@ -1,321 +1,354 @@
-/**
- * Export UI2 - Terminal-grade export bundle V3 interface (Wave 12 v1.113)
- * 
- * Features:
- * - Export button trigger
- * - Progress indicator
- * - Success state with file summary (counts, hashes)
- * - Error state with clear message
- * - Full data-testid coverage
- */
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// ExportUI2 â€” Bloomberg APEX Export Bundle V3 terminal
+// Judge bundle builder, artifact manifest, export state, format config, audit
+// Tabs: EXPORT | MANIFEST | ARTIFACTS | FORMATS | AUDIT
+// APIs: /api/v3/export/bundle, /manifest, /artifacts, /formats, /audit
 
-import React, { useState } from 'react';
-import { Download, CheckCircle, AlertCircle, FileArchive } from 'lucide-react';
-import { PageHeader } from '../components/PageHeader';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
-type ExportState = 'idle' | 'loading' | 'success' | 'error';
+interface ExportBundle {
+  bundleId: string
+  name: string
+  status: 'ready' | 'building' | 'failed' | 'archived' | 'uploading'
+  sizeBytes: number
+  fileCount: number
+  bundleHash: string
+  exportVersion: string
+  createdAt: string
+  downloadUrl: string | null
+}
 
 interface ExportManifest {
-  export_version: string;
-  available: boolean;
-  artifacts: {
-    trading_state: { order_count: number; position_count: number };
-    autopilot_decisions: { decision_count: number };
-    automation_workflows: { workflow_count: number; run_count: number };
-    telemetry_events: { event_count: number };
-    search_metadata: { backend: string };
-    platform_health: { status: string };
-  };
-  timestamp: string;
+  bundleId: string
+  exportVersion: string
+  available: boolean
+  artifacts: Array<{
+    key: string
+    count: number
+    status: string
+    description: string
+  }>
+  timestamp: string
+  signerKey: string
 }
 
-interface ExportResult {
-  filename: string;
-  size: number;
-  artifacts: Record<string, unknown>;
+interface ExportArtifact {
+  artifactId: string
+  bundleId: string
+  name: string
+  type: 'trading_state' | 'decisions' | 'workflows' | 'telemetry' | 'search_meta' | 'platform_health' | 'strategy'
+  status: 'ready' | 'building' | 'failed'
+  sizeBytes: number
+  sha256: string
+  rowCount: number | null
+  createdAt: string
 }
+
+interface ExportFormat {
+  formatId: string
+  name: string
+  extension: string
+  description: string
+  compression: 'gzip' | 'zstd' | 'none' | 'brotli'
+  supported: boolean
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function StatusBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { ready: GREEN, building: AMBER, failed: RED, archived: SUBTLE, uploading: BLUE }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.toUpperCase()}</span>
+}
+function fmtBytes(b: number) {
+  if (b >= 1073741824) return `${(b / 1073741824).toFixed(1)} GB`
+  if (b >= 1048576) return `${(b / 1048576).toFixed(1)} MB`
+  if (b >= 1024) return `${(b / 1024).toFixed(1)} KB`
+  return `${b} B`
+}
+
 
 export function ExportUI2() {
-  const [state, setState] = useState<ExportState>('idle');
-  const [manifest, setManifest] = useState<ExportManifest | null>(null);
-  const [result, setResult] = useState<ExportResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<'export' | 'manifest' | 'artifacts' | 'formats' | 'audit'>('export')
+  const [bundles, setBundles] = useState<ExportBundle[]>([])
+  const [manifest, setManifest] = useState<ExportManifest | null>(null)
+  const [artifacts, setArtifacts] = useState<ExportArtifact[]>([])
+  const [formats, setFormats] = useState<ExportFormat[]>([])
+  const [auditLog, setAuditLog] = useState<Array<{ auditId: string; action: string; actor: string; detail: string; timestamp: string }>>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+  const [building, setBuilding] = useState(false)
+  const [buildMsg, setBuildMsg] = useState<string | null>(null)
 
-  React.useEffect(() => {
-    // Fetch manifest on mount
-    fetchManifest();
-  }, []);
-
-  const fetchManifest = async () => {
+  const fetchAll = useCallback(async () => {
     try {
-      const response = await fetch('/api/v1/export/v3/manifest');
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      setManifest(data);
-    } catch (err) {
-      console.error('Failed to fetch export manifest:', err);
-    }
-  };
-
-  const handleExport = async () => {
-    setState('loading');
-    setError(null);
-    setResult(null);
-
-    try {
-      const response = await fetch('/api/v1/export/v3/bundle');
-      if (!response.ok) {
-        throw new Error(`Export failed: HTTP ${response.status}`);
+      const [rB, rM, rA, rF, rL] = await Promise.allSettled([
+        fetch('/api/v3/export/bundles').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/export/manifest').then(r => r.ok ? r.json() : null),
+        fetch('/api/v3/export/artifacts').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/export/formats').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/export/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rB.status === 'fulfilled') {
+        const raw = Array.isArray(rB.value) ? rB.value : rB.value.bundles ?? rB.value.data ?? []
+        setBundles(raw.map((b: any) => ({
+          bundleId: b.bundle_id ?? b.bundleId ?? b.id ?? '',
+          name: b.name ?? '', status: b.status ?? 'ready',
+          sizeBytes: Number(b.size_bytes ?? b.sizeBytes ?? b.size ?? 0),
+          fileCount: Number(b.file_count ?? b.fileCount ?? 0),
+          bundleHash: b.bundle_hash ?? b.bundleHash ?? '',
+          exportVersion: b.export_version ?? b.exportVersion ?? '',
+          createdAt: b.created_at ?? b.createdAt ?? '',
+          downloadUrl: b.download_url ?? b.downloadUrl ?? null,
+        })))
+        setErr(null)
+      } else setErr('Failed to load export bundles')
+      if (rM.status === 'fulfilled' && rM.value) {
+        const m = rM.value
+        const arts = m.artifacts ? (typeof m.artifacts === 'object' && !Array.isArray(m.artifacts)
+          ? Object.entries(m.artifacts).map(([key, val]: any) => ({ key, count: val?.count ?? val?.order_count ?? val?.decision_count ?? 0, status: val?.status ?? 'ok', description: key }))
+          : m.artifacts)
+          : []
+        setManifest({
+          bundleId: m.bundle_id ?? m.bundleId ?? '',
+          exportVersion: m.export_version ?? m.exportVersion ?? '',
+          available: Boolean(m.available),
+          artifacts: arts,
+          timestamp: m.timestamp ?? '',
+          signerKey: m.signer_key ?? m.signerKey ?? '',
+        })
       }
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.artifacts ?? rA.value.data ?? []
+        setArtifacts(raw.map((a: any) => ({
+          artifactId: a.artifact_id ?? a.artifactId ?? a.id ?? '',
+          bundleId: a.bundle_id ?? a.bundleId ?? '',
+          name: a.name ?? '', type: a.type ?? 'trading_state',
+          status: a.status ?? 'ready',
+          sizeBytes: Number(a.size_bytes ?? a.sizeBytes ?? 0),
+          sha256: a.sha256 ?? '',
+          rowCount: a.row_count ?? a.rowCount ?? null,
+          createdAt: a.created_at ?? a.createdAt ?? '',
+        })))
+      }
+      if (rF.status === 'fulfilled') {
+        const raw = Array.isArray(rF.value) ? rF.value : rF.value.formats ?? rF.value.data ?? []
+        setFormats(raw.map((f: any) => ({
+          formatId: f.format_id ?? f.formatId ?? f.id ?? '',
+          name: f.name ?? '', extension: f.extension ?? '',
+          description: f.description ?? '',
+          compression: f.compression ?? 'none',
+          supported: Boolean(f.supported ?? true),
+        })))
+      }
+      if (rL.status === 'fulfilled') {
+        const raw = Array.isArray(rL.value) ? rL.value : rL.value.audit ?? rL.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '',
+          action: a.action ?? '', actor: a.actor ?? '',
+          detail: a.detail ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-      // Get filename from Content-Disposition header
-      const contentDisposition = response.headers.get('Content-Disposition');
-      const filenameMatch = contentDisposition?.match(/filename="?(.+?)"?$/);
-      const filename = filenameMatch ? filenameMatch[1] : 'apex-terminal-export-v3.zip';
+  const handleBuild = async () => {
+    setBuilding(true); setBuildMsg(null)
+    try {
+      const r = await fetch('/api/v3/export/bundle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format: 'zip' }) })
+      if (r.ok) { const d = await r.json(); setBuildMsg(`Bundle built: ${d.bundle_id ?? d.filename ?? 'ok'}`); fetchAll() }
+      else setBuildMsg('Build failed â€” check backend')
+    } catch (e: any) { setBuildMsg(e.message) }
+    finally { setBuilding(false) }
+  }
 
-      // Get blob
-      const blob = await response.blob();
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
-      // Trigger download
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+  const readyBundles = bundles.filter(b => b.status === 'ready').length
+  const totalSize = bundles.reduce((s, b) => s + b.sizeBytes, 0)
+  const artReady = artifacts.filter(a => a.status === 'ready').length
 
-      // Set success state
-      setResult({
-        filename,
-        size: blob.size,
-        artifacts: manifest?.artifacts || {},
-      });
-      setState('success');
-
-      // Refresh manifest
-      await fetchManifest();
-    } catch (err) {
-      console.error('Export failed:', err);
-      setError(err instanceof Error ? err.message : 'Export failed');
-      setState('error');
-    }
-  };
+  const TABS2 = [
+    { id: 'export' as const, label: 'EXPORT' },
+    { id: 'manifest' as const, label: 'MANIFEST' },
+    { id: 'artifacts' as const, label: 'ARTIFACTS' },
+    { id: 'formats' as const, label: 'FORMATS' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <div className="h-full flex flex-col bg-neutral-950" data-testid="export-page" data-ready="true">
-      <PageHeader
-        title="Export Bundle V3"
-        subtitle="Terminal-grade deterministic export"
-        badge="v1.113"
-      />
-
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Export Button Section */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6" data-testid="export-section">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-neutral-100 mb-2">Full System Export</h2>
-                <p className="text-sm text-neutral-400 mb-4">
-                  Create a deterministic ZIP archive containing complete trading state, autopilot decisions,
-                  automation workflows, telemetry events, search metadata, and platform health.
-                </p>
-
-                {manifest && manifest.available && (
-                  <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                    <div className="flex items-center gap-2">
-                      <FileArchive className="w-4 h-4 text-blue-400" />
-                      <span className="text-neutral-400">Orders:</span>
-                      <span className="text-neutral-200 font-mono" data-testid="export-order-count">
-                        {manifest.artifacts.trading_state.order_count}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FileArchive className="w-4 h-4 text-green-400" />
-                      <span className="text-neutral-400">Positions:</span>
-                      <span className="text-neutral-200 font-mono" data-testid="export-position-count">
-                        {manifest.artifacts.trading_state.position_count}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FileArchive className="w-4 h-4 text-purple-400" />
-                      <span className="text-neutral-400">Telemetry:</span>
-                      <span className="text-neutral-200 font-mono" data-testid="export-telemetry-count">
-                        {manifest.artifacts.telemetry_events.event_count}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FileArchive className="w-4 h-4 text-orange-400" />
-                      <span className="text-neutral-400">Workflows:</span>
-                      <span className="text-neutral-200 font-mono" data-testid="export-workflow-count">
-                        {manifest.artifacts.automation_workflows.workflow_count}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <button
-                onClick={handleExport}
-                disabled={state === 'loading' || !!(manifest && !manifest.available)}
-                className={`
-                  px-4 py-2 rounded-lg font-medium transition-colors
-                  flex items-center gap-2
-                  ${
-                    state === 'loading'
-                      ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }
-                `}
-                data-testid="export-button"
-              >
-                <Download className="w-4 h-4" />
-                {state === 'loading' ? 'Exporting...' : 'Export Bundle'}
-              </button>
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {state === 'loading' && (
-            <div
-              className="bg-blue-950/30 border border-blue-900/50 rounded-lg p-6"
-              data-testid="export-loading"
-            >
-              <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent" />
-                <div>
-                  <div className="text-sm font-medium text-blue-300">Creating export bundle...</div>
-                  <div className="text-xs text-blue-400/70 mt-1">
-                    Packaging trading state, telemetry, autopilot decisions, and platform health
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Success State */}
-          {state === 'success' && result && (
-            <div
-              className="bg-green-950/30 border border-green-900/50 rounded-lg p-6"
-              data-testid="export-success"
-            >
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-green-300 mb-2">Export successful</div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-green-400/70">File:</span>
-                      <span className="text-green-300 font-mono" data-testid="export-filename">
-                        {result.filename}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-green-400/70">Size:</span>
-                      <span className="text-green-300 font-mono" data-testid="export-size">
-                        {(result.size / 1024).toFixed(2)} KB
-                      </span>
-                    </div>
-                    <div className="text-xs text-green-400/70 mt-3">
-                      Bundle contains 6 artifacts with content hashes for verification.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {state === 'error' && error && (
-            <div
-              className="bg-red-950/30 border border-red-900/50 rounded-lg p-6"
-              data-testid="export-error"
-            >
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-red-300 mb-1">Export failed</div>
-                  <div className="text-xs text-red-400/70" data-testid="export-error-message">
-                    {error}
-                  </div>
-                  <button
-                    onClick={() => setState('idle')}
-                    className="mt-3 text-xs text-red-400 hover:text-red-300 underline"
-                    data-testid="export-error-dismiss"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Info Panel */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
-            <h3 className="text-sm font-semibold text-neutral-100 mb-3">Export Bundle Contents</h3>
-            <div className="space-y-2 text-xs text-neutral-400">
-              <div className="flex items-start gap-2">
-                <span className="text-neutral-500">•</span>
-                <div>
-                  <span className="text-neutral-300 font-mono">manifest.json</span>
-                  <span className="ml-2">- Metadata + content hashes</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-neutral-500">•</span>
-                <div>
-                  <span className="text-neutral-300 font-mono">trading_state.json</span>
-                  <span className="ml-2">- Orders, positions, PnL tape</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-neutral-500">•</span>
-                <div>
-                  <span className="text-neutral-300 font-mono">autopilot_decisions.json</span>
-                  <span className="ml-2">- Candidate decisions + rejection codes</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-neutral-500">•</span>
-                <div>
-                  <span className="text-neutral-300 font-mono">automation_workflows.json</span>
-                  <span className="ml-2">- Workflows + execution results</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-neutral-500">•</span>
-                <div>
-                  <span className="text-neutral-300 font-mono">telemetry_events.json</span>
-                  <span className="ml-2">- Recent event window (bounded)</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-neutral-500">•</span>
-                <div>
-                  <span className="text-neutral-300 font-mono">search_metadata.json</span>
-                  <span className="ml-2">- Index stats + backend type</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-neutral-500">•</span>
-                <div>
-                  <span className="text-neutral-300 font-mono">platform_health.json</span>
-                  <span className="ml-2">- Subsystem health snapshot</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-neutral-800">
-              <div className="text-xs text-neutral-500">
-                <span className="font-semibold text-neutral-400">Determinism guarantees:</span> Stable ordering,
-                normalized timestamps in DEMO mode, content hashes for verification, reproducible across runs.
-              </div>
-            </div>
-          </div>
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EXPORT BUNDLE V3 â€” JUDGE BUNDLE BUILDER + MANIFEST + ARTIFACT REGISTRY + INTEGRITY</span>
+        {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {buildMsg && <span style={{ fontSize: 10, color: GREEN }}>{buildMsg}</span>}
+          <button onClick={handleBuild} disabled={building}
+            style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: building ? SUBTLE : AMBER, background: (building ? SUBTLE : AMBER) + '22', border: `1px solid ${building ? SUBTLE : AMBER}44`, borderRadius: 3, padding: '4px 10px', cursor: building ? 'not-allowed' : 'pointer' }}>
+            {building ? 'BUILDINGâ€¦' : 'BUILD BUNDLE'}
+          </button>
         </div>
       </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Total Bundles" value={bundles.length} col={TEXT} />
+        <StatCard label="Ready Bundles" value={readyBundles} col={GREEN} />
+        <StatCard label="Total Size" value={fmtBytes(totalSize)} col={BLUE} />
+        <StatCard label="Artifacts Ready" value={artReady} col={artReady > 0 ? GREEN : AMBER} />
+        <StatCard label="Manifest" value={manifest?.available ? 'AVAILABLE' : 'PENDING'} col={manifest?.available ? GREEN : AMBER} />
+      </div>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {tab === 'export' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Bundle ID</Th><Th>Name</Th><Th>Status</Th><Th>Version</Th><Th right>Files</Th><Th right>Size</Th><Th>Hash</Th><Th>Created</Th><Th>Action</Th></tr></thead>
+              <tbody>
+                {bundles.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bundles â€” POST to /api/v3/export/bundle to build</td></tr>}
+                {bundles.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((b, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{b.bundleId.slice(0, 12)}</Td>
+                    <Td mono col={TEXT}>{b.name.slice(0, 28)}</Td>
+                    <Td><StatusBadge s={b.status} /></Td>
+                    <Td mono col={SUBTLE}>{b.exportVersion}</Td>
+                    <Td right mono col={TEXT}>{b.fileCount}</Td>
+                    <Td right mono col={TEXT}>{fmtBytes(b.sizeBytes)}</Td>
+                    <Td mono col={SUBTLE}>{b.bundleHash.slice(0, 12)}â€¦</Td>
+                    <Td mono col={SUBTLE}>{b.createdAt}</Td>
+                    <Td>
+                      {b.downloadUrl && <a href={b.downloadUrl} style={{ fontFamily: MONO, fontSize: 10, color: GREEN }}>DOWNLOAD</a>}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'manifest' && (
+          <div>
+            {!manifest && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No manifest â€” check /api/v3/export/manifest</div>}
+            {manifest && (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+                  <StatCard label="Bundle ID" value={manifest.bundleId.slice(0, 12)} col={AMBER} />
+                  <StatCard label="Export Version" value={manifest.exportVersion} col={BLUE} />
+                  <StatCard label="Available" value={manifest.available ? 'YES' : 'NO'} col={manifest.available ? GREEN : RED} />
+                  <StatCard label="Signer Key" value={manifest.signerKey.slice(0, 14) || 'â€”'} col={PURPLE} />
+                </div>
+                <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr><Th>Artifact Key</Th><Th>Description</Th><Th right>Count</Th><Th>Status</Th></tr></thead>
+                    <tbody>
+                      {manifest.artifacts.map((a, i) => (
+                        <tr key={i}>
+                          <Td mono col={AMBER}>{a.key}</Td>
+                          <Td mono col={SUBTLE}>{a.description}</Td>
+                          <Td right mono col={TEXT}>{a.count.toLocaleString()}</Td>
+                          <Td><StatusBadge s={a.status} /></Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {tab === 'artifacts' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Artifact ID</Th><Th>Name</Th><Th>Type</Th><Th>Status</Th><Th right>Rows</Th><Th right>Size</Th><Th>SHA256</Th><Th>Created</Th></tr></thead>
+              <tbody>
+                {artifacts.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No artifacts â€” check /api/v3/export/artifacts</td></tr>}
+                {artifacts.sort((a, b) => b.sizeBytes - a.sizeBytes).map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.artifactId.slice(0, 10)}</Td>
+                    <Td mono col={TEXT}>{a.name.slice(0, 28)}</Td>
+                    <Td mono col={BLUE}>{a.type}</Td>
+                    <Td><StatusBadge s={a.status} /></Td>
+                    <Td right mono col={TEXT}>{a.rowCount !== null ? a.rowCount.toLocaleString() : 'â€”'}</Td>
+                    <Td right mono col={TEXT}>{fmtBytes(a.sizeBytes)}</Td>
+                    <Td mono col={SUBTLE}>{a.sha256.slice(0, 14)}â€¦</Td>
+                    <Td mono col={SUBTLE}>{a.createdAt}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'formats' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Format ID</Th><Th>Name</Th><Th>Extension</Th><Th>Compression</Th><Th>Description</Th><Th>Supported</Th></tr></thead>
+              <tbody>
+                {formats.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No formats â€” check /api/v3/export/formats</td></tr>}
+                {formats.map((f, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{f.formatId}</Td>
+                    <Td mono col={TEXT}>{f.name}</Td>
+                    <Td mono col={BLUE}>{f.extension}</Td>
+                    <Td mono col={ORANGE}>{f.compression}</Td>
+                    <Td mono col={SUBTLE}>{f.description.slice(0, 50)}</Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: f.supported ? GREEN : RED, background: (f.supported ? GREEN : RED) + '22', borderRadius: 3, padding: '2px 5px' }}>{f.supported ? 'YES' : 'NO'}</span></Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v3/export/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }

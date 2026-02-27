@@ -31,8 +31,8 @@ describe('CitationsPanel', () => {
     expect(screen.getByTestId('citations-panel')).toBeInTheDocument();
     expect(screen.getByTestId('citation-item-0')).toBeInTheDocument();
     expect(screen.getByTestId('citation-item-1')).toBeInTheDocument();
-    expect(screen.getByTestId('citation-source-0')).toHaveTextContent('risk_run');
-    expect(screen.getByTestId('citation-source-1')).toHaveTextContent('backtest');
+    expect(screen.getByTestId('citation-source-0')).toHaveTextContent('RISK_RUN');
+    expect(screen.getByTestId('citation-source-1')).toHaveTextContent('BACKTEST');
   });
 
   it('renders confidence percentage', () => {
@@ -57,7 +57,7 @@ describe('CitationsPanel', () => {
     render(<CitationsPanel citations={[]} />);
     expect(screen.getByTestId('citations-panel')).toBeInTheDocument();
     expect(screen.getByTestId('citations-empty')).toBeInTheDocument();
-    expect(screen.getByTestId('citations-empty')).toHaveTextContent('No citations available');
+    expect(screen.getByTestId('citations-empty')).toHaveTextContent('NO CITATIONS AVAILABLE');
   });
 
   it('truncates to maxVisible and shows toggle', () => {
@@ -76,7 +76,7 @@ describe('CitationsPanel', () => {
     // Toggle should show
     const toggle = screen.getByTestId('citations-toggle');
     expect(toggle).toBeInTheDocument();
-    expect(toggle).toHaveTextContent('Show 5 more');
+    expect(toggle).toHaveTextContent('SHOW 5 MORE');
   });
 
   it('expands to show all items on toggle click', () => {
@@ -92,7 +92,7 @@ describe('CitationsPanel', () => {
 
     // All 6 should be visible
     expect(screen.getByTestId('citation-item-5')).toBeInTheDocument();
-    expect(screen.getByTestId('citations-toggle')).toHaveTextContent('Show less');
+    expect(screen.getByTestId('citations-toggle')).toHaveTextContent('SHOW LESS');
   });
 
   it('does not show toggle when count <= maxVisible', () => {
@@ -109,7 +109,7 @@ describe('CitationsPanel', () => {
     render(<CitationsPanel citations={citations} maxVisible={10} />);
 
     types.forEach((t, i) => {
-      expect(screen.getByTestId(`citation-source-${i}`)).toHaveTextContent(t);
+      expect(screen.getByTestId(`citation-source-${i}`)).toHaveTextContent(t.toUpperCase());
     });
   });
 });

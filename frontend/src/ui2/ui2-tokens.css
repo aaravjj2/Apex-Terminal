@@ -1,121 +1,139 @@
 /**
- * UI2 Design Tokens - Professional Trading Terminal
- * Bloomberg/Robinhood-grade polish with depth, clarity, and sophistication
+ * UI2 Design Tokens — APEX Bloomberg Terminal DNA
+ * ──────────────────────────────────────────────────────────────────────────
+ * Authentic Bloomberg Terminal aesthetic: obsidian black, amber signal,
+ * IBM Plex Mono type, phosphor-green gains, crimson losses.
+ * Every pixel serves the data. Every color carries meaning.
+ * ──────────────────────────────────────────────────────────────────────────
  */
 
+/* ══════════════════════════════════════════════════════════════════════════
+   BLOOMBERG TERMINAL FONT IMPORTS
+══════════════════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
 :root {
-  /* ─── Background Layers (7-layer depth system) ─── */
-  --ui2-bg-base: #09090b;           /* App foundation */
-  --ui2-bg-sunken: #0d0d10;         /* Recessed areas */
-  --ui2-bg-elevated: #131316;       /* Raised surfaces */
-  --ui2-bg-panel: #18181b;          /* Primary panels */
-  --ui2-bg-surface: #1c1c20;        /* Secondary surfaces */
-  --ui2-bg-hover: #212126;          /* Hover states */
-  --ui2-bg-selected: #27272d;       /* Active/selected */
-  --ui2-bg-input: #1a1a1e;          /* Form inputs */
+  /* ─── OBSIDIAN BACKGROUND SYSTEM ─────────────────────────── */
+  --ui2-bg-base: #040407;           /* True terminal black */
+  --ui2-bg-sunken: #020204;         /* Sunken void */
+  --ui2-bg-elevated: #08080d;       /* Slightly raised */
+  --ui2-bg-panel: #0c0c14;          /* Panel surface */
+  --ui2-bg-surface: #101019;        /* Secondary surface */
+  --ui2-bg-hover: #14141f;          /* Hover state */
+  --ui2-bg-selected: #1a1a28;       /* Active/selected */
+  --ui2-bg-input: #0d0d15;          /* Form inputs */
+  --ui2-bg-stripe: rgba(255,153,0,0.03); /* Table row alt */
   
-  /* ─── Border System ────────────────────────────────────── */
-  --ui2-border: #2a2a32;            /* Primary borders */
-  --ui2-border-subtle: #1e1e24;     /* Subtle dividers */
-  --ui2-border-strong: #3a3a42;     /* Emphasized borders */
-  --ui2-border-focus: #4f46e5;      /* Focus rings */
-  --ui2-border-focus-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  /* ─── AMBER SIGNAL BORDER SYSTEM ────────────────────────── */
+  --ui2-border: #1e1e2e;            /* Panel borders */
+  --ui2-border-subtle: #13131d;     /* Subtle dividers */
+  --ui2-border-strong: #ff9900;     /* BLOOMBERG AMBER border */
+  --ui2-border-panel: #242436;      /* Panel frame */
+  --ui2-border-focus: #ff9900;      /* Focus: amber */
+  --ui2-border-focus-shadow: 0 0 0 2px rgba(255,153,0,0.30);
   
-  /* ─── Text Hierarchy ───────────────────────────────────── */
-  --ui2-text-primary: #f4f4f5;      /* Main content */
-  --ui2-text-secondary: #a1a1aa;    /* Supporting text */
-  --ui2-text-tertiary: #71717a;     /* Muted labels */
-  --ui2-text-muted: #52525b;        /* Deemphasized */
-  --ui2-text-disabled: #3f3f46;     /* Disabled */
-  --ui2-text-inverse: #09090b;      /* On colored backgrounds */
+  /* ─── PHOSPHOR TEXT HIERARCHY ─────────────────────────────── */
+  --ui2-text-primary: #e8e8ee;      /* Terminal white */
+  --ui2-text-secondary: #9898b8;    /* Dim secondary */
+  --ui2-text-tertiary: #5d5d7d;     /* Muted label */
+  --ui2-text-muted: #3a3a55;        /* Deemphasized */
+  --ui2-text-disabled: #2a2a40;     /* Disabled */
+  --ui2-text-inverse: #040407;      /* On amber backgrounds */
+  --ui2-text-amber: #ff9900;        /* Bloomberg amber label */
+  --ui2-text-amber-dim: #b36b00;    /* Dim amber */
   
-  /* ─── Brand Colors ─────────────────────────────────────── */
-  --ui2-brand-primary: #6366f1;     /* Primary brand */
-  --ui2-brand-hover: #7c3aed;       /* Brand hover */
-  --ui2-brand-active: #5b21b6;      /* Brand pressed */
-  --ui2-brand-subtle: #312e81;      /* Brand backgrounds */
-  --ui2-brand-ghost: rgba(99, 102, 241, 0.1);
+  /* ─── BLOOMBERG AMBER BRAND SYSTEM ─────────────────────── */
+  --ui2-brand-primary: #ff9900;     /* Bloomberg amber */
+  --ui2-brand-hover: #ffac33;       /* Amber lightened */
+  --ui2-brand-active: #cc7a00;      /* Amber pressed */
+  --ui2-brand-subtle: #1a1100;      /* Amber ghost bg */
+  --ui2-brand-ghost: rgba(255,153,0,0.12);
+  --ui2-brand-glow: 0 0 20px rgba(255,153,0,0.35);
   
-  /* ─── Semantic Colors (Rich status system) ─────────────── */
-  --ui2-success: #22c55e;
-  --ui2-success-bg: #14532d;
-  --ui2-success-border: #166534;
-  --ui2-success-hover: #16a34a;
-  --ui2-success-ghost: rgba(34, 197, 94, 0.1);
+  /* ─── SEMANTIC STATUS COLORS ────────────────────────────── */
+  --ui2-success: #00d88a;           /* Phosphor green */
+  --ui2-success-bg: rgba(0,216,138,0.08);
+  --ui2-success-border: rgba(0,216,138,0.25);
+  --ui2-success-hover: #00f0a0;
+  --ui2-success-ghost: rgba(0,216,138,0.10);
   
-  --ui2-danger: #ef4444;
-  --ui2-danger-bg: #7f1d1d;
-  --ui2-danger-border: #991b1b;
-  --ui2-danger-hover: #dc2626;
-  --ui2-danger-ghost: rgba(239, 68, 68, 0.1);
+  --ui2-danger: #ff3b5c;            /* Crimson loss */
+  --ui2-danger-bg: rgba(255,59,92,0.08);
+  --ui2-danger-border: rgba(255,59,92,0.25);
+  --ui2-danger-hover: #ff5577;
+  --ui2-danger-ghost: rgba(255,59,92,0.10);
   
-  --ui2-warning: #f59e0b;
-  --ui2-warning-bg: #78350f;
-  --ui2-warning-border: #92400e;
-  --ui2-warning-hover: #d97706;
-  --ui2-warning-ghost: rgba(245, 158, 11, 0.1);
+  --ui2-warning: #ff9900;           /* Amber alert = brand */
+  --ui2-warning-bg: rgba(255,153,0,0.08);
+  --ui2-warning-border: rgba(255,153,0,0.25);
+  --ui2-warning-hover: #ffac33;
+  --ui2-warning-ghost: rgba(255,153,0,0.10);
   
-  --ui2-info: #3b82f6;
-  --ui2-info-bg: #1e3a8a;
-  --ui2-info-border: #1e40af;
-  --ui2-info-hover: #2563eb;
-  --ui2-info-ghost: rgba(59, 130, 246, 0.1);
+  --ui2-info: #4da6ff;              /* Cyan info */
+  --ui2-info-bg: rgba(77,166,255,0.08);
+  --ui2-info-border: rgba(77,166,255,0.25);
+  --ui2-info-hover: #66b8ff;
+  --ui2-info-ghost: rgba(77,166,255,0.10);
   
-  /* ─── Financial Data Colors (PnL, Greeks, etc.) ─────────── */
-  --ui2-positive: #10b981;          /* Profit, calls */
-  --ui2-negative: #f43f5e;          /* Loss, puts */
-  --ui2-neutral: #64748b;           /* Neutral sentiment */
-  --ui2-bid: #22c55e;               /* Bid prices */
-  --ui2-ask: #ef4444;               /* Ask prices */
+  /* ─── FINANCIAL DATA — PHOSPHOR GREEN / CRIMSON ─────────── */
+  --ui2-positive: #00d88a;          /* Phosphor green profit */
+  --ui2-positive-dim: #009960;      /* Dim profit */
+  --ui2-negative: #ff3b5c;          /* Crimson loss */
+  --ui2-negative-dim: #cc2244;      /* Dim loss */
+  --ui2-neutral: #5d5d7d;           /* Flat/neutral */
+  --ui2-bid: #00d88a;               /* Bid: green */
+  --ui2-ask: #ff3b5c;               /* Ask: red */
+  --ui2-mid: #ff9900;               /* Mid: amber */
   
-  /* ─── Typography Tiers (Premium Trading Terminal Scale) ─── */
-  /* Hero KPIs - Maximum impact for main metrics */
-  --ui2-font-hero: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --ui2-font-hero-size: 56px;
-  --ui2-font-hero-weight: 700;
-  --ui2-font-hero-tracking: -0.03em;
-  --ui2-font-hero-line: 1.1;
+  /* ─── IBM PLEX TYPOGRAPHY SYSTEM (Bloomberg-grade) ───────── */
+  /* Hero KPIs — Monospace for maximum terminal impact */
+  --ui2-font-hero: 'IBM Plex Mono', 'Courier New', monospace;
+  --ui2-font-hero-size: 48px;
+  --ui2-font-hero-weight: 600;
+  --ui2-font-hero-tracking: -0.02em;
+  --ui2-font-hero-line: 1;
   
-  /* Display - Large KPIs, section titles */
-  --ui2-font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --ui2-font-display-size: 32px;
-  --ui2-font-display-weight: 700;
-  --ui2-font-display-tracking: -0.02em;
-  --ui2-font-display-line: 1.2;
+  /* Display — Large KPIs, section titles */
+  --ui2-font-display: 'IBM Plex Mono', 'Courier New', monospace;
+  --ui2-font-display-size: 28px;
+  --ui2-font-display-weight: 600;
+  --ui2-font-display-tracking: -0.015em;
+  --ui2-font-display-line: 1.1;
   
-  /* Title - Panel headers, workspace titles */
-  --ui2-font-title-size: 20px;
+  /* Title — Panel headers */
+  --ui2-font-title-size: 11px;
   --ui2-font-title-weight: 600;
-  --ui2-font-title-tracking: -0.015em;
+  --ui2-font-title-tracking: 0.12em;
   --ui2-font-title-line: 1.3;
   
-  /* Subhead - Section headers, table group headers */
-  --ui2-font-subhead-size: 14px;
-  --ui2-font-subhead-weight: 600;
-  --ui2-font-subhead-tracking: 0;
+  /* Subhead — Section dividers */
+  --ui2-font-subhead-size: 10px;
+  --ui2-font-subhead-weight: 700;
+  --ui2-font-subhead-tracking: 0.15em;
   --ui2-font-subhead-line: 1.4;
   
-  /* Data Numerals (tabular numbers for PnL/Greeks/prices) */
-  --ui2-font-data: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', 'Consolas', monospace;
+  /* Data Numerals — tabular mono for all financial data */
+  --ui2-font-data: 'IBM Plex Mono', 'Roboto Mono', 'Consolas', monospace;
   --ui2-font-data-size: 13px;
   --ui2-font-data-weight: 500;
   --ui2-font-data-line: 1.5;
   
-  /* UI/Body (readability) */
-  --ui2-font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  /* UI/Body — IBM Plex Sans for human-readable prose */
+  --ui2-font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --ui2-font-sans-size: 13px;
   --ui2-font-sans-weight: 400;
   --ui2-font-sans-line: 1.5;
   
-  /* Micro - Table headers, badges, micro-labels */
-  --ui2-font-micro-size: 10px;
-  --ui2-font-micro-weight: 600;
-  --ui2-font-micro-tracking: 0.5px;
+  /* Micro — Compact table headers, AMD-style labels */
+  --ui2-font-micro-size: 9px;
+  --ui2-font-micro-weight: 700;
+  --ui2-font-micro-tracking: 0.12em;
   --ui2-font-micro-line: 1.4;
   
-  /* Mono (code, logs) */
-  --ui2-font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', 'Consolas', monospace;
+  /* Mono (Bloomberg-grade: all terminal output, code, logs) */
+  --ui2-font-mono: 'IBM Plex Mono', 'Roboto Mono', 'Courier New', monospace;
   
+  /* ─── COMPACT SPACING (Bloomberg uses dense 4px baseline) ─── */
   /* ─── Spacing Scale (4px increments, 8px rhythm) ───────── */
   --ui2-space-0: 0;
   --ui2-space-1: 0.25rem;  /* 4px  */
@@ -129,13 +147,13 @@
   --ui2-space-12: 3rem;    /* 48px */
   --ui2-space-16: 4rem;    /* 64px */
   
-  /* ─── Border Radius ────────────────────────────────────── */
-  --ui2-radius-none: 0;
-  --ui2-radius-sm: 4px;
-  --ui2-radius-md: 6px;
-  --ui2-radius-lg: 8px;
-  --ui2-radius-xl: 12px;
-  --ui2-radius-full: 9999px;
+  /* ─── BLOOMBERG: ZERO-RADIUS SHARP CORNERS ────────────── */
+  --ui2-radius-none: 0;          /* Bloomberg: always sharp */
+  --ui2-radius-sm: 2px;          /* Subtle rounding */
+  --ui2-radius-md: 3px;          /* Medium */
+  --ui2-radius-lg: 4px;          /* Large */
+  --ui2-radius-xl: 6px;          /* Extra (off-brand) */
+  --ui2-radius-full: 2px;        /* Badges: still sharp */
   
   /* ─── Shadows (Depth system) ───────────────────────────── */
   --ui2-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -162,11 +180,11 @@
   --ui2-z-toast: 1600;
   --ui2-z-tooltip: 1700;
   
-  /* ─── Accent Glow System (Premium Active States) ─────── */
-  --ui2-glow-primary: 0 0 16px rgba(99, 102, 241, 0.3);
-  --ui2-glow-success: 0 0 12px rgba(34, 197, 94, 0.25);
-  --ui2-glow-danger: 0 0 12px rgba(239, 68, 68, 0.25);
-  --ui2-glow-focus: 0 0 0 3px rgba(99, 102, 241, 0.2), 0 0 20px rgba(99, 102, 241, 0.15);
+  /* ─── BLOOMBERG GLOW SYSTEM (Amber amber amber) ─────── */
+  --ui2-glow-primary: 0 0 20px rgba(255,153,0,0.40);
+  --ui2-glow-success: 0 0 14px rgba(0,216,138,0.30);
+  --ui2-glow-danger: 0 0 14px rgba(255,59,92,0.30);
+  --ui2-glow-focus: 0 0 0 2px rgba(255,153,0,0.35), 0 0 16px rgba(255,153,0,0.15);
   
   /* ─── Elevation Model (Gradient + Border + Shadow) ─────── */
   /* Level 0 - Flat (base panels) */
@@ -174,18 +192,18 @@
   --ui2-elevation-0-border: var(--ui2-border);
   --ui2-elevation-0-shadow: none;
   
-  /* Level 1 - Slightly raised (cards) */
-  --ui2-elevation-1-bg: linear-gradient(180deg, var(--ui2-bg-elevated) 0%, var(--ui2-bg-panel) 100%);
+  /* Level 1 - Bloomberg panel (sharp, no gradient) */
+  --ui2-elevation-1-bg: var(--ui2-bg-panel);
   --ui2-elevation-1-border: var(--ui2-border);
   --ui2-elevation-1-shadow: var(--ui2-shadow-sm);
   
-  /* Level 2 - Raised (interactive panels) */
-  --ui2-elevation-2-bg: linear-gradient(180deg, var(--ui2-bg-surface) 0%, var(--ui2-bg-panel) 100%);
-  --ui2-elevation-2-border: var(--ui2-border-strong);
+  /* Level 2 - Active panel (amber top-border) */
+  --ui2-elevation-2-bg: var(--ui2-bg-surface);
+  --ui2-elevation-2-border: var(--ui2-border-panel);
   --ui2-elevation-2-shadow: var(--ui2-shadow-md);
   
-  /* Level 3 - Floating (modals, popovers) */
-  --ui2-elevation-3-bg: linear-gradient(180deg, var(--ui2-bg-hover) 0%, var(--ui2-bg-surface) 100%);
+  /* Level 3 - Floating overlay (amber border) */
+  --ui2-elevation-3-bg: var(--ui2-bg-hover);
   --ui2-elevation-3-border: var(--ui2-border-strong);
   --ui2-elevation-3-shadow: var(--ui2-shadow-lg);
   
@@ -203,9 +221,28 @@
   --ui2-status-canceled-bg: rgba(100, 116, 139, 0.1);
   
   /* Price flash colors (for real-time updates) */
-  --ui2-flash-up: #10b981;
-  --ui2-flash-down: #f43f5e;
-  --ui2-flash-neutral: #64748b;
+  --ui2-flash-up: #00d88a;          /* Phosphor green */
+  --ui2-flash-down: #ff3b5c;        /* Crimson */
+  --ui2-flash-neutral: #5d5d7d;
+  
+  /* ─── BLOOMBERG STRUCTURAL MEASUREMENTS ──────────────── */
+  --ui2-topbar-h: 36px;             /* Slim command bar */
+  --ui2-ticker-h: 28px;             /* Market tape strip */
+  --ui2-sidebar-w: 48px;            /* Icon-only collapsed */
+  --ui2-sidebar-expanded-w: 200px;  /* Expanded labels */
+  --ui2-panel-header-h: 28px;       /* Panel title strip */
+  --ui2-row-h: 26px;                /* Data table row height */
+  --ui2-row-compact-h: 22px;        /* Super compact row */
+  
+  /* ─── AMBER ACCENT UTILITIES ─────────────────────────── */
+  --ui2-amber: #ff9900;
+  --ui2-amber-dim: rgba(255,153,0,0.6);
+  --ui2-amber-ghost: rgba(255,153,0,0.08);
+  --ui2-amber-hover: rgba(255,153,0,0.15);
+  --ui2-green: #00d88a;
+  --ui2-green-dim: rgba(0,216,138,0.6);
+  --ui2-red: #ff3b5c;
+  --ui2-red-dim: rgba(255,59,92,0.6);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -213,13 +250,23 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @keyframes price-flash-up {
-  0% { background-color: rgba(16, 185, 129, 0.3); }
-  100% { background-color: transparent; }
+  0% { background-color: rgba(0,216,138,0.28); color: #00f0a0; }
+  100% { background-color: transparent; color: inherit; }
 }
 
 @keyframes price-flash-down {
-  0% { background-color: rgba(244, 63, 94, 0.3); }
-  100% { background-color: transparent; }
+  0% { background-color: rgba(255,59,92,0.28); color: #ff6680; }
+  100% { background-color: transparent; color: inherit; }
+}
+
+@keyframes amber-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes scan-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .ui2-price-flash-up {
@@ -235,14 +282,16 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .ui2-root {
-  font-family: var(--ui2-font-sans);
+  font-family: 'IBM Plex Mono', 'Roboto Mono', 'Courier New', monospace;
   color: var(--ui2-text-primary);
   background: var(--ui2-bg-base);
-  font-size: var(--ui2-font-sans-size);
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: 'kern' 1, 'liga' 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'kern' 1, 'tnum' 1, 'zero' 1;
+  letter-spacing: 0.01em;
 }
 
 /* ─── Motion Control (E2E determinism) ──────────────────────── */
@@ -348,21 +397,21 @@
 }
 
 .ui2-scrollable::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 .ui2-scrollable::-webkit-scrollbar-track {
-  background: var(--ui2-bg-base);
+  background: var(--ui2-bg-sunken);
 }
 
 .ui2-scrollable::-webkit-scrollbar-thumb {
-  background: var(--ui2-border);
-  border-radius: 5px;
+  background: var(--ui2-border-panel);
+  border-radius: 0;
 }
 
 .ui2-scrollable::-webkit-scrollbar-thumb:hover {
-  background: var(--ui2-text-muted);
+  background: var(--ui2-amber-dim);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -711,4 +760,377 @@
   width: 1px;
   background: var(--ui2-border-subtle);
   margin: 0 var(--ui2-space-2);
+}
+/* ══════════════════════════════════════════════════════════════════════════
+   BLOOMBERG TERMINAL STRUCTURAL COMPONENTS
+══════════════════════════════════════════════════════════════════════════ */
+
+/* Bloomberg Panel Header (amber top-border band) */
+.ui2-panel-header {
+  height: var(--ui2-panel-header-h);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background: rgba(255,153,0,0.06);
+  border-top: 2px solid var(--ui2-amber);
+  border-bottom: 1px solid var(--ui2-border);
+  gap: 8px;
+}
+
+.ui2-panel-header-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui2-amber);
+}
+
+/* Bloomberg Panel: sharp border, amber top accent */
+.ui2-panel-bloomberg {
+  background: var(--ui2-bg-panel);
+  border: 1px solid var(--ui2-border);
+  border-top: 2px solid var(--ui2-amber);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  border-radius: 0;
+}
+
+/* Bloomberg Data Row */
+.ui2-data-row {
+  display: flex;
+  align-items: center;
+  height: var(--ui2-row-h);
+  padding: 0 10px;
+  border-bottom: 1px solid var(--ui2-border-subtle);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  gap: 8px;
+  transition: background 80ms ease;
+}
+
+.ui2-data-row:hover {
+  background: rgba(255,153,0,0.04);
+}
+
+.ui2-data-row:nth-child(even) {
+  background: var(--ui2-bg-stripe);
+}
+
+/* Bloomberg KPI Tile */
+.ui2-kpi-tile {
+  background: var(--ui2-bg-panel);
+  border: 1px solid var(--ui2-border);
+  border-top: 2px solid var(--ui2-amber);
+  padding: 12px 14px;
+  border-radius: 0;
+  min-width: 0;
+}
+
+.ui2-kpi-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui2-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.ui2-kpi-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ui2-text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.ui2-kpi-value.positive { color: var(--ui2-green); }
+.ui2-kpi-value.negative { color: var(--ui2-red); }
+.ui2-kpi-value.amber    { color: var(--ui2-amber); }
+
+.ui2-kpi-delta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 3px;
+}
+
+/* Bloomberg Badge (sharp, monospace) */
+.ui2-badge-bloomberg {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.ui2-badge-bloomberg.amber {
+  background: var(--ui2-amber-ghost);
+  color: var(--ui2-amber);
+  border: 1px solid rgba(255,153,0,0.25);
+}
+
+.ui2-badge-bloomberg.green {
+  background: rgba(0,216,138,0.08);
+  color: var(--ui2-green);
+  border: 1px solid rgba(0,216,138,0.25);
+}
+
+.ui2-badge-bloomberg.red {
+  background: rgba(255,59,92,0.08);
+  color: var(--ui2-red);
+  border: 1px solid rgba(255,59,92,0.25);
+}
+
+.ui2-badge-bloomberg.neutral {
+  background: rgba(150,150,180,0.08);
+  color: var(--ui2-text-secondary);
+  border: 1px solid var(--ui2-border);
+}
+
+/* Bloomberg Button */
+.ui2-btn-bloomberg {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 0;
+  border: 1px solid var(--ui2-amber);
+  background: transparent;
+  color: var(--ui2-amber);
+  cursor: pointer;
+  transition: all 100ms ease;
+  white-space: nowrap;
+}
+
+.ui2-btn-bloomberg:hover {
+  background: var(--ui2-amber-ghost);
+  box-shadow: 0 0 12px rgba(255,153,0,0.2);
+}
+
+.ui2-btn-bloomberg.filled {
+  background: var(--ui2-amber);
+  color: #000;
+}
+
+.ui2-btn-bloomberg.filled:hover {
+  background: var(--ui2-brand-hover);
+  box-shadow: 0 0 16px rgba(255,153,0,0.35);
+}
+
+.ui2-btn-bloomberg.danger {
+  border-color: var(--ui2-red);
+  color: var(--ui2-red);
+}
+
+.ui2-btn-bloomberg.success {
+  border-color: var(--ui2-green);
+  color: var(--ui2-green);
+}
+
+/* Bloomberg Input */
+.ui2-input-bloomberg {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  background: var(--ui2-bg-input);
+  border: 1px solid var(--ui2-border);
+  border-radius: 0;
+  color: var(--ui2-text-primary);
+  padding: 5px 8px;
+  outline: none;
+  width: 100%;
+  transition: border-color 100ms ease, box-shadow 100ms ease;
+}
+
+.ui2-input-bloomberg:focus {
+  border-color: var(--ui2-amber);
+  box-shadow: 0 0 0 2px rgba(255,153,0,0.15);
+}
+
+.ui2-input-bloomberg::placeholder {
+  color: var(--ui2-text-muted);
+}
+
+/* Bloomberg Table */
+.ui2-table-bloomberg {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui2-table-bloomberg thead th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ui2-text-tertiary);
+  background: var(--ui2-bg-elevated);
+  padding: 5px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--ui2-border);
+  white-space: nowrap;
+}
+
+.ui2-table-bloomberg thead th:first-child {
+  text-align: left;
+}
+
+.ui2-table-bloomberg tbody tr {
+  border-bottom: 1px solid var(--ui2-border-subtle);
+  transition: background 60ms ease;
+}
+
+.ui2-table-bloomberg tbody tr:hover {
+  background: rgba(255,153,0,0.04);
+}
+
+.ui2-table-bloomberg tbody td {
+  padding: 5px 8px;
+  text-align: right;
+  color: var(--ui2-text-primary);
+  white-space: nowrap;
+}
+
+.ui2-table-bloomberg tbody td:first-child {
+  text-align: left;
+  color: var(--ui2-text-secondary);
+}
+
+/* Bloomberg Market Tape Ticker */
+.ui2-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-right: 1px solid var(--ui2-border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ui2-ticker-symbol {
+  color: var(--ui2-amber);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.ui2-ticker-price {
+  color: var(--ui2-text-primary);
+}
+
+.ui2-ticker-change-pos {
+  color: var(--ui2-green);
+}
+
+.ui2-ticker-change-neg {
+  color: var(--ui2-red);
+}
+
+/* Bloomberg Sidebar Nav Item */
+.ui2-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: all 80ms ease;
+  border-left: 2px solid transparent;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ui2-text-tertiary);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.ui2-nav-item:hover {
+  background: var(--ui2-amber-ghost);
+  color: var(--ui2-text-secondary);
+  border-left-color: rgba(255,153,0,0.3);
+}
+
+.ui2-nav-item.active {
+  background: var(--ui2-amber-hover);
+  color: var(--ui2-amber);
+  border-left-color: var(--ui2-amber);
+}
+
+/* Bloomberg Status Chip */
+.ui2-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 0;
+}
+
+.ui2-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ui2-status-chip.live {
+  color: var(--ui2-green);
+  background: rgba(0,216,138,0.08);
+  border: 1px solid rgba(0,216,138,0.25);
+}
+
+.ui2-status-chip.live .ui2-status-dot {
+  background: var(--ui2-green);
+  box-shadow: 0 0 4px var(--ui2-green);
+  animation: amber-pulse 2s ease infinite;
+}
+
+.ui2-status-chip.delayed {
+  color: var(--ui2-amber);
+  background: var(--ui2-amber-ghost);
+  border: 1px solid rgba(255,153,0,0.25);
+}
+
+/* Bloomberg Separator Band */
+.ui2-band {
+  background: rgba(255,153,0,0.06);
+  border-top: 1px solid var(--ui2-border);
+  border-bottom: 1px solid var(--ui2-border);
+  padding: 4px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui2-amber);
+}
+
+/* Financial data helpers */
+.ui2-pos { color: var(--ui2-green); }
+.ui2-neg { color: var(--ui2-red); }
+.ui2-flat { color: var(--ui2-neutral); }
+.ui2-amber-text { color: var(--ui2-amber); }
+
+.ui2-pos-bg { background: rgba(0,216,138,0.07); }
+.ui2-neg-bg { background: rgba(255,59,92,0.07); }
+
+/* Scan-in animation for new panels */
+.ui2-scan-in {
+  animation: scan-in 160ms ease-out both;
 }

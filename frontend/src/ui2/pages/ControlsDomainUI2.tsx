@@ -1,219 +1,348 @@
-/**
- * Wave 106 - Controls Domain UI2
- * ES-first search for AP/AR and reconciliation controls with evidence graph.
- * Route: /ui2/controls-domain
- */
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// ControlsDomainUI2 â€” Bloomberg APEX Controls Domain terminal
+// AP/AR reconciliation controls, evidence graph, ES-first search, risk assessment
+// Tabs: CONTROLS | EVIDENCE | RECONCILIATION | RISK | AUDIT
+// APIs: /api/v3/controls/items, /evidence, /reconciliation, /risk, /audit
 
-import { useState, useEffect, useCallback } from 'react';
-import { PageShellUI2, type PageStatus } from '../components';
-
-const API = '/api/v3/controls';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
 interface ControlDoc {
-  id: string;
-  doc_type: string;
-  reference?: string;
+  controlId: string
+  title: string
+  domain: 'ap' | 'ar' | 'reconciliation' | 'treasury' | 'compliance' | 'risk' | 'operations'
+  category: 'preventive' | 'detective' | 'corrective' | 'directive'
+  frequency: 'realtime' | 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual'
+  status: 'active' | 'draft' | 'suspended' | 'retired'
+  owner: string
+  lastTestedAt: string
+  testResult: 'pass' | 'fail' | 'partial' | 'untested'
+  riskLevel: 'critical' | 'high' | 'medium' | 'low'
+  evidenceCount: number
+  deficiencies: number
 }
 
-interface Edge {
-  id: string;
-  from_id: string;
-  to_id: string;
-  edge_type: string;
-  metadata: Record<string, unknown>;
-  created_at: number;
+interface ControlEvidence {
+  evidenceId: string
+  controlId: string
+  title: string
+  type: 'screenshot' | 'log' | 'report' | 'attestation' | 'system_output' | 'sample'
+  status: 'accepted' | 'pending' | 'rejected' | 'expired'
+  reviewer: string
+  reviewedAt: string
+  expiresAt: string
+  sizeBytes: number
+  hash: string
 }
 
-function DocTypeChip({ type }: { type: string }) {
-  const bg = type === 'ap-ar' ? '#1d4ed8' : '#7c3aed';
+interface ReconciliationItem {
+  reconId: string
+  entity: string
+  period: string
+  type: 'ap' | 'ar' | 'bank' | 'intercompany' | 'inventory' | 'payroll'
+  status: 'reconciled' | 'unreconciled' | 'in_progress' | 'pending_approval' | 'exception'
+  openItems: number
+  exceptionAmount: number
+  currency: string
+  dueDate: string
+  completedBy: string
+  approvedBy: string
+}
+
+interface ControlRisk {
+  riskId: string
+  controlId: string
+  description: string
+  riskType: 'financial' | 'operational' | 'compliance' | 'reputational' | 'fraud'
+  likelihood: 'high' | 'medium' | 'low'
+  impact: 'critical' | 'high' | 'medium' | 'low'
+  residualRisk: 'high' | 'medium' | 'low'
+  mitigationStatus: 'mitigated' | 'partially_mitigated' | 'unmitigated' | 'accepted'
+  owner: string
+  dueDate: string
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
   return (
-    <span style={{
-      padding: '2px 8px', borderRadius: '999px', fontSize: '11px',
-      fontWeight: 600, color: '#fff', background: bg,
-    }}>
-      {type}
-    </span>
-  );
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
 }
+function StatusBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { active: GREEN, draft: BLUE, suspended: ORANGE, retired: SUBTLE, pass: GREEN, fail: RED, partial: AMBER, untested: SUBTLE, reconciled: GREEN, unreconciled: RED, in_progress: AMBER, pending_approval: BLUE, exception: RED, accepted: GREEN, pending: AMBER, rejected: RED, expired: SUBTLE, mitigated: GREEN, partially_mitigated: AMBER, unmitigated: RED }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.replace(/_/g, ' ').toUpperCase()}</span>
+}
+function RiskBadge({ r }: { r: string }) {
+  const m: Record<string, string> = { critical: RED, high: ORANGE, medium: AMBER, low: GREEN }
+  const c = m[r] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{r.toUpperCase()}</span>
+}
+
 
 export function ControlsDomainUI2() {
-  const [query, setQuery]         = useState('');
-  const [results, setResults]     = useState<ControlDoc[]>([]);
-  const [selected, setSelected]   = useState<ControlDoc | null>(null);
-  const [edges, setEdges]         = useState<Edge[]>([]);
-  const [status, setStatus]       = useState<PageStatus>('loading');
-  const [errorMsg, setErrorMsg]   = useState<string | undefined>();
+  const [tab, setTab] = useState<'controls' | 'evidence' | 'reconciliation' | 'risk' | 'audit'>('controls')
+  const [controls, setControls] = useState<ControlDoc[]>([])
+  const [evidence, setEvidence] = useState<ControlEvidence[]>([])
+  const [reconciliation, setReconciliation] = useState<ReconciliationItem[]>([])
+  const [risks, setRisks] = useState<ControlRisk[]>([])
+  const [auditLog, setAuditLog] = useState<Array<{ auditId: string; action: string; actor: string; detail: string; timestamp: string }>>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
-  const runSearch = useCallback(async (q: string) => {
-    setStatus('loading');
-    setErrorMsg(undefined);
+  const fetchAll = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/controls/search?q=${encodeURIComponent(q)}`);
-      if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-      const data = await res.json();
-      setResults(data.hits || []);
-      setStatus('ready');
-    } catch (e) {
-      setErrorMsg(String(e));
-      setStatus('error');
-    }
-  }, []);
+      const [rC, rE, rR, rRk, rA] = await Promise.allSettled([
+        fetch('/api/v3/controls/items').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/controls/evidence').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/controls/reconciliation').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/controls/risk').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/controls/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rC.status === 'fulfilled') {
+        const raw = Array.isArray(rC.value) ? rC.value : rC.value.controls ?? rC.value.data ?? rC.value.items ?? []
+        setControls(raw.map((c: any) => ({
+          controlId: c.control_id ?? c.controlId ?? c.id ?? '',
+          title: c.title ?? '', domain: c.domain ?? 'operations',
+          category: c.category ?? 'detective', frequency: c.frequency ?? 'monthly',
+          status: c.status ?? 'active', owner: c.owner ?? '',
+          lastTestedAt: c.last_tested_at ?? c.lastTestedAt ?? '',
+          testResult: c.test_result ?? c.testResult ?? 'untested',
+          riskLevel: c.risk_level ?? c.riskLevel ?? 'medium',
+          evidenceCount: Number(c.evidence_count ?? c.evidenceCount ?? 0),
+          deficiencies: Number(c.deficiencies ?? 0),
+        })))
+        setErr(null)
+      } else setErr('Failed to load controls')
+      if (rE.status === 'fulfilled') {
+        const raw = Array.isArray(rE.value) ? rE.value : rE.value.evidence ?? rE.value.data ?? []
+        setEvidence(raw.map((e: any) => ({
+          evidenceId: e.evidence_id ?? e.evidenceId ?? e.id ?? '',
+          controlId: e.control_id ?? e.controlId ?? '',
+          title: e.title ?? '', type: e.type ?? 'report',
+          status: e.status ?? 'pending', reviewer: e.reviewer ?? '',
+          reviewedAt: e.reviewed_at ?? e.reviewedAt ?? '',
+          expiresAt: e.expires_at ?? e.expiresAt ?? '',
+          sizeBytes: Number(e.size_bytes ?? e.sizeBytes ?? 0),
+          hash: e.hash ?? '',
+        })))
+      }
+      if (rR.status === 'fulfilled') {
+        const raw = Array.isArray(rR.value) ? rR.value : rR.value.reconciliation ?? rR.value.data ?? []
+        setReconciliation(raw.map((r: any) => ({
+          reconId: r.recon_id ?? r.reconId ?? r.id ?? '',
+          entity: r.entity ?? '', period: r.period ?? '',
+          type: r.type ?? 'bank', status: r.status ?? 'in_progress',
+          openItems: Number(r.open_items ?? r.openItems ?? 0),
+          exceptionAmount: Number(r.exception_amount ?? r.exceptionAmount ?? 0),
+          currency: r.currency ?? 'USD', dueDate: r.due_date ?? r.dueDate ?? '',
+          completedBy: r.completed_by ?? r.completedBy ?? '',
+          approvedBy: r.approved_by ?? r.approvedBy ?? '',
+        })))
+      }
+      if (rRk.status === 'fulfilled') {
+        const raw = Array.isArray(rRk.value) ? rRk.value : rRk.value.risks ?? rRk.value.data ?? []
+        setRisks(raw.map((r: any) => ({
+          riskId: r.risk_id ?? r.riskId ?? r.id ?? '',
+          controlId: r.control_id ?? r.controlId ?? '',
+          description: r.description ?? '', riskType: r.risk_type ?? r.riskType ?? 'operational',
+          likelihood: r.likelihood ?? 'medium', impact: r.impact ?? 'medium',
+          residualRisk: r.residual_risk ?? r.residualRisk ?? 'medium',
+          mitigationStatus: r.mitigation_status ?? r.mitigationStatus ?? 'unmitigated',
+          owner: r.owner ?? '', dueDate: r.due_date ?? r.dueDate ?? '',
+        })))
+      }
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.audit ?? rA.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '', action: a.action ?? '',
+          actor: a.actor ?? '', detail: a.detail ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  useEffect(() => { runSearch(''); }, [runSearch]);
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
-  const openEvidence = useCallback(async (doc: ControlDoc) => {
-    setSelected(doc);
-    try {
-      const res = await fetch(`${API}/edges?from_id=${doc.id}`);
-      if (!res.ok) throw new Error('Edges fetch failed');
-      const data = await res.json();
-      setEdges(data.edges || []);
-    } catch {
-      setEdges([]);
-    }
-  }, []);
+  const failedControls = controls.filter(c => c.testResult === 'fail').length
+  const deficientControls = controls.filter(c => c.deficiencies > 0).length
+  const openExceptions = reconciliation.filter(r => r.status === 'exception').length
+  const highRisks = risks.filter(r => r.residualRisk === 'high' || r.impact === 'critical').length
+  const filtered = controls.filter(c => !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.domain.includes(search.toLowerCase()))
 
-  const handleSearch = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    runSearch(query);
-  }, [query, runSearch]);
+  const TABS2 = [
+    { id: 'controls' as const, label: 'CONTROLS' },
+    { id: 'evidence' as const, label: 'EVIDENCE' },
+    { id: 'reconciliation' as const, label: 'RECONCILIATION' },
+    { id: 'risk' as const, label: 'RISK' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <PageShellUI2
-      status={status}
-      testId="controls-domain-page"
-      errorMessage={errorMsg}
-      emptyMessage="No controls found."
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 data-testid="controls-domain-title"
-              style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#f1f5f9' }}>
-            Controls Domain
-          </h2>
-          <span style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>
-            ES-first BP/AR Reconciliation
-          </span>
-        </div>
-
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px' }}>
-          <input
-            data-testid="controls-search-input"
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search controls (ES-first)..."
-            aria-label="Search controls"
-            style={{
-              flex: 1, padding: '10px 14px',
-              background: 'var(--ui2-bg-input)', border: '1px solid var(--ui2-border)',
-              borderRadius: 'var(--ui2-radius-sm)', color: 'var(--ui2-text-primary)',
-              fontSize: '14px',
-            }}
-          />
-          <button
-            type="submit"
-            data-testid="controls-search-btn"
-            aria-label="Run control search"
-            style={{
-              padding: '10px 20px', background: 'var(--ui2-accent)', color: '#fff',
-              border: 'none', borderRadius: 'var(--ui2-radius-sm)', cursor: 'pointer',
-              fontWeight: 600, fontSize: '14px',
-            }}
-          >
-            Search
-          </button>
-        </form>
-
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div data-testid="controls-results-list"
-               style={{
-                 flex: 1, background: 'var(--ui2-bg-card)',
-                 border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius)',
-                 overflow: 'hidden',
-               }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--ui2-border)',
-                          fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>
-              Results ({results.length})
-            </div>
-            {results.length === 0 ? (
-              <div data-testid="controls-results-empty"
-                   style={{ padding: '32px 16px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
-                No results. Run a search above.
-              </div>
-            ) : (
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {results.map((doc) => (
-                  <li
-                    key={doc.id}
-                    data-testid={`controls-result-${doc.id}`}
-                    onClick={() => openEvidence(doc)}
-                    style={{
-                      padding: '12px 16px', cursor: 'pointer',
-                      borderBottom: '1px solid var(--ui2-border)',
-                      background: selected?.id === doc.id ? 'var(--ui2-bg-hover)' : 'transparent',
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                    }}
-                  >
-                    <DocTypeChip type={doc.doc_type} />
-                    <span style={{ fontSize: '13px', color: '#e2e8f0', fontFamily: 'monospace' }}>
-                      {doc.id.slice(0, 8)}...
-                    </span>
-                    {doc.reference && (
-                      <span style={{ fontSize: '13px', color: '#f1f5f9' }}>
-                        {doc.reference}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div data-testid="controls-evidence-panel"
-               style={{
-                 width: '320px', background: 'var(--ui2-bg-card)',
-                 border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius)',
-                 overflow: 'hidden',
-               }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--ui2-border)',
-                          fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>
-              Evidence / Edges
-              {selected ? ` -- ${selected.id.slice(0, 8)}` : ''}
-            </div>
-            {!selected ? (
-              <div style={{ padding: '32px 16px', color: '#64748b', fontSize: '13px', textAlign: 'center' }}>
-                Select a control to view linked events
-              </div>
-            ) : edges.length === 0 ? (
-              <div data-testid="controls-evidence-empty"
-                   style={{ padding: '32px 16px', color: '#64748b', fontSize: '13px', textAlign: 'center' }}>
-                No linked edges
-              </div>
-            ) : (
-              <ul data-testid="controls-edges-list"
-                  style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {edges.map((edge) => (
-                  <li key={edge.id}
-                      style={{ padding: '12px 16px', borderBottom: '1px solid var(--ui2-border)', fontSize: '12px' }}>
-                    <div style={{ fontWeight: 600, color: '#e2e8f0', marginBottom: '4px' }}>
-                      {edge.edge_type}
-                    </div>
-                    <div style={{ color: '#94a3b8', fontFamily: 'monospace' }}>
-                      to: {edge.to_id.slice(0, 12)}...
-                    </div>
-                    {Object.keys(edge.metadata).length > 0 && (
-                      <div style={{ color: '#64748b', marginTop: '4px', fontSize: '11px' }}>
-                        {JSON.stringify(edge.metadata)}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CONTROLS DOMAIN â€” AP/AR RECONCILIATION + EVIDENCE GRAPH + ES-FIRST SEARCH</span>
+        {failedControls > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {failedControls} FAILED</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
       </div>
-    </PageShellUI2>
-  );
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Total Controls" value={controls.length} col={BLUE} />
+        <StatCard label="Failed Tests" value={failedControls} col={failedControls > 0 ? RED : GREEN} />
+        <StatCard label="Deficiencies" value={deficientControls} col={deficientControls > 0 ? ORANGE : GREEN} />
+        <StatCard label="Recon Exceptions" value={openExceptions} col={openExceptions > 0 ? RED : GREEN} />
+        <StatCard label="High Risk Items" value={highRisks} col={highRisks > 0 ? RED : GREEN} />
+      </div>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {tab === 'controls' && (
+          <div>
+            <div style={{ marginBottom: 8 }}>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search controls by title / domainâ€¦"
+                style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, color: TEXT, padding: '5px 10px', width: 320 }} />
+            </div>
+            <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><Th>Control ID</Th><Th>Title</Th><Th>Domain</Th><Th>Category</Th><Th>Frequency</Th><Th>Status</Th><Th>Test Result</Th><Th>Risk</Th><Th right>Evidence</Th><Th right>Deficiencies</Th></tr></thead>
+                <tbody>
+                  {filtered.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls â€” check /api/v3/controls/items</td></tr>}
+                  {filtered.sort((a, b) => a.deficiencies > 0 ? -1 : 0).map((c, i) => (
+                    <tr key={i} style={{ background: c.testResult === 'fail' ? RED + '08' : c.deficiencies > 0 ? ORANGE + '06' : 'transparent' }}>
+                      <Td mono col={AMBER}>{c.controlId}</Td>
+                      <Td mono col={TEXT}>{c.title.slice(0, 40)}{c.title.length > 40 ? 'â€¦' : ''}</Td>
+                      <Td mono col={BLUE}>{c.domain.toUpperCase()}</Td>
+                      <Td mono col={PURPLE}>{c.category}</Td>
+                      <Td mono col={SUBTLE}>{c.frequency}</Td>
+                      <Td><StatusBadge s={c.status} /></Td>
+                      <Td><StatusBadge s={c.testResult} /></Td>
+                      <Td><RiskBadge r={c.riskLevel} /></Td>
+                      <Td right mono col={TEXT}>{c.evidenceCount}</Td>
+                      <Td right mono col={c.deficiencies > 0 ? RED : GREEN}>{c.deficiencies}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {tab === 'evidence' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Evidence ID</Th><Th>Control ID</Th><Th>Title</Th><Th>Type</Th><Th>Status</Th><Th>Reviewer</Th><Th>Reviewed At</Th><Th>Expires At</Th></tr></thead>
+              <tbody>
+                {evidence.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence â€” check /api/v3/controls/evidence</td></tr>}
+                {evidence.sort((a, b) => a.status === 'rejected' ? -1 : 0).map((e, i) => (
+                  <tr key={i} style={{ background: e.status === 'rejected' ? RED + '08' : e.status === 'expired' ? ORANGE + '06' : 'transparent' }}>
+                    <Td mono col={AMBER}>{e.evidenceId}</Td>
+                    <Td mono col={BLUE}>{e.controlId}</Td>
+                    <Td mono col={TEXT}>{e.title.slice(0, 40)}{e.title.length > 40 ? 'â€¦' : ''}</Td>
+                    <Td mono col={PURPLE}>{e.type.replace(/_/g, ' ')}</Td>
+                    <Td><StatusBadge s={e.status} /></Td>
+                    <Td mono col={SUBTLE}>{e.reviewer || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.reviewedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.expiresAt || 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'reconciliation' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Recon ID</Th><Th>Entity</Th><Th>Type</Th><Th>Period</Th><Th>Status</Th><Th right>Open Items</Th><Th right>Exception Amt</Th><Th>Ccy</Th><Th>Due Date</Th><Th>Approved By</Th></tr></thead>
+              <tbody>
+                {reconciliation.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reconciliation items â€” check /api/v3/controls/reconciliation</td></tr>}
+                {reconciliation.sort((a, b) => a.status === 'exception' ? -1 : 0).map((r, i) => (
+                  <tr key={i} style={{ background: r.status === 'exception' ? RED + '08' : 'transparent' }}>
+                    <Td mono col={AMBER}>{r.reconId}</Td>
+                    <Td mono col={TEXT}>{r.entity}</Td>
+                    <Td mono col={PURPLE}>{r.type.toUpperCase()}</Td>
+                    <Td mono col={SUBTLE}>{r.period}</Td>
+                    <Td><StatusBadge s={r.status} /></Td>
+                    <Td right mono col={r.openItems > 0 ? ORANGE : GREEN}>{r.openItems}</Td>
+                    <Td right mono col={r.exceptionAmount > 0 ? RED : GREEN}>{r.exceptionAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Td>
+                    <Td mono col={SUBTLE}>{r.currency}</Td>
+                    <Td mono col={SUBTLE}>{r.dueDate || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.approvedBy || 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'risk' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Risk ID</Th><Th>Control ID</Th><Th>Description</Th><Th>Type</Th><Th>Likelihood</Th><Th>Impact</Th><Th>Residual</Th><Th>Mitigation</Th><Th>Owner</Th><Th>Due</Th></tr></thead>
+              <tbody>
+                {risks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk items â€” check /api/v3/controls/risk</td></tr>}
+                {risks.sort((a, b) => a.residualRisk === 'high' ? -1 : 0).map((r, i) => (
+                  <tr key={i} style={{ background: r.residualRisk === 'high' ? RED + '08' : 'transparent' }}>
+                    <Td mono col={AMBER}>{r.riskId}</Td>
+                    <Td mono col={BLUE}>{r.controlId}</Td>
+                    <Td mono col={TEXT}>{r.description.slice(0, 40)}{r.description.length > 40 ? 'â€¦' : ''}</Td>
+                    <Td mono col={PURPLE}>{r.riskType}</Td>
+                    <Td><RiskBadge r={r.likelihood} /></Td>
+                    <Td><RiskBadge r={r.impact} /></Td>
+                    <Td><RiskBadge r={r.residualRisk} /></Td>
+                    <Td><StatusBadge s={r.mitigationStatus} /></Td>
+                    <Td mono col={SUBTLE}>{r.owner || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.dueDate || 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v3/controls/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }

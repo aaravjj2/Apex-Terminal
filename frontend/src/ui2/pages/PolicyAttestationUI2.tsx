@@ -1,230 +1,352 @@
-/**
- * PolicyAttestationUI2 — W51: Policy Attestation
- * Policy attestation packs with evidence collection and compliance reporting
- *
- * Production-grade terminal interface using ui2 design system.
- * Tabs: Overview | Data | Analytics | Configuration
- */
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// PolicyAttestationUI2 â€” Bloomberg APEX policy attestation terminal
+// Attestation packs, evidence collection, compliance reporting, policy lifecycle, audit
+// Tabs: PACKS | ATTESTATIONS | EVIDENCE | COMPLIANCE | AUDIT
+// APIs: /api/v4/policy-attestation/packs, /attestations, /evidence, /compliance, /audit
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  PageHeader, Tabs, Panel, DataTable, StatusBadge, KPIStrip, Button, EmptyState, Skeleton,
-} from '../components';
-import type { ColumnDef, KPIItem } from '../components';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
-const API = '/api/v4/policy-attestation';
-
-const TABS = [
-  { id: 'overview',  label: 'Overview' },
-  { id: 'data',      label: 'Data' },
-  { id: 'analytics', label: 'Analytics' },
-  { id: 'config',    label: 'Configuration' },
-];
-
-const S = {
-  page:    { height: '100%', display: 'flex', flexDirection: 'column' as const, overflow: 'hidden' },
-  content: { flex: 1, overflow: 'auto', padding: '0 16px 16px 16px' },
-  gap:     { display: 'flex', flexDirection: 'column' as const, gap: 'var(--ui2-space-4)' },
-  grid2:   { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--ui2-space-3)' },
-  grid3:   { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--ui2-space-3)' },
-  surface: { background: 'var(--ui2-bg-surface)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-sm)', padding: 'var(--ui2-space-3)' } as React.CSSProperties,
-  mono:    { fontFamily: 'var(--ui2-font-mono)', fontSize: '11px', color: 'var(--ui2-text-tertiary)' } as React.CSSProperties,
-  dimText: { fontSize: '11px', color: 'var(--ui2-text-muted)' } as React.CSSProperties,
-  label:   { fontSize: '11px', fontWeight: 600, color: 'var(--ui2-text-secondary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '4px', display: 'block' } as React.CSSProperties,
-  errorBox:  { background: 'var(--ui2-danger-bg)', border: '1px solid var(--ui2-danger-border)', borderRadius: 'var(--ui2-radius-sm)', padding: 'var(--ui2-space-3)', color: 'var(--ui2-danger)', fontSize: '13px' } as React.CSSProperties,
-};
-
-interface DataItem { [key: string]: unknown }
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={S.dimText}>{label}</span>
-      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ui2-text-primary)' }}>{value}</span>
-    </div>
-  );
+interface AttestationPack {
+  packId: string
+  name: string
+  framework: string
+  category: string
+  status: 'active' | 'draft' | 'archived'
+  controlCount: number
+  attestedCount: number
+  evidenceRequired: number
+  dueDate: string
+  owningTeam: string
+  completionPct: number
 }
 
-function MetricCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={S.surface}>
-      <div style={S.dimText}>{label}</div>
-      <div style={{ fontSize: '16px', fontWeight: 700, fontFamily: 'var(--ui2-font-mono)', color: 'var(--ui2-text-primary)', marginTop: '2px' }}>{value}</div>
-    </div>
-  );
+interface AttestationRecord {
+  attestationId: string
+  packId: string
+  packName: string
+  controlId: string
+  controlName: string
+  attestedBy: string
+  attestedAt: string
+  outcome: 'pass' | 'fail' | 'exception' | 'not_applicable'
+  expiresAt: string
+  evidenceCount: number
+  comment: string
 }
+
+interface EvidenceItem {
+  evidenceId: string
+  packId: string
+  controlId: string
+  evidenceType: 'document' | 'screenshot' | 'log' | 'api_response' | 'auto_generated'
+  title: string
+  source: string
+  collectedAt: string
+  validUntil: string
+  status: 'valid' | 'expired' | 'pending_review'
+  collectedBy: string
+}
+
+interface ComplianceReport {
+  reportId: string
+  framework: string
+  period: string
+  overallScore: number
+  passedControls: number
+  failedControls: number
+  exceptionsControls: number
+  naControls: number
+  generatedAt: string
+  status: 'final' | 'draft' | 'under_review'
+}
+
+interface PolicyAttAuditEntry {
+  auditId: string
+  packId: string
+  action: string
+  actor: string
+  outcome: 'pass' | 'fail' | 'warn'
+  detail: string
+  timestamp: string
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function OutcomeBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { pass: GREEN, fail: RED, exception: ORANGE, not_applicable: SUBTLE, valid: GREEN, expired: RED, pending_review: AMBER, final: GREEN, draft: BLUE, under_review: AMBER, active: GREEN, archived: SUBTLE, pass2: GREEN, fail2: RED, warn: AMBER }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.replace(/[_2]/g, ' ').toUpperCase()}</span>
+}
+function ProgressBar({ pct, col }: { pct: number; col?: string }) {
+  const c = col ?? (pct >= 90 ? GREEN : pct >= 60 ? AMBER : RED)
+  return (
+    <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+      <div style={{ width: 48, height: 4, background: BORDER, borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: c }} />
+      </div>
+      <span style={{ fontFamily: MONO, fontSize: 10, color: c }}>{pct.toFixed(0)}%</span>
+    </div>
+  )
+}
+
 
 export function PolicyAttestationUI2() {
-  const [tab, setTab] = useState('overview');
-  const [data, setData] = useState<DataItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [stats, setStats] = useState<Record<string, any>>({ });
+  const [tab, setTab] = useState<'packs' | 'attestations' | 'evidence' | 'compliance' | 'audit'>('packs')
+  const [packs, setPacks] = useState<AttestationPack[]>([])
+  const [attestations, setAttestations] = useState<AttestationRecord[]>([])
+  const [evidence, setEvidence] = useState<EvidenceItem[]>([])
+  const [compliance, setCompliance] = useState<ComplianceReport[]>([])
+  const [auditLog, setAuditLog] = useState<PolicyAttAuditEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const fetchAll = useCallback(async () => {
     try {
-      const r = await fetch(`${API}/packs` );
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const json = await r.json();
-      setData(Array.isArray(json.data) ? json.data : []);
-      setStats(json.metadata || {});
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
-  }, []);
+      const [rP, rA, rE, rC, rAu] = await Promise.allSettled([
+        fetch('/api/v4/policy-attestation/packs').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/policy-attestation/attestations').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/policy-attestation/evidence').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/policy-attestation/compliance').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/policy-attestation/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rP.status === 'fulfilled') {
+        const raw = Array.isArray(rP.value) ? rP.value : rP.value.packs ?? rP.value.data ?? []
+        setPacks(raw.map((p: any) => ({
+          packId: p.pack_id ?? p.packId ?? '', name: p.name ?? '',
+          framework: p.framework ?? '', category: p.category ?? '',
+          status: p.status ?? 'active', controlCount: Number(p.control_count ?? p.controlCount ?? 0),
+          attestedCount: Number(p.attested_count ?? p.attestedCount ?? 0),
+          evidenceRequired: Number(p.evidence_required ?? p.evidenceRequired ?? 0),
+          dueDate: p.due_date ?? p.dueDate ?? '', owningTeam: p.owning_team ?? p.owningTeam ?? '',
+          completionPct: Number(p.completion_pct ?? p.completionPct ?? 0),
+        })))
+        setErr(null)
+      } else setErr('Failed to load packs')
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.attestations ?? rA.value.data ?? []
+        setAttestations(raw.map((a: any) => ({
+          attestationId: a.attestation_id ?? a.attestationId ?? '', packId: a.pack_id ?? a.packId ?? '',
+          packName: a.pack_name ?? a.packName ?? '', controlId: a.control_id ?? a.controlId ?? '',
+          controlName: a.control_name ?? a.controlName ?? '', attestedBy: a.attested_by ?? a.attestedBy ?? '',
+          attestedAt: a.attested_at ?? a.attestedAt ?? '', outcome: a.outcome ?? 'not_applicable',
+          expiresAt: a.expires_at ?? a.expiresAt ?? '', evidenceCount: Number(a.evidence_count ?? a.evidenceCount ?? 0),
+          comment: a.comment ?? '',
+        })))
+      }
+      if (rE.status === 'fulfilled') {
+        const raw = Array.isArray(rE.value) ? rE.value : rE.value.evidence ?? rE.value.data ?? []
+        setEvidence(raw.map((e: any) => ({
+          evidenceId: e.evidence_id ?? e.evidenceId ?? '', packId: e.pack_id ?? e.packId ?? '',
+          controlId: e.control_id ?? e.controlId ?? '',
+          evidenceType: e.evidence_type ?? e.evidenceType ?? 'document', title: e.title ?? '',
+          source: e.source ?? '', collectedAt: e.collected_at ?? e.collectedAt ?? '',
+          validUntil: e.valid_until ?? e.validUntil ?? '', status: e.status ?? 'valid',
+          collectedBy: e.collected_by ?? e.collectedBy ?? '',
+        })))
+      }
+      if (rC.status === 'fulfilled') {
+        const raw = Array.isArray(rC.value) ? rC.value : rC.value.compliance ?? rC.value.data ?? []
+        setCompliance(raw.map((c: any) => ({
+          reportId: c.report_id ?? c.reportId ?? '', framework: c.framework ?? '',
+          period: c.period ?? '', overallScore: Number(c.overall_score ?? c.overallScore ?? 0),
+          passedControls: Number(c.passed_controls ?? c.passedControls ?? 0),
+          failedControls: Number(c.failed_controls ?? c.failedControls ?? 0),
+          exceptionsControls: Number(c.exceptions_controls ?? c.exceptionsControls ?? 0),
+          naControls: Number(c.na_controls ?? c.naControls ?? 0),
+          generatedAt: c.generated_at ?? c.generatedAt ?? '', status: c.status ?? 'draft',
+        })))
+      }
+      if (rAu.status === 'fulfilled') {
+        const raw = Array.isArray(rAu.value) ? rAu.value : rAu.value.audit ?? rAu.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '', packId: a.pack_id ?? a.packId ?? '',
+          action: a.action ?? '', actor: a.actor ?? '', outcome: a.outcome ?? 'pass',
+          detail: a.detail ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
-  const columns: ColumnDef<DataItem>[] = [
-    { key: 'id', label: 'ID', width: '120px', render: (_v, row) => <span style={S.mono}>{String(row.id || '—')}</span> },
-    { key: 'name', label: 'Name', width: '200px' },
-    { key: 'status', label: 'Status', width: '100px', render: (_v, row) => <StatusBadge variant={String(row.status) === 'active' ? 'success' : 'neutral'}>{String(row.status || 'pending')}</StatusBadge> },
-    { key: 'updated', label: 'Updated', width: '140px', render: (_v, row) => <span style={{ fontSize: '12px' }}>{String(row.updated || '—')}</span> },
-  ];
+  const failedAttestations = attestations.filter(a => a.outcome === 'fail').length
+  const expiredEvidence = evidence.filter(e => e.status === 'expired').length
+  const activePacks = packs.filter(p => p.status === 'active').length
+  const avgScore = compliance.length > 0 ? compliance.reduce((s, c) => s + c.overallScore, 0) / compliance.length : 0
 
-  const kpiItems: KPIItem[] = [
-    { id: 'total', label: 'Total Items', value: String(data.length), status: 'neutral', icon: <span style={{ fontSize: '16px' }}>📊</span> },
-    { id: 'active', label: 'Active', value: String(data.filter((d: any) => d.status === 'active').length), status: 'success', icon: <span style={{ fontSize: '16px' }}>✅</span> },
-    { id: 'week', label: 'Week', value: 'W51', status: 'neutral', icon: <span style={{ fontSize: '16px' }}>📝</span> },
-    { id: 'version', label: 'API Version', value: 'v4', status: 'neutral', icon: <span style={{ fontSize: '16px' }}>🔗</span> },
-  ];
+  const TABS2 = [
+    { id: 'packs' as const, label: 'PACKS' },
+    { id: 'attestations' as const, label: 'ATTESTATIONS' },
+    { id: 'evidence' as const, label: 'EVIDENCE' },
+    { id: 'compliance' as const, label: 'COMPLIANCE' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <div data-testid="policy-attestation-page" data-ready="true" style={S.page}>
-      <div style={{ padding: '12px 16px 0 16px' }}>
-        <PageHeader title="Policy Attestation" subtitle="Policy attestation packs with evidence collection and compliance reporting" testId="policy-attestation-header" />
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>POLICY ATTESTATION â€” PACKS + EVIDENCE COLLECTION + COMPLIANCE REPORTING</span>
+        {failedAttestations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {failedAttestations} FAILED ATTESTATIONS</span>}
+        {expiredEvidence > 0 && <span style={{ fontSize: 10, color: ORANGE }}>âš‘ {expiredEvidence} EXPIRED EVIDENCE</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
       </div>
-      <div style={{ padding: '0 16px 8px 16px' }}>
-        <Tabs items={TABS} activeTab={tab} onTabChange={setTab} testId="policy-attestation-tabs" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Active Packs" value={activePacks} col={BLUE} />
+        <StatCard label="Failed Attestations" value={failedAttestations} col={failedAttestations > 0 ? RED : GREEN} />
+        <StatCard label="Expired Evidence" value={expiredEvidence} col={expiredEvidence > 0 ? ORANGE : GREEN} />
+        <StatCard label="Avg Score" value={avgScore > 0 ? `${avgScore.toFixed(1)}%` : 'â€”'} col={avgScore >= 90 ? GREEN : avgScore >= 70 ? AMBER : RED} />
+        <StatCard label="Reports" value={compliance.filter(c => c.status === 'final').length} col={PURPLE} />
       </div>
-      <div style={S.content}>
-        {error && <div style={S.errorBox}>{error}</div>}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
 
-        {tab === 'overview' && (
-          <div style={S.gap}>
-            <KPIStrip items={kpiItems} variant="hero" testId="policy-attestation-kpi" />
-            <div style={S.grid2}>
-              <Panel title="Service Status" variant="elevated" padding="md" testId="policy-attestation-status"
-                status={<StatusBadge variant="success">Operational</StatusBadge>}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <InfoRow label="Feature" value="Policy Attestation" />
-                  <InfoRow label="Week" value="W51" />
-                  <InfoRow label="API Prefix" value="/api/v4/policy-attestation" />
-                  <InfoRow label="Endpoints" value="5" />
-                  <InfoRow label="Version" value="v4" />
-                </div>
-              </Panel>
-              <Panel title="Quick Actions" variant="elevated" padding="md" testId="policy-attestation-actions">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ui2-space-2)' }}>
-                  <Button variant="primary" fullWidth onClick={fetchData} loading={loading} testId="policy-attestation-refresh">
-                    Refresh Data
-                  </Button>
-                  <Button variant="secondary" fullWidth testId="policy-attestation-export">
-                    Export Report
-                  </Button>
-                  <Button variant="ghost" fullWidth testId="policy-attestation-docs">
-                    View Documentation
-                  </Button>
-                </div>
-              </Panel>
-            </div>
+        {tab === 'packs' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Pack</Th><Th>Framework</Th><Th>Category</Th><Th>Status</Th><Th right>Controls</Th><Th>Completion</Th><Th>Team</Th><Th>Due Date</Th></tr></thead>
+              <tbody>
+                {packs.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No packs â€” check /api/v4/policy-attestation/packs</td></tr>}
+                {packs.sort((a, b) => a.completionPct - b.completionPct).map((p, i) => (
+                  <tr key={i} style={{ background: p.completionPct < 50 ? AMBER + '07' : 'transparent' }}>
+                    <Td mono col={AMBER}>{p.name}</Td>
+                    <Td mono col={BLUE}>{p.framework}</Td>
+                    <Td mono col={PURPLE}>{p.category}</Td>
+                    <Td><OutcomeBadge s={p.status} /></Td>
+                    <Td right mono col={SUBTLE}>{p.attestedCount}/{p.controlCount}</Td>
+                    <Td><ProgressBar pct={p.completionPct} /></Td>
+                    <Td mono col={TEXT}>{p.owningTeam}</Td>
+                    <Td mono col={SUBTLE}>{p.dueDate || 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'data' && (
-          <div style={S.gap}>
-            {loading ? <Skeleton height={300} /> : data.length > 0 ? (
-              <Panel title="Policy Attestation Data" variant="default" padding="none" testId="policy-attestation-data-panel">
-                <DataTable columns={columns} data={data} keyField="id" density="compact" testId="policy-attestation-table" />
-              </Panel>
-            ) : (
-              <EmptyState title="No data available" description="Run a refresh or check the API connection to load data." />
-            )}
+        {tab === 'attestations' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Control</Th><Th>Pack</Th><Th>Attested By</Th><Th>Outcome</Th><Th right>Evidence</Th><Th>Attested</Th><Th>Expires</Th><Th>Comment</Th></tr></thead>
+              <tbody>
+                {attestations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No attestations â€” check /api/v4/policy-attestation/attestations</td></tr>}
+                {attestations.sort((a, b) => a.outcome === 'fail' ? -1 : 1).map((a, i) => (
+                  <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
+                    <Td mono col={AMBER}>{a.controlName.slice(0, 32)}{a.controlName.length > 32 ? 'â€¦' : ''}</Td>
+                    <Td mono col={BLUE}>{a.packName}</Td>
+                    <Td mono col={TEXT}>{a.attestedBy}</Td>
+                    <Td><OutcomeBadge s={a.outcome} /></Td>
+                    <Td right mono col={a.evidenceCount === 0 ? ORANGE : GREEN}>{a.evidenceCount}</Td>
+                    <Td mono col={SUBTLE}>{a.attestedAt}</Td>
+                    <Td mono col={SUBTLE}>{a.expiresAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.comment.slice(0, 28) || 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'analytics' && (
-          <div style={S.gap}>
-            <Panel title="Analytics Overview" variant="elevated" padding="md" testId="policy-attestation-analytics">
-              <div style={S.grid3}>
-                <MetricCell label="Data Points" value={String(data.length)} />
-                <MetricCell label="API Calls" value="—" />
-                <MetricCell label="Latency (p99)" value="—" />
-                <MetricCell label="Error Rate" value="0%" />
-                <MetricCell label="Throughput" value="—" />
-                <MetricCell label="Cache Hit" value="—" />
-              </div>
-            </Panel>
-            <Panel title="Recent Activity" variant="bordered" padding="md" testId="policy-attestation-activity">
-              <EmptyState title="No recent activity" description="Analytics data will populate as the service processes requests." />
-            </Panel>
+        {tab === 'evidence' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Title</Th><Th>Type</Th><Th>Source</Th><Th>Status</Th><Th>Collected By</Th><Th>Collected</Th><Th>Valid Until</Th></tr></thead>
+              <tbody>
+                {evidence.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence â€” check /api/v4/policy-attestation/evidence</td></tr>}
+                {evidence.sort((a, b) => a.status === 'expired' ? -1 : 1).map((e, i) => (
+                  <tr key={i} style={{ background: e.status === 'expired' ? ORANGE + '0a' : 'transparent' }}>
+                    <Td mono col={AMBER}>{e.title.slice(0, 36)}{e.title.length > 36 ? 'â€¦' : ''}</Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: e.evidenceType === 'auto_generated' ? PURPLE : BLUE, background: (e.evidenceType === 'auto_generated' ? PURPLE : BLUE) + '22', borderRadius: 3, padding: '2px 5px' }}>{e.evidenceType.replace('_', ' ').toUpperCase()}</span></Td>
+                    <Td mono col={SUBTLE}>{e.source.slice(0, 32) || 'â€”'}</Td>
+                    <Td><OutcomeBadge s={e.status} /></Td>
+                    <Td mono col={TEXT}>{e.collectedBy}</Td>
+                    <Td mono col={SUBTLE}>{e.collectedAt}</Td>
+                    <Td mono col={e.status === 'expired' ? ORANGE : SUBTLE}>{e.validUntil || 'â€”'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {tab === 'config' && (
-          <div style={S.gap}>
-            <Panel title="Service Configuration" variant="elevated" padding="md" testId="policy-attestation-config">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <InfoRow label="API Endpoint" value="/api/v4/policy-attestation" />
-                <InfoRow label="Week" value="W51" />
-                <InfoRow label="Section" value="system" />
-                <InfoRow label="Auto-refresh" value="Enabled" />
-                <InfoRow label="Cache TTL" value="60s" />
-              </div>
-            </Panel>
-            <Panel title="Endpoints" variant="bordered" padding="md" testId="policy-attestation-endpoints">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/packs
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>List attestation packs</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="warning">POST</StatusBadge>
-                      {' '}/packs
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Create attestation pack</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/packs/{id}/evidence
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Get pack evidence</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="warning">POST</StatusBadge>
-                      {' '}/sign
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Sign attestation</div>
-                </div>
-                <div style={S.surface}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ui2-text-primary)' }}>
-                      <StatusBadge variant="success">GET</StatusBadge>
-                      {' '}/compliance-report
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ui2-text-tertiary)', marginTop: '2px' }}>Get compliance report</div>
-                </div>
-              </div>
-            </Panel>
+        {tab === 'compliance' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Framework</Th><Th>Period</Th><Th>Status</Th><Th right>Score</Th><Th right>Passed</Th><Th right>Failed</Th><Th right>Exceptions</Th><Th right>N/A</Th><Th>Generated</Th></tr></thead>
+              <tbody>
+                {compliance.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance reports â€” check /api/v4/policy-attestation/compliance</td></tr>}
+                {compliance.sort((a, b) => b.overallScore - a.overallScore).map((c, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{c.framework}</Td>
+                    <Td mono col={SUBTLE}>{c.period}</Td>
+                    <Td><OutcomeBadge s={c.status} /></Td>
+                    <Td right mono col={c.overallScore >= 95 ? GREEN : c.overallScore >= 80 ? AMBER : RED}>{c.overallScore.toFixed(1)}%</Td>
+                    <Td right mono col={GREEN}>{c.passedControls}</Td>
+                    <Td right mono col={c.failedControls > 0 ? RED : SUBTLE}>{c.failedControls}</Td>
+                    <Td right mono col={c.exceptionsControls > 0 ? ORANGE : SUBTLE}>{c.exceptionsControls}</Td>
+                    <Td right mono col={SUBTLE}>{c.naControls}</Td>
+                    <Td mono col={SUBTLE}>{c.generatedAt}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Pack</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/policy-attestation/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={BLUE}>{a.packId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td><OutcomeBadge s={a.outcome} /></Td>
+                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }

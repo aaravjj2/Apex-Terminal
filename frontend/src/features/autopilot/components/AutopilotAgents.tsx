@@ -1,90 +1,66 @@
+﻿const BG='#0a0a0a'; const PANEL='#111111'; const BORDER='#1e1e1e';
+const AMBER='#f5a623'; const GREEN='#26a69a'; const RED='#ef5350';
+const BLUE='#42a5f5'; const PURPLE='#ab47bc'; const SUBTLE='#555';
+const TEXT='#d1d4dc'; const MONO='"Roboto Mono","Courier New",monospace';
+
 import React, { useEffect, useState } from 'react';
 import { API_BASE } from '../../../config/api';
 
-interface AgentStatus {
-    symbol: string;
-    running: boolean;
-    interval: number;
-    last_check: string;
-    status: string;
-}
-
-interface AgentsResponse {
-    agents: AgentStatus[];
-    count: number;
-    monitoring_active: boolean;
-}
+interface AgentStatus { symbol: string; running: boolean; interval: number; last_check: string; status: string; }
+interface AgentsResponse { agents: AgentStatus[]; count: number; monitoring_active: boolean; }
 
 export const AutopilotAgents: React.FC = () => {
-    const [data, setData] = useState<AgentsResponse | null>(null);
-    const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<AgentsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    const fetchAgents = async () => {
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/autopilot/agents`);
-            if (res.ok) {
-                const json = await res.json();
-                setData(json);
-            }
-        } catch (e) {
-            console.error("Failed to fetch agents", e);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchAgents = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/autopilot/agents`);
+      if (res.ok) setData(await res.json());
+    } catch (e) { console.error('Failed to fetch agents', e); }
+    finally { setLoading(false); }
+  };
 
-    useEffect(() => {
-        fetchAgents();
-        const interval = setInterval(fetchAgents, 3000); // Poll every 3s
-        return () => clearInterval(interval);
-    }, []);
+  useEffect(() => { fetchAgents(); const iv = setInterval(fetchAgents, 3000); return () => clearInterval(iv); }, []);
 
-    if (loading && !data) return <div className="text-gray-500 text-sm p-4">Loading agents...</div>;
-    if (!data || data.agents.length === 0) {
-        if (data?.monitoring_active) {
-            return (
-                <div className="bg-gray-800 rounded p-4 mb-4 border border-gray-700">
-                    <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
-                        <span>🛡️ Active Guardians</span>
-                        <span className="text-xs bg-green-900 text-green-300 px-2 py-0.5 rounded-full">Dispatcher Active</span>
-                    </h3>
-                    <div className="text-gray-500 text-sm text-center py-2">
-                        No active positions to monitor.
-                    </div>
-                </div>
-            )
-        }
-        return null;
-    }
+  if (loading && !data) return <div style={{ fontSize: 11, color: SUBTLE, padding: 12, fontFamily: MONO }}>Loading agents...</div>;
 
+  if (!data || data.agents.length === 0) {
+    if (!data?.monitoring_active) return null;
     return (
-        <div className="bg-gray-800 rounded p-4 mb-4 border border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
-                    <span>🛡️ Active Guardians</span>
-                    <span className="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded-full">{data.count} Active</span>
-                </h3>
-                {data.monitoring_active && (
-                    <span className="text-xs text-green-400 font-mono animate-pulse">● Dispatcher Running</span>
-                )}
-            </div>
-
-            <div className="space-y-2">
-                {data.agents.map((agent) => (
-                    <div key={agent.symbol} className="flex items-center justify-between bg-gray-750 p-2 rounded border border-gray-700">
-                        <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${agent.running ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                            <span className="font-bold text-sm font-mono">{agent.symbol}</span>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-gray-400">
-                            <span>Interval: {agent.interval}s</span>
-                            <span className={agent.status === 'watching' ? 'text-green-400' : 'text-gray-500'}>
-                                {agent.status.toUpperCase()}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </div>
+      <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '10px 12px', marginBottom: 8, fontFamily: MONO }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: TEXT }}> ACTIVE GUARDIANS</span>
+          <span style={{ fontSize: 10, color: GREEN, padding: '2px 6px', background: GREEN + '22', borderRadius: 2 }}>DISPATCHER ACTIVE</span>
         </div>
+        <div style={{ fontSize: 11, color: SUBTLE, textAlign: 'center', padding: '4px 0' }}>No active positions to monitor.</div>
+      </div>
     );
+  }
+
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '10px 12px', marginBottom: 8, fontFamily: MONO }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: TEXT }}> ACTIVE GUARDIANS</span>
+          <span style={{ fontSize: 10, color: BLUE, padding: '2px 6px', background: BLUE + '22', borderRadius: 2 }}>{data.count} ACTIVE</span>
+        </div>
+        {data.monitoring_active && <span style={{ fontSize: 10, color: GREEN, fontFamily: MONO }}> DISPATCHER</span>}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {data.agents.map(agent => (
+          <div key={agent.symbol} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: BG, padding: '6px 10px', borderRadius: 2, border: `1px solid ${BORDER}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: agent.running ? GREEN : RED }} />
+              <span style={{ fontSize: 11, fontWeight: 700, fontFamily: MONO }}>{agent.symbol}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 14, fontSize: 10, color: SUBTLE }}>
+              <span>INTERVAL: {agent.interval}s</span>
+              <span style={{ color: agent.status === 'watching' ? GREEN : SUBTLE }}>{agent.status.toUpperCase()}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };

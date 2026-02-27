@@ -1,257 +1,391 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'
+﻿// WalkForwardV3UI2 â€” Bloomberg APEX Walk-Forward V3 terminal
+// Walk-forward analysis, fold results, robustness matrix, sensitivity heatmap, parameter optimization
+// Tabs: FOLDS | ROBUSTNESS | HEATMAP | PARAMETER OPT | AUDIT
+// APIs: /api/v3/walkforward/run, /robustness, /heatmap, /optimize, /audit
 
-const API = '/api/v3/walkforward';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
-interface Fold {
-  fold_idx: number;
-  train_start: number;
-  train_end: number;
-  test_start: number;
-  test_end: number;
-  train_return: number;
-  test_return: number;
-  purge_bars: number;
+interface WfFold {
+  foldIdx: number
+  trainStart: number
+  trainEnd: number
+  testStart: number
+  testEnd: number
+  trainReturn: number
+  testReturn: number
+  purgeBars: number
+  sharpe: number | null
+  maxDrawdown: number | null
 }
 
 interface WalkResult {
-  config_id: string;
-  strategy: string;
-  n_folds: number;
-  purge_bars: number;
-  folds: Fold[];
-  avg_train_return: number;
-  avg_test_return: number;
+  configId: string
+  strategy: string
+  nFolds: number
+  purgeBars: number
+  folds: WfFold[]
+  avgTrainReturn: number
+  avgTestReturn: number
+  overfitScore: number | null
 }
 
 interface RobRow {
-  slippage: number;
-  spread: number;
-  delay_bars: number;
-  liquidity_cap: number;
-  base_return: number;
-  adj_return: number;
-  delta: number;
+  slippage: number
+  spread: number
+  delayBars: number
+  liquidityCap: number
+  baseReturn: number
+  adjReturn: number
+  delta: number
 }
 
-interface RobResult { config_id: string; base_return: number; matrix: RobRow[]; count: number }
+interface RobResult {
+  configId: string
+  baseReturn: number
+  matrix: RobRow[]
+  count: number
+  robustnessScore: number
+}
 
-interface HeatmapRow { slippage: number; returns_by_spread: Record<string, number> }
-interface HeatmapData { slippage_levels: number[]; spread_levels: number[]; heatmap: HeatmapRow[] }
+interface HeatmapRow { slippage: number; returnsBySpread: Record<string, number> }
+interface HeatmapData { slippageLevels: number[]; spreadLevels: number[]; heatmap: HeatmapRow[] }
+
+interface ParamOptResult {
+  paramName: string
+  value: number
+  trainReturn: number
+  testReturn: number
+  sharpe: number
+  rank: number
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function Pct({ v }: { v: number }) {
+  const col = v >= 0 ? GREEN : RED
+  return <span style={{ color: col, fontFamily: MONO, fontSize: 11 }}>{v >= 0 ? '+' : ''}{(v * 100).toFixed(2)}%</span>
+}
+
 
 export function WalkForwardV3UI2() {
-  const [nFolds, setNFolds] = useState(4);
-  const [purge, setPurge] = useState(2);
-  const [walkResult, setWalkResult] = useState<WalkResult | null>(null);
-  const [robResult, setRobResult] = useState<RobResult | null>(null);
-  const [heatmap, setHeatmap] = useState<HeatmapData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'folds' | 'robustness' | 'heatmap'>('folds');
+  const [tab, setTab] = useState<'folds' | 'robustness' | 'heatmap' | 'optimize' | 'audit'>('folds')
+  const [walkResult, setWalkResult] = useState<WalkResult | null>(null)
+  const [robResult, setRobResult] = useState<RobResult | null>(null)
+  const [heatmap, setHeatmap] = useState<HeatmapData | null>(null)
+  const [paramOpt, setParamOpt] = useState<ParamOptResult[]>([])
+  const [auditLog, setAuditLog] = useState<Array<{ auditId: string; action: string; actor: string; detail: string; timestamp: string }>>([])
+  const [nFolds, setNFolds] = useState(4)
+  const [purgeBars, setPurgeBars] = useState(2)
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
 
-  const runWalk = async () => {
-    setLoading(true); setError(null);
+  const handleRunWalk = async () => {
+    setLoading(true); setErr(null)
     try {
-      const r = await fetch(`${API}/run`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ n_folds: nFolds, purge_bars: purge }),
-      });
-      if (!r.ok) { setError((await r.json()).detail); return; }
-      setWalkResult(await r.json());
-      setTab('folds');
-    } catch (e: any) { setError(String(e)); }
-    finally { setLoading(false); }
-  };
+      const r = await fetch('/api/v3/walkforward/run', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ n_folds: nFolds, purge_bars: purgeBars }),
+      })
+      if (r.ok) {
+        const d = await r.json()
+        setWalkResult({
+          configId: d.config_id ?? d.configId ?? '',
+          strategy: d.strategy ?? '',
+          nFolds: Number(d.n_folds ?? d.nFolds ?? nFolds),
+          purgeBars: Number(d.purge_bars ?? d.purgeBars ?? purgeBars),
+          avgTrainReturn: Number(d.avg_train_return ?? d.avgTrainReturn ?? 0),
+          avgTestReturn: Number(d.avg_test_return ?? d.avgTestReturn ?? 0),
+          overfitScore: d.overfit_score ?? d.overfitScore ?? null,
+          folds: (d.folds ?? []).map((f: any) => ({
+            foldIdx: Number(f.fold_idx ?? f.foldIdx ?? 0),
+            trainStart: Number(f.train_start ?? f.trainStart ?? 0),
+            trainEnd: Number(f.train_end ?? f.trainEnd ?? 0),
+            testStart: Number(f.test_start ?? f.testStart ?? 0),
+            testEnd: Number(f.test_end ?? f.testEnd ?? 0),
+            trainReturn: Number(f.train_return ?? f.trainReturn ?? 0),
+            testReturn: Number(f.test_return ?? f.testReturn ?? 0),
+            purgeBars: Number(f.purge_bars ?? f.purgeBars ?? 0),
+            sharpe: f.sharpe ?? null, maxDrawdown: f.max_drawdown ?? f.maxDrawdown ?? null,
+          })),
+        })
+        setTab('folds')
+      } else { const e = await r.json(); setErr(e.detail ?? 'Walk-forward failed') }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }
 
-  const runRobustness = async () => {
-    setLoading(true); setError(null);
+  const handleRobustness = async () => {
+    setLoading(true); setErr(null)
     try {
-      const cid = walkResult?.config_id || 'standalone';
-      const r = await fetch(`${API}/robustness`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config_id: cid }),
-      });
-      if (!r.ok) { setError((await r.json()).detail); return; }
-      setRobResult(await r.json());
-      setTab('robustness');
-    } catch (e: any) { setError(String(e)); }
-    finally { setLoading(false); }
-  };
+      const r = await fetch('/api/v3/walkforward/robustness', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config_id: walkResult?.configId ?? 'standalone' }),
+      })
+      if (r.ok) {
+        const d = await r.json()
+        setRobResult({
+          configId: d.config_id ?? d.configId ?? '',
+          baseReturn: Number(d.base_return ?? d.baseReturn ?? 0),
+          count: Number(d.count ?? 0),
+          robustnessScore: Number(d.robustness_score ?? d.robustnessScore ?? 0),
+          matrix: (d.matrix ?? []).map((m: any) => ({
+            slippage: Number(m.slippage ?? 0), spread: Number(m.spread ?? 0),
+            delayBars: Number(m.delay_bars ?? m.delayBars ?? 0),
+            liquidityCap: Number(m.liquidity_cap ?? m.liquidityCap ?? 0),
+            baseReturn: Number(m.base_return ?? m.baseReturn ?? 0),
+            adjReturn: Number(m.adj_return ?? m.adjReturn ?? 0),
+            delta: Number(m.delta ?? 0),
+          })),
+        })
+        setTab('robustness')
+      } else setErr('Robustness failed')
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }
 
-  const loadHeatmap = async () => {
-    setLoading(true); setError(null);
+  const handleHeatmap = async () => {
+    setLoading(true); setErr(null)
     try {
-      const r = await fetch(`${API}/heatmap`);
-      setHeatmap(await r.json());
-      setTab('heatmap');
-    } catch (e: any) { setError(String(e)); }
-    finally { setLoading(false); }
-  };
+      const r = await fetch('/api/v3/walkforward/heatmap')
+      if (r.ok) {
+        const d = await r.json()
+        setHeatmap({
+          slippageLevels: d.slippage_levels ?? d.slippageLevels ?? [],
+          spreadLevels: d.spread_levels ?? d.spreadLevels ?? [],
+          heatmap: (d.heatmap ?? []).map((row: any) => ({
+            slippage: Number(row.slippage ?? 0),
+            returnsBySpread: row.returns_by_spread ?? row.returnsBySpread ?? {},
+          })),
+        })
+        setTab('heatmap')
+      } else setErr('Heatmap load failed')
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }
 
-  const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
-  const color = (v: number) => v >= 0 ? '#4f4' : '#f44';
+  const fetchOptAndAudit = useCallback(async () => {
+    try {
+      const [rO, rA] = await Promise.allSettled([
+        fetch('/api/v3/walkforward/optimize').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/walkforward/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rO.status === 'fulfilled') {
+        const raw = Array.isArray(rO.value) ? rO.value : rO.value.results ?? rO.value.data ?? []
+        setParamOpt(raw.map((p: any) => ({
+          paramName: p.param_name ?? p.paramName ?? '',
+          value: Number(p.value ?? 0), trainReturn: Number(p.train_return ?? p.trainReturn ?? 0),
+          testReturn: Number(p.test_return ?? p.testReturn ?? 0),
+          sharpe: Number(p.sharpe ?? 0), rank: Number(p.rank ?? 0),
+        })))
+      }
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.audit ?? rA.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '', action: a.action ?? '',
+          actor: a.actor ?? '', detail: a.detail ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => { fetchOptAndAudit() }, [fetchOptAndAudit])
+
+  const avgTestReturn = walkResult ? walkResult.avgTestReturn : null
+  const TABS2 = [
+    { id: 'folds' as const, label: 'FOLDS' },
+    { id: 'robustness' as const, label: 'ROBUSTNESS' },
+    { id: 'heatmap' as const, label: 'HEATMAP' },
+    { id: 'optimize' as const, label: 'PARAMETER OPT' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <div data-testid="walkforward-v3-page" style={{ padding: 24, fontFamily: 'monospace', maxWidth: 1100 }}>
-      <h2>W98 — Walk-Forward + Robustness v3</h2>
-      {error && <p style={{ color: '#f55' }} data-testid="page-error">{error}</p>}
-
-      {/* Controls */}
-      <div data-testid="walkforward-controls" style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <label>
-          Folds
-          <input
-            type="number" min={2} max={10}
-            value={nFolds}
-            onChange={e => setNFolds(Number(e.target.value))}
-            data-testid="n-folds-input"
-            style={{ marginLeft: 8, width: 60, background: '#222', color: '#eee', border: '1px solid #555', padding: '4px 6px' }}
-          />
-        </label>
-        <label>
-          Purge Bars
-          <input
-            type="number" min={0} max={10}
-            value={purge}
-            onChange={e => setPurge(Number(e.target.value))}
-            data-testid="purge-bars-input"
-            style={{ marginLeft: 8, width: 60, background: '#222', color: '#eee', border: '1px solid #555', padding: '4px 6px' }}
-          />
-        </label>
-        <button data-testid="run-walkforward-btn" onClick={runWalk} disabled={loading}
-          style={{ padding: '8px 18px', background: '#1e6fd4', color: '#fff', border: 'none', borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer' }}>
-          {loading && tab === 'folds' ? 'Running…' : 'Run Walk-Forward'}
-        </button>
-        <button data-testid="run-robustness-btn" onClick={runRobustness} disabled={loading}
-          style={{ padding: '8px 18px', background: '#6b2fd4', color: '#fff', border: 'none', borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer' }}>
-          Run Robustness
-        </button>
-        <button data-testid="load-heatmap-btn" onClick={loadHeatmap} disabled={loading}
-          style={{ padding: '8px 18px', background: '#2f8a2f', color: '#fff', border: 'none', borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer' }}>
-          Load Heatmap
-        </button>
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>WALK-FORWARD V3 â€” FOLD ANALYSIS + ROBUSTNESS MATRIX + SENSITIVITY HEATMAP + PARAM OPTIMIZATION</span>
+        {loading && <span style={{ fontSize: 10, color: AMBER }}>RUNNINGâ€¦</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
       </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-        {(['folds', 'robustness', 'heatmap'] as const).map(t => (
-          <button key={t} data-testid={`tab-${t}`} onClick={() => setTab(t)}
-            style={{
-              padding: '6px 16px', border: '1px solid #444', borderRadius: 4,
-              background: tab === t ? '#1e6fd4' : '#222', color: '#eee', cursor: 'pointer',
-            }}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Folds" value={walkResult ? walkResult.nFolds : 'â€”'} col={BLUE} />
+        <StatCard label="Avg Train Ret." value={walkResult ? `${(walkResult.avgTrainReturn * 100).toFixed(2)}%` : 'â€”'} col={walkResult ? (walkResult.avgTrainReturn >= 0 ? GREEN : RED) : SUBTLE} />
+        <StatCard label="Avg Test Ret." value={avgTestReturn !== null ? `${(avgTestReturn * 100).toFixed(2)}%` : 'â€”'} col={avgTestReturn !== null ? (avgTestReturn >= 0 ? GREEN : RED) : SUBTLE} />
+        <StatCard label="Overfit Score" value={walkResult?.overfitScore !== null && walkResult?.overfitScore !== undefined ? walkResult.overfitScore.toFixed(3) : 'â€”'} col={AMBER} />
+        <StatCard label="Robustness" value={robResult ? `${(robResult.robustnessScore * 100).toFixed(1)}%` : 'â€”'} col={robResult ? (robResult.robustnessScore >= 0.7 ? GREEN : RED) : SUBTLE} />
+        <StatCard label="Matrix Rows" value={robResult ? robResult.count : 'â€”'} col={PURPLE} />
+      </div>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0, alignItems: 'center', gap: 12, padding: '4px 8px' }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '7px 14px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
           </button>
         ))}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <label style={{ fontSize: 10, color: SUBTLE }}>Folds</label>
+          <input type="number" min={2} max={10} value={nFolds} onChange={e => setNFolds(Number(e.target.value))}
+            style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, color: TEXT, padding: '3px 6px', width: 44, borderRadius: 3 }} />
+          <label style={{ fontSize: 10, color: SUBTLE }}>Purge</label>
+          <input type="number" min={0} max={10} value={purgeBars} onChange={e => setPurgeBars(Number(e.target.value))}
+            style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, color: TEXT, padding: '3px 6px', width: 44, borderRadius: 3 }} />
+          {[{ label: 'RUN WALK', onClick: handleRunWalk, col: BLUE }, { label: 'ROBUSTNESS', onClick: handleRobustness, col: PURPLE }, { label: 'HEATMAP', onClick: handleHeatmap, col: GREEN }].map(btn => (
+            <button key={btn.label} onClick={btn.onClick} disabled={loading}
+              style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: btn.col, background: btn.col + '22', border: `1px solid ${btn.col}44`, borderRadius: 3, padding: '4px 10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
+              {btn.label}
+            </button>
+          ))}
+        </div>
       </div>
-
-      {/* Folds Tab */}
-      {tab === 'folds' && walkResult && (
-        <section data-testid="folds-panel">
-          <h3>Walk-Forward Folds ({walkResult.n_folds} folds, purge={walkResult.purge_bars})</h3>
-          <p>Avg Train Return: <strong style={{ color: color(walkResult.avg_train_return) }}>{pct(walkResult.avg_train_return)}</strong>
-            {' · '} Avg Test Return: <strong data-testid="avg-test-return" style={{ color: color(walkResult.avg_test_return) }}>{pct(walkResult.avg_test_return)}</strong>
-          </p>
-          <table data-testid="folds-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr>
-                {['Fold', 'Train [start→end]', 'Purge Gap', 'Test [start→end]', 'Train Return', 'Test Return'].map(h => (
-                  <th key={h} style={{ border: '1px solid #444', padding: '5px 10px', background: '#222' }}>{h}</th>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {tab === 'folds' && (
+          <div>
+            {!walkResult && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No walk-forward results â€” click RUN WALK or check /api/v3/walkforward/run</div>}
+            {walkResult && (
+              <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr><Th right>Fold</Th><Th right>Train Start</Th><Th right>Train End</Th><Th right>Purge</Th><Th right>Test Start</Th><Th right>Test End</Th><Th right>Train Ret.</Th><Th right>Test Ret.</Th><Th right>Sharpe</Th><Th right>Max DD</Th></tr></thead>
+                  <tbody>
+                    {walkResult.folds.map((f, i) => (
+                      <tr key={i}>
+                        <Td right mono col={AMBER}>{f.foldIdx}</Td>
+                        <Td right mono col={SUBTLE}>{f.trainStart}</Td>
+                        <Td right mono col={SUBTLE}>{f.trainEnd}</Td>
+                        <Td right mono col={SUBTLE}>{f.purgeBars}</Td>
+                        <Td right mono col={SUBTLE}>{f.testStart}</Td>
+                        <Td right mono col={SUBTLE}>{f.testEnd}</Td>
+                        <Td right><Pct v={f.trainReturn} /></Td>
+                        <Td right><Pct v={f.testReturn} /></Td>
+                        <Td right mono col={f.sharpe !== null ? (f.sharpe >= 1 ? GREEN : f.sharpe >= 0 ? AMBER : RED) : SUBTLE}>{f.sharpe !== null ? f.sharpe.toFixed(2) : 'â€”'}</Td>
+                        <Td right mono col={f.maxDrawdown !== null && f.maxDrawdown < -0.2 ? RED : AMBER}>{f.maxDrawdown !== null ? `${(f.maxDrawdown * 100).toFixed(1)}%` : 'â€”'}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {tab === 'robustness' && (
+          <div>
+            {!robResult && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No robustness results â€” click ROBUSTNESS</div>}
+            {robResult && (
+              <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr><Th right>Slippage</Th><Th right>Spread</Th><Th right>Delay Bars</Th><Th right>Liq Cap</Th><Th right>Base Ret.</Th><Th right>Adj Ret.</Th><Th right>Delta</Th></tr></thead>
+                  <tbody>
+                    {robResult.matrix.map((r, i) => (
+                      <tr key={i}>
+                        <Td right mono col={TEXT}>{r.slippage}</Td>
+                        <Td right mono col={TEXT}>{r.spread}</Td>
+                        <Td right mono col={TEXT}>{r.delayBars}</Td>
+                        <Td right mono col={TEXT}>{r.liquidityCap}</Td>
+                        <Td right><Pct v={r.baseReturn} /></Td>
+                        <Td right><Pct v={r.adjReturn} /></Td>
+                        <Td right mono col={r.delta >= 0 ? GREEN : RED}>{r.delta >= 0 ? '+' : ''}{(r.delta * 100).toFixed(2)}%</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {tab === 'heatmap' && (
+          <div>
+            {!heatmap && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No heatmap data â€” click HEATMAP</div>}
+            {heatmap && (
+              <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <Th>Slip \ Spread</Th>
+                      {heatmap.spreadLevels.map(s => <Th key={s} right>{s}</Th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {heatmap.heatmap.map((row, i) => (
+                      <tr key={i}>
+                        <Td mono col={AMBER}>{row.slippage}</Td>
+                        {heatmap.spreadLevels.map(s => {
+                          const val = Number(row.returnsBySpread[String(s)] ?? 0)
+                          const intensity = Math.min(Math.abs(val) * 500, 80)
+                          const bg = val >= 0 ? `rgba(38,166,154,${intensity / 100})` : `rgba(239,83,80,${intensity / 100})`
+                          return <td key={s} style={{ fontFamily: MONO, fontSize: 11, padding: '4px 10px', background: bg, textAlign: 'right', color: TEXT, borderBottom: `1px solid #161616` }}>{val >= 0 ? '+' : ''}{(val * 100).toFixed(2)}%</td>
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {tab === 'optimize' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Param Name</Th><Th right>Value</Th><Th right>Train Ret.</Th><Th right>Test Ret.</Th><Th right>Sharpe</Th><Th right>Rank</Th></tr></thead>
+              <tbody>
+                {paramOpt.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No optimization results â€” check /api/v3/walkforward/optimize</td></tr>}
+                {paramOpt.sort((a, b) => a.rank - b.rank).map((p, i) => (
+                  <tr key={i}>
+                    <Td mono col={BLUE}>{p.paramName}</Td>
+                    <Td right mono col={TEXT}>{p.value}</Td>
+                    <Td right><Pct v={p.trainReturn} /></Td>
+                    <Td right><Pct v={p.testReturn} /></Td>
+                    <Td right mono col={p.sharpe >= 1 ? GREEN : p.sharpe >= 0 ? AMBER : RED}>{p.sharpe.toFixed(2)}</Td>
+                    <Td right mono col={p.rank <= 3 ? AMBER : TEXT}>#{p.rank}</Td>
+                  </tr>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {walkResult.folds.map(f => (
-                <tr key={f.fold_idx} data-testid={`fold-row-${f.fold_idx}`}>
-                  <td style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'center' }}>{f.fold_idx}</td>
-                  <td style={{ border: '1px solid #333', padding: '4px 10px' }}>{f.train_start}→{f.train_end}</td>
-                  <td style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'center' }}>{f.purge_bars} bars</td>
-                  <td style={{ border: '1px solid #333', padding: '4px 10px' }}>{f.test_start}→{f.test_end}</td>
-                  <td style={{ border: '1px solid #333', padding: '4px 10px', color: color(f.train_return) }}>{pct(f.train_return)}</td>
-                  <td style={{ border: '1px solid #333', padding: '4px 10px', color: color(f.test_return) }}>{pct(f.test_return)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      {tab === 'folds' && !walkResult && (
-        <p data-testid="folds-empty-state">No walk-forward results yet. Click Run Walk-Forward.</p>
-      )}
-
-      {/* Robustness Tab */}
-      {tab === 'robustness' && robResult && (
-        <section data-testid="robustness-panel">
-          <h3>Robustness Matrix ({robResult.count} scenarios)</h3>
-          <p>Base Return: <strong style={{ color: color(robResult.base_return) }}>{pct(robResult.base_return)}</strong></p>
-          <table data-testid="robustness-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr>
-                {['Slippage', 'Spread', 'Delay', 'Liq Cap', 'Adj Return', 'Delta'].map(h => (
-                  <th key={h} style={{ border: '1px solid #444', padding: '4px 8px', background: '#222' }}>{h}</th>
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v3/walkforward/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {robResult.matrix.map((row, i) => (
-                <tr key={i} data-testid={`robustness-row-${i}`}>
-                  <td style={{ border: '1px solid #333', padding: '3px 8px' }}>{row.slippage}</td>
-                  <td style={{ border: '1px solid #333', padding: '3px 8px' }}>{row.spread}</td>
-                  <td style={{ border: '1px solid #333', padding: '3px 8px' }}>{row.delay_bars}</td>
-                  <td style={{ border: '1px solid #333', padding: '3px 8px' }}>{row.liquidity_cap}</td>
-                  <td style={{ border: '1px solid #333', padding: '3px 8px', color: color(row.adj_return) }}>{pct(row.adj_return)}</td>
-                  <td style={{ border: '1px solid #333', padding: '3px 8px', color: color(row.delta) }}>{pct(row.delta)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      {tab === 'robustness' && !robResult && (
-        <p data-testid="robustness-empty-state">No robustness results yet. Click Run Robustness.</p>
-      )}
-
-      {/* Heatmap Tab */}
-      {tab === 'heatmap' && heatmap && (
-        <section data-testid="heatmap-panel">
-          <h3>Sensitivity Heatmap (Slippage × Spread)</h3>
-          <table data-testid="heatmap-table" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ border: '1px solid #444', padding: '5px 12px', background: '#222' }}>Slippage \ Spread</th>
-                {heatmap.spread_levels.map(s => (
-                  <th key={s} style={{ border: '1px solid #444', padding: '5px 12px', background: '#222' }}>{s}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {heatmap.heatmap.map(row => (
-                <tr key={row.slippage} data-testid={`heatmap-row-${row.slippage}`}>
-                  <td style={{ border: '1px solid #333', padding: '4px 12px', fontWeight: 'bold' }}>{row.slippage}</td>
-                  {heatmap.spread_levels.map(s => {
-                    const val = row.returns_by_spread[String(s)] ?? 0;
-                    const intensity = Math.min(Math.abs(val) * 500, 80);
-                    const bg = val >= 0 ? `rgba(0,200,0,${intensity / 100})` : `rgba(200,0,0,${intensity / 100})`;
-                    return (
-                      <td key={s} data-testid={`heatmap-cell-${row.slippage}-${s}`}
-                        style={{ border: '1px solid #333', padding: '4px 12px', background: bg, textAlign: 'center', color: '#eee' }}>
-                        {pct(val)}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      {tab === 'heatmap' && !heatmap && (
-        <p data-testid="heatmap-empty-state">No heatmap data. Click Load Heatmap.</p>
-      )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }

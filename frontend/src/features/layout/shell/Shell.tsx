@@ -1,4 +1,9 @@
-import { useState, useEffect } from 'react';
+const BG='#0a0a0a'; const PANEL='#111111'; const BORDER='#1e1e1e';
+const AMBER='#f5a623'; const GREEN='#26a69a'; const RED='#ef5350';
+const BLUE='#42a5f5'; const PURPLE='#ab47bc'; const SUBTLE='#555';
+const TEXT='#d1d4dc'; const MONO='"Roboto Mono","Courier New",monospace';
+
+import React, { useState, useEffect } from 'react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { TopAppBarEnhanced } from './TopAppBarEnhanced';
 import { LeftNavEnhanced, type ViewId } from './LeftNavEnhanced';
@@ -188,20 +193,20 @@ export function Shell() {
         switch (activeView) {
             case 'monitor':
                 return (
-                    <PanelGroup orientation="horizontal" className="flex-1">
+                    <PanelGroup orientation="horizontal" style={{ flex: 1 }}>
                         <Panel defaultSize={rightDockOpen ? 75 : 100} minSize={40}>
                             <PanelGroup orientation="vertical">
                                 <Panel defaultSize={bottomDockOpen ? 70 : 100} minSize={30}>
-                                    <div className="h-full w-full flex flex-col bg-background">
+                                    <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', background: BG }}>
                                         <ChartHeaderStrip />
-                                        <div className="flex-1 relative">
-                                            <ChartCanvas className="absolute inset-0" />
+                                        <div style={{ flex: 1, position: 'relative' }}>
+                                            <ChartCanvas style={{ position: 'absolute', inset: 0 }} />
                                         </div>
                                     </div>
                                 </Panel>
                                 {bottomDockOpen && (
                                     <>
-                                        <PanelResizeHandle className="h-1 bg-border hover:bg-brand transition-colors cursor-row-resize" />
+                                        <PanelResizeHandle style={{ height: 3, background: BORDER, cursor: 'row-resize' }} />
                                         <Panel defaultSize={30} minSize={10} maxSize={50}>
                                             <BottomPanel />
                                         </Panel>
@@ -211,7 +216,7 @@ export function Shell() {
                         </Panel>
                         {rightDockOpen && (
                             <>
-                                <PanelResizeHandle className="w-1 bg-border hover:bg-brand transition-colors cursor-col-resize" />
+                                <PanelResizeHandle style={{ width: 3, background: BORDER, cursor: 'col-resize' }} />
                                 <Panel defaultSize={25} minSize={15} maxSize={40}>
                                     <RightPanel />
                                 </Panel>
@@ -282,14 +287,14 @@ export function Shell() {
 
     return (
         <ToastProvider>
-            <div className={`h-screen w-screen flex flex-col bg-background text-text overflow-hidden font-sans selection:bg-brand/30${isE2E ? ' e2e-mode' : ''}`} data-testid="app-shell">
+            <div style={{ height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', background: BG, color: TEXT, overflow: 'hidden', fontFamily: MONO }} data-testid="app-shell" className={isE2E ? 'e2e-mode' : ''}>
                 <TopAppBarEnhanced />
                 <ModeBanner {...modeInfo} />
 
-                <div className="flex-1 flex overflow-hidden">
+                <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
                     <LeftNavEnhanced activeView={activeView} onViewChange={setActiveView} />
 
-                    <main className="flex-1 overflow-hidden" data-testid="main-content">
+                    <main style={{ flex: 1, overflow: 'hidden' }} data-testid="main-content">
                         {renderMainView()}
                     </main>
                 </div>

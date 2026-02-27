@@ -1,11 +1,346 @@
-// RunsAuditView.tsx - Runs / Audit Log page (A2 requirement)
-import React, { useState, useEffect } from 'react';
-import { RefreshCw, Download, ClipboardList } from 'lucide-react';
+﻿// â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BG='#0a0a0a',PANEL='#111111',BORDER='#1e1e1e'
+const AMBER='#f5a623',GREEN='#26a69a',RED='#ef5350',BLUE='#42a5f5'
+const PURPLE='#ab47bc',SUBTLE='#555',TEXT='#d1d4dc'
+const MONO='"Roboto Mono","Courier New",monospace'
+
+// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const Th=({c}:{c:string})=><th style={{padding:'5px 10px',fontSize:9,letterSpacing:'0.1em',color:SUBTLE,
+  textAlign:'left' as const,borderBottom:`1px solid ${BORDER}`,background:PANEL,fontFamily:MONO,whiteSpace:'nowrap' as const}}>{c}</th>
+const Td=({children,mono,color}:{children:React.ReactNode,mono?:boolean,color?:string})=>(
+  <td style={{padding:'6px 10px',fontSize:11,color:color||TEXT,fontFamily:mono?MONO:'inherit',
+    borderBottom:`1px solid ${BORDER}33`,whiteSpace:'nowrap' as const}}>{children}</td>
+)
+const StatusBadge=({s}:{s:string})=>{
+  const c=s==='success'?GREEN:s==='running'?BLUE:s==='warning'?AMBER:s==='failed'?RED:SUBTLE;
+  return<span style={{fontSize:9,padding:'2px 6px',border:`1px solid ${c}`,color:c,borderRadius:2,letterSpacing:'0.07em'}}>{s.toUpperCase()}</span>
+}
+const SevBadge=({s}:{s:string})=>{
+  const c=s==='critical'?RED:s==='error'?RED:s==='warning'?AMBER:SUBTLE;
+  return<span style={{fontSize:9,color:c,letterSpacing:'0.07em',fontFamily:MONO}}>{s.toUpperCase()}</span>
+}
+const TypeBadge=({t}:{t:string})=>{
+  const c=t==='autopilot'?PURPLE:t==='monitoring'?GREEN:AMBER;
+  return<span style={{fontSize:9,padding:'2px 5px',border:`1px solid ${c}33`,color:c,borderRadius:2}}>{t.toUpperCase()}</span>
+}
+const StatCard=({label,value,color}:{label:string,value:string|number,color?:string})=>(
+  <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 12px',minWidth:90}}>
+    <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:3}}>{label}</div>
+    <div style={{fontSize:17,color:color||TEXT,fontFamily:MONO,fontWeight:700}}>{value}</div>
+  </div>
+)
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE } from '../../../config/api';
-import { Badge } from '../../../ui/Badge';
-import { Button } from '../../../ui/Button';
-import { PageHeader } from '../../../ui/PageHeader';
-import { cn } from '../../../ui/utils';
+
+interface RunRecord {
+  run_id: string;
+  type: 'autopilot'|'monitoring'|'manual';
+  started_at: string;
+  completed_at: string|null;
+  status: 'running'|'success'|'warning'|'failed';
+  duration_ms: number|null;
+  actions_taken: number;
+  errors: number;
+  summary: string;
+}
+
+interface AuditEvent {
+  id: string;
+  timestamp: string;
+  run_id: string|null;
+  event_type: string;
+  severity: 'info'|'warning'|'error'|'critical';
+  message: string;
+  details: Record<string, unknown>;
+}
+
+const fmtTime=(iso:string)=>new Date(iso).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const fmtDate=(iso:string)=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const fmtDur=(ms:number|null)=>{
+  if(ms===null) return 'â€”';
+  if(ms<1000) return `${ms}ms`;
+  const s=Math.floor(ms/1000);
+  if(s<60) return `${s}s`;
+  return `${Math.floor(s/60)}m ${s%60}s`;
+};
+
+export const RunsAuditView: React.FC = () => {
+  const [tab, setTab] = useState<'runs'|'audit'>('runs');
+  const [runs, setRuns] = useState<RunRecord[]>([]);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [selectedRun, setSelectedRun] = useState<RunRecord|null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [rr, ar] = await Promise.all([
+        fetch(`${API_BASE}/api/v1/autopilot/runs`),
+        fetch(`${API_BASE}/api/v1/autopilot/logs?limit=200`)
+      ]);
+      if(rr.ok) { const d=await rr.json(); setRuns(d.runs||[]); }
+      if(ar.ok) {
+        const d=await ar.json();
+        const raw=Array.isArray(d.logs) ? d.logs : Array.isArray(d) ? d : [];
+        setAuditEvents(raw.map((e: Record<string,unknown>)=>({
+          id:e.id||`${e.timestamp}-${e.event_type}`,
+          timestamp:String(e.timestamp||e.created_at||new Date().toISOString()),
+          run_id:(e.run_id as string|null)||null,
+          event_type:String(e.event_type||e.event||'event'),
+          severity:String(e.severity||e.level||'info') as 'info'|'warning'|'error'|'critical',
+          message:String(e.message||e.msg||''),
+          details:(e.details as Record<string,unknown>)||{},
+        })));
+      }
+    } catch(err) {
+      console.error('Failed to fetch runs/audit data:',err);
+    } finally { setLoading(false); }
+  },[]);
+
+  useEffect(()=>{fetchData();const t=setInterval(fetchData,10000);return()=>clearInterval(t);},[fetchData]);
+
+  const SEL:React.CSSProperties={background:BG,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,fontSize:10,
+    padding:'4px 8px',outline:'none',borderRadius:2}
+
+  const tbtn=(a:boolean,col?:string):React.CSSProperties=>({padding:'6px 14px',fontSize:10,fontFamily:MONO,
+    letterSpacing:'0.08em',cursor:'pointer',background:'none',border:'none',
+    borderBottom:a?`2px solid ${col||GREEN}`:'2px solid transparent',
+    color:a?(col||GREEN):SUBTLE,textTransform:'uppercase' as const})
+
+  const filteredRuns=runs.filter(r=>{
+    if(typeFilter!=='all'&&r.type!==typeFilter) return false;
+    if(statusFilter!=='all'&&r.status!==statusFilter) return false;
+    if(search&&!r.run_id.toLowerCase().includes(search.toLowerCase())&&
+      !r.summary.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const filteredAudit=auditEvents.filter(e=>{
+    if(severityFilter!=='all'&&e.severity!==severityFilter) return false;
+    if(search&&!e.message.toLowerCase().includes(search.toLowerCase())&&
+      !e.event_type.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const running=runs.filter(r=>r.status==='running').length;
+
+  return (
+    <div data-testid="runs-audit-view"
+      style={{height:'100%',display:'flex',flexDirection:'column' as const,background:BG,fontFamily:MONO}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'6px 14px',
+        borderBottom:`1px solid ${BORDER}`,background:PANEL,flexShrink:0,flexWrap:'wrap' as const}}>
+        <span style={{fontSize:11,color:PURPLE,letterSpacing:'0.1em'}}>RA</span>
+        <span style={{fontSize:12,color:TEXT,fontWeight:700}}>RUNS & AUDIT LOG</span>
+        {running>0&&<span style={{fontSize:9,padding:'2px 6px',border:`1px solid ${GREEN}`,color:GREEN,borderRadius:2}}>â— {running} RUNNING</span>}
+        <div style={{flex:1}}/>
+        {/* Search */}
+        <input placeholder="Search runs, events..." value={search} onChange={e=>setSearch(e.target.value)}
+          style={{...SEL,width:200,fontSize:11,padding:'4px 8px'}}/>
+        <button onClick={fetchData}
+          style={{background:PANEL,border:`1px solid ${BORDER}`,color:TEXT,fontFamily:MONO,
+            fontSize:10,padding:'4px 10px',cursor:'pointer',borderRadius:2}}>
+          REFRESH
+        </button>
+      </div>
+
+      {/* Stats bar */}
+      <div style={{display:'flex',gap:8,padding:'8px 14px',borderBottom:`1px solid ${BORDER}`,
+        background:PANEL,flexShrink:0,flexWrap:'wrap' as const}}>
+        <StatCard label="TOTAL RUNS" value={runs.length} color={TEXT}/>
+        <StatCard label="RUNNING" value={running} color={GREEN}/>
+        <StatCard label="SUCCESS" value={runs.filter(r=>r.status==='success').length} color={GREEN}/>
+        <StatCard label="FAILED" value={runs.filter(r=>r.status==='failed').length} color={RED}/>
+        <StatCard label="WARNINGS" value={runs.filter(r=>r.status==='warning').length} color={AMBER}/>
+        <StatCard label="AUDIT EVENTS" value={auditEvents.length} color={BLUE}/>
+      </div>
+
+      {/* Tab bar */}
+      <div style={{display:'flex',gap:0,borderBottom:`1px solid ${BORDER}`,
+        background:PANEL,flexShrink:0,alignItems:'center'}}>
+        <button style={tbtn(tab==='runs',PURPLE)} onClick={()=>setTab('runs')}>
+          RUNS ({runs.length})
+        </button>
+        <button style={tbtn(tab==='audit',BLUE)} onClick={()=>setTab('audit')}>
+          AUDIT LOG ({auditEvents.length})
+        </button>
+        <div style={{flex:1}}/>
+        {/* Filters */}
+        {tab==='runs'&&(
+          <div style={{display:'flex',gap:6,padding:'0 12px'}}>
+            <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} style={SEL}>
+              <option value="all">ALL TYPES</option>
+              <option value="autopilot">AUTOPILOT</option>
+              <option value="monitoring">MONITORING</option>
+              <option value="manual">MANUAL</option>
+            </select>
+            <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={SEL}>
+              <option value="all">ALL STATUS</option>
+              <option value="running">RUNNING</option>
+              <option value="success">SUCCESS</option>
+              <option value="warning">WARNING</option>
+              <option value="failed">FAILED</option>
+            </select>
+          </div>
+        )}
+        {tab==='audit'&&(
+          <div style={{padding:'0 12px'}}>
+            <select value={severityFilter} onChange={e=>setSeverityFilter(e.target.value)} style={SEL}>
+              <option value="all">ALL SEVERITY</option>
+              <option value="info">INFO</option>
+              <option value="warning">WARNING</option>
+              <option value="error">ERROR</option>
+              <option value="critical">CRITICAL</option>
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflow:'auto'}}>
+        {loading?(
+          <div style={{padding:32,textAlign:'center' as const,color:AMBER,fontSize:11}}>LOADING...</div>
+        ):tab==='runs'?(
+          /* Runs table */
+          <table style={{width:'100%',borderCollapse:'collapse' as const}}>
+            <thead><tr>
+              <Th c="RUN ID"/><Th c="TYPE"/><Th c="STARTED"/><Th c="DURATION"/>
+              <Th c="STATUS"/><Th c="ACTIONS"/><Th c="ERRORS"/><Th c="SUMMARY"/>
+            </tr></thead>
+            <tbody>
+              {filteredRuns.length===0&&(
+                <tr><td colSpan={8} style={{padding:24,textAlign:'center' as const,color:SUBTLE,fontSize:11}}>No runs found</td></tr>
+              )}
+              {filteredRuns.map(run=>(
+                <tr key={run.run_id} onClick={()=>setSelectedRun(run)}
+                  style={{cursor:'pointer',background:'transparent'}}
+                  onMouseEnter={e=>(e.currentTarget.style.background=`${BORDER}66`)}
+                  onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                  <Td mono color={BLUE}>{run.run_id}</Td>
+                  <Td><TypeBadge t={run.type}/></Td>
+                  <Td mono>{fmtTime(run.started_at)}<br/><span style={{fontSize:9,color:SUBTLE}}>{fmtDate(run.started_at)}</span></Td>
+                  <Td mono color={run.status==='running'?AMBER:TEXT}>
+                    {run.status==='running'?'âŸ³ RUNNING':fmtDur(run.duration_ms)}
+                  </Td>
+                  <Td><StatusBadge s={run.status}/></Td>
+                  <Td mono>{run.actions_taken}</Td>
+                  <Td mono color={run.errors>0?RED:TEXT}>{run.errors>0?run.errors:'0'}</Td>
+                  <Td>{run.summary.length>50?run.summary.slice(0,50)+'â€¦':run.summary}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ):(
+          /* Audit log table */
+          <table style={{width:'100%',borderCollapse:'collapse' as const}}>
+            <thead><tr>
+              <Th c="TIME"/><Th c="SEVERITY"/><Th c="EVENT TYPE"/><Th c="RUN ID"/><Th c="MESSAGE"/>
+            </tr></thead>
+            <tbody>
+              {filteredAudit.length===0&&(
+                <tr><td colSpan={5} style={{padding:24,textAlign:'center' as const,color:SUBTLE,fontSize:11}}>No events found</td></tr>
+              )}
+              {filteredAudit.map(evt=>(
+                <tr key={evt.id}
+                  style={{background:'transparent'}}
+                  onMouseEnter={e=>(e.currentTarget.style.background=`${BORDER}66`)}
+                  onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                  <Td mono>{fmtTime(evt.timestamp)}<br/><span style={{fontSize:9,color:SUBTLE}}>{fmtDate(evt.timestamp)}</span></Td>
+                  <Td><SevBadge s={evt.severity}/></Td>
+                  <Td mono color={PURPLE}>{evt.event_type}</Td>
+                  <Td>
+                    {evt.run_id?(
+                      <span onClick={()=>{setTab('runs');setSearch(evt.run_id||'');}}
+                        style={{fontSize:10,color:BLUE,cursor:'pointer',fontFamily:MONO}}>
+                        {evt.run_id.slice(-14)}
+                      </span>
+                    ):<span style={{color:SUBTLE}}>â€”</span>}
+                  </Td>
+                  <Td>{evt.message}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Run detail drawer */}
+      {selectedRun&&(
+        <div style={{position:'fixed' as const,inset:0,zIndex:1000,display:'flex'}}>
+          <div style={{position:'absolute' as const,inset:0,background:'rgba(0,0,0,0.7)'}} onClick={()=>setSelectedRun(null)}/>
+          <div style={{position:'absolute' as const,right:0,top:0,bottom:0,width:440,background:PANEL,
+            borderLeft:`1px solid ${BORDER}`,overflow:'auto',fontFamily:MONO}}>
+            <div style={{padding:'8px 14px',borderBottom:`1px solid ${BORDER}`,display:'flex',alignItems:'center',gap:8,background:BG}}>
+              <span style={{fontSize:11,color:PURPLE}}>RD</span>
+              <span style={{fontSize:12,color:TEXT,fontWeight:700,flex:1}}>RUN DETAILS</span>
+              <button onClick={()=>setSelectedRun(null)}
+                style={{background:'none',border:'none',color:SUBTLE,cursor:'pointer',fontSize:16,padding:2}}>âœ•</button>
+            </div>
+            <div style={{padding:14}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+                <span style={{fontSize:11,color:BLUE,fontFamily:MONO}}>{selectedRun.run_id}</span>
+                <StatusBadge s={selectedRun.status}/>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
+                {[['TYPE',selectedRun.type.toUpperCase(),TEXT],['DURATION',fmtDur(selectedRun.duration_ms),TEXT],
+                  ['ACTIONS',String(selectedRun.actions_taken),GREEN],
+                  ['ERRORS',String(selectedRun.errors),selectedRun.errors>0?RED:GREEN]
+                ].map(([k,v,c])=>(
+                  <div key={k} style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:2,padding:'8px 10px'}}>
+                    <div style={{fontSize:9,color:SUBTLE,marginBottom:3}}>{k}</div>
+                    <div style={{fontSize:13,color:c,fontFamily:MONO,fontWeight:700}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:2,padding:'10px 12px',marginBottom:12}}>
+                <div style={{fontSize:9,color:SUBTLE,marginBottom:4}}>SUMMARY</div>
+                <div style={{fontSize:11,color:TEXT}}>{selectedRun.summary}</div>
+              </div>
+              <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:2,padding:'10px 12px',marginBottom:12}}>
+                <div style={{fontSize:9,color:SUBTLE,marginBottom:6}}>TIMELINE</div>
+                <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
+                  <div style={{fontSize:10,color:TEXT}}>
+                    <span style={{color:GREEN}}>â— START: </span>{fmtTime(selectedRun.started_at)}
+                    <span style={{color:SUBTLE}}> {fmtDate(selectedRun.started_at)}</span>
+                  </div>
+                  {selectedRun.completed_at&&(
+                    <div style={{fontSize:10,color:TEXT}}>
+                      <span style={{color:BLUE}}>â— END: </span>{fmtTime(selectedRun.completed_at)}
+                      <span style={{color:SUBTLE}}> {fmtDate(selectedRun.completed_at)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:9,color:SUBTLE,letterSpacing:'0.1em',marginBottom:8}}>RELATED EVENTS</div>
+                {auditEvents.filter(e=>e.run_id===selectedRun.run_id).map(e=>(
+                  <div key={e.id} style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:2,
+                    padding:'8px 10px',marginBottom:6}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:3}}>
+                      <span style={{fontSize:9,color:PURPLE,fontFamily:MONO}}>{e.event_type}</span>
+                      <SevBadge s={e.severity}/>
+                    </div>
+                    <div style={{fontSize:10,color:TEXT}}>{e.message}</div>
+                    <div style={{fontSize:9,color:SUBTLE,marginTop:2}}>{fmtTime(e.timestamp)}</div>
+                  </div>
+                ))}
+                {auditEvents.filter(e=>e.run_id===selectedRun.run_id).length===0&&(
+                  <div style={{fontSize:10,color:SUBTLE}}>No events linked to this run.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default RunsAuditView;
 
 interface RunRecord {
   run_id: string;
@@ -29,561 +364,3 @@ interface AuditEvent {
   details: Record<string, unknown>;
 }
 
-export const RunsAuditView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'runs' | 'audit'>('runs');
-  const [runs, setRuns] = useState<RunRecord[]>([]);
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [severityFilter, setSeverityFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRun, setSelectedRun] = useState<RunRecord | null>(null);
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [runsRes, auditRes] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/autopilot/runs`),
-        fetch(`${API_BASE}/api/v1/autopilot/logs?limit=200`)
-      ]);
-
-      if (runsRes.ok) {
-        const runsData = await runsRes.json();
-        setRuns(runsData.runs || []);
-      }
-
-      if (auditRes.ok) {
-        const auditData = await auditRes.json();
-        const raw = (auditData.logs || auditData || []);
-        const normalized = raw.map((e: any) => ({
-          id: e.id || `${e.timestamp}-${e.event_type}`,
-          timestamp: e.timestamp || e.created_at || new Date().toISOString(),
-          run_id: e.run_id || null,
-          event_type: e.event_type || e.event || 'event',
-          severity: (e.severity || e.level || 'info'),
-          message: e.message || e.msg || '',
-          details: e.details || {},
-        }));
-        setAuditEvents(normalized);
-      }
-    } catch (err) {
-      console.error('Failed to fetch runs/audit data:', err);
-      // Mock data for development
-      setRuns([
-        {
-          run_id: 'run_20260114_093000',
-          type: 'autopilot',
-          started_at: '2026-01-14T09:30:00Z',
-          completed_at: '2026-01-14T09:30:45Z',
-          status: 'success',
-          duration_ms: 45000,
-          actions_taken: 2,
-          errors: 0,
-          summary: 'Opened 1 PCS on SPY, closed 1 CCS on QQQ'
-        },
-        {
-          run_id: 'run_20260114_100000',
-          type: 'monitoring',
-          started_at: '2026-01-14T10:00:00Z',
-          completed_at: '2026-01-14T10:00:12Z',
-          status: 'success',
-          duration_ms: 12000,
-          actions_taken: 0,
-          errors: 0,
-          summary: 'No exit conditions met'
-        },
-        {
-          run_id: 'run_20260114_103000',
-          type: 'autopilot',
-          started_at: '2026-01-14T10:30:00Z',
-          completed_at: '2026-01-14T10:30:38Z',
-          status: 'warning',
-          duration_ms: 38000,
-          actions_taken: 1,
-          errors: 1,
-          summary: 'Partial fill on SPY order, retrying'
-        },
-        {
-          run_id: 'run_20260114_110000',
-          type: 'monitoring',
-          started_at: '2026-01-14T11:00:00Z',
-          completed_at: null,
-          status: 'running',
-          duration_ms: null,
-          actions_taken: 0,
-          errors: 0,
-          summary: 'Checking exit conditions...'
-        }
-      ]);
-
-      setAuditEvents([
-        {
-          id: 'evt_001',
-          timestamp: '2026-01-14T09:30:00Z',
-          run_id: 'run_20260114_093000',
-          event_type: 'autopilot_started',
-          severity: 'info',
-          message: 'Autopilot cycle started',
-          details: { trigger: 'scheduled' }
-        },
-        {
-          id: 'evt_002',
-          timestamp: '2026-01-14T09:30:15Z',
-          run_id: 'run_20260114_093000',
-          event_type: 'order_placed',
-          severity: 'info',
-          message: 'Order placed: PCS SPY 580/575 @ $1.25 credit',
-          details: { symbol: 'SPY', strategy: 'PCS', client_order_id: 'pcs_spy_20260114_1' }
-        },
-        {
-          id: 'evt_003',
-          timestamp: '2026-01-14T09:30:18Z',
-          run_id: 'run_20260114_093000',
-          event_type: 'order_filled',
-          severity: 'info',
-          message: 'Order filled: PCS SPY @ $1.24 credit',
-          details: { fill_price: 1.24, qty: 1 }
-        },
-        {
-          id: 'evt_004',
-          timestamp: '2026-01-14T09:30:30Z',
-          run_id: 'run_20260114_093000',
-          event_type: 'position_closed',
-          severity: 'info',
-          message: 'Position closed: CCS QQQ +$45 realized',
-          details: { symbol: 'QQQ', pnl: 45 }
-        },
-        {
-          id: 'evt_005',
-          timestamp: '2026-01-14T10:30:20Z',
-          run_id: 'run_20260114_103000',
-          event_type: 'order_partial',
-          severity: 'warning',
-          message: 'Partial fill: SPY order 50% filled, retrying',
-          details: { filled_qty: 1, total_qty: 2 }
-        },
-        {
-          id: 'evt_006',
-          timestamp: '2026-01-14T10:45:00Z',
-          run_id: null,
-          event_type: 'provider_degraded',
-          severity: 'warning',
-          message: 'Finnhub API rate limited, using cached data',
-          details: { provider: 'finnhub', fallback: 'cache' }
-        },
-        {
-          id: 'evt_007',
-          timestamp: '2026-01-14T11:00:00Z',
-          run_id: 'run_20260114_110000',
-          event_type: 'monitoring_started',
-          severity: 'info',
-          message: 'Monitoring pass started',
-          details: { positions_to_check: 3 }
-        }
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredRuns = runs.filter(run => {
-    if (typeFilter !== 'all' && run.type !== typeFilter) return false;
-    if (statusFilter !== 'all' && run.status !== statusFilter) return false;
-    if (searchQuery && !run.run_id.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !run.summary.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
-
-  const filteredAuditEvents = auditEvents.filter(evt => {
-    if (severityFilter !== 'all' && evt.severity !== severityFilter) return false;
-    if (searchQuery && !evt.message.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !evt.event_type.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !(evt.run_id || '').toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'success' | 'warning' | 'error' | 'default'> = {
-      success: 'success',
-      warning: 'warning',
-      failed: 'error',
-      running: 'default'
-    };
-    return <Badge variant={variants[status] || 'default'}>{status.toUpperCase()}</Badge>;
-  };
-
-  const getSeverityBadge = (severity: string) => {
-    const colors: Record<string, string> = {
-      info: 'text-text-secondary',
-      warning: 'text-yellow-400',
-      error: 'text-down',
-      critical: 'text-red-600'
-    };
-    return (
-      <span className={`text-xs font-medium ${colors[severity]}`}>
-        {severity.toUpperCase()}
-      </span>
-    );
-  };
-
-  const formatDuration = (ms: number | null) => {
-    if (ms === null) return '—';
-    if (ms < 1000) return `${ms}ms`;
-    const seconds = Math.floor(ms / 1000);
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds}s`;
-  };
-
-  const formatTime = (iso: string) => {
-    const date = new Date(iso);
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
-
-  const formatDate = (iso: string) => {
-    const date = new Date(iso);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  return (
-    <div className="h-full flex flex-col bg-background" data-testid="runs-audit-view">
-      {/* Page Header */}
-      <PageHeader
-        title="Runs & Audit Log"
-        subtitle="View autopilot execution history and system events"
-        icon={<ClipboardList size={20} />}
-        badge={
-          runs.filter(r => r.status === 'running').length > 0 ? (
-            <Badge variant="success" dot>{runs.filter(r => r.status === 'running').length} running</Badge>
-          ) : (
-            <Badge variant="outline">{runs.length} total</Badge>
-          )
-        }
-        actions={
-          <div className="flex items-center gap-3">
-            <Button variant="secondary" size="sm" onClick={fetchData}>
-              <RefreshCw size={14} className="mr-1" />
-              Refresh
-            </Button>
-            <Button variant="secondary" size="sm">
-              <Download size={14} className="mr-1" />
-              Export
-            </Button>
-          </div>
-        }
-        data-testid="runs-audit-header"
-      />
-
-      {/* Tab Switcher */}
-      <div className="pro-tab-bar">
-        <button
-          onClick={() => setActiveTab('runs')}
-          aria-selected={activeTab === 'runs'}
-          className={cn(
-            'pro-tab flex items-center gap-1.5',
-            activeTab === 'runs' && 'active'
-          )}
-        >
-          Runs
-          <Badge size="sm" variant={activeTab === 'runs' ? 'brand' : 'default'}>{runs.length}</Badge>
-        </button>
-        <button
-          onClick={() => setActiveTab('audit')}
-          aria-selected={activeTab === 'audit'}
-          className={cn(
-            'pro-tab flex items-center gap-1.5',
-            activeTab === 'audit' && 'active'
-          )}
-        >
-          Audit Log
-          <Badge size="sm" variant={activeTab === 'audit' ? 'brand' : 'default'}>{auditEvents.length}</Badge>
-        </button>
-      </div>
-
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
-      {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search runs, events..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 bg-element-bg border border-border rounded-lg text-sm text-text placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand/50 w-64"
-          />
-        </div>
-
-        {activeTab === 'runs' ? (
-          <>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 bg-element-bg border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
-            >
-              <option value="all">All Types</option>
-              <option value="autopilot">Autopilot</option>
-              <option value="monitoring">Monitoring</option>
-              <option value="manual">Manual</option>
-            </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-element-bg border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
-            >
-              <option value="all">All Statuses</option>
-              <option value="running">Running</option>
-              <option value="success">Success</option>
-              <option value="warning">Warning</option>
-              <option value="failed">Failed</option>
-            </select>
-          </>
-        ) : (
-          <select
-            value={severityFilter}
-            onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-3 py-2 bg-element-bg border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand/50"
-          >
-            <option value="all">All Severities</option>
-            <option value="info">Info</option>
-            <option value="warning">Warning</option>
-            <option value="error">Error</option>
-            <option value="critical">Critical</option>
-          </select>
-        )}
-      </div>
-
-      {/* Content */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
-        </div>
-      ) : activeTab === 'runs' ? (
-        /* Runs Table */
-        <div className="bg-element-bg rounded-lg border border-border overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-element-bg/50 border-b border-border">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Run ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Started</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Duration</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Actions</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Errors</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Summary</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filteredRuns.map((run) => (
-                <tr
-                  key={run.run_id}
-                  onClick={() => setSelectedRun(run)}
-                  className="hover:bg-element-bg/50 cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-sm text-brand">{run.run_id}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge variant={run.type === 'autopilot' ? 'default' : run.type === 'monitoring' ? 'success' : 'warning'}>
-                      {run.type}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-text">{formatTime(run.started_at)}</div>
-                    <div className="text-xs text-text-secondary">{formatDate(run.started_at)}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text">
-                    {run.status === 'running' ? (
-                      <span className="text-brand animate-pulse">Running...</span>
-                    ) : (
-                      formatDuration(run.duration_ms)
-                    )}
-                  </td>
-                  <td className="px-4 py-3">{getStatusBadge(run.status)}</td>
-                  <td className="px-4 py-3 text-sm text-text">{run.actions_taken}</td>
-                  <td className="px-4 py-3">
-                    {run.errors > 0 ? (
-                      <span className="text-down font-medium">{run.errors}</span>
-                    ) : (
-                      <span className="text-text-secondary">0</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-secondary max-w-xs truncate">
-                    {run.summary}
-                  </td>
-                </tr>
-              ))}
-              {filteredRuns.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-text-secondary">
-                    No runs found matching your filters
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        /* Audit Log */
-        <div className="bg-element-bg rounded-lg border border-border overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-element-bg/50 border-b border-border">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Time</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Severity</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Event Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Run ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Message</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filteredAuditEvents.map((evt) => (
-                <tr key={evt.id} className="hover:bg-element-bg/50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-text">{formatTime(evt.timestamp)}</div>
-                    <div className="text-xs text-text-secondary">{formatDate(evt.timestamp)}</div>
-                  </td>
-                  <td className="px-4 py-3">{getSeverityBadge(evt.severity)}</td>
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-xs text-text-secondary bg-element-bg/50 px-2 py-1 rounded">
-                      {evt.event_type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {evt.run_id ? (
-                      <button
-                        onClick={() => {
-                          setActiveTab('runs');
-                          setSearchQuery(evt.run_id || '');
-                        }}
-                        className="font-mono text-xs text-brand hover:underline"
-                      >
-                        {evt.run_id}
-                      </button>
-                    ) : (
-                      <span className="text-text-secondary text-xs">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text">{evt.message}</td>
-                </tr>
-              ))}
-              {filteredAuditEvents.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-text-secondary">
-                    No audit events found matching your filters
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Run Details Drawer */}
-      {selectedRun && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedRun(null)} />
-          <div className="absolute right-0 top-0 bottom-0 w-[500px] bg-element-bg border-l border-border overflow-y-auto">
-            <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-text">Run Details</h2>
-                <button
-                  onClick={() => setSelectedRun(null)}
-                  className="p-2 hover:bg-element-bg/50 rounded-lg transition-colors"
-                >
-                  <svg className="w-5 h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-brand">{selectedRun.run_id}</span>
-                  {getStatusBadge(selectedRun.status)}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-element-bg/50 p-3 rounded-lg">
-                    <div className="text-xs text-text-secondary mb-1">Type</div>
-                    <div className="text-sm text-text capitalize">{selectedRun.type}</div>
-                  </div>
-                  <div className="bg-element-bg/50 p-3 rounded-lg">
-                    <div className="text-xs text-text-secondary mb-1">Duration</div>
-                    <div className="text-sm text-text">{formatDuration(selectedRun.duration_ms)}</div>
-                  </div>
-                  <div className="bg-element-bg/50 p-3 rounded-lg">
-                    <div className="text-xs text-text-secondary mb-1">Actions Taken</div>
-                    <div className="text-sm text-text">{selectedRun.actions_taken}</div>
-                  </div>
-                  <div className="bg-element-bg/50 p-3 rounded-lg">
-                    <div className="text-xs text-text-secondary mb-1">Errors</div>
-                    <div className={`text-sm ${selectedRun.errors > 0 ? 'text-down' : 'text-text'}`}>
-                      {selectedRun.errors}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-element-bg/50 p-3 rounded-lg">
-                  <div className="text-xs text-text-secondary mb-1">Summary</div>
-                  <div className="text-sm text-text">{selectedRun.summary}</div>
-                </div>
-
-                <div className="bg-element-bg/50 p-3 rounded-lg">
-                  <div className="text-xs text-text-secondary mb-1">Timeline</div>
-                  <div className="space-y-2 mt-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-2 h-2 bg-up rounded-full"></div>
-                      <span className="text-text-secondary">Started:</span>
-                      <span className="text-text">{formatTime(selectedRun.started_at)}</span>
-                    </div>
-                    {selectedRun.completed_at && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="w-2 h-2 bg-brand rounded-full"></div>
-                        <span className="text-text-secondary">Completed:</span>
-                        <span className="text-text">{formatTime(selectedRun.completed_at)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Related Events */}
-                <div>
-                  <div className="text-sm font-medium text-text mb-2">Related Events</div>
-                  <div className="space-y-2">
-                    {auditEvents
-                      .filter(evt => evt.run_id === selectedRun.run_id)
-                      .map(evt => (
-                        <div key={evt.id} className="bg-element-bg/50 p-3 rounded-lg">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-mono text-xs text-text-secondary">{evt.event_type}</span>
-                            {getSeverityBadge(evt.severity)}
-                          </div>
-                          <div className="text-sm text-text">{evt.message}</div>
-                          <div className="text-xs text-text-secondary mt-1">{formatTime(evt.timestamp)}</div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      </div>
-    </div>
-  );
-};
-
-export default RunsAuditView;

@@ -1,269 +1,348 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'
+// StrategyStudioV3UI2 — Bloomberg APEX Strategy Studio V3 terminal
+// Strategy authoring, backtesting, templating, parameter optimization, version history
+// Tabs: STRATEGIES | TEMPLATES | BACKTEST | ANALYTICS | AUDIT
+// APIs: /api/v3/strategy-studio/strategies, /templates, /backtest, /analytics, /audit
 
-const API = '/api/v3/strategy-studio';
+const BG = '#0a0a0a'
+const PANEL = '#111111'
+const BORDER = '#1e1e1e'
+const AMBER = '#f5a623'
+const GREEN = '#26a69a'
+const RED = '#ef5350'
+const BLUE = '#42a5f5'
+const PURPLE = '#ab47bc'
+const ORANGE = '#ff8a65'
+const SUBTLE = '#555'
+const TEXT = '#d1d4dc'
+const MONO = '"Roboto Mono","Courier New",monospace'
 
-interface Strategy {
-  id: string;
-  name: string;
-  strategy_type: string;
-  symbols: string[];
-  start_date: string;
-  end_date: string;
-  params: Record<string, any>;
-  version: number;
-  archived: boolean;
-  created_at: string;
+interface StrategyV3 {
+  strategyId: string
+  name: string
+  strategyType: string
+  symbols: string[]
+  startDate: string
+  endDate: string
+  params: Record<string, unknown>
+  version: number
+  archived: boolean
+  status: 'active' | 'draft' | 'archived' | 'running'
+  totalReturn: number | null
+  sharpeRatio: number | null
+  maxDrawdown: number | null
+  createdAt: string
+  updatedAt: string
 }
 
-interface Template {
-  id: string;
-  name: string;
-  strategy_type: string;
-  description: string;
-  symbols: string[];
-  start_date: string;
-  end_date: string;
-  params: Record<string, any>;
+interface StrategyTemplate {
+  templateId: string
+  name: string
+  strategyType: string
+  description: string
+  defaultSymbols: string[]
+  defaultStartDate: string
+  defaultEndDate: string
+  defaultParams: Record<string, unknown>
+  usageCount: number
 }
 
-interface LintError { field: string; rule: string; message: string }
+interface BacktestResult {
+  backtestId: string
+  strategyId: string
+  strategyName: string
+  totalReturn: number
+  annualizedReturn: number
+  sharpeRatio: number
+  sortinoRatio: number
+  maxDrawdown: number
+  winRatePct: number
+  profitFactor: number
+  totalTrades: number
+  duration: number
+  status: 'completed' | 'running' | 'failed'
+  runAt: string
+}
 
-const STRATEGY_TYPES = ['ma_cross', 'mean_reversion', 'buy_and_hold', 'rsi', 'breakout', 'momentum'];
+interface StrategyAnalytic {
+  strategyId: string
+  strategyName: string
+  metricName: string
+  value: number
+  period: string
+  rank: number
+  percentile: number
+}
+
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return <th style={{ fontFamily: MONO, fontSize: 9, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', whiteSpace: 'nowrap' }}>{children}</th>
+}
+function Td({ children, right, mono, col }: { children: React.ReactNode; right?: boolean; mono?: boolean; col?: string }) {
+  return <td style={{ fontFamily: mono ? MONO : 'inherit', fontSize: mono ? 11 : 12, color: col || TEXT, padding: '5px 10px', textAlign: right ? 'right' : 'left', borderBottom: `1px solid #161616`, whiteSpace: 'nowrap' }}>{children}</td>
+}
+function StatCard({ label, value, sub, col }: { label: string; value: string | number; sub?: string; col?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontFamily: MONO, fontWeight: 700, color: col || TEXT }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+function StatusBadge({ s }: { s: string }) {
+  const m: Record<string, string> = { active: GREEN, draft: BLUE, archived: SUBTLE, running: AMBER, completed: GREEN, failed: RED }
+  const c = m[s] ?? SUBTLE
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.toUpperCase()}</span>
+}
+function Pct({ v, pos }: { v: number | null; pos?: boolean }) {
+  if (v === null) return <span style={{ color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>—</span>
+  const col = pos ? (v >= 0 ? GREEN : RED) : TEXT
+  return <span style={{ color: col, fontFamily: MONO, fontSize: 11 }}>{v >= 0 ? '+' : ''}{v.toFixed(2)}%</span>
+}
+
 
 export function StrategyStudioV3UI2() {
-  const [strategies, setStrategies] = useState<Strategy[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [selected, setSelected] = useState<Strategy | null>(null);
-  const [lintErrors, setLintErrors] = useState<LintError[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
-  const [searchQ, setSearchQ] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<'strategies' | 'templates' | 'backtest' | 'analytics' | 'audit'>('strategies')
+  const [strategies, setStrategies] = useState<StrategyV3[]>([])
+  const [templates, setTemplates] = useState<StrategyTemplate[]>([])
+  const [backtests, setBacktests] = useState<BacktestResult[]>([])
+  const [analytics, setAnalytics] = useState<StrategyAnalytic[]>([])
+  const [auditLog, setAuditLog] = useState<Array<{ auditId: string; action: string; actor: string; detail: string; timestamp: string }>>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
-  // Form state
-  const [name, setName] = useState('');
-  const [stratType, setStratType] = useState('ma_cross');
-  const [symbols, setSymbols] = useState('AAPL');
-  const [startDate, setStartDate] = useState('2024-01-01');
-  const [endDate, setEndDate] = useState('2024-12-31');
+  const fetchAll = useCallback(async () => {
+    try {
+      const [rS, rT, rB, rA, rL] = await Promise.allSettled([
+        fetch('/api/v3/strategy-studio/strategies').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/strategy-studio/templates').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/strategy-studio/backtest').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/strategy-studio/analytics').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/strategy-studio/audit').then(r => r.ok ? r.json() : []),
+      ])
+      if (rS.status === 'fulfilled') {
+        const raw = Array.isArray(rS.value) ? rS.value : rS.value.strategies ?? rS.value.data ?? []
+        setStrategies(raw.map((s: any) => ({
+          strategyId: s.strategy_id ?? s.strategyId ?? s.id ?? '',
+          name: s.name ?? '', strategyType: s.strategy_type ?? s.strategyType ?? '',
+          symbols: s.symbols ?? [], startDate: s.start_date ?? s.startDate ?? '',
+          endDate: s.end_date ?? s.endDate ?? '', params: s.params ?? {},
+          version: Number(s.version ?? 1), archived: Boolean(s.archived),
+          status: s.archived ? 'archived' : (s.status ?? 'active'),
+          totalReturn: s.total_return ?? s.totalReturn ?? null,
+          sharpeRatio: s.sharpe_ratio ?? s.sharpeRatio ?? null,
+          maxDrawdown: s.max_drawdown ?? s.maxDrawdown ?? null,
+          createdAt: s.created_at ?? s.createdAt ?? '',
+          updatedAt: s.updated_at ?? s.updatedAt ?? '',
+        })))
+        setErr(null)
+      } else setErr('Failed to load strategies')
+      if (rT.status === 'fulfilled') {
+        const raw = Array.isArray(rT.value) ? rT.value : rT.value.templates ?? rT.value.data ?? []
+        setTemplates(raw.map((t: any) => ({
+          templateId: t.template_id ?? t.templateId ?? t.id ?? '',
+          name: t.name ?? '', strategyType: t.strategy_type ?? t.strategyType ?? '',
+          description: t.description ?? '',
+          defaultSymbols: t.default_symbols ?? t.symbols ?? [],
+          defaultStartDate: t.default_start_date ?? t.start_date ?? '',
+          defaultEndDate: t.default_end_date ?? t.end_date ?? '',
+          defaultParams: t.default_params ?? t.params ?? {},
+          usageCount: Number(t.usage_count ?? t.usageCount ?? 0),
+        })))
+      }
+      if (rB.status === 'fulfilled') {
+        const raw = Array.isArray(rB.value) ? rB.value : rB.value.backtests ?? rB.value.results ?? rB.value.data ?? []
+        setBacktests(raw.map((b: any) => ({
+          backtestId: b.backtest_id ?? b.backtestId ?? b.id ?? '',
+          strategyId: b.strategy_id ?? b.strategyId ?? '',
+          strategyName: b.strategy_name ?? b.strategyName ?? '',
+          totalReturn: Number(b.total_return ?? b.totalReturn ?? 0),
+          annualizedReturn: Number(b.annualized_return ?? b.annualizedReturn ?? 0),
+          sharpeRatio: Number(b.sharpe_ratio ?? b.sharpeRatio ?? 0),
+          sortinoRatio: Number(b.sortino_ratio ?? b.sortinoRatio ?? 0),
+          maxDrawdown: Number(b.max_drawdown ?? b.maxDrawdown ?? 0),
+          winRatePct: Number(b.win_rate_pct ?? b.winRatePct ?? 0),
+          profitFactor: Number(b.profit_factor ?? b.profitFactor ?? 0),
+          totalTrades: Number(b.total_trades ?? b.totalTrades ?? 0),
+          duration: Number(b.duration_ms ?? b.duration ?? 0),
+          status: b.status ?? 'completed', runAt: b.run_at ?? b.runAt ?? '',
+        })))
+      }
+      if (rA.status === 'fulfilled') {
+        const raw = Array.isArray(rA.value) ? rA.value : rA.value.analytics ?? rA.value.data ?? []
+        setAnalytics(raw.map((a: any) => ({
+          strategyId: a.strategy_id ?? a.strategyId ?? '',
+          strategyName: a.strategy_name ?? a.strategyName ?? '',
+          metricName: a.metric_name ?? a.metricName ?? '',
+          value: Number(a.value ?? 0), period: a.period ?? '1Y',
+          rank: Number(a.rank ?? 0), percentile: Number(a.percentile ?? 0),
+        })))
+      }
+      if (rL.status === 'fulfilled') {
+        const raw = Array.isArray(rL.value) ? rL.value : rL.value.audit ?? rL.value.data ?? []
+        setAuditLog(raw.map((a: any) => ({
+          auditId: a.audit_id ?? a.auditId ?? '', action: a.action ?? '',
+          actor: a.actor ?? '', detail: a.detail ?? '', timestamp: a.timestamp ?? '',
+        })))
+      }
+    } catch (e: any) { setErr(e.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  const loadAll = async (q = '') => {
-    const [s, t] = await Promise.all([
-      fetch(`${API}/strategies${q ? `?q=${encodeURIComponent(q)}` : ''}`).then(r => r.json()),
-      fetch(`${API}/templates`).then(r => r.json()),
-    ]);
-    setStrategies(s.strategies ?? []);
-    setTemplates(t.templates ?? []);
-  };
+  useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
-  useEffect(() => { loadAll(); }, []);
+  const activeStrats = strategies.filter(s => s.status === 'active').length
+  const avgSharpe = backtests.length ? (backtests.reduce((s, b) => s + b.sharpeRatio, 0) / backtests.length).toFixed(2) : '—'
+  const bestReturn = backtests.length ? Math.max(...backtests.map(b => b.totalReturn)) : null
+  const filtered = strategies.filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.strategyType.toLowerCase().includes(search.toLowerCase()))
 
-  const runLint = async (spec: Record<string, any>) => {
-    const r = await fetch(`${API}/lint`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(spec),
-    });
-    const data = await r.json();
-    setLintErrors(data.errors ?? []);
-    return data.valid as boolean;
-  };
-
-  const formSpec = () => ({
-    name, strategy_type: stratType,
-    symbols: symbols.split(',').map(s => s.trim()).filter(Boolean),
-    start_date: startDate, end_date: endDate,
-    params: {},
-  });
-
-  const handleCreate = async () => {
-    setError(null);
-    const spec = formSpec();
-    const valid = await runLint(spec);
-    if (!valid) return;
-    const r = await fetch(`${API}/strategies`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(spec),
-    });
-    if (!r.ok) {
-      const err = await r.json();
-      setError(JSON.stringify(err.detail));
-      return;
-    }
-    await loadAll(searchQ);
-  };
-
-  const handleSelectStrategy = async (s: Strategy) => {
-    setSelected(s);
-    const h = await fetch(`${API}/strategies/${s.id}/history`).then(r => r.json());
-    setHistory(h.history ?? []);
-  };
-
-  const handleUseTemplate = (t: Template) => {
-    setName(t.name);
-    setStratType(t.strategy_type);
-    setSymbols(t.symbols.join(', '));
-    setStartDate(t.start_date);
-    setEndDate(t.end_date);
-  };
-
-  const handleDelete = async (id: string) => {
-    await fetch(`${API}/strategies/${id}`, { method: 'DELETE' });
-    if (selected?.id === id) setSelected(null);
-    await loadAll(searchQ);
-  };
-
-  const handleSearch = async () => {
-    await loadAll(searchQ);
-  };
+  const TABS2 = [
+    { id: 'strategies' as const, label: 'STRATEGIES' },
+    { id: 'templates' as const, label: 'TEMPLATES' },
+    { id: 'backtest' as const, label: 'BACKTEST' },
+    { id: 'analytics' as const, label: 'ANALYTICS' },
+    { id: 'audit' as const, label: 'AUDIT' },
+  ]
 
   return (
-    <div data-testid="strategy-studio-page" style={{ padding: 20, fontFamily: 'monospace', display: 'flex', gap: 16, maxWidth: 1200 }}>
-
-      {/* Left: templates + strategy list */}
-      <div style={{ width: 280, flexShrink: 0 }}>
-        <h3>Template Gallery</h3>
-        <div data-testid="template-gallery">
-          {templates.map(t => (
-            <div key={t.id} data-testid={`template-row-${t.id}`}
-              style={{ border: '1px solid #444', borderRadius: 4, padding: 10, marginBottom: 8, cursor: 'pointer', background: '#1a1a2e' }}
-              onClick={() => handleUseTemplate(t)}>
-              <strong style={{ fontSize: 13 }}>{t.name}</strong>
-              <p style={{ margin: '3px 0 0', color: '#888', fontSize: 11 }}>{t.description}</p>
-              <button data-testid={`use-template-btn-${t.id}`}
-                style={{ marginTop: 6, padding: '3px 10px', fontSize: 11, background: '#2a4a8a', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer' }}>
-                Use Template
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <h3 style={{ marginTop: 16 }}>Strategies</h3>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-          <input
-            value={searchQ} onChange={e => setSearchQ(e.target.value)}
-            placeholder="Search…"
-            data-testid="strategy-search-input"
-            style={{ flex: 1, background: '#222', color: '#eee', border: '1px solid #555', padding: '4px 6px', borderRadius: 3 }}
-          />
-          <button onClick={handleSearch} data-testid="strategy-search-btn"
-            style={{ padding: '4px 10px', background: '#444', color: '#eee', border: 'none', borderRadius: 3, cursor: 'pointer' }}>
-            Go
+    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>STRATEGY STUDIO V3 — AUTHORING + BACKTEST + PARAMETER OPTIMIZATION + VERSION HISTORY</span>
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠ {err}</span>}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <StatCard label="Active Strategies" value={activeStrats} col={BLUE} />
+        <StatCard label="Total Strategies" value={strategies.length} col={TEXT} />
+        <StatCard label="Avg Sharpe Ratio" value={avgSharpe} col={AMBER} />
+        <StatCard label="Best Total Return" value={bestReturn !== null ? `${bestReturn >= 0 ? '+' : ''}${bestReturn.toFixed(1)}%` : '—'} col={bestReturn !== null && bestReturn >= 0 ? GREEN : RED} />
+        <StatCard label="Templates" value={templates.length} col={PURPLE} />
+      </div>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {TABS2.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1, color: tab === t.id ? AMBER : SUBTLE, background: tab === t.id ? '#0d0d0d' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? AMBER : 'transparent'}`, padding: '9px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t.label}
           </button>
-        </div>
-        <div data-testid="strategies-list">
-          {strategies.length === 0 && <p data-testid="strategies-empty">No strategies yet</p>}
-          {strategies.map(s => (
-            <div key={s.id} data-testid={`strategy-row-${s.id}`}
-              onClick={() => handleSelectStrategy(s)}
-              style={{
-                border: `1px solid ${selected?.id === s.id ? '#4af' : '#444'}`,
-                borderRadius: 4, padding: '8px 10px', marginBottom: 6,
-                cursor: 'pointer', background: selected?.id === s.id ? '#1a2a3a' : '#111',
-              }}>
-              <strong style={{ fontSize: 12 }}>{s.name}</strong>
-              <span style={{ marginLeft: 6, fontSize: 10, color: '#888' }}>v{s.version}</span>
-              <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{s.strategy_type}</div>
-              <button data-testid={`delete-strategy-btn-${s.id}`}
-                onClick={e => { e.stopPropagation(); handleDelete(s.id); }}
-                style={{ marginTop: 4, padding: '2px 8px', fontSize: 10, background: '#4a1a1a', color: '#f88', border: '1px solid #6a2a2a', borderRadius: 3, cursor: 'pointer' }}>
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
-
-      {/* Center: editor */}
-      <div style={{ flex: 1 }}>
-        <h3>Strategy Editor</h3>
-        {error && <p style={{ color: '#f55' }} data-testid="editor-error">{error}</p>}
-        <div data-testid="strategy-editor" style={{ border: '1px solid #444', borderRadius: 6, padding: 16 }}>
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ display: 'block', fontSize: 12, marginBottom: 3 }}>Name</label>
-            <input value={name} onChange={e => setName(e.target.value)}
-              data-testid="strategy-name-input" placeholder="My Strategy"
-              style={{ width: '100%', background: '#222', color: '#eee', border: '1px solid #555', padding: '6px 8px', borderRadius: 3 }} />
-          </div>
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ display: 'block', fontSize: 12, marginBottom: 3 }}>Strategy Type</label>
-            <select value={stratType} onChange={e => setStratType(e.target.value)}
-              data-testid="strategy-type-select"
-              style={{ width: '100%', background: '#222', color: '#eee', border: '1px solid #555', padding: '6px 8px', borderRadius: 3 }}>
-              {STRATEGY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ display: 'block', fontSize: 12, marginBottom: 3 }}>Symbols (comma-separated)</label>
-            <input value={symbols} onChange={e => setSymbols(e.target.value)}
-              data-testid="strategy-symbols-input" placeholder="AAPL, MSFT"
-              style={{ width: '100%', background: '#222', color: '#eee', border: '1px solid #555', padding: '6px 8px', borderRadius: 3 }} />
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 12, marginBottom: 3 }}>Start Date</label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                data-testid="strategy-start-date"
-                style={{ width: '100%', background: '#222', color: '#eee', border: '1px solid #555', padding: '5px 8px', borderRadius: 3 }} />
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {tab === 'strategies' && (
+          <div>
+            <div style={{ marginBottom: 8 }}>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name / type…"
+                style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, color: TEXT, padding: '5px 10px', width: 280 }} />
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 12, marginBottom: 3 }}>End Date</label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                data-testid="strategy-end-date"
-                style={{ width: '100%', background: '#222', color: '#eee', border: '1px solid #555', padding: '5px 8px', borderRadius: 3 }} />
+            <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><Th>ID</Th><Th>Name</Th><Th>Type</Th><Th>Symbols</Th><Th>Status</Th><Th>Ver.</Th><Th right>Total Ret.</Th><Th right>Sharpe</Th><Th right>Max DD</Th><Th>Updated</Th></tr></thead>
+                <tbody>
+                  {filtered.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies — check /api/v3/strategy-studio/strategies</td></tr>}
+                  {filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((s, i) => (
+                    <tr key={i} style={{ opacity: s.archived ? 0.5 : 1 }}>
+                      <Td mono col={AMBER}>{s.strategyId}</Td>
+                      <Td mono col={TEXT}>{s.name.slice(0, 30)}</Td>
+                      <Td mono col={BLUE}>{s.strategyType}</Td>
+                      <Td mono col={SUBTLE}>{s.symbols.slice(0, 3).join(', ')}{s.symbols.length > 3 ? `+${s.symbols.length - 3}` : ''}</Td>
+                      <Td><StatusBadge s={s.status} /></Td>
+                      <Td mono col={SUBTLE}>v{s.version}</Td>
+                      <Td right><Pct v={s.totalReturn} pos /></Td>
+                      <Td right mono col={s.sharpeRatio !== null ? (s.sharpeRatio >= 1 ? GREEN : s.sharpeRatio >= 0 ? AMBER : RED) : SUBTLE}>{s.sharpeRatio !== null ? s.sharpeRatio.toFixed(2) : '—'}</Td>
+                      <Td right mono col={s.maxDrawdown !== null && s.maxDrawdown < -0.2 ? RED : AMBER}>{s.maxDrawdown !== null ? `${(s.maxDrawdown * 100).toFixed(1)}%` : '—'}</Td>
+                      <Td mono col={SUBTLE}>{s.updatedAt || s.createdAt || '—'}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button data-testid="lint-strategy-btn"
-              onClick={async () => { await runLint(formSpec()); }}
-              style={{ padding: '8px 16px', background: '#444', color: '#eee', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-              Lint
-            </button>
-            <button data-testid="create-strategy-btn"
-              onClick={handleCreate}
-              style={{ padding: '8px 20px', background: '#1e6fd4', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-              Create Strategy
-            </button>
-          </div>
-        </div>
-
-        {/* Lint errors */}
-        <div data-testid="lint-errors-panel" style={{ marginTop: 12 }}>
-          {lintErrors.length > 0 ? (
-            <div style={{ border: '1px solid #6a2a2a', borderRadius: 4, padding: 10, background: '#2a1a1a' }}>
-              <strong style={{ color: '#f88' }}>Lint Errors ({lintErrors.length})</strong>
-              <ul style={{ margin: '6px 0 0', padding: '0 0 0 16px' }}>
-                {lintErrors.map((e, i) => (
-                  <li key={i} data-testid={`lint-error-${i}`} style={{ color: '#fa8', fontSize: 12 }}>
-                    <code>[{e.field}][{e.rule}]</code> {e.message}
-                  </li>
+        )}
+        {tab === 'templates' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Template ID</Th><Th>Name</Th><Th>Type</Th><Th>Description</Th><Th>Default Symbols</Th><Th right>Usage</Th></tr></thead>
+              <tbody>
+                {templates.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No templates — check /api/v3/strategy-studio/templates</td></tr>}
+                {templates.sort((a, b) => b.usageCount - a.usageCount).map((t, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{t.templateId}</Td>
+                    <Td mono col={TEXT}>{t.name}</Td>
+                    <Td mono col={BLUE}>{t.strategyType}</Td>
+                    <Td mono col={SUBTLE}>{t.description.slice(0, 50)}</Td>
+                    <Td mono col={SUBTLE}>{t.defaultSymbols.slice(0, 3).join(', ')}</Td>
+                    <Td right mono col={TEXT}>{t.usageCount}</Td>
+                  </tr>
                 ))}
-              </ul>
-            </div>
-          ) : (
-            <p data-testid="lint-ok-badge" style={{ color: '#4f4', fontSize: 12 }}>✓ No lint errors</p>
-          )}
-        </div>
-      </div>
-
-      {/* Right: version history */}
-      {selected && (
-        <div style={{ width: 260, flexShrink: 0 }}>
-          <h3>Version History</h3>
-          <p style={{ fontSize: 12, color: '#aaa' }}>{selected.name} (v{selected.version})</p>
-          <div data-testid="version-history-panel">
-            {history.length === 0 ? (
-              <p style={{ fontSize: 12, color: '#666' }}>No history records</p>
-            ) : (
-              history.map(h => (
-                <div key={h.id} data-testid={`history-row-v${h.version}`}
-                  style={{ border: '1px solid #333', borderRadius: 3, padding: '6px 8px', marginBottom: 6, fontSize: 11 }}>
-                  <strong>v{h.version}</strong> — {h.name}
-                  <div style={{ color: '#888', marginTop: 2 }}>{h.changed_at?.slice(0, 19).replace('T', ' ')}</div>
-                </div>
-              ))
-            )}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
+        )}
+        {tab === 'backtest' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Backtest ID</Th><Th>Strategy</Th><Th>Status</Th><Th right>Total Ret.</Th><Th right>Annlzd Ret.</Th><Th right>Sharpe</Th><Th right>Sortino</Th><Th right>Max DD</Th><Th right>Win %</Th><Th right>Trades</Th></tr></thead>
+              <tbody>
+                {backtests.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No backtest results — check /api/v3/strategy-studio/backtest</td></tr>}
+                {backtests.sort((a, b) => b.sharpeRatio - a.sharpeRatio).map((b, i) => (
+                  <tr key={i} style={{ background: b.status === 'failed' ? RED + '08' : 'transparent' }}>
+                    <Td mono col={AMBER}>{b.backtestId}</Td>
+                    <Td mono col={TEXT}>{b.strategyName.slice(0, 28)}</Td>
+                    <Td><StatusBadge s={b.status} /></Td>
+                    <Td right><Pct v={b.totalReturn} pos /></Td>
+                    <Td right><Pct v={b.annualizedReturn} pos /></Td>
+                    <Td right mono col={b.sharpeRatio >= 1 ? GREEN : b.sharpeRatio >= 0 ? AMBER : RED}>{b.sharpeRatio.toFixed(2)}</Td>
+                    <Td right mono col={TEXT}>{b.sortinoRatio.toFixed(2)}</Td>
+                    <Td right mono col={b.maxDrawdown < -20 ? RED : AMBER}>{b.maxDrawdown.toFixed(1)}%</Td>
+                    <Td right mono col={b.winRatePct >= 50 ? GREEN : RED}>{b.winRatePct.toFixed(1)}%</Td>
+                    <Td right mono col={TEXT}>{b.totalTrades}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'analytics' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Strategy ID</Th><Th>Strategy Name</Th><Th>Metric</Th><Th>Period</Th><Th right>Value</Th><Th right>Rank</Th><Th right>Percentile</Th></tr></thead>
+              <tbody>
+                {analytics.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No analytics — check /api/v3/strategy-studio/analytics</td></tr>}
+                {analytics.sort((a, b) => b.percentile - a.percentile).map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.strategyId}</Td>
+                    <Td mono col={TEXT}>{a.strategyName}</Td>
+                    <Td mono col={BLUE}>{a.metricName}</Td>
+                    <Td mono col={SUBTLE}>{a.period}</Td>
+                    <Td right mono col={TEXT}>{a.value.toFixed(4)}</Td>
+                    <Td right mono col={TEXT}>#{a.rank}</Td>
+                    <Td right mono col={a.percentile >= 75 ? GREEN : a.percentile >= 25 ? AMBER : RED}>{a.percentile.toFixed(0)}th</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {tab === 'audit' && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
+              <tbody>
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries — check /api/v3/strategy-studio/audit</td></tr>}
+                {auditLog.map((a, i) => (
+                  <tr key={i}>
+                    <Td mono col={AMBER}>{a.auditId}</Td>
+                    <Td mono col={ORANGE}>{a.action}</Td>
+                    <Td mono col={TEXT}>{a.actor}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.timestamp}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }

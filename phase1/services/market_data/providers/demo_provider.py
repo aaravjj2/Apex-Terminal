@@ -148,10 +148,10 @@ class DemoProvider(MarketDataProvider):
         
         For demo mode, we derive the quote from the last available bar.
         """
-        # Get bars for last 7 days
+        # Get bars for a wide date range (fixture data can be from any period)
         from datetime import timedelta
-        end = datetime.utcnow()
-        start = end - timedelta(days=7)
+        end = datetime(2099, 12, 31)
+        start = datetime(2000, 1, 1)
         
         bars_req = BarsRequest(
             symbol=request.symbol,

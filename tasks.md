@@ -1,1311 +1,10472 @@
-Objective: Create a baseline snapshot + migration map so the refactor is guided, not guesswork.
-
-Work to do
-
-Create docs/migration/W81_baseline_audit.md:
-
-exact backend entrypoint(s), frontend entrypoint(s)
-
-API prefixes you currently expose
-
-WebSocket endpoint(s) and channels (if any)
-
-Elasticsearch endpoints and index naming conventions
-
-the exact “gold” commands you run today for tsc/vitest/pytest/playwright
-
-top 25 pain points you want gone
-
-Generate docs/migration/W81_tree_before.txt using a deterministic script:
-
-exclude: node_modules, __pycache__, .venv, .pytest_cache, test-results, playwright-report, logs, artifacts/proof
-
-stable sort so two runs match
-
-Add scripts:
-
-scripts/tree_snapshot.sh
-
-scripts/tree_snapshot.ps1
-
-Generate docs/migration/W81_dep_audit.json:
-
-Python: imported packages from runtime modules (not tests)
-
-TS: imported packages from UI2 runtime modules (not tests)
-
-list “installed but not imported”
-
-Create docs/migration/W81_move_map.yaml mapping OLD → NEW paths:
-
-include at least phase1/services/waves11_20/*, phase1/services/waves21_50/*, and UI2 paths (your tree has both). 
-
-tree
-
- 
-
-tree
-
-Create docs/migration/W81_api_inventory.md b
-
-tree
-
-o
-
-tree
-
-+ tags
-
-Tests to add/upgrade (Playwright MCP-first)
-
-Playwright: frontend/tests/e2e/hardening/w81-baseline-health.spec.ts
-
-load UI2 shell
-
-navigate to Ops/Health
-
-assert all cards show data-ready="true"
-
-Pytest: backend/tests/integration/test_w81_health_contract.py
-
-GET /api/v3/ops/health returns stable schema + correlation_id
-
-Repo gate script: scripts/assert_no_tracked_bloat.(sh|ps1)
-
-fail if git tracks node_modules/, test-results/, playwright-report/, logs/
-
-Acceptance (binary)
-
-Running scripts/tree_snapshot.* twice produces identical output
-
-Baseline MCP headed Playwright run passes against build+preview
-
-Repo gate script passes
-
-Proof artifacts
-
-docs/migration/W81_* committed
-
-proof pack includes the tree snapshot + dep audit + health test logs
-
-Wave 082 — Canonical monorepo layout (backend/ + frontend/ + infrastructure/)
-
-Objective: Clean tree with explicit backend/frontend/infra while keeping commands working.
-
-Work to do
-
-Create top-level folders:
-
-backend/
-
-frontend/
-
-infrastructure/
-
-Move frontend app into frontend/:
-
-src/, public/, Vite config, Playwright config, frontend tests
-
-Move backend runtime into backend/:
-
-keep a temporary compatibility shim if needed, but write it down in the migration doc
-
-Add infrastructure/docker-compose.yml:
-
-Postgres
-
-Elasticsearch
-
-Kibana (optional but useful for demos)
-
-Add root Makefile + scripts/dev.ps1:
-
-make up / make down
-
-make api / make web
-
-make test (tsc+vitest+pytest)
-
-make e2e (Playwright MCP headed)
-
-make proof
-
-Tests
-
-Playwright: w82-smoke.spec.ts (UI2 loads, routes work, backend reachable on 8090)
-
-Pytest: test_w82_import_sanity.py (routers import cleanly from new paths)
-
-Acceptance
-
-All existing gates still pass from repo root
-
-No duplicated entrypoints
-
-Proof
-
-W82_tree_after.txt
-
-Makefile logs in proof pack
-
-Wave 083 — Stale artifact purge + retention policy
-
-Objective: Delete stale outputs and prevent reintroduction.
-
-Work to do
-
-Add docs/RETENTION.md:
-
-what is allowed in-repo vs must stay local
-
-proof packs: stored in artifacts/proof/ and never committed
-
-Update .gitignore to include:
-
-**/node_modules/
-
-**/__pycache__/
-
-**/.pytest_cache/
-
-test-results/
-
-playwright-report/
-
-logs/
-
-artifacts/proof/
-
-Add scripts/clean_workspace.(sh|ps1):
-
-deletes local bloat safely
-
-must never touch keys.env
-
-Untrack/delete any committed artifacts in the working tree
-
-Tests
-
-Pytest: test_repo_sanity_no_tracked_artifacts.py (fails if forbidden dirs tracked)
-
-Playwright: w83-proofpack-location.spec.ts (ensures proof packs land only under artifacts/proof/)
-
-Acceptance
-
-Repo has no tracked artifacts and the sanity test enforces it
-
-Proof
-
-retention doc + sanity output in proof pack
-
-Wave 084 — Single config loader + fail-fast startup checks (no demo fallback)
-
-Objective: Central config, no fake values, fail fast if deps/keys missing.
-
-Work to do
-
-Create backend/core/config.py (pydantic settings)
-
-Create backend/core/startup_checks.py:
-
-Postgres reachable
-
-ES reachable
-
-required indices exist (or template install + alias creation happens deterministically)
-
-WS subsystem ready
-
-Expose GET /api/v3/ops/health:
-
-dependency statuses
-
-correlation_id
-
-last successful check timestamps
-
-Remove demo/mock fallbacks across backend config paths
-
-Tests
-
-Pytest: test_startup_failfast_errors.py (missing env -> explicit errors)
-
-Playwright: w84-ops-health.spec.ts (Ops shows all green when configured)
-
-Acceptance
-
-Backend refuses to run core flows without required deps
-
-Ops health is truthful
-
-Proof
-
-Startup logs captured in proof pack (both a failing boot and a successful boot)
-
-Wave 085 — Domain isolation firewall (import boundary tests)
-
-Objective: Stop cross-import coupling by enforcing domains + contracts.
-
-Work to do
-
-Create backend/domains/:
-
-search/
-
-backtesting/
-
-workflows/
-
-agents/
-
-broker/
-
-audit/
-
-Create backend/core/contracts/ for shared DTOs/interfaces
-
-Start migrating code out of the parallel “wave module” layout (your tree shows phase1/services/waves11_20 and waves21_50). 
-
-tree
-
-Delete shims as you finish each domain (no permanent “compat forever” 
-
-tree
-
-test: test_architecture_import_boundaries.py scans imports and fails cross-domain imports
-
-Playwright: w85-nav-regression.spec.ts ensures UI2 routes still work after migrations
-
-Acceptance
-
-Import boundary test passes
-
-At least 2 domains fully migrated with no shims remaining
-
-Proof
-
-import scan report included in proof pack
-
-Wave 086 — Event bus + immutable audit events indexed in ES
-
-Objective: Every state change emits an event (auditable + searchable).
-
-Work to do
-
-Implement backend/core/event_bus.py:
-
-correlation_id propagation
-
-publish API
-
-persistence hook
-
-Create backend/domains/audit/models.py:
-
-immutable events table
-
-Create backend/domains/audit/routes.py:
-
-/api/v3/events
-
-/api/v3/events/search
-
-Ensure these flows emit events:
-
-strategy create/update
-
-backtest run start/end
-
-workflow run start/end
-
-agent run start/end + tool calls
-
-broker sync ticks
-
-Index events into ES apex-events-* (versioned mapping)
-
-Tests
-
-Pytest: run a backtest -> assert event chain exists and indexed
-
-Playwright: open Events timeline -> search by correlation_id -> open detail drawer
-
-Acceptance
-
-Events persist + index + render in UI2
-
-Search returns events with stable ordering
-
-Proof
-
-screenshots: timeline + search result
-
-logs: ES ingest + DB insert
-
-Wave 087 — WebSocket reliability v1 (heartbeat + typed channels)
-
-Objective: Real-time layer stays connected; disconnects are measurable.
-
-Work to do
-
-Implement WS server (FastAPI WS) with:
-
-heartbeat ping/pong
-
-typed channel subscriptions: events, jobs, prices, broker
-
-server-side disconnect counter
-
-Add /api/v3/ops/ws/health:
-
-active clients
-
-last heartbeat age
-
-disconnect_count
-
-UI2 Shell:
-
-global WS indicator (green/yellow/red)
-
-per-page channel badges
-
-Tests
-
-Playwright: WS indicator must stay green across a long multi-page flow
-
-Pytest: connect/subscribe, receive heartbeat, receive an event broadcast
-
-Acceptance
-
-disconnect_count stays 0 during normal E2E
-
-if WS drops, UI surfaces incident and auto-reconnects deterministically
-
-Proof
-
-WS health snapshots at start/end of Playwright run
-
-Wave 088 — Ops workspace v1 (deps + ES + WS + broker + jobs)
-
-Objective: Environment visibility inside UI2.
-
-Work to do
-
-Create UI2 OpsUI2 page with cards:
-
-Postgres
-
-Elasticsearch (cluster + templates + aliases + doc counts)
-
-WS
-
-Broker
-
-Jobs
-
-Lag/DLQ (once those exist)
-
-Every card must have:
-
-data-testid
-
-data-ready gating (no hardcoded true)
-
-copy correlation_id button
-
-Tests
-
-Playwright: Ops loads and every card shows ready + green
-
-Pytest: ops endpoints stable schema + redaction (no secrets ever)
-
-Acceptance
-
-Ops is truthful and ready-gated
-
-Proof
-
-screenshots of Ops page + logs
-
-Wave 089 — Command palette + deep link contract
-
-Objective: Search-first navigation that is demo-friendly and fast.
-
-Work to do
-
-Add Ctrl/Cmd+K command palette
-
-Implement deep-link contract for:
-
-strategies
-
-backtests
-
-runs
-
-jobs
-
-events
-
-tickets
-
-agent runs
-
-Tables support row highlight via query params (and clear it)
-
-Tests
-
-Playwright: palette -> open result -> highlight present -> browser back restores palette state
-
-Acceptance
-
-Deep links work across core entities
-
-No forbidden selectors in tests (data-testid only)
-
-Proof
-
-short demo clip checkpoint in proof pack
-
-Wave 090 — Repo sanity gates (testids + forbidden patterns)
-
-Objective: Prevent regression into untestable UI and fragile E2E.
-
-Work to do
-
-Add script that fails build if:
-
-interactive elements missing data-testid
-
-Playwright tests contain getByText, getByRole, or raw text selectors
-
-any test contains waitForTimeout
-
-Add docs/CONTRIBUTING.md:
-
-per-wave requires new Playwright coverage + proof artifacts
-
-Tests
-
-The scanners run as part of make test and fail loudly
-
-Acceptance
-
-Missing testid and forbidden patterns are blocked automatically
-
-Proof
-
-scanner outputs in proof pack
-
-Waves 091–110 (Hackathon core: Elastic + Agent Builder + Convergence UX)
-Wave 091 — Elasticsearch templates + aliases v4 (versioned)
-
-Objective: Deterministic mappings with safe reindex and alias swaps.
-
-Work to do
-
-Implement ES templates for:
-
-events, strategies, backtests, workflows, jobs, tickets, edges
-
-Enforce alias convention:
-
-apex-<type>-write, apex-<type>-read
-
-Implement reindex:
-
-plan -> execute -> verify -> alias swap
-
-emit audit events for every step
-
-Ops UI shows template + alias health
-
-Tests
-
-Pytest: templates installed and alias swap works
-
-Playwright: ES Ops card shows templates, aliases, doc counts
-
-Acceptance
-
-Reindex + alias swap proven by tests
-
-Proof
-
-reindex logs + screenshots
-
-Wave 092 — Bulk ingest + DLQ + lag metrics
-
-Objective: No silent ES failures: DLQ + lag telemetry.
-
-Work to do
-
-Bulk ingest pipeline:
-
-batching
-
-retry/backoff
-
-DLQ persistence in Postgres
-
-Lag metrics:
-
-canonical DB count vs ES count per type
-
-DLQ drain endpoint + Ops UI action
-
-Tests
-
-Pytest: induce ES failure -> DLQ grows; recover -> drain; lag drops
-
-Playwright: drain from Ops and see counts update
-
-Acceptance
-
-DLQ exists and is exercised
-
-lag metrics are truthful
-
-Wave 093 — Evidence graph v1 (nodes+edges)
-
-Objective: Traceability layer indexed in ES and rendered in UI.
-
-Work to do
-
-Persist edges in Postgres and index into ES
-
-Graph API: /api/v3/evidence/graph?root_type=&root_id=
-
-UI2: Evidence Graph view on:
-
-backtest run detail
-
-strategy detail
-
-ticket detail
-
-agent run detail
-
-Tests
-
-Pytest: a backtest run creates expected edges
-
-Playwright: open graph and assert nodes/edges > 0
-
-Acceptance
-
-Graph is non-empty for a real run and navigable
-
-Wave 094 — Agent tools v1 (strict tools + audit trail)
-
-Objective: Agents act only through explicit tools; every tool call logged and searchable.
-
-Work to do
-
-Tools:
-
-search (ES)
-
-fetch_entity
-
-fetch_graph
-
-summarize
-
-create_ticket (safe action)
-
-Persist agent runs + tool traces + citations (with correlation_id)
-
-Index agent runs into ES
-
-UI2: tool trace viewer + citations list with deep links
-
-Tests
-
-Pytest: tool traces persisted and secrets redacted
-
-Playwright: run agent query -> open a citation -> see evidence graph
-
-Acceptance
-
-Agent runs are grounded and auditable
-
-Wave 095 — Elastic Agent Builder integration (ElastiHack-critical)
-
-Objective: Elastic Agent Builder drives real runs.
-
-Work to do
-
-Adapter to Elastic Agent Builder (server-side only, env-gated)
-
-UI2 “Agent Builder” page:
-
-create agent
-
-run agent
-
-view trace + citations + tool usage
-
-Tests
-
-Pytest: refuses without keys, validates schemas
-
-Playwright: agent run end-to-end, citations open entity drawers
-
-Acceptance
-
-Agent Builder is central to the demo flow, not a side integration
-
-Wave 096 — Search UX v3 (facets + saved searches + explain drawer)
-
-Objective: Search becomes the primary experience.
-
-Work to do
-
-Facets: type, time, severity, symbol, run_id
-
-Saved searches persisted per user
-
-Explain drawer: query, filters, sort, matched fields (no secrets)
-
-Deep link + highlight on destination pages
-
-Tests
-
-Playwright: facet -> save -> pin -> rerun -> stable ordering; open explain; deep link highlight
-
-Pytest: stable sort contract tests
-
-Wave 097 — Backtesting correctness contract + golden runs
-
-Objective: Backtesting credibility: invariants + golden runs.
-
-Work to do
-
-Define invariants:
-
-no lookahead
-
-equity = cash + positions value
-
-trades obey fill rules and cost model
-
-Create 3 golden runs with frozen expected outputs (metrics + trade count)
-
-Refuse runs on incomplete/invalid data, with clear error messages
-
-Index run artifacts into ES and connect edges
-
-Tests
-
-Pytest: golden runs match expected outputs within strict tolerances
-
-Playwright: run golden from UI and verify displayed metrics match
-
-Wave 098 — Walk-forward + robustness v3
-
-Objective: Anti-overfit evaluation by default.
-
-Work to do
-
-Walk-forward folds with purged gaps
-
-Robustness matrix:
-
-slippage multipliers
-
-spread widening
-
-execution delay
-
-liquidity caps
-
-Sensitivity heatmaps
-
-Index fold artifacts + robustness deltas into ES
-
-UI2 tabs for folds and robustness
-
-Tests
-
-Pytest fold determinism
-
-Playwright run and view folds + robustness tables
-
-Wave 099 — Strategy Studio v3
-
-Objective: Template -> validate -> backtest -> archive workflow.
-
-Work to do
-
-StrategySpec schema + lint rules
-
-UI editor with inline validation
-
-Template gallery
-
-Version history
-
-Link strategy to runs and evidence graph
-
-Searchable strategies with deep links
-
-Tests
-
-Playwright: lifecycle end-to-end (create, validate, backtest, search, open)
-
-Pytest: schema/lint tests
-
-Wave 100 — Job Queue v2 + WS progress
-
-Objective: Queued/cancellable jobs with streamed progress.
-
-Work to do
-
-Job state machine: queued, running, succeeded, failed, canceled
-
-WS channel jobs streams progress updates
-
-UI2 job queue page + job detail drawer
-
-Index jobs into ES
-
-Tests
-
-Playwright: submit job -> observe progress -> cancel -> verify state changes
-
-Pytest: state machine invariants + idempotent cancel
-
-Wave 101 — Convergence cockpit v1 (TerraCode wow screen)
-
-Objective: Single cockpit: search + evidence graph + agent trace + safe action.
-
-Work to do
-
-3-pane layout:
-
-left: search + saved searches
-
-center: evidence graph
-
-right: agent trace + citations + “create ticket”
-
-Scenario presets that run real queries
-
-Everything testid-instrumented and ready-gated
-
-Tests
-
-Playwright: run scenario -> panes populate -> create ticket -> ticket searchable
-
-Wave 102 — Agent eval harness
-
-Objective: Repeatable scoring of agent output and citation correctness.
-
-Work to do
-
-Small curated eval dataset stored in repo:
-
-prompt
-
-expected evidence IDs
-
-Eval runner:
-
-produces scores
-
-stores results
-
-indexes results into ES
-
-UI2 eval page shows trends
-
-Tests
-
-Pytest determinism of eval results
-
-Playwright: run eval and inspect a case
-
-Wave 103 — UI2 standardization (PageShell + DataTable)
-
-Objective: Fix the “hacked together” feel.
-
-Work to do
-
-Create PageShellUI2
-
-Create DataTableUI2:
-
-toolbar (search/filter/export)
-
-virtualization for large lists
-
-Migrate core pages: Search, Backtest, Strategy, Jobs, Agents, Ops, Auditor
-
-Enforce loading/empty/error/ready states
-
-Tests
-
-Playwright: each core page transitions loading -> ready and has one key action
-
-Wave 104 — Accessibility (headed Playwright + axe)
-
-Objective: Win UX points and reduce obvious polish gaps.
-
-Work to do
-
-Add focus management (drawers/modals)
-
-Add ARIA labels
-
-Add skip links
-
-Add visible focus ring
-
-Integrate axe audit into headed Playwright run
-
-Tests
-
-Playwright: axe audit fails on critical/serious issues
-
-Wave 105 — Performance budgets + CWV checks
-
-Objective: Make it feel fast and measurable.
-
-Work to do
-
-Bundle size budget gate
-
-Playwright performance sampling (store results in proof pack)
-
-Reduce unnecessary re-renders and expensive tables
-
-Tests
-
-Playwright perf spec (fail if budgets exceeded)
-
-Wave 106 — Accounting/controls alignment into ES + evidence graph
-
-Objective: Unify the controls/audit track with ES and the evidence graph.
-
-Work to do
-
-Move AP/AR, reconciliation, controls into the domain layout
-
-Index them into ES + edges
-
-Auditor portal is ES-first, not DB-only
-
-Tests
-
-Playwright: auditor searches control -> opens evidence -> sees linked events/edges
-
-Pytest: mapping + edge creation
-
-Wave 107 — Safe actions (tickets)
-
-Objective: Agents take reliable action safely and audibly.
-
-Work to do
-
-Ticket schema
-
-RBAC gate
-
-Audit events for creation/updates
-
-Index tickets into ES and connect edges
-
-Tests
-
-Playwright: agent creates ticket -> ticket searchable -> audit trail visible
-
-Pytest: idempotency
-
-Wave 108 — Export bundles (reproducible)
-
-Objective: One-click judge bundle and recovery artifacts.
-
-Work to do
-
-Export zip includes:
-
-manifest with hashes
-
-ES templates
-
-selected DB tables
-
-“how to reproduce” README
-
-Ops UI triggers export
-
-Tests
-
-Pytest manifest determinism
-
-Playwright export flow
-
-Wave 109 — Docker compose + judge mode
-
-Objective: Judges can run it without debugging.
-
-Work to do
-
-Compose: Postgres + ES + Kibana + backend + frontend preview
-
-docs/RUN_LOCAL.md: exactly 3 commands to run
-
-scripts/bootstrap_keys_example.* creates keys.env template
-
-Tests
-
-Playwright smoke run against compose startup
-
-Wave 110 — Submission kit v1 (dual hackathon)
-
-Objective: Submission assets are real and repeatable.
-
-Work to do
-
-Add OSI license file (required for ElastiHack)
-
-Add docs/submission/TERRACODE.md:
-
-problem, solution, stack, how AI used, demo script (2–3 min)
-
-Add docs/submission/ELASTIHACK.md:
-
-how ES + Agent Builder used, tool trace, citations, safe action, demo script (~3 min)
-
-Add architecture diagram image in repo
-
-Add docs/submission/CHECKLIST.md
-
-Tests
-
-Playwright “tour” specs exist for both demos
-
-Waves 111–130 (extreme Playwright MCP strictness, reliability, and final proof)
-Wave 111 — MCP-only enforcement gate
-
-Objective: Block any non-MCP, headless, or misconfigured E2E run.
-
-Work
-
-Add config assertions:
-
-headed only
-
-workers=1
-
-retries=0
-
-video/trace/screenshot on
-
-Add test file scanner:
-
-fail if getByText, getByRole, or any role/text selector is used
-
-fail if waitForTimeout appears anywhere
-
-Tests
-
-A self-test Playwright spec that fails if config isn’t compliant
-
-Acceptance
-
-Non-compliant runs cannot happen
-
-Wave 112 — Persistent window for entire suite
-
-Objective: One browser context + one page reused for the whole run.
-
-Work
-
-Refactor E2E harness:
-
-beforeAll boots app once
-
-tests reuse the same page
-
-per-test reset is server-side (new reset endpoints), not by closing the window
-
-Tests
-
-Playwright asserts only one context/page exists
-
-Wave 113 — Suite-level WS stability monitor
-
-Objective: Fail the run if WS disconnects at any point in normal suite.
-
-Work
-
-Add suite monitor that polls /api/v3/ops/ws/health
-
-Add UI WS indicator assertion that it never turns red
-
-Tests
-
-ws-stability.spec.ts runs alongside suite and fails on disconnect_count increment
-
-Wave 114 — Suite-level ES health + lag monitor
-
-Objective: Fail if ES health degrades or lag breaches SLO.
-
-Work
-
-Define SLO thresholds in docs/ops/SLO.md
-
-Poll /api/v3/ops/elastic/health + /api/v3/elasticsearch/lag
-
-Tests
-
-es-stability.spec.ts fails if thresholds violated
-
-Wave 115 — Suite-level broker sync monitor
-
-Objective: Fail if broker sync becomes stale.
-
-Work
-
-Define broker staleness SLO
-
-Poll /api/v3/ops/broker/health and assert sync advances during suite
-
-Tests
-
-broker-stability.spec.ts
-
-Wave 116 — Expand E2E to 200+ high-signal tests
-
-Objective: Coverage that proves correctness, not click-through.
-
-Work
-
-Add tests that verify backend state via API after UI actions:
-
-create strategy -> verify stored + indexed
-
-run backtest -> verify events + edges + ES docs
-
-run agent -> verify tool trace + citations
-
-create ticket -> verify audit trail
-
-No fluff tests
-
-Acceptance
-
-=200 Playwright tests, all passing, zero skipped
-
-Wave 117 — Visual stability without loosening thresholds
-
-Objective: Fix nondeterminism rather than tolerating it.
-
-Work
-
-Remove volatile timestamps from UI or render them deterministically in E2E mode
-
-Disable non-essential animations in E2E mode (deterministic flag)
-
-Tests
-
-Visual regression suite passes without increasing tolerances
-
-Wave 118 — Zero-flake repeat-run harness (3x)
-
-Objective: If it flakes once, it’s broken.
-
-Work
-
-Script runs key suites 3 times and diffs results
-
-Store summaries in proof pack
-
-Acceptance
-
-Identical results across 3 runs
-
-Wave 119 — Full determinism proof (full suite twice)
-
-Objective: Prove run1 == run2 for the full E2E suite.
-
-Work
-
-Generate:
-
-determinism-run1.json
-
-determinism-run2.json
-
-determinism-diff.txt must be empty
-
-Wave 120 — Onboarding + guided tour mode
-
-Objective: Better “user environment” on first run.
-
-Work
-
-“Getting Started” wizard:
-
-checks Postgres/ES/WS/Broker health
-
-shows missing env vars clearly
-
-links to RUN_LOCAL
-
-“Guided tour mode” with checklisted steps for recording demo videos
-
-Wave 121 — Runbooks + troubleshooting + judge mode
-
-Objective: Docs become an advantage.
-
-Work
-
-docs/ops/TROUBLESHOOTING.md
-
-docs/ops/RESET.md
-
-docs/ops/JUDGE_MODE.md
-
-Wave 122 — Secrets and redaction hardening
-
-Objective: No accidental key leaks.
-
-Work
-
-Log redaction for known patterns
-
-Secret scan script that fails CI if secrets are detected in repo
-
-Wave 123 — Submission compliance checks
-
-Objective: Ensure Devpost requirements are satisfied automatically.
-
-Work
-
-Script validates:
-
-OSI license present (ElastiHack)
-
-demo scripts present
-
-architecture diagram present
-
-README has run steps
-
-video requirements met (TerraCode 2–3 min, ElastiHack ~3 min)
-
-Wave 124 — TerraCode demo script + tour spec
-
-Objective: Nail TerraCode scoring categories (innovation, impact, UX, demo).
-
-Work
-
-Write docs/submission/TERRACODE_DEMO_SCRIPT.md
-
-Implement tour-terracode.spec.ts that follows it end-to-end
-
-Wave 125 — ElastiHack demo script + tour spec
-
-Objective: Nail ElastiHack: Agent Builder + ES must be central.
-
-Work
-
-Write docs/submission/ELASTIHACK_DEMO_SCRIPT.md
-
-Implement tour-elastihack.spec.ts
-
-Wave 126 — Submission bundle generator (zip)
-
-Objective: One command outputs a Devpost-ready bundle.
-
-Work
-
-Create submission_bundle.zip containing:
-
-screenshots
-
-diagram
-
-demo scripts
-
-proof manifest
-
-README excerpt
-
-Wave 127 — CI alignment (local == CI)
-
-Objective: No surprises.
-
-Work
-
-CI runs the same make test and make e2e
-
-No skipped tests allowed
-
-Wave 128 — Final UX declutter
-
-Objective: Fewer pages, more depth.
-
-Work
-
-Nav includes only:
-
-Convergence
-
-Search
-
-Backtesting
-
-Strategies
-
-Agents
-
-Ops
-
-Auditor
-
-Remove dead links and placeholder pages
-
-Wave 129 — Incident drills (ES/WS/Broker outages)
-
-Objective: Prove resilience and recovery.
-
-Work
-
-Controlled outage specs:
-
-ES down briefly
-
-WS forced disconnect
-
-broker failure
-
-System must surface incident banners and recover
-
-Wave 130 — Final proof pack + dual-submission readiness
-
-Objective: Ship final judge-grade proof.
-
-Work
-
-Generate proof pack with:
-
-full logs
-
-Playwright report
-
-videos/traces/screenshots
-
-determinism run1/run2 + diff
-
-TOUR_TERRACODE.webm (2–3 min)
-
-TOUR_ELASTIHACK.webm (~3 min)
-
-submission bundle zip
-
-Update README with exact run steps and “judge mode”
+﻿# APEX TERMINAL â€” MASTER TASK LIST
+# Bloomberg Terminal + TradingView Complete Feature Parity
+# Generated: 2026-02-27
+# Status: [ ] = pending, [x] = done, [-] = in-progress
+
+
+## CHART ENGINE â€” CORE RENDERING
+
+- [ ] TASK-00001: Implement real-time WebSocket OHLCV streaming for sub-second updates
+- [ ] TASK-00002: Add Tick chart type (100, 250, 500, 1000 tick intervals)
+- [ ] TASK-00003: Add Renko chart type (configurable brick size)
+- [ ] TASK-00004: Add Kagi chart type (configurable reversal amount)
+- [ ] TASK-00005: Add Point & Figure chart type (box size / reversal)
+- [ ] TASK-00006: Add Range bar chart type (fixed range per bar)
+- [ ] TASK-00007: Add Volume bar chart type (fixed volume per bar)
+- [ ] TASK-00008: Add Dollar bar chart type (fixed dollar volume per bar)
+- [ ] TASK-00009: Implement multi-chart layout grid: 2x1 configuration
+- [ ] TASK-00010: Implement multi-chart layout grid: 1x2 configuration
+- [ ] TASK-00011: Implement multi-chart layout grid: 2x2 configuration
+- [ ] TASK-00012: Implement multi-chart layout grid: 3x1 configuration
+- [ ] TASK-00013: Implement multi-chart layout grid: 3x2 configuration
+- [ ] TASK-00014: Implement multi-chart layout grid: 4x1 configuration
+- [ ] TASK-00015: Implement multi-chart layout grid: 4x4 configuration
+- [ ] TASK-00016: Implement chart sync: crosshair sync across all panels in layout
+- [ ] TASK-00017: Implement chart sync: time scale sync across all panels
+- [ ] TASK-00018: Implement chart sync: selection sync (click one bar highlights all)
+- [ ] TASK-00019: Add Hollow Candles chart type (body outline only when close>open)
+- [ ] TASK-00020: Add Line Break chart type (3-line break with reversal logic)
+- [ ] TASK-00021: Add Baseline chart type with configurable baseline price
+- [ ] TASK-00022: Add Mountain/Area chart type with gradient fill
+- [ ] TASK-00023: Add Histogram chart type for volume profile overlay
+- [ ] TASK-00024: Implement zoom: pinch-to-zoom gesture support on touch devices
+- [ ] TASK-00025: Implement zoom: mouse wheel zoom with Alt for horizontal only
+- [ ] TASK-00026: Implement zoom: Ctrl+= / Ctrl+- keyboard shortcuts
+- [ ] TASK-00027: Implement zoom: double-click to fit all data in view
+- [ ] TASK-00028: Implement zoom: right-click drag for zoom rectangle selection
+- [ ] TASK-00029: Add price scale: logarithmic vs linear toggle button
+- [ ] TASK-00030: Add price scale: percentage mode (% change from first bar)
+- [ ] TASK-00031: Add price scale: indexed to 100 mode for comparison
+- [ ] TASK-00032: Add price scale: auto-scale toggle per pane
+- [ ] TASK-00033: Add price scale: lock price scale (disable auto-scale)
+- [ ] TASK-00034: Add price scale: invert price scale toggle
+- [ ] TASK-00035: Add price scale: right-side and left-side scale options
+- [ ] TASK-00036: Add price scale: custom price format (2/4/8 decimal places)
+- [ ] TASK-00037: Implement on-chart watermark with symbol + timeframe text
+- [ ] TASK-00038: Add pre-market / after-hours shading (gray overlay regions)
+- [ ] TASK-00039: Add session dividers (vertical lines at session open/close)
+- [ ] TASK-00040: Add news event pins on chart (small pin icon at news time)
+- [ ] TASK-00041: Add earnings/dividend event markers on chart timeline
+- [ ] TASK-00042: Add split adjustment toggle (keep pre-split prices optional)
+- [ ] TASK-00043: Implement chart templates: save indicator config to template
+- [ ] TASK-00044: Implement chart templates: load template from saved list
+- [ ] TASK-00045: Implement chart templates: delete template
+- [ ] TASK-00046: Implement chart templates: share template as JSON
+- [ ] TASK-00047: Add chart screenshot export as PNG with full resolution
+- [ ] TASK-00048: Add chart screenshot export as SVG vector format
+- [ ] TASK-00049: Add chart data export as CSV of visible bars
+- [ ] TASK-00050: Implement compare mode: overlay multiple symbols normalized to %
+- [ ] TASK-00051: Add comparison symbols selector dropdown with search
+- [ ] TASK-00052: Add benchmark overlay (SPY, QQQ) on price chart
+- [ ] TASK-00053: Implement replay/playback mode: step through bars historically
+- [ ] TASK-00054: Add replay: speed control (0.5x, 1x, 2x, 5x, 10x)
+- [ ] TASK-00055: Add replay: jump-to-date picker for replay start
+- [ ] TASK-00056: Add replay: play/pause/stop controls
+- [ ] TASK-00057: Add replay: forward/backward one bar step buttons
+- [ ] TASK-00058: Implement alert lines on chart (horizontal draggable price lines)
+- [ ] TASK-00059: Add on-chart price alert: trigger notification when price crossed
+- [ ] TASK-00060: Add on-chart percentage alert: e.g. +5% from current price
+- [ ] TASK-00061: Add on-chart volume spike alert (3x average volume)
+- [ ] TASK-00062: Add alert list panel showing all active alerts on chart
+- [ ] TASK-00063: Implement right-click context menu on chart background
+- [ ] TASK-00064: Right-click menu: Insert indicator at this position
+- [ ] TASK-00065: Right-click menu: Add text label at cursor position
+- [ ] TASK-00066: Right-click menu: Set alert at this price level
+- [ ] TASK-00067: Right-click menu: Copy price to clipboard
+- [ ] TASK-00068: Right-click menu: Add trendline from this point
+- [ ] TASK-00069: Right-click menu: Remove drawing object at cursor
+- [ ] TASK-00070: Right-click menu: Change bar color at selection
+- [ ] TASK-00071: Right-click menu: Take screenshot of chart
+- [ ] TASK-00072: Right-click menu: Reset chart to default
+- [ ] TASK-00073: Implement undo/redo stack for all drawing tool operations
+- [ ] TASK-00074: Add keyboard shortcut: D = toggle drawing mode
+- [ ] TASK-00075: Add keyboard shortcut: I = indicator panel toggle
+- [ ] TASK-00076: Add keyboard shortcut: A = alert panel toggle
+- [ ] TASK-00077: Add keyboard shortcut: T = text annotation tool
+- [ ] TASK-00078: Add keyboard shortcut: L = trendline tool
+- [ ] TASK-00079: Add keyboard shortcut: F = Fibonacci tool
+- [ ] TASK-00080: Add keyboard shortcut: H = horizontal line tool
+- [ ] TASK-00081: Add keyboard shortcut: V = vertical line tool
+- [ ] TASK-00082: Add keyboard shortcut: Space = fit chart to view
+- [ ] TASK-00083: Add keyboard shortcut: Escape = cancel current drawing
+- [ ] TASK-00084: Add keyboard shortcut: Delete = remove selected object
+- [ ] TASK-00085: Add keyboard shortcut: Ctrl+Z = undo last drawing
+- [ ] TASK-00086: Add keyboard shortcut: Ctrl+Y = redo last undo
+- [ ] TASK-00087: Implement chart crosshair data window (OHLCV + indicator values)
+- [ ] TASK-00088: Data window: show bid/ask/spread on crosshair hover
+- [ ] TASK-00089: Data window: show volume delta (buy vs sell volume)
+- [ ] TASK-00090: Data window: expandable indicator value display
+- [ ] TASK-00091: Data window: show timestamp and bar index
+- [ ] TASK-00092: Add status bar at bottom: cursor position (price, time)
+- [ ] TASK-00093: Add status bar at bottom: active drawing tool name
+- [ ] TASK-00094: Add status bar at bottom: zoom level percentage
+- [ ] TASK-00095: Add status bar at bottom: total bars loaded count
+- [ ] TASK-00096: Implement pane resizing via drag handle between panes
+- [ ] TASK-00097: Add auto-scale button per sub-pane
+- [ ] TASK-00098: Add collapse/expand button per sub-pane
+- [ ] TASK-00099: Add remove pane button per sub-pane
+- [ ] TASK-00100: Add add-pane button to open indicator browser
+- [ ] TASK-00101: Implement continuation loading: scroll left to load more history
+- [ ] TASK-00102: Add real-time bar update: last bar extends until next bar opens
+- [ ] TASK-00103: Add bar count display in chart header area
+- [ ] TASK-00104: Implement chart anti-aliasing for smooth line rendering
+- [ ] TASK-00105: Add chart grid style options (solid, dashed, dotted, none)
+- [ ] TASK-00106: Add chart background gradient option
+
+## CHART ENGINE â€” INDICATORS (110+)
+
+- [ ] TASK-00107: Implement SMA (Simple Moving Average) indicator with period param
+- [ ] TASK-00108: Implement EMA (Exponential Moving Average) indicator
+- [ ] TASK-00109: Implement WMA (Weighted Moving Average) indicator
+- [ ] TASK-00110: Implement HMA (Hull Moving Average) indicator
+- [ ] TASK-00111: Implement DEMA (Double EMA) indicator
+- [ ] TASK-00112: Implement TEMA (Triple EMA) indicator
+- [ ] TASK-00113: Implement KAMA (Kaufman Adaptive MA) indicator
+- [ ] TASK-00114: Implement ALMA (Arnaud Legoux MA) indicator
+- [ ] TASK-00115: Implement VWAP (Volume Weighted Average Price) indicator
+- [ ] TASK-00116: Implement Anchored VWAP (user-selects anchor bar) indicator
+- [ ] TASK-00117: Implement VWAP bands (+/- 1,2,3 sigma) indicator
+- [ ] TASK-00118: Implement Bollinger Bands (20,2) indicator overlay
+- [ ] TASK-00119: Implement Bollinger Band Width indicator in sub-pane
+- [ ] TASK-00120: Implement Bollinger %B indicator in sub-pane
+- [ ] TASK-00121: Implement Keltner Channel indicator overlay
+- [ ] TASK-00122: Implement Donchian Channel indicator overlay
+- [ ] TASK-00123: Implement Envelope indicator (MA +/- %) overlay
+- [ ] TASK-00124: Implement PSAR (Parabolic SAR) indicator overlay dots
+- [ ] TASK-00125: Implement Supertrend indicator with color changes
+- [ ] TASK-00126: Implement Ichimoku Cloud (Tenkan/Kijun/Senkou/Chikou) full
+- [ ] TASK-00127: Implement RSI (Relative Strength Index) indicator sub-pane
+- [ ] TASK-00128: Implement Stochastic Oscillator (%K, %D) indicator
+- [ ] TASK-00129: Implement Stochastic RSI indicator
+- [ ] TASK-00130: Implement Williams %R indicator
+- [ ] TASK-00131: Implement CCI (Commodity Channel Index) indicator
+- [ ] TASK-00132: Implement ROC (Rate of Change) indicator
+- [ ] TASK-00133: Implement Momentum indicator
+- [ ] TASK-00134: Implement MACD (12,26,9) with signal and histogram
+- [ ] TASK-00135: Implement MACD Histogram standalone indicator
+- [ ] TASK-00136: Implement PPO (Percentage Price Oscillator) indicator
+- [ ] TASK-00137: Implement DPO (Detrended Price Oscillator) indicator
+- [ ] TASK-00138: Implement TSI (True Strength Index) indicator
+- [ ] TASK-00139: Implement CMO (Chande Momentum Oscillator) indicator
+- [ ] TASK-00140: Implement Aroon Oscillator indicator
+- [ ] TASK-00141: Implement Aroon Up/Down indicator
+- [ ] TASK-00142: Implement ADX (Average Directional Index) indicator
+- [ ] TASK-00143: Implement +DI / -DI (Directional Indicators) sub-pane
+- [ ] TASK-00144: Implement DMI (Directional Movement Index) indicator
+- [ ] TASK-00145: Implement ATR (Average True Range) indicator sub-pane
+- [ ] TASK-00146: Implement Historical Volatility indicator
+- [ ] TASK-00147: Implement Chaikin Volatility indicator
+- [ ] TASK-00148: Implement Volume bars indicator (colored by direction)
+- [ ] TASK-00149: Implement Volume MA overlay on volume bars
+- [ ] TASK-00150: Implement OBV (On-Balance Volume) indicator
+- [ ] TASK-00151: Implement Volume Oscillator indicator
+- [ ] TASK-00152: Implement CMF (Chaikin Money Flow) indicator
+- [ ] TASK-00153: Implement MFI (Money Flow Index) indicator
+- [ ] TASK-00154: Implement A/D (Accumulation/Distribution) Line indicator
+- [ ] TASK-00155: Implement Force Index indicator
+- [ ] TASK-00156: Implement Ease of Movement indicator
+- [ ] TASK-00157: Implement Elder Ray Bull Power indicator
+- [ ] TASK-00158: Implement Elder Ray Bear Power indicator
+- [ ] TASK-00159: Implement TRIX indicator
+- [ ] TASK-00160: Implement Mass Index indicator
+- [ ] TASK-00161: Implement Vortex Indicator (VI+ VI-)
+- [ ] TASK-00162: Implement Schaff Trend Cycle indicator
+- [ ] TASK-00163: Implement Know Sure Thing (KST) indicator
+- [ ] TASK-00164: Implement Fisher Transform indicator
+- [ ] TASK-00165: Implement Coppock Curve indicator
+- [ ] TASK-00166: Implement Pivot Points (Traditional) overlay
+- [ ] TASK-00167: Implement Pivot Points (Fibonacci) overlay
+- [ ] TASK-00168: Implement Pivot Points (Woodie) overlay
+- [ ] TASK-00169: Implement Pivot Points (Camarilla) overlay
+- [ ] TASK-00170: Implement Average Daily Range indicator
+- [ ] TASK-00171: Implement Chandelier Exit indicator overlay
+- [ ] TASK-00172: Implement ZigZag indicator overlay
+- [ ] TASK-00173: Implement High/Low 52-week lines overlay
+- [ ] TASK-00174: Implement Fractal indicator (Williams) overlay
+- [ ] TASK-00175: Implement Volume Profile (visible range) overlay
+- [ ] TASK-00176: Implement Volume Profile (fixed range) overlay
+- [ ] TASK-00177: Implement Volume Profile (session) overlay
+- [ ] TASK-00178: Implement Market Profile (TPO chart) overlay
+- [ ] TASK-00179: Implement Value Area High/Low lines overlay
+- [ ] TASK-00180: Implement Point of Control line overlay
+- [ ] TASK-00181: Implement Delta Volume (buy vs sell) indicator
+- [ ] TASK-00182: Implement Cumulative Delta indicator
+- [ ] TASK-00183: Implement Volume Delta histogram indicator
+- [ ] TASK-00184: Implement Relative Volume (RVOL) indicator
+- [ ] TASK-00185: Implement Squeeze Momentum (LazyBear) indicator
+- [ ] TASK-00186: Implement TTM Squeeze indicator
+- [ ] TASK-00187: Implement Elder Impulse System indicator (bar coloring)
+- [ ] TASK-00188: Implement Linear Regression Channel indicator
+- [ ] TASK-00189: Implement Standard Deviation Channel indicator
+- [ ] TASK-00190: Implement Regression Line indicator overlay
+- [ ] TASK-00191: Implement VIDYA (Variable Index Dynamic Average)
+- [ ] TASK-00192: Implement Rainbow Moving Averages (10 MAs stacked)
+- [ ] TASK-00193: Implement Guppy Multiple Moving Average display
+- [ ] TASK-00194: Implement Alligator indicator (Williams) overlay
+- [ ] TASK-00195: Implement AO (Awesome Oscillator) indicator
+- [ ] TASK-00196: Implement AC (Accelerator Oscillator) indicator
+- [ ] TASK-00197: Implement DeMarker indicator
+- [ ] TASK-00198: Implement Klinger Volume Oscillator
+- [ ] TASK-00199: Implement Choppiness Index indicator
+- [ ] TASK-00200: Implement Connors RSI indicator
+- [ ] TASK-00201: Implement Ultimate Oscillator indicator
+- [ ] TASK-00202: Implement Ehlers Fisher Transform indicator
+- [ ] TASK-00203: Implement Laguerre RSI indicator
+- [ ] TASK-00204: Implement McGinley Dynamic indicator
+- [ ] TASK-00205: Implement Relative Vigor Index (RVI)
+- [ ] TASK-00206: Implement Balance of Power indicator
+- [ ] TASK-00207: Implement Net Volume indicator
+- [ ] TASK-00208: Implement Positive/Negative Volume Index
+- [ ] TASK-00209: Implement Price Volume Trend indicator
+- [ ] TASK-00210: Implement Trend Intensity Index
+- [ ] TASK-00211: Implement Vertical Horizontal Filter
+- [ ] TASK-00212: Implement Qstick indicator
+- [ ] TASK-00213: Implement Swing Index indicator
+- [ ] TASK-00214: Implement Accumulative Swing Index
+- [ ] TASK-00215: Implement Hurst Exponent indicator
+- [ ] TASK-00216: Implement Fractal Dimension indicator
+
+## CHART ENGINE â€” DRAWING TOOLS (80+)
+
+- [ ] TASK-00217: Implement Trend Line drawing tool with snap
+- [ ] TASK-00218: Implement Extended Line drawing tool (infinite both directions)
+- [ ] TASK-00219: Implement Ray drawing tool (infinite one direction)
+- [ ] TASK-00220: Implement Horizontal Line drawing tool
+- [ ] TASK-00221: Implement Vertical Line drawing tool
+- [ ] TASK-00222: Implement Cross / Plus drawing tool
+- [ ] TASK-00223: Implement Arrow drawing tool (directional)
+- [ ] TASK-00224: Implement Rectangle drawing tool with fill
+- [ ] TASK-00225: Implement Circle drawing tool
+- [ ] TASK-00226: Implement Triangle drawing tool
+- [ ] TASK-00227: Implement Ellipse drawing tool
+- [ ] TASK-00228: Implement Parallel Channel drawing tool
+- [ ] TASK-00229: Implement Regression Channel drawing tool
+- [ ] TASK-00230: Implement Flat Top/Bottom channel drawing tool
+- [ ] TASK-00231: Implement Disjoint Angle drawing tool
+- [ ] TASK-00232: Implement Pitchfork (Andrew's Pitchfork) drawing tool
+- [ ] TASK-00233: Implement Schiff Pitchfork drawing tool
+- [ ] TASK-00234: Implement Modified Schiff Pitchfork drawing tool
+- [ ] TASK-00235: Implement Pitchfan drawing tool
+- [ ] TASK-00236: Implement Fibonacci Retracement drawing tool
+- [ ] TASK-00237: Implement Fibonacci Extension drawing tool
+- [ ] TASK-00238: Implement Fibonacci Channel drawing tool
+- [ ] TASK-00239: Implement Fibonacci Fan drawing tool
+- [ ] TASK-00240: Implement Fibonacci Arc drawing tool
+- [ ] TASK-00241: Implement Fibonacci Spiral drawing tool
+- [ ] TASK-00242: Implement Fibonacci Time Zones drawing tool
+- [ ] TASK-00243: Implement Gann Box drawing tool
+- [ ] TASK-00244: Implement Gann Fan drawing tool
+- [ ] TASK-00245: Implement Gann Square drawing tool
+- [ ] TASK-00246: Implement Elliott Wave (12345 ABC) annotation tool
+- [ ] TASK-00247: Implement XABCD harmonic pattern annotation
+- [ ] TASK-00248: Implement Cypher harmonic pattern annotation
+- [ ] TASK-00249: Implement Bat harmonic pattern annotation
+- [ ] TASK-00250: Implement Gartley harmonic pattern annotation
+- [ ] TASK-00251: Implement Butterfly harmonic pattern annotation
+- [ ] TASK-00252: Implement Crab harmonic pattern annotation
+- [ ] TASK-00253: Implement Head and Shoulders annotation tool
+- [ ] TASK-00254: Implement Double Top/Bottom annotation tool
+- [ ] TASK-00255: Implement Cup and Handle annotation tool
+- [ ] TASK-00256: Implement Flag/Pennant annotation tool
+- [ ] TASK-00257: Implement Wedge annotation tool
+- [ ] TASK-00258: Implement Triangle pattern annotation tool
+- [ ] TASK-00259: Implement Text label drawing annotation
+- [ ] TASK-00260: Implement Price label drawing annotation
+- [ ] TASK-00261: Implement Note/sticky annotation tool
+- [ ] TASK-00262: Implement Long Position drawing (entry + stop + TP levels)
+- [ ] TASK-00263: Implement Short Position drawing (entry + stop + TP levels)
+- [ ] TASK-00264: Implement Forecast line drawing tool
+- [ ] TASK-00265: Implement Date Range selection box tool
+- [ ] TASK-00266: Implement Price Range box tool
+- [ ] TASK-00267: Implement Brush drawing (freehand) tool
+- [ ] TASK-00268: Implement Highlighter drawing (transparent fill) tool
+- [ ] TASK-00269: Implement Measurement tool (price + bars distance)
+- [ ] TASK-00270: Implement Magnet mode: snap drawings to OHLC values
+- [ ] TASK-00271: Implement Lock mode: prevent accidental movement of drawings
+- [ ] TASK-00272: Add drawing property: line color picker
+- [ ] TASK-00273: Add drawing property: line width selector (1-5px)
+- [ ] TASK-00274: Add drawing property: line style (solid/dashed/dotted)
+- [ ] TASK-00275: Add drawing property: fill color with opacity slider
+- [ ] TASK-00276: Add drawing property: font size for text labels
+- [ ] TASK-00277: Add drawing property: text alignment (left/center/right)
+- [ ] TASK-00278: Add drawing list panel (show all drawing objects on chart)
+- [ ] TASK-00279: Drawing list: select/highlight object from list
+- [ ] TASK-00280: Drawing list: toggle visibility of object (eye icon)
+- [ ] TASK-00281: Drawing list: delete object from list
+- [ ] TASK-00282: Drawing list: duplicate object
+- [ ] TASK-00283: Drawing list: group objects together
+- [ ] TASK-00284: Implement drawing clone: Alt+drag duplicates object
+- [ ] TASK-00285: Implement drawing snap to price levels
+- [ ] TASK-00286: Implement drawing snap to time (bar) levels
+- [ ] TASK-00287: Save drawings to backend (persist across sessions)
+- [ ] TASK-00288: Load saved drawings on chart open
+- [ ] TASK-00289: Export drawings as JSON file
+- [ ] TASK-00290: Import drawings from JSON file
+- [ ] TASK-00291: Implement drawing toolbar (TradingView-style left panel)
+- [ ] TASK-00292: Drawing toolbar: tool groups with flyout sub-menus
+- [ ] TASK-00293: Drawing toolbar: recent tool quick access
+- [ ] TASK-00294: Drawing toolbar: favorites section
+
+## ORDER BOOK & MARKET DEPTH
+
+- [ ] TASK-00295: Implement L2 order book with real bid/ask ladder (20 levels)
+- [ ] TASK-00296: Add aggregated order book: group prices by configurable tick size
+- [ ] TASK-00297: Add order book: color intensity heatmap by size per level
+- [ ] TASK-00298: Add order book: highlight large blocks (whale orders >1000 shares)
+- [ ] TASK-00299: Add order book: animated row transitions on quote changes
+- [ ] TASK-00300: Add order book: spread display (mid price / BBO)
+- [ ] TASK-00301: Add order book: cumulative volume column
+- [ ] TASK-00302: Add order book: cumulative % of total depth column
+- [ ] TASK-00303: Add order book: size bar visualization per level (horizontal bars)
+- [ ] TASK-00304: Add order book: imbalance ratio display (bid vs ask side total)
+- [ ] TASK-00305: Add order book: DOM (Depth of Market) histogram visualization
+- [ ] TASK-00306: Add order book: volume at price histogram (VAP)
+- [ ] TASK-00307: Add order book: trades tape integration (last trade highlight)
+- [ ] TASK-00308: Add order book: filter minimum size (hide small orders below threshold)
+- [ ] TASK-00309: Add order book: count column (number of orders at each level)
+- [ ] TASK-00310: Implement Time & Sales tape with real print data
+- [ ] TASK-00311: Time & Sales: color by direction (buy=green, sell=red, neutral=gray)
+- [ ] TASK-00312: Time & Sales: large print highlighting (block trades >10k shares)
+- [ ] TASK-00313: Time & Sales: filter by side (all/buy/sell)
+- [ ] TASK-00314: Time & Sales: filter by minimum size input
+- [ ] TASK-00315: Time & Sales: speed modes (slow/normal/fast scroll)
+- [ ] TASK-00316: Time & Sales: aggregate prints at same price level
+- [ ] TASK-00317: Time & Sales: cumulative volume counter
+- [ ] TASK-00318: Time & Sales: print count per second display
+- [ ] TASK-00319: Implement sweep detection (large order eating through multiple levels)
+- [ ] TASK-00320: Implement bid/ask size ratio sparkline chart
+- [ ] TASK-00321: Add order book: configurable decimal precision
+- [ ] TASK-00322: Add order book: center-aligned price ladder mode
+- [ ] TASK-00323: Add order book: click-to-trade from price level
+- [ ] TASK-00324: Add order book: resize column widths
+
+## ORDER ENTRY & EXECUTION
+
+- [ ] TASK-00325: Implement order ticket: market order type
+- [ ] TASK-00326: Implement order ticket: limit order with price input
+- [ ] TASK-00327: Implement order ticket: stop order type
+- [ ] TASK-00328: Implement order ticket: stop-limit order type
+- [ ] TASK-00329: Implement order ticket: trailing stop order type
+- [ ] TASK-00330: Implement order ticket: bracket order (entry + stop + TP)
+- [ ] TASK-00331: Implement order ticket: OCO (One Cancels Other) order type
+- [ ] TASK-00332: Implement order ticket: OTO (One Triggers Other) order type
+- [ ] TASK-00333: Implement order ticket: TWAP algorithm order
+- [ ] TASK-00334: Implement order ticket: VWAP algorithm order
+- [ ] TASK-00335: Implement order ticket: Iceberg order (display qty hiding total)
+- [ ] TASK-00336: Implement order ticket: FOK (Fill or Kill) time-in-force
+- [ ] TASK-00337: Implement order ticket: IOC (Immediate or Cancel) time-in-force
+- [ ] TASK-00338: Implement order ticket: AON (All or None) time-in-force
+- [ ] TASK-00339: Implement order ticket: GTC (Good Till Cancelled) duration
+- [ ] TASK-00340: Implement order ticket: GTD (Good Till Date) duration
+- [ ] TASK-00341: Implement order ticket: MOO (Market on Open) timing
+- [ ] TASK-00342: Implement order ticket: MOC (Market on Close) timing
+- [ ] TASK-00343: Add order preview: estimated total cost / margin required
+- [ ] TASK-00344: Add order preview: estimated market impact (% of ADV)
+- [ ] TASK-00345: Add order preview: risk check warnings (position limit, margin)
+- [ ] TASK-00346: Add order preview: position size / concentration check
+- [ ] TASK-00347: Implement one-click order confirmation dialog
+- [ ] TASK-00348: Implement order modify: change price/qty while order is open
+- [ ] TASK-00349: Implement order cancel button with confirmation dialog
+- [ ] TASK-00350: Implement cancel all orders button
+- [ ] TASK-00351: Add hotkey trading: F1=buy market, F2=sell market
+- [ ] TASK-00352: Add order book click-to-trade (1-click from DOM level)
+- [ ] TASK-00353: Implement position sizing calculator in order ticket
+- [ ] TASK-00354: Add risk/reward calculator in order ticket
+- [ ] TASK-00355: Add P&L estimate display for pending order
+- [ ] TASK-00356: Add slippage estimate for market orders
+- [ ] TASK-00357: Implement smart order routing display
+- [ ] TASK-00358: Add post-only toggle for maker orders
+- [ ] TASK-00359: Add reduce-only toggle for futures/options
+- [ ] TASK-00360: Implement order staging (review before submit batch)
+- [ ] TASK-00361: Add order templates: save common order parameter sets
+- [ ] TASK-00362: Implement batch order submission (multiple orders at once)
+- [ ] TASK-00363: Add order routing preference: exchange selector
+
+## BLOOMBERG TERMINAL â€” QUOTE DATA
+
+- [ ] TASK-00364: Implement Bloomberg-style quote panel with comprehensive fields
+- [ ] TASK-00365: Add quote: open, high, low, close, volume, VWAP fields
+- [ ] TASK-00366: Add quote: bid size / ask size / spread display
+- [ ] TASK-00367: Add quote: yesterday close / prev day change
+- [ ] TASK-00368: Add quote: pre-market / after-hours price fields
+- [ ] TASK-00369: Add quote: 52-week high / 52-week low
+- [ ] TASK-00370: Add quote: market cap display (auto-format B/M/T)
+- [ ] TASK-00371: Add quote: float shares count
+- [ ] TASK-00372: Add quote: shares outstanding
+- [ ] TASK-00373: Add quote: dividend yield / next dividend date
+- [ ] TASK-00374: Add quote: ex-dividend date display
+- [ ] TASK-00375: Add quote: earnings date (next) with countdown
+- [ ] TASK-00376: Add quote: P/E ratio (trailing and forward)
+- [ ] TASK-00377: Add quote: EPS (TTM and next estimate)
+- [ ] TASK-00378: Add quote: beta (1Y monthly vs SPY)
+- [ ] TASK-00379: Add quote: short interest / short float %
+- [ ] TASK-00380: Add quote: institutional ownership %
+- [ ] TASK-00381: Add quote: insider ownership %
+- [ ] TASK-00382: Add quote: average daily volume (20-day / 50-day)
+- [ ] TASK-00383: Add quote: relative volume (today vs 20-day avg)
+- [ ] TASK-00384: Add quote: days to cover (short interest / ADTV)
+- [ ] TASK-00385: Add quote: book value per share
+- [ ] TASK-00386: Add quote: price-to-book ratio
+- [ ] TASK-00387: Add quote: price-to-sales ratio
+- [ ] TASK-00388: Add quote: enterprise value
+- [ ] TASK-00389: Add quote: EV/EBITDA ratio
+- [ ] TASK-00390: Add quote: revenue TTM
+- [ ] TASK-00391: Add quote: gross margin %
+- [ ] TASK-00392: Add quote: operating margin %
+- [ ] TASK-00393: Add quote: net margin %
+- [ ] TASK-00394: Add quote: return on equity %
+- [ ] TASK-00395: Add quote: return on assets %
+- [ ] TASK-00396: Add quote: debt-to-equity ratio
+- [ ] TASK-00397: Add quote: current ratio
+- [ ] TASK-00398: Add quote: quick ratio
+- [ ] TASK-00399: Add quote: free cash flow
+- [ ] TASK-00400: Add quote: free cash flow yield %
+- [ ] TASK-00401: Implement Bloomberg DES (Description) page equivalent
+- [ ] TASK-00402: DES: Company overview (business description paragraph)
+- [ ] TASK-00403: DES: Key executives table (name, title, age)
+- [ ] TASK-00404: DES: Sector / industry / sub-industry classification
+- [ ] TASK-00405: DES: Headquarters address, employees count, founded date
+- [ ] TASK-00406: DES: Stock exchange listing and index membership
+- [ ] TASK-00407: DES: Ticker symbols (Bloomberg, ISIN, CUSIP, SEDOL)
+- [ ] TASK-00408: DES: Related securities (preferred, warrants, ADRs)
+- [ ] TASK-00409: Implement Bloomberg GP (Graph Price) page equivalent
+- [ ] TASK-00410: GP: Multi-year price chart with key event annotations
+- [ ] TASK-00411: GP: Relative performance vs index overlay
+- [ ] TASK-00412: GP: Volume chart below price chart
+- [ ] TASK-00413: GP: Analyst price targets overlay on chart
+- [ ] TASK-00414: Implement Bloomberg FA (Fundamental Analysis) page
+- [ ] TASK-00415: FA: Income statement display (quarterly + annual toggle)
+- [ ] TASK-00416: FA: Balance sheet display (quarterly + annual toggle)
+- [ ] TASK-00417: FA: Cash flow statement display (quarterly + annual toggle)
+- [ ] TASK-00418: FA: Key ratios panel: P/E, P/B, P/S, EV/EBITDA
+- [ ] TASK-00419: FA: Growth rates: revenue, EPS, EBITDA YoY
+- [ ] TASK-00420: FA: Margin analysis: gross, operating, net margins chart
+- [ ] TASK-00421: FA: DuPont analysis breakdown visualization
+- [ ] TASK-00422: FA: Altman Z-score calculation display
+- [ ] TASK-00423: Implement Bloomberg RV (Relative Value) page
+- [ ] TASK-00424: RV: Peer comparison table (select sector peers)
+- [ ] TASK-00425: RV: Valuation multiples comparison bar chart
+- [ ] TASK-00426: RV: Growth comparison vs peers chart
+- [ ] TASK-00427: RV: Margin comparison vs peers chart
+- [ ] TASK-00428: RV: Return on equity / invested capital comparison
+- [ ] TASK-00429: Implement Bloomberg ERN (Earnings) page
+- [ ] TASK-00430: ERN: Earnings history chart (past 8 quarters)
+- [ ] TASK-00431: ERN: EPS estimates vs actuals bar chart
+- [ ] TASK-00432: ERN: Revenue estimates vs actuals bar chart
+- [ ] TASK-00433: ERN: Beat/miss rate percentage display
+- [ ] TASK-00434: ERN: Guidance history table
+- [ ] TASK-00435: ERN: Next earnings countdown timer widget
+- [ ] TASK-00436: Implement Bloomberg AN (Analyst Ratings) page
+- [ ] TASK-00437: AN: Buy/hold/sell recommendation counts bar
+- [ ] TASK-00438: AN: Average price target with range
+- [ ] TASK-00439: AN: Price target high/low spread chart
+- [ ] TASK-00440: AN: Recent rating changes feed
+- [ ] TASK-00441: AN: Individual analyst recommendations table
+- [ ] TASK-00442: AN: Estimate revision trend chart
+
+## BLOOMBERG TERMINAL â€” OPTIONS ANALYTICS
+
+- [ ] TASK-00443: Implement full options chain with all strikes and expiries
+- [ ] TASK-00444: Options chain: real-time bid/ask/last update streaming
+- [ ] TASK-00445: Options chain: open interest column with change indicator
+- [ ] TASK-00446: Options chain: volume column with unusual activity flag
+- [ ] TASK-00447: Options chain: implied volatility column
+- [ ] TASK-00448: Options chain: Delta column display
+- [ ] TASK-00449: Options chain: Gamma column display
+- [ ] TASK-00450: Options chain: Theta column display
+- [ ] TASK-00451: Options chain: Vega column display
+- [ ] TASK-00452: Options chain: Rho column display
+- [ ] TASK-00453: Options chain: ITM/OTM/ATM row highlighting
+- [ ] TASK-00454: Options chain: P/C ratio display (put/call volume ratio)
+- [ ] TASK-00455: Options chain: OI change column (vs yesterday)
+- [ ] TASK-00456: Options chain: max pain calculation and display
+- [ ] TASK-00457: Options chain: breakeven price display per option
+- [ ] TASK-00458: Options chain: theoretical value column (BSM)
+- [ ] TASK-00459: Options chain: probability ITM column
+- [ ] TASK-00460: Options chain: probability of profit column
+- [ ] TASK-00461: Implement implied volatility surface (3D surface visualization)
+- [ ] TASK-00462: IV surface: plot term structure on X axis (days to expiry)
+- [ ] TASK-00463: IV surface: plot moneyness/delta on Y axis
+- [ ] TASK-00464: IV surface: color gradient for IV level intensity
+- [ ] TASK-00465: IV surface: historical vs current surface overlay toggle
+- [ ] TASK-00466: IV surface: rotate/zoom 3D view controls
+- [ ] TASK-00467: Implement volatility skew chart
+- [ ] TASK-00468: Vol skew: plot IV vs strike for selected expiry
+- [ ] TASK-00469: Vol skew: put skew vs call skew comparison
+- [ ] TASK-00470: Vol skew: term structure of ATM IV chart
+- [ ] TASK-00471: Vol skew: overlay multiple expiry skews
+- [ ] TASK-00472: Implement Greeks surface visualization (Delta surface, Gamma surface)
+- [ ] TASK-00473: Implement P&L diagram for selected options position
+- [ ] TASK-00474: P&L diagram: breakeven price lines
+- [ ] TASK-00475: P&L diagram: profit/loss zone coloring (green/red fill)
+- [ ] TASK-00476: P&L diagram: expiry P&L vs today's P&L toggle
+- [ ] TASK-00477: P&L diagram: animate time decay (theta simulation)
+- [ ] TASK-00478: P&L diagram: show max profit / max loss labels
+- [ ] TASK-00479: P&L diagram: probability distribution overlay
+- [ ] TASK-00480: Implement options strategy builder panel
+- [ ] TASK-00481: Strategy builder: Long Call template
+- [ ] TASK-00482: Strategy builder: Long Put template
+- [ ] TASK-00483: Strategy builder: Covered Call template
+- [ ] TASK-00484: Strategy builder: Cash-Secured Put template
+- [ ] TASK-00485: Strategy builder: Bull Call Spread template
+- [ ] TASK-00486: Strategy builder: Bear Put Spread template
+- [ ] TASK-00487: Strategy builder: Iron Condor template
+- [ ] TASK-00488: Strategy builder: Iron Butterfly template
+- [ ] TASK-00489: Strategy builder: Straddle template
+- [ ] TASK-00490: Strategy builder: Strangle template
+- [ ] TASK-00491: Strategy builder: Calendar Spread template
+- [ ] TASK-00492: Strategy builder: Diagonal Spread template
+- [ ] TASK-00493: Strategy builder: Ratio Spread template
+- [ ] TASK-00494: Strategy builder: Collar template
+- [ ] TASK-00495: Strategy builder: Synthetic Long/Short template
+- [ ] TASK-00496: Strategy builder: Jade Lizard template
+- [ ] TASK-00497: Strategy builder: custom multi-leg builder
+- [ ] TASK-00498: Implement BSM Greeks calculator with real-time update
+- [ ] TASK-00499: BSM: implied vol solver (Newton-Raphson method)
+- [ ] TASK-00500: BSM: Monte Carlo pricing mode for exotic options
+- [ ] TASK-00501: BSM: Binomial tree pricing method
+- [ ] TASK-00502: BSM: American option pricing (early exercise)
+- [ ] TASK-00503: Implement options probability calculator
+- [ ] TASK-00504: Options analytics: probability of profit at expiry
+- [ ] TASK-00505: Options analytics: probability of expiring ITM
+- [ ] TASK-00506: Options analytics: expected move by expiry date
+- [ ] TASK-00507: Options analytics: risk-adjusted return display
+- [ ] TASK-00508: Implement unusual options activity screener
+- [ ] TASK-00509: UOA: high volume vs OI anomaly detection
+- [ ] TASK-00510: UOA: large block trade identification
+- [ ] TASK-00511: UOA: put/call sweep detection
+- [ ] TASK-00512: UOA: flow sentiment score calculation
+- [ ] TASK-00513: UOA: dark pool print detection
+- [ ] TASK-00514: Implement options heat map (volume/OI by strike+expiry grid)
+- [ ] TASK-00515: Implement gamma exposure (GEX) chart per strike
+- [ ] TASK-00516: GEX: net gamma by strike visualization
+- [ ] TASK-00517: GEX: gamma flip level (zero GEX point) line on chart
+- [ ] TASK-00518: GEX: put wall / call wall identification labels
+- [ ] TASK-00519: Implement max pain vs current price comparison display
+- [ ] TASK-00520: Implement expected move cone overlay on price chart
+
+## BLOOMBERG TERMINAL â€” FIXED INCOME
+
+- [ ] TASK-00521: Implement bond analytics panel (Bloomberg YAS equivalent)
+- [ ] TASK-00522: Bond: yield to maturity calculation engine
+- [ ] TASK-00523: Bond: yield to call calculation
+- [ ] TASK-00524: Bond: yield to worst calculation
+- [ ] TASK-00525: Bond: modified duration calculation
+- [ ] TASK-00526: Bond: effective duration calculation
+- [ ] TASK-00527: Bond: DV01 (dollar value of a basis point) calculation
+- [ ] TASK-00528: Bond: convexity calculation
+- [ ] TASK-00529: Bond: OAS (option-adjusted spread) calculation
+- [ ] TASK-00530: Bond: Z-spread calculation
+- [ ] TASK-00531: Bond: I-spread calculation
+- [ ] TASK-00532: Bond: T-spread (Treasury spread) calculation
+- [ ] TASK-00533: Bond: Macaulay duration calculation
+- [ ] TASK-00534: Bond: accrued interest calculator
+- [ ] TASK-00535: Bond: full price / clean price display
+- [ ] TASK-00536: Implement yield curve display (Bloomberg YCRV equivalent)
+- [ ] TASK-00537: Yield curve: US Treasury curve (3m, 1y, 2y, 5y, 10y, 30y)
+- [ ] TASK-00538: Yield curve: corporate credit curve overlay
+- [ ] TASK-00539: Yield curve: historical yield curve animation slider
+- [ ] TASK-00540: Yield curve: spread between two tenors display
+- [ ] TASK-00541: Yield curve: inversion detection and visual alert
+- [ ] TASK-00542: Yield curve: 3D historical curve surface
+- [ ] TASK-00543: Implement credit spread monitor panel
+- [ ] TASK-00544: Credit spreads: investment grade vs high yield comparison
+- [ ] TASK-00545: Credit spreads: CDS (Credit Default Swap) spreads display
+- [ ] TASK-00546: Credit spreads: iTraxx / CDX spread indices
+- [ ] TASK-00547: Implement SOFR / Fed Funds rate monitor widget
+- [ ] TASK-00548: Implement TED spread monitor widget
+- [ ] TASK-00549: Implement OIS-LIBOR spread monitor widget
+- [ ] TASK-00550: Implement bond screener (filter by sector, rating, maturity)
+- [ ] TASK-00551: Bond screener: filter by yield range
+- [ ] TASK-00552: Bond screener: filter by duration range
+- [ ] TASK-00553: Bond screener: filter by credit rating (AAA to D)
+- [ ] TASK-00554: Bond screener: filter by issuer type (sovereign, corporate, muni)
+- [ ] TASK-00555: Implement mortgage-backed securities analytics panel
+- [ ] TASK-00556: MBS: prepayment speed (PSA model)
+- [ ] TASK-00557: MBS: weighted average life calculation
+- [ ] TASK-00558: Implement bond ladder visualization tool
+- [ ] TASK-00559: Bond ladder: cash flow by maturity chart
+- [ ] TASK-00560: Bond ladder: reinvestment yield calculator
+
+## BLOOMBERG TERMINAL â€” FX / RATES / CRYPTO
+
+- [ ] TASK-00561: Implement FX cross-rate matrix (all major pairs)
+- [ ] TASK-00562: FX matrix: EUR/USD, GBP/USD, USD/JPY, USD/CHF real-time
+- [ ] TASK-00563: FX matrix: AUD/USD, NZD/USD, USD/CAD real-time
+- [ ] TASK-00564: FX matrix: all cross-pairs computed from majors
+- [ ] TASK-00565: FX matrix: emerging market pairs (USD/BRL, USD/MXN, USD/TRY)
+- [ ] TASK-00566: FX matrix: real-time update with green/red color flash
+- [ ] TASK-00567: Implement FX forward curve display
+- [ ] TASK-00568: FX forward: spot / 1w / 1m / 3m / 6m / 1y rates
+- [ ] TASK-00569: FX forward: implied yield differential calculation
+- [ ] TASK-00570: Implement central bank rates monitor (8 major banks)
+- [ ] TASK-00571: Rates: Fed Funds Rate display and history
+- [ ] TASK-00572: Rates: ECB deposit rate display and history
+- [ ] TASK-00573: Rates: BOE bank rate display and history
+- [ ] TASK-00574: Rates: BOJ policy rate display
+- [ ] TASK-00575: Rates: SNB, RBA, RBNZ, BOC rates
+- [ ] TASK-00576: Rates: next meeting dates with countdown
+- [ ] TASK-00577: Rates: consensus probability from futures pricing
+- [ ] TASK-00578: Rates: historical rate decisions timeline chart
+- [ ] TASK-00579: Implement fed funds futures curve (implied path)
+- [ ] TASK-00580: FFF: implied rate expectations by meeting date
+- [ ] TASK-00581: Implement currency heat map (ranked by % change vs USD)
+- [ ] TASK-00582: Heat map: 1d, 1w, 1m, YTD performance comparison
+- [ ] TASK-00583: Implement FX carry trade calculator
+- [ ] TASK-00584: Implement currency correlation matrix heatmap
+- [ ] TASK-00585: Implement USD Index (DXY) composite display
+- [ ] TASK-00586: Implement crypto dashboard: BTC/USD real-time
+- [ ] TASK-00587: Crypto: ETH/USD real-time price
+- [ ] TASK-00588: Crypto: top 20 coins by market cap table
+- [ ] TASK-00589: Crypto: funding rate history chart (perpetual futures)
+- [ ] TASK-00590: Crypto: open interest chart for BTC/ETH
+- [ ] TASK-00591: Crypto: liquidation heatmap visualization
+- [ ] TASK-00592: Crypto: exchange inflow/outflow monitor
+- [ ] TASK-00593: Crypto: DeFi TVL tracker
+- [ ] TASK-00594: Crypto: gas fees monitor (ETH)
+- [ ] TASK-00595: Crypto: Bitcoin dominance chart
+
+## BLOOMBERG TERMINAL â€” MACRO / ECONOMICS
+
+- [ ] TASK-00596: Implement economic calendar with 500+ events database
+- [ ] TASK-00597: Economic calendar: filter by country dropdown
+- [ ] TASK-00598: Economic calendar: filter by importance (1/2/3 stars)
+- [ ] TASK-00599: Economic calendar: filter by event type (GDP, CPI, NFP etc)
+- [ ] TASK-00600: Economic calendar: consensus vs prior vs actual columns
+- [ ] TASK-00601: Economic calendar: surprise score (actual - consensus) display
+- [ ] TASK-00602: Economic calendar: market impact indicator (high/med/low)
+- [ ] TASK-00603: Economic calendar: countdown timer to next release
+- [ ] TASK-00604: Economic calendar: historical calendar replay by date picker
+- [ ] TASK-00605: Economic calendar: week/day/month view toggle
+- [ ] TASK-00606: Implement FRED data integration (Federal Reserve Economic Data)
+- [ ] TASK-00607: FRED: GDP and components chart (consumption, investment, govt)
+- [ ] TASK-00608: FRED: CPI inflation data chart with YoY and MoM
+- [ ] TASK-00609: FRED: PCE deflator chart
+- [ ] TASK-00610: FRED: PPI inflation data chart
+- [ ] TASK-00611: FRED: NFP (Non-Farm Payrolls) chart with revisions
+- [ ] TASK-00612: FRED: Unemployment rate chart
+- [ ] TASK-00613: FRED: JOLTS job openings chart
+- [ ] TASK-00614: FRED: Initial/Continuing jobless claims chart
+- [ ] TASK-00615: FRED: Housing starts and permits chart
+- [ ] TASK-00616: FRED: Existing home sales chart
+- [ ] TASK-00617: FRED: NAHB housing market index chart
+- [ ] TASK-00618: FRED: ISM Manufacturing PMI chart
+- [ ] TASK-00619: FRED: ISM Services PMI chart
+- [ ] TASK-00620: FRED: Industrial Production chart
+- [ ] TASK-00621: FRED: Retail Sales chart (total and ex-auto)
+- [ ] TASK-00622: FRED: Consumer Confidence (Conference Board) chart
+- [ ] TASK-00623: FRED: Michigan Consumer Sentiment chart
+- [ ] TASK-00624: FRED: Trade balance chart
+- [ ] TASK-00625: FRED: Fed Balance Sheet total assets chart
+- [ ] TASK-00626: FRED: M1/M2 money supply charts
+- [ ] TASK-00627: Implement macro dashboard layout with key indicators
+- [ ] TASK-00628: Macro dashboard: recession bands (NBER dates)
+- [ ] TASK-00629: Macro dashboard: GDP growth bar chart by quarter
+- [ ] TASK-00630: Macro dashboard: Fed rate timeline with decision markers
+- [ ] TASK-00631: Implement global PMI heat map by country
+- [ ] TASK-00632: Implement global inflation heat map by country
+- [ ] TASK-00633: Implement commodity complex monitor
+- [ ] TASK-00634: Commodity: WTI crude oil price and chart
+- [ ] TASK-00635: Commodity: Brent crude oil price
+- [ ] TASK-00636: Commodity: Natural gas price
+- [ ] TASK-00637: Commodity: Gold spot price and chart
+- [ ] TASK-00638: Commodity: Silver spot price
+- [ ] TASK-00639: Commodity: Copper price
+- [ ] TASK-00640: Commodity: Corn, Soybeans, Wheat prices
+- [ ] TASK-00641: Implement CFTC commitment of traders (COT) display
+- [ ] TASK-00642: COT: commercial vs non-commercial positioning chart
+- [ ] TASK-00643: COT: net positioning history per commodity
+- [ ] TASK-00644: Implement global equity market performance table
+- [ ] TASK-00645: Global markets: US (SPX, NDX, DJIA, RTY)
+- [ ] TASK-00646: Global markets: Europe (STOXX, DAX, FTSE, CAC)
+- [ ] TASK-00647: Global markets: Asia (Nikkei, HSI, Shanghai, KOSPI)
+
+## BLOOMBERG TERMINAL â€” NEWS & SENTIMENT
+
+- [ ] TASK-00648: Implement real-time news feed with article cards
+- [ ] TASK-00649: News feed: full-text article display in panel
+- [ ] TASK-00650: News feed: category filtering (earnings, macro, M&A, tech)
+- [ ] TASK-00651: News feed: symbol-specific news filtering
+- [ ] TASK-00652: News feed: source filtering (Reuters, AP, Dow Jones, etc)
+- [ ] TASK-00653: News feed: keyword search within articles
+- [ ] TASK-00654: News feed: sentiment score per article (NLP analysis)
+- [ ] TASK-00655: News feed: related tickers extraction from article text
+- [ ] TASK-00656: News feed: time-relative display (2 min ago, 1 hr ago)
+- [ ] TASK-00657: News feed: read tracking (mark as read, gray out)
+- [ ] TASK-00658: News feed: bookmark/save article functionality
+- [ ] TASK-00659: News feed: share article link
+- [ ] TASK-00660: Implement news sentiment aggregator per symbol
+- [ ] TASK-00661: Sentiment: daily sentiment score (-1 to +1) display
+- [ ] TASK-00662: Sentiment: 7-day sentiment trend sparkline chart
+- [ ] TASK-00663: Sentiment: mention volume bar chart over time
+- [ ] TASK-00664: Sentiment: source breakdown (news vs social media)
+- [ ] TASK-00665: Implement social media sentiment tracker
+- [ ] TASK-00666: Social: Twitter/X mention volume per symbol
+- [ ] TASK-00667: Social: trending hashtags related to markets
+- [ ] TASK-00668: Social: Reddit wallstreetbets mention tracker
+- [ ] TASK-00669: Social: StockTwits sentiment integration
+- [ ] TASK-00670: Implement SEC filing monitor feed
+- [ ] TASK-00671: SEC: 8-K real-time filing alerts
+- [ ] TASK-00672: SEC: 10-K / 10-Q quarterly/annual filings
+- [ ] TASK-00673: SEC: 13-F institutional holdings display
+- [ ] TASK-00674: SEC: Form 4 insider transaction feed
+- [ ] TASK-00675: SEC: EDGAR search integration
+- [ ] TASK-00676: Implement M&A deal tracker panel
+- [ ] TASK-00677: M&A: pending deals with premium/discount calculation
+- [ ] TASK-00678: M&A: arbitrage spread display
+- [ ] TASK-00679: M&A: deal closing probability from spread
+- [ ] TASK-00680: Implement analyst research feed
+- [ ] TASK-00681: Research: price target changes feed
+- [ ] TASK-00682: Research: rating changes feed (upgrade/downgrade)
+- [ ] TASK-00683: Research: estimate revision feed
+
+## BLOOMBERG TERMINAL â€” PORTFOLIO MANAGEMENT
+
+- [ ] TASK-00684: Implement full portfolio management view with real positions
+- [ ] TASK-00685: Portfolio: real-time P&L (unrealized + realized) display
+- [ ] TASK-00686: Portfolio: position table: symbol, qty, avg cost, current price
+- [ ] TASK-00687: Portfolio: position table: market value, unrealized P&L, unrealized %
+- [ ] TASK-00688: Portfolio: position table: realized P&L, today P&L, total return
+- [ ] TASK-00689: Portfolio: position table: beta, weight, sector columns
+- [ ] TASK-00690: Portfolio: sector allocation pie/donut chart
+- [ ] TASK-00691: Portfolio: geography allocation chart
+- [ ] TASK-00692: Portfolio: market cap allocation (large/mid/small/micro) chart
+- [ ] TASK-00693: Portfolio: currency exposure breakdown chart
+- [ ] TASK-00694: Portfolio: factor exposure (value, growth, momentum, quality, vol)
+- [ ] TASK-00695: Portfolio: portfolio beta vs benchmark display
+- [ ] TASK-00696: Portfolio: tracking error vs benchmark calculation
+- [ ] TASK-00697: Portfolio: information ratio calculation
+- [ ] TASK-00698: Portfolio: Sharpe ratio (trailing 1Y) display
+- [ ] TASK-00699: Portfolio: Sortino ratio display
+- [ ] TASK-00700: Portfolio: maximum drawdown history chart
+- [ ] TASK-00701: Portfolio: drawdown waterfall chart visualization
+- [ ] TASK-00702: Portfolio: rolling 30/60/90-day return chart
+- [ ] TASK-00703: Portfolio: correlation matrix heatmap of holdings
+- [ ] TASK-00704: Portfolio: VaR (Value at Risk) 1d 95% gauge
+- [ ] TASK-00705: Portfolio: CVaR (Conditional VaR / Expected Shortfall)
+- [ ] TASK-00706: Portfolio: stress test scenarios panel
+- [ ] TASK-00707: Portfolio: scenario 2008 financial crisis simulation
+- [ ] TASK-00708: Portfolio: scenario 2020 COVID crash simulation
+- [ ] TASK-00709: Portfolio: scenario 2022 rate shock simulation
+- [ ] TASK-00710: Portfolio: scenario custom user-defined shock
+- [ ] TASK-00711: Portfolio: factor attribution analysis breakdown
+- [ ] TASK-00712: Portfolio: P&L attribution by sector chart
+- [ ] TASK-00713: Portfolio: P&L attribution by individual security
+- [ ] TASK-00714: Portfolio: P&L attribution by alpha vs beta components
+- [ ] TASK-00715: Portfolio: contribution to total risk by position
+- [ ] TASK-00716: Portfolio: liquidity analysis (days to liquidate each holding)
+- [ ] TASK-00717: Portfolio: margin utilization gauge
+- [ ] TASK-00718: Portfolio: leverage ratio display
+- [ ] TASK-00719: Portfolio: concentration risk alerts (>10% weight warning)
+- [ ] TASK-00720: Portfolio: rebalancing drift from target weights display
+- [ ] TASK-00721: Portfolio: rebalancing order list generation
+- [ ] TASK-00722: Implement portfolio optimizer (mean-variance framework)
+- [ ] TASK-00723: Optimizer: Black-Litterman model implementation
+- [ ] TASK-00724: Optimizer: risk parity allocation calculation
+- [ ] TASK-00725: Optimizer: maximum Sharpe optimization
+- [ ] TASK-00726: Optimizer: minimum variance optimization
+- [ ] TASK-00727: Optimizer: custom constraint inputs (max weight, sector limit)
+- [ ] TASK-00728: Optimizer: efficient frontier chart visualization
+- [ ] TASK-00729: Implement Brinson performance attribution model
+- [ ] TASK-00730: Brinson: allocation effect calculation
+- [ ] TASK-00731: Brinson: selection effect calculation
+- [ ] TASK-00732: Brinson: interaction effect calculation
+- [ ] TASK-00733: Brinson: total active return display
+- [ ] TASK-00734: Implement benchmark comparison table (SPY, QQQ, IWM, TLT)
+- [ ] TASK-00735: Implement custom benchmark creation from holdings
+- [ ] TASK-00736: Implement portfolio performance report generation
+
+## BLOOMBERG TERMINAL â€” RISK MANAGEMENT
+
+- [ ] TASK-00737: Implement comprehensive risk dashboard layout
+- [ ] TASK-00738: Risk: portfolio VaR gauge (1-day 95%, 1-day 99%)
+- [ ] TASK-00739: Risk: portfolio VaR gauge (10-day 95%, 10-day 99%)
+- [ ] TASK-00740: Risk: VaR decomposition by individual position
+- [ ] TASK-00741: Risk: expected shortfall (CVaR) calculation and display
+- [ ] TASK-00742: Risk: stressed VaR calculation (worst historical periods)
+- [ ] TASK-00743: Risk: parametric VaR implementation
+- [ ] TASK-00744: Risk: historical simulation VaR implementation
+- [ ] TASK-00745: Risk: Monte Carlo VaR simulation (10,000 paths)
+- [ ] TASK-00746: Risk: delta-normal VaR for options portfolio
+- [ ] TASK-00747: Implement stress testing framework panel
+- [ ] TASK-00748: Stress test: custom scenario input (shock each factor)
+- [ ] TASK-00749: Stress test: historical scenario replay selector
+- [ ] TASK-00750: Stress test: factor shock scenarios (+/-10% rates)
+- [ ] TASK-00751: Stress test: factor shock scenarios (+/-25% equity)
+- [ ] TASK-00752: Stress test: tail risk scenarios (3-sigma events)
+- [ ] TASK-00753: Stress test: results table with position-level impact
+- [ ] TASK-00754: Implement P&L explain (Greeks-based decomposition)
+- [ ] TASK-00755: P&L explain: delta P&L contribution
+- [ ] TASK-00756: P&L explain: gamma P&L contribution
+- [ ] TASK-00757: P&L explain: theta P&L contribution
+- [ ] TASK-00758: P&L explain: vega P&L contribution
+- [ ] TASK-00759: P&L explain: rho P&L contribution
+- [ ] TASK-00760: P&L explain: unexplained residual tracking
+- [ ] TASK-00761: Implement real-time risk limit monitoring dashboard
+- [ ] TASK-00762: Risk limits: position limit per symbol configuration
+- [ ] TASK-00763: Risk limits: sector concentration limit
+- [ ] TASK-00764: Risk limits: VaR limit with alert threshold
+- [ ] TASK-00765: Risk limits: drawdown limit (circuit breaker trigger)
+- [ ] TASK-00766: Risk limits: gross exposure limit
+- [ ] TASK-00767: Risk limits: net exposure limit
+- [ ] TASK-00768: Risk limits: leverage limit monitoring
+- [ ] TASK-00769: Risk limits: 80% threshold warning alert
+- [ ] TASK-00770: Risk limits: 100% breach critical alert
+- [ ] TASK-00771: Risk limits: hard stop at 110% breach
+- [ ] TASK-00772: Implement correlation analysis panel
+- [ ] TASK-00773: Correlation: rolling 30-day correlation matrix
+- [ ] TASK-00774: Correlation: rolling 60-day correlation matrix
+- [ ] TASK-00775: Correlation: rolling 90-day correlation matrix
+- [ ] TASK-00776: Correlation: correlation breakdown in stress periods
+- [ ] TASK-00777: Correlation: principal component analysis visualization
+- [ ] TASK-00778: Implement systemic risk indicators panel
+- [ ] TASK-00779: Systemic: VIX index monitor with chart
+- [ ] TASK-00780: Systemic: HY OAS (credit spreads) monitor
+- [ ] TASK-00781: Systemic: TED spread monitor
+- [ ] TASK-00782: Systemic: MOVE index (bond volatility) monitor
+- [ ] TASK-00783: Systemic: FRA-OIS spread monitor
+- [ ] TASK-00784: Systemic: financial conditions index monitor
+- [ ] TASK-00785: Implement risk heat map by asset class visualization
+- [ ] TASK-00786: Risk heat map: equity risk column
+- [ ] TASK-00787: Risk heat map: rates risk column
+- [ ] TASK-00788: Risk heat map: credit risk column
+- [ ] TASK-00789: Risk heat map: FX risk column
+- [ ] TASK-00790: Risk heat map: commodity risk column
+
+## TRADINGVIEW â€” STOCK SCREENER
+
+- [ ] TASK-00791: Implement stock screener with 100+ filter options
+- [ ] TASK-00792: Screener filter: market cap ranges (nano/micro/small/mid/large/mega)
+- [ ] TASK-00793: Screener filter: sector and industry GICS classification
+- [ ] TASK-00794: Screener filter: exchange (NYSE, NASDAQ, AMEX, OTC)
+- [ ] TASK-00795: Screener filter: country of domicile
+- [ ] TASK-00796: Screener filter: price range (min-max)
+- [ ] TASK-00797: Screener filter: volume range (absolute)
+- [ ] TASK-00798: Screener filter: relative volume (RVOL threshold)
+- [ ] TASK-00799: Screener filter: average volume (20-day, 50-day)
+- [ ] TASK-00800: Screener filter: price change % today
+- [ ] TASK-00801: Screener filter: price change % 1 week
+- [ ] TASK-00802: Screener filter: price change % 1 month
+- [ ] TASK-00803: Screener filter: price change % YTD
+- [ ] TASK-00804: Screener filter: price change % 1 year
+- [ ] TASK-00805: Screener filter: 52-week high proximity (%)
+- [ ] TASK-00806: Screener filter: 52-week low proximity (%)
+- [ ] TASK-00807: Screener filter: gap up/down % from prev close
+- [ ] TASK-00808: Screener filter: P/E ratio range (trailing)
+- [ ] TASK-00809: Screener filter: P/E ratio range (forward)
+- [ ] TASK-00810: Screener filter: P/S ratio range
+- [ ] TASK-00811: Screener filter: P/B ratio range
+- [ ] TASK-00812: Screener filter: EV/EBITDA range
+- [ ] TASK-00813: Screener filter: EV/Revenue range
+- [ ] TASK-00814: Screener filter: debt-to-equity range
+- [ ] TASK-00815: Screener filter: current ratio range
+- [ ] TASK-00816: Screener filter: return on equity range
+- [ ] TASK-00817: Screener filter: return on assets range
+- [ ] TASK-00818: Screener filter: profit margin % range
+- [ ] TASK-00819: Screener filter: operating margin % range
+- [ ] TASK-00820: Screener filter: revenue growth YoY range
+- [ ] TASK-00821: Screener filter: earnings growth YoY range
+- [ ] TASK-00822: Screener filter: free cash flow yield range
+- [ ] TASK-00823: Screener filter: dividend yield range
+- [ ] TASK-00824: Screener filter: payout ratio range
+- [ ] TASK-00825: Screener filter: beta range
+- [ ] TASK-00826: Screener filter: short interest % range
+- [ ] TASK-00827: Screener filter: institutional ownership % range
+- [ ] TASK-00828: Screener filter: insider transactions (recent 3m net)
+- [ ] TASK-00829: Screener filter: analyst consensus (buy/hold/sell categories)
+- [ ] TASK-00830: Screener filter: RSI range (overbought/oversold)
+- [ ] TASK-00831: Screener filter: MACD signal (bullish/bearish crossover)
+- [ ] TASK-00832: Screener filter: moving average crossover (SMA 50/200)
+- [ ] TASK-00833: Screener filter: Bollinger Band breakout signal
+- [ ] TASK-00834: Screener filter: volume spike today (>2x avg)
+- [ ] TASK-00835: Screener filter: new 52-week high today
+- [ ] TASK-00836: Screener filter: new 52-week low today
+- [ ] TASK-00837: Screener filter: ATR % (volatility level)
+- [ ] TASK-00838: Screener filter: earnings date within N days
+- [ ] TASK-00839: Screener filter: ex-dividend date upcoming
+- [ ] TASK-00840: Screener result: sortable columns (click header to sort)
+- [ ] TASK-00841: Screener result: configurable column set (add/remove columns)
+- [ ] TASK-00842: Screener result: mini sparkline chart per row (5-day)
+- [ ] TASK-00843: Screener result: export results to CSV file
+- [ ] TASK-00844: Screener result: save screen as named preset
+- [ ] TASK-00845: Screener result: open chart from result row click
+- [ ] TASK-00846: Screener result: add to watchlist from result row
+- [ ] TASK-00847: Screener result: pagination with configurable page size
+- [ ] TASK-00848: Screener preset: momentum leaders screen
+- [ ] TASK-00849: Screener preset: RSI oversold bounces screen
+- [ ] TASK-00850: Screener preset: earnings growth leaders screen
+- [ ] TASK-00851: Screener preset: high short interest screen
+- [ ] TASK-00852: Screener preset: insider buying screen
+- [ ] TASK-00853: Screener preset: dividend aristocrats screen
+- [ ] TASK-00854: Screener preset: new 52-week highs with volume
+- [ ] TASK-00855: Screener preset: technical breakouts screen
+- [ ] TASK-00856: Screener preset: value stocks (low P/E, low P/B)
+- [ ] TASK-00857: Screener preset: GARP (growth at reasonable price)
+- [ ] TASK-00858: Implement crypto screener tab in screener
+- [ ] TASK-00859: Crypto screener: market cap filter
+- [ ] TASK-00860: Crypto screener: 24h volume filter
+- [ ] TASK-00861: Crypto screener: % change filter
+- [ ] TASK-00862: Crypto screener: sector filter (DeFi, L1, Gaming)
+- [ ] TASK-00863: Implement ETF screener tab
+- [ ] TASK-00864: ETF screener: expense ratio filter
+- [ ] TASK-00865: ETF screener: AUM filter
+- [ ] TASK-00866: ETF screener: category filter
+
+## TRADINGVIEW â€” ALERTS SYSTEM
+
+- [ ] TASK-00867: Implement price alert: crossing above price level
+- [ ] TASK-00868: Implement price alert: crossing below price level
+- [ ] TASK-00869: Implement alert: crossing up (enter from below)
+- [ ] TASK-00870: Implement alert: crossing down (enter from above)
+- [ ] TASK-00871: Implement alert: % change from current price
+- [ ] TASK-00872: Implement alert: % change from today's open
+- [ ] TASK-00873: Implement alert: volume spike (>3x 20-day avg)
+- [ ] TASK-00874: Implement alert: RSI enters overbought (>70)
+- [ ] TASK-00875: Implement alert: RSI enters oversold (<30)
+- [ ] TASK-00876: Implement alert: MACD bullish crossover
+- [ ] TASK-00877: Implement alert: MACD bearish crossover
+- [ ] TASK-00878: Implement alert: moving average crossover (SMA)
+- [ ] TASK-00879: Implement alert: Bollinger Band upper breach
+- [ ] TASK-00880: Implement alert: Bollinger Band lower breach
+- [ ] TASK-00881: Implement alert: new 52-week high
+- [ ] TASK-00882: Implement alert: new 52-week low
+- [ ] TASK-00883: Implement alert: earnings date reminder (N days before)
+- [ ] TASK-00884: Implement alert: custom formula condition
+- [ ] TASK-00885: Alert notification: browser push notification
+- [ ] TASK-00886: Alert notification: in-app toast notification
+- [ ] TASK-00887: Alert notification: webhook/API callback
+- [ ] TASK-00888: Alert notification: sound effect
+- [ ] TASK-00889: Alert setting: one-time vs recurring trigger
+- [ ] TASK-00890: Alert setting: expiry date configuration
+- [ ] TASK-00891: Alert management: list all active alerts
+- [ ] TASK-00892: Alert management: pause/resume individual alert
+- [ ] TASK-00893: Alert management: delete alert with confirmation
+- [ ] TASK-00894: Alert management: duplicate alert
+- [ ] TASK-00895: Alert management: group alerts by symbol
+- [ ] TASK-00896: Alert management: filter alerts by type
+- [ ] TASK-00897: Alert management: trigger history log with timestamps
+
+## TRADINGVIEW â€” STRATEGY EDITOR
+
+- [ ] TASK-00898: Implement strategy code editor with syntax highlighting
+- [ ] TASK-00899: Editor: proper monospace font (Fira Code / JetBrains Mono)
+- [ ] TASK-00900: Editor: line numbers display
+- [ ] TASK-00901: Editor: code folding support for functions/blocks
+- [ ] TASK-00902: Editor: find and replace dialog (Ctrl+F, Ctrl+H)
+- [ ] TASK-00903: Editor: multi-cursor editing support
+- [ ] TASK-00904: Editor: auto-indentation on newline
+- [ ] TASK-00905: Editor: bracket matching and highlighting
+- [ ] TASK-00906: Editor: auto-complete for built-in indicator functions
+- [ ] TASK-00907: Editor: function documentation tooltip on hover
+- [ ] TASK-00908: Editor: error/warning highlighting (red/yellow underline)
+- [ ] TASK-00909: Editor: error messages in gutter
+- [ ] TASK-00910: Editor: format / beautify code button
+- [ ] TASK-00911: Editor: run strategy on chart (execute button)
+- [ ] TASK-00912: Editor: strategy results panel (trades list, stats)
+- [ ] TASK-00913: Editor: indicator output visualization panel
+- [ ] TASK-00914: Editor: variable inspector (watch values at each bar)
+- [ ] TASK-00915: Editor: save strategy to named file
+- [ ] TASK-00916: Editor: load strategy from saved files list
+- [ ] TASK-00917: Editor: version history with diff view
+- [ ] TASK-00918: Editor: template library (built-in strategy templates)
+- [ ] TASK-00919: Editor template: SMA crossover strategy
+- [ ] TASK-00920: Editor template: RSI mean reversion strategy
+- [ ] TASK-00921: Editor template: Breakout strategy
+- [ ] TASK-00922: Editor template: Pairs trading strategy
+- [ ] TASK-00923: Editor template: Bollinger band squeeze strategy
+- [ ] TASK-00924: Editor: undo/redo (Ctrl+Z, Ctrl+Y)
+- [ ] TASK-00925: Editor: copy/paste with proper formatting
+- [ ] TASK-00926: Editor: word wrap toggle
+- [ ] TASK-00927: Editor: minimap sidebar
+- [ ] TASK-00928: Editor: go to line number (Ctrl+G)
+
+## WATCHLIST IMPROVEMENTS
+
+- [ ] TASK-00929: Implement multi-watchlist support (create 5+ separate lists)
+- [ ] TASK-00930: Watchlist: create new watchlist dialog
+- [ ] TASK-00931: Watchlist: rename watchlist inline
+- [ ] TASK-00932: Watchlist: delete watchlist with confirmation
+- [ ] TASK-00933: Watchlist: switch between watchlists via tabs/dropdown
+- [ ] TASK-00934: Watchlist: drag-and-drop reorder symbols within list
+- [ ] TASK-00935: Watchlist: import symbols from CSV file
+- [ ] TASK-00936: Watchlist: export symbols to CSV file
+- [ ] TASK-00937: Watchlist: add notes per symbol (tooltip on hover)
+- [ ] TASK-00938: Watchlist: color tag per symbol (categorization)
+- [ ] TASK-00939: Watchlist: column configuration dialog (choose visible columns)
+- [ ] TASK-00940: Watchlist columns: price, change, change%, volume
+- [ ] TASK-00941: Watchlist columns: market cap, P/E ratio
+- [ ] TASK-00942: Watchlist columns: 52w high, 52w low
+- [ ] TASK-00943: Watchlist columns: avg volume 20d, RSI, sector
+- [ ] TASK-00944: Watchlist: mini sparkline chart per row (5-day price)
+- [ ] TASK-00945: Watchlist: right-click context menu per symbol row
+- [ ] TASK-00946: Watchlist context: open chart for symbol
+- [ ] TASK-00947: Watchlist context: view options chain
+- [ ] TASK-00948: Watchlist context: view news feed
+- [ ] TASK-00949: Watchlist context: add alert for symbol
+- [ ] TASK-00950: Watchlist context: add to portfolio
+- [ ] TASK-00951: Watchlist context: copy ticker to clipboard
+- [ ] TASK-00952: Watchlist: group by sector toggle
+- [ ] TASK-00953: Watchlist: performance heatmap mode (tile view)
+- [ ] TASK-00954: Watchlist: sort by any column (click header)
+- [ ] TASK-00955: Watchlist: filter/search within list
+- [ ] TASK-00956: Watchlist: green/red row color based on change %
+- [ ] TASK-00957: Watchlist: flash animation on price update
+- [ ] TASK-00958: Watchlist: highlight new 52-week high symbol
+- [ ] TASK-00959: Watchlist: highlight unusual volume symbol
+- [ ] TASK-00960: Watchlist: earnings date badge next to symbol
+- [ ] TASK-00961: Watchlist: dividend date badge next to symbol
+- [ ] TASK-00962: Watchlist: analyst upgrade/downgrade badge
+- [ ] TASK-00963: Watchlist: save layout preference to localStorage
+- [ ] TASK-00964: Watchlist preset: FAANG stocks
+- [ ] TASK-00965: Watchlist preset: DOW 30 components
+- [ ] TASK-00966: Watchlist preset: crypto top 20 by market cap
+- [ ] TASK-00967: Watchlist preset: index ETFs (SPY, QQQ, IWM, TLT, GLD)
+- [ ] TASK-00968: Watchlist preset: S&P 500 sector ETFs (XLK, XLF, XLE, etc)
+
+## BACKTESTER V3 IMPROVEMENTS
+
+- [ ] TASK-00969: BacktesterV3: fix walk-forward optimization tab (fully working)
+- [ ] TASK-00970: BacktesterV3: fix monte carlo simulation tab (fully working)
+- [ ] TASK-00971: BacktesterV3: fix comparison tab (benchmark vs strategy)
+- [ ] TASK-00972: BacktesterV3: fix tearsheet tab (full performance report)
+- [ ] TASK-00973: BacktesterV3: add detailed trade log with chart replay per trade
+- [ ] TASK-00974: BacktesterV3: add monthly returns heatmap table
+- [ ] TASK-00975: BacktesterV3: add annual returns bar chart
+- [ ] TASK-00976: BacktesterV3: add rolling Sharpe ratio chart
+- [ ] TASK-00977: BacktesterV3: add rolling sortino ratio chart
+- [ ] TASK-00978: BacktesterV3: add rolling max drawdown chart
+- [ ] TASK-00979: BacktesterV3: add trade distribution histogram (P&L buckets)
+- [ ] TASK-00980: BacktesterV3: add win/loss streak statistics
+- [ ] TASK-00981: BacktesterV3: add holding period distribution chart
+- [ ] TASK-00982: BacktesterV3: add MAE/MFE analysis chart (max adverse/favorable excursion)
+- [ ] TASK-00983: BacktesterV3: add trade P&L vs position duration scatter plot
+- [ ] TASK-00984: BacktesterV3: add cumulative P&L by trade number chart
+- [ ] TASK-00985: BacktesterV3: add drawdown duration histogram
+- [ ] TASK-00986: BacktesterV3: add underwater equity chart
+- [ ] TASK-00987: BacktesterV3: add risk-adjusted metrics (Sharpe, Sortino, Calmar, Omega)
+- [ ] TASK-00988: BacktesterV3: add exposure/position chart over time
+- [ ] TASK-00989: BacktesterV3: add sector exposure chart over time
+- [ ] TASK-00990: BacktesterV3: add turnover ratio display
+- [ ] TASK-00991: BacktesterV3: add commission impact analysis
+- [ ] TASK-00992: BacktesterV3: add slippage impact analysis
+- [ ] TASK-00993: BacktesterV3: export full backtest report as PDF
+- [ ] TASK-00994: BacktesterV3: export trade log as CSV
+- [ ] TASK-00995: BacktesterV3: save backtest result for later comparison
+- [ ] TASK-00996: BacktesterV3: load and compare saved backtest results
+- [ ] TASK-00997: BacktesterV3: add parameter sensitivity analysis chart
+- [ ] TASK-00998: BacktesterV3: add multi-timeframe backtest support
+- [ ] TASK-00999: Walk-forward: configurable number of windows (2-20)
+- [ ] TASK-01000: Walk-forward: in-sample / out-of-sample split slider
+- [ ] TASK-01001: Walk-forward: optimization metric selector
+- [ ] TASK-01002: Walk-forward: parameter grid builder UI
+- [ ] TASK-01003: Walk-forward: results table per window
+- [ ] TASK-01004: Walk-forward: out-of-sample equity curve chart
+- [ ] TASK-01005: Walk-forward: overfitting detection display
+- [ ] TASK-01006: Walk-forward: optimal parameter stability chart
+- [ ] TASK-01007: Monte Carlo: configurable simulation count (100-50,000)
+- [ ] TASK-01008: Monte Carlo: confidence level selector (90%, 95%, 99%)
+- [ ] TASK-01009: Monte Carlo: equity path distribution chart (spaghetti plot)
+- [ ] TASK-01010: Monte Carlo: drawdown distribution histogram
+- [ ] TASK-01011: Monte Carlo: final equity distribution histogram
+- [ ] TASK-01012: Monte Carlo: percentile outcomes table (5th, 25th, 50th, 75th, 95th)
+- [ ] TASK-01013: Monte Carlo: probability of ruin analysis
+- [ ] TASK-01014: Monte Carlo: worst-case scenario display
+- [ ] TASK-01015: Comparison: benchmark selector (SPY, QQQ, custom)
+- [ ] TASK-01016: Comparison: side-by-side equity curves chart
+- [ ] TASK-01017: Comparison: relative performance chart (alpha)
+- [ ] TASK-01018: Comparison: drawdown comparison chart
+- [ ] TASK-01019: Comparison: risk metrics comparison table
+- [ ] TASK-01020: Comparison: monthly returns comparison table
+
+## EXISTING PAGE â€” DASHBOARD IMPROVEMENTS
+
+- [ ] TASK-01021: Dashboard: add real-time portfolio P&L gauge widget
+- [ ] TASK-01022: Dashboard: add market breadth indicator (advancers vs decliners)
+- [ ] TASK-01023: Dashboard: add sector performance heatmap (S&P sectors)
+- [ ] TASK-01024: Dashboard: add fear & greed index gauge widget
+- [ ] TASK-01025: Dashboard: add market regime indicator (bull/bear/neutral)
+- [ ] TASK-01026: Dashboard: add top movers table (top 10 gainers)
+- [ ] TASK-01027: Dashboard: add top losers table (top 10 losers)
+- [ ] TASK-01028: Dashboard: add volume leaders table (top 10 most active)
+- [ ] TASK-01029: Dashboard: add earnings this week calendar widget
+- [ ] TASK-01030: Dashboard: add global market summary row
+- [ ] TASK-01031: Dashboard: add VIX / volatility panel with chart
+- [ ] TASK-01032: Dashboard: add S&P 500 mini chart widget
+- [ ] TASK-01033: Dashboard: add NASDAQ mini chart widget
+- [ ] TASK-01034: Dashboard: add DOW mini chart widget
+- [ ] TASK-01035: Dashboard: add 10Y Treasury yield mini chart
+- [ ] TASK-01036: Dashboard: add USD index mini chart
+- [ ] TASK-01037: Dashboard: add Gold mini chart widget
+- [ ] TASK-01038: Dashboard: add Bitcoin mini chart widget
+- [ ] TASK-01039: Dashboard: add news headlines ticker at top
+- [ ] TASK-01040: Dashboard: add economic events today widget
+- [ ] TASK-01041: Dashboard: add positions summary widget
+- [ ] TASK-01042: Dashboard: add open orders count widget
+- [ ] TASK-01043: Dashboard: add buying power / margin available widget
+- [ ] TASK-01044: Dashboard: add sector rotation model display
+- [ ] TASK-01045: Dashboard: add put/call ratio indicator
+- [ ] TASK-01046: Dashboard: add breadth oscillator (McClellan)
+- [ ] TASK-01047: Dashboard: add advance/decline line chart mini
+- [ ] TASK-01048: Dashboard: add new highs vs new lows chart mini
+- [ ] TASK-01049: Dashboard: configurable widget layout (drag/drop)
+- [ ] TASK-01050: Dashboard: save custom layout preference
+
+## EXISTING PAGE â€” RISK PAGE IMPROVEMENTS
+
+- [ ] TASK-01051: RiskUI2: add real VaR gauge with traffic light colors
+- [ ] TASK-01052: RiskUI2: add parametric VaR calculation display
+- [ ] TASK-01053: RiskUI2: add historical VaR calculation display
+- [ ] TASK-01054: RiskUI2: add Monte Carlo VaR with simulation chart
+- [ ] TASK-01055: RiskUI2: add CVaR (Expected Shortfall) gauge
+- [ ] TASK-01056: RiskUI2: add stress test scenarios panel
+- [ ] TASK-01057: RiskUI2: add factor exposure radar chart
+- [ ] TASK-01058: RiskUI2: add correlation heatmap of portfolio holdings
+- [ ] TASK-01059: RiskUI2: add Greeks exposure for options positions
+- [ ] TASK-01060: RiskUI2: add DV01 for fixed income positions
+- [ ] TASK-01061: RiskUI2: add position-level risk decomposition table
+- [ ] TASK-01062: RiskUI2: add sector risk contribution chart
+- [ ] TASK-01063: RiskUI2: add risk limit monitoring dashboard
+- [ ] TASK-01064: RiskUI2: add drawdown analysis chart
+- [ ] TASK-01065: RiskUI2: add tail risk analysis panel
+- [ ] TASK-01066: RiskUI2: add Monte Carlo equity path visualization
+- [ ] TASK-01067: RiskUI2: add worst-case scenario table
+- [ ] TASK-01068: RiskUI2: add systemic risk indicators section
+- [ ] TASK-01069: RiskUI2: add liquidity risk assessment
+- [ ] TASK-01070: RiskUI2: add concentration risk table
+
+## EXISTING PAGE â€” PORTFOLIO IMPROVEMENTS
+
+- [ ] TASK-01071: PortfolioUI2: real-time P&L with live price updates
+- [ ] TASK-01072: PortfolioUI2: sector allocation donut chart
+- [ ] TASK-01073: PortfolioUI2: geography allocation chart
+- [ ] TASK-01074: PortfolioUI2: risk contribution treemap visualization
+- [ ] TASK-01075: PortfolioUI2: performance vs benchmark chart
+- [ ] TASK-01076: PortfolioUI2: drawdown history chart
+- [ ] TASK-01077: PortfolioUI2: rolling returns chart (30d/60d/90d)
+- [ ] TASK-01078: PortfolioUI2: monthly returns heatmap table
+- [ ] TASK-01079: PortfolioUI2: annual returns summary bar chart
+- [ ] TASK-01080: PortfolioUI2: trade history complete log
+- [ ] TASK-01081: PortfolioUI2: realized vs unrealized P&L breakdown
+- [ ] TASK-01082: PortfolioUI2: dividend income tracker
+- [ ] TASK-01083: PortfolioUI2: tax lot accounting display
+- [ ] TASK-01084: PortfolioUI2: cost basis tracking per holding
+- [ ] TASK-01085: PortfolioUI2: weight vs target weight comparison
+- [ ] TASK-01086: PortfolioUI2: rebalancing suggestion panel
+- [ ] TASK-01087: PortfolioUI2: margin utilization display
+- [ ] TASK-01088: PortfolioUI2: buying power display
+- [ ] TASK-01089: PortfolioUI2: portfolio statistics card (Sharpe, beta, etc)
+- [ ] TASK-01090: PortfolioUI2: export portfolio to CSV
+
+## EXISTING PAGE â€” OPTIONS MATRIX IMPROVEMENTS
+
+- [ ] TASK-01091: OptionsMatrixUI2: full BSM Greeks surface rendering
+- [ ] TASK-01092: OptionsMatrixUI2: strategy payoff diagram with interactive legs
+- [ ] TASK-01093: OptionsMatrixUI2: IV skew chart per expiry date
+- [ ] TASK-01094: OptionsMatrixUI2: unusual options activity feed
+- [ ] TASK-01095: OptionsMatrixUI2: max pain calculator and display
+- [ ] TASK-01096: OptionsMatrixUI2: expected move cone on chart
+- [ ] TASK-01097: OptionsMatrixUI2: options flow heat map
+- [ ] TASK-01098: OptionsMatrixUI2: GEX chart by strike
+- [ ] TASK-01099: OptionsMatrixUI2: P/C ratio trend chart
+- [ ] TASK-01100: OptionsMatrixUI2: term structure of ATM IV chart
+- [ ] TASK-01101: OptionsMatrixUI2: options scanner presets
+- [ ] TASK-01102: OptionsMatrixUI2: multi-leg position builder
+- [ ] TASK-01103: OptionsMatrixUI2: probability calculator per position
+- [ ] TASK-01104: OptionsMatrixUI2: risk/reward summary card
+- [ ] TASK-01105: OptionsMatrixUI2: early assignment risk warning
+- [ ] TASK-01106: OptionsMatrixUI2: dividend impact on options pricing
+- [ ] TASK-01107: OptionsMatrixUI2: pin risk identification near expiry
+- [ ] TASK-01108: OptionsMatrixUI2: options premium decay chart (theta)
+- [ ] TASK-01109: OptionsMatrixUI2: sensitivity analysis (what-if vol, price)
+- [ ] TASK-01110: OptionsMatrixUI2: export chain to CSV
+
+## EXISTING PAGE â€” SCREENER IMPROVEMENTS
+
+- [ ] TASK-01111: ScreenersUI2: implement 100+ technical + fundamental filters
+- [ ] TASK-01112: ScreenersUI2: add preset screens panel sidebar
+- [ ] TASK-01113: ScreenersUI2: add mini-chart thumbnails in results
+- [ ] TASK-01114: ScreenersUI2: add column configurator dialog
+- [ ] TASK-01115: ScreenersUI2: add sortable column headers
+- [ ] TASK-01116: ScreenersUI2: add export results to CSV
+- [ ] TASK-01117: ScreenersUI2: add save screen preset functionality
+- [ ] TASK-01118: ScreenersUI2: add pagination with page size selector
+- [ ] TASK-01119: ScreenersUI2: add real-time price updates in results
+- [ ] TASK-01120: ScreenersUI2: add click-to-chart from result row
+- [ ] TASK-01121: ScreenersUI2: add add-to-watchlist button per row
+- [ ] TASK-01122: ScreenersUI2: add sector/industry filter dropdown
+- [ ] TASK-01123: ScreenersUI2: add market cap range slider filter
+- [ ] TASK-01124: ScreenersUI2: add P/E ratio range filter
+- [ ] TASK-01125: ScreenersUI2: add volume filter (min/max)
+- [ ] TASK-01126: ScreenersUI2: add RSI filter (overbought/oversold)
+- [ ] TASK-01127: ScreenersUI2: add moving average crossover filter
+- [ ] TASK-01128: ScreenersUI2: add price change % filter (1d/1w/1m/1y)
+- [ ] TASK-01129: ScreenersUI2: add 52-week proximity filter
+- [ ] TASK-01130: ScreenersUI2: add short interest filter
+
+## EXISTING PAGE â€” SENTIMENT IMPROVEMENTS
+
+- [ ] TASK-01131: SentimentUI2: implement NLP-powered sentiment scores
+- [ ] TASK-01132: SentimentUI2: social media volume chart (Twitter, Reddit)
+- [ ] TASK-01133: SentimentUI2: news sentiment aggregation per symbol
+- [ ] TASK-01134: SentimentUI2: fear & greed index display
+- [ ] TASK-01135: SentimentUI2: put/call ratio trend chart
+- [ ] TASK-01136: SentimentUI2: VIX term structure chart
+- [ ] TASK-01137: SentimentUI2: AAII investor sentiment survey
+- [ ] TASK-01138: SentimentUI2: CNN Money fear/greed components
+- [ ] TASK-01139: SentimentUI2: dark pool activity indicator
+- [ ] TASK-01140: SentimentUI2: insider buying/selling net chart
+- [ ] TASK-01141: SentimentUI2: short interest change tracker
+- [ ] TASK-01142: SentimentUI2: analyst rating distribution chart
+- [ ] TASK-01143: SentimentUI2: options flow sentiment score
+- [ ] TASK-01144: SentimentUI2: market breadth sentiment indicators
+- [ ] TASK-01145: SentimentUI2: sentiment history overlay on price chart
+
+## EXISTING PAGE â€” ECONOMIC CALENDAR
+
+- [ ] TASK-01146: EconomicCalendarUI2: full event database (500+ events)
+- [ ] TASK-01147: EconomicCalendarUI2: country filter with flags
+- [ ] TASK-01148: EconomicCalendarUI2: importance filter (1/2/3 stars)
+- [ ] TASK-01149: EconomicCalendarUI2: event type filter categories
+- [ ] TASK-01150: EconomicCalendarUI2: consensus vs prior vs actual columns
+- [ ] TASK-01151: EconomicCalendarUI2: surprise score calculation and color
+- [ ] TASK-01152: EconomicCalendarUI2: market impact indicator per event
+- [ ] TASK-01153: EconomicCalendarUI2: countdown timer to next release
+- [ ] TASK-01154: EconomicCalendarUI2: week/day/month view toggle
+- [ ] TASK-01155: EconomicCalendarUI2: historical data on click expand
+- [ ] TASK-01156: EconomicCalendarUI2: chart for historical series per event
+- [ ] TASK-01157: EconomicCalendarUI2: alert subscription per event type
+- [ ] TASK-01158: EconomicCalendarUI2: real-time update when data released
+- [ ] TASK-01159: EconomicCalendarUI2: export calendar to ICS/CSV
+- [ ] TASK-01160: EconomicCalendarUI2: timezone selector for display
+
+## EXISTING PAGE â€” MONTE CARLO IMPROVEMENTS
+
+- [ ] TASK-01161: MonteCarloUI2: implement 10,000+ simulation runs
+- [ ] TASK-01162: MonteCarloUI2: equity path spaghetti plot (all paths)
+- [ ] TASK-01163: MonteCarloUI2: confidence interval bands (5/25/50/75/95)
+- [ ] TASK-01164: MonteCarloUI2: final equity distribution histogram
+- [ ] TASK-01165: MonteCarloUI2: maximum drawdown distribution histogram
+- [ ] TASK-01166: MonteCarloUI2: percentile outcome table
+- [ ] TASK-01167: MonteCarloUI2: probability of ruin calculation
+- [ ] TASK-01168: MonteCarloUI2: probability of hitting target return
+- [ ] TASK-01169: MonteCarloUI2: worst-case equity path highlight
+- [ ] TASK-01170: MonteCarloUI2: best-case equity path highlight
+- [ ] TASK-01171: MonteCarloUI2: median equity path highlight
+- [ ] TASK-01172: MonteCarloUI2: input configuration: initial capital
+- [ ] TASK-01173: MonteCarloUI2: input configuration: number of simulations
+- [ ] TASK-01174: MonteCarloUI2: input configuration: confidence level
+- [ ] TASK-01175: MonteCarloUI2: use actual trade returns from backtest
+- [ ] TASK-01176: MonteCarloUI2: bootstrap vs parametric simulation toggle
+- [ ] TASK-01177: MonteCarloUI2: export simulation results to CSV
+- [ ] TASK-01178: MonteCarloUI2: save simulation configuration
+- [ ] TASK-01179: MonteCarloUI2: compare two simulation configurations
+- [ ] TASK-01180: MonteCarloUI2: animate simulation generation
+
+## EXISTING PAGE â€” WALK-FORWARD IMPROVEMENTS
+
+- [ ] TASK-01181: WalkForwardUI2: configurable window count (2-20 slider)
+- [ ] TASK-01182: WalkForwardUI2: in-sample / out-of-sample split slider
+- [ ] TASK-01183: WalkForwardUI2: optimization metric dropdown selector
+- [ ] TASK-01184: WalkForwardUI2: parameter grid builder with ranges
+- [ ] TASK-01185: WalkForwardUI2: results table per optimization window
+- [ ] TASK-01186: WalkForwardUI2: out-of-sample equity curve chart
+- [ ] TASK-01187: WalkForwardUI2: overfitting detection indicator
+- [ ] TASK-01188: WalkForwardUI2: parameter stability chart across windows
+- [ ] TASK-01189: WalkForwardUI2: in-sample vs out-of-sample Sharpe comparison
+- [ ] TASK-01190: WalkForwardUI2: robustness score calculation
+- [ ] TASK-01191: WalkForwardUI2: optimal parameter convergence display
+- [ ] TASK-01192: WalkForwardUI2: window visualization timeline
+- [ ] TASK-01193: WalkForwardUI2: total out-of-sample performance metrics
+- [ ] TASK-01194: WalkForwardUI2: export results to CSV
+- [ ] TASK-01195: WalkForwardUI2: anchored vs rolling window toggle
+
+## EXISTING PAGE â€” AUTOPILOT IMPROVEMENTS
+
+- [ ] TASK-01196: AutopilotUI2: real decision log with AI reasoning display
+- [ ] TASK-01197: AutopilotUI2: position sizing justification per trade
+- [ ] TASK-01198: AutopilotUI2: human-in-loop override controls
+- [ ] TASK-01199: AutopilotUI2: strategy selector (which algo to run)
+- [ ] TASK-01200: AutopilotUI2: risk parameter configuration panel
+- [ ] TASK-01201: AutopilotUI2: real-time P&L tracking per autopilot run
+- [ ] TASK-01202: AutopilotUI2: trade execution history table
+- [ ] TASK-01203: AutopilotUI2: market regime detection display
+- [ ] TASK-01204: AutopilotUI2: signal strength gauge per symbol
+- [ ] TASK-01205: AutopilotUI2: portfolio exposure summary
+- [ ] TASK-01206: AutopilotUI2: stop/start autopilot controls
+- [ ] TASK-01207: AutopilotUI2: emergency kill switch button
+- [ ] TASK-01208: AutopilotUI2: max daily loss limit input
+- [ ] TASK-01209: AutopilotUI2: max position count limit
+- [ ] TASK-01210: AutopilotUI2: approved universe (symbol whitelist)
+
+## EXISTING PAGE â€” RUNS & AUDIT IMPROVEMENTS
+
+- [ ] TASK-01211: RunsUI2: live strategy execution monitoring dashboard
+- [ ] TASK-01212: RunsUI2: real-time P&L streaming per strategy run
+- [ ] TASK-01213: RunsUI2: risk gauge per active run
+- [ ] TASK-01214: RunsUI2: total run count and status breakdown
+- [ ] TASK-01215: RunsUI2: execution latency histogram
+- [ ] TASK-01216: RunsUI2: fill rate tracking per run
+- [ ] TASK-01217: RunsUI2: slippage analysis per trade
+- [ ] TASK-01218: RunsUI2: commission cost tracking
+- [ ] TASK-01219: RunsUI2: error/warning log per run
+- [ ] TASK-01220: RunsUI2: run timeline visualization (Gantt chart)
+- [ ] TASK-01221: RunsUI2: compare run performance table
+- [ ] TASK-01222: RunsUI2: export run log to CSV
+- [ ] TASK-01223: RunsUI2: audit trail with timestamps
+- [ ] TASK-01224: RunsUI2: decision justification per trade
+- [ ] TASK-01225: RunsUI2: regulatory compliance indicators
+
+## EXISTING PAGE â€” RESEARCH IMPROVEMENTS
+
+- [ ] TASK-01226: ResearchUI2: analyst consensus chart (buy/hold/sell over time)
+- [ ] TASK-01227: ResearchUI2: price target range display
+- [ ] TASK-01228: ResearchUI2: estimate revision trends chart
+- [ ] TASK-01229: ResearchUI2: earnings surprise history chart
+- [ ] TASK-01230: ResearchUI2: revenue growth trend chart
+- [ ] TASK-01231: ResearchUI2: peer comparison table
+- [ ] TASK-01232: ResearchUI2: fundamental data summary card
+- [ ] TASK-01233: ResearchUI2: SEC filing links panel
+- [ ] TASK-01234: ResearchUI2: insider transaction feed
+- [ ] TASK-01235: ResearchUI2: institutional ownership changes
+- [ ] TASK-01236: ResearchUI2: short interest trend chart
+- [ ] TASK-01237: ResearchUI2: competitive landscape mapping
+- [ ] TASK-01238: ResearchUI2: supply chain visualization
+- [ ] TASK-01239: ResearchUI2: search research by keyword
+- [ ] TASK-01240: ResearchUI2: save research notes per symbol
+
+## EXISTING PAGE â€” SETTINGS IMPROVEMENTS
+
+- [ ] TASK-01241: SettingsUI2: theme selector (Bloomberg/TradingView Dark/Light)
+- [ ] TASK-01242: SettingsUI2: font size preference (Small/Normal/Large)
+- [ ] TASK-01243: SettingsUI2: chart default settings (type, indicators)
+- [ ] TASK-01244: SettingsUI2: default timeframe preference
+- [ ] TASK-01245: SettingsUI2: notification preferences (email, push, sound)
+- [ ] TASK-01246: SettingsUI2: hotkey customization panel
+- [ ] TASK-01247: SettingsUI2: data refresh rate configuration
+- [ ] TASK-01248: SettingsUI2: timezone selection
+- [ ] TASK-01249: SettingsUI2: language preference
+- [ ] TASK-01250: SettingsUI2: number format (comma/dot separators)
+- [ ] TASK-01251: SettingsUI2: currency display preference (USD, EUR, etc)
+- [ ] TASK-01252: SettingsUI2: trading hours display preference
+- [ ] TASK-01253: SettingsUI2: order confirmation toggle
+- [ ] TASK-01254: SettingsUI2: sound effects toggle
+- [ ] TASK-01255: SettingsUI2: auto-save preference
+- [ ] TASK-01256: SettingsUI2: API key management
+- [ ] TASK-01257: SettingsUI2: data provider selection
+- [ ] TASK-01258: SettingsUI2: export all settings to JSON
+- [ ] TASK-01259: SettingsUI2: import settings from JSON
+- [ ] TASK-01260: SettingsUI2: reset all settings to defaults button
+
+## EXISTING PAGE â€” EXECUTION COCKPIT
+
+- [ ] TASK-01261: ExecutionCockpitUI2: real-time order fill monitoring
+- [ ] TASK-01262: ExecutionCockpitUI2: slippage analysis per order
+- [ ] TASK-01263: ExecutionCockpitUI2: algo execution quality metrics
+- [ ] TASK-01264: ExecutionCockpitUI2: fill rate tracking
+- [ ] TASK-01265: ExecutionCockpitUI2: latency histogram per route
+- [ ] TASK-01266: ExecutionCockpitUI2: order status timeline per order
+- [ ] TASK-01267: ExecutionCockpitUI2: dark pool vs lit execution ratio
+- [ ] TASK-01268: ExecutionCockpitUI2: VWAP deviation analysis
+- [ ] TASK-01269: ExecutionCockpitUI2: implementation shortfall calculation
+- [ ] TASK-01270: ExecutionCockpitUI2: market impact measurement
+- [ ] TASK-01271: ExecutionCockpitUI2: broker comparison table
+- [ ] TASK-01272: ExecutionCockpitUI2: TCA (transaction cost analysis) report
+- [ ] TASK-01273: ExecutionCockpitUI2: order routing decision tree display
+- [ ] TASK-01274: ExecutionCockpitUI2: smart order router configuration
+- [ ] TASK-01275: ExecutionCockpitUI2: execution venue statistics
+
+## EXISTING PAGE â€” CONTROL TOWER
+
+- [ ] TASK-01276: ControlTowerUI2: system health real-time dashboard
+- [ ] TASK-01277: ControlTowerUI2: circuit breaker status panel
+- [ ] TASK-01278: ControlTowerUI2: kill switch per strategy
+- [ ] TASK-01279: ControlTowerUI2: global kill switch (halt all trading)
+- [ ] TASK-01280: ControlTowerUI2: API service status monitor (health checks)
+- [ ] TASK-01281: ControlTowerUI2: WebSocket connection status display
+- [ ] TASK-01282: ControlTowerUI2: data feed latency monitor
+- [ ] TASK-01283: ControlTowerUI2: error rate monitor with alerting
+- [ ] TASK-01284: ControlTowerUI2: CPU/memory utilization display
+- [ ] TASK-01285: ControlTowerUI2: active connections count
+- [ ] TASK-01286: ControlTowerUI2: request rate limiter status
+- [ ] TASK-01287: ControlTowerUI2: deployment version display
+- [ ] TASK-01288: ControlTowerUI2: uptime tracking display
+- [ ] TASK-01289: ControlTowerUI2: incident history log
+- [ ] TASK-01290: ControlTowerUI2: escalation chain configuration
+
+## EXISTING PAGE â€” WORKFLOW BUILDER
+
+- [ ] TASK-01291: WorkflowBuilderUI2: working drag-and-drop node placement
+- [ ] TASK-01292: WorkflowBuilderUI2: condition node real implementation
+- [ ] TASK-01293: WorkflowBuilderUI2: action node real implementation
+- [ ] TASK-01294: WorkflowBuilderUI2: trigger node (price, time, event)
+- [ ] TASK-01295: WorkflowBuilderUI2: save/load workflow definition
+- [ ] TASK-01296: WorkflowBuilderUI2: execute workflow button
+- [ ] TASK-01297: WorkflowBuilderUI2: workflow status monitoring
+- [ ] TASK-01298: WorkflowBuilderUI2: node connector lines (bezier curves)
+- [ ] TASK-01299: WorkflowBuilderUI2: node property panel (configure parameters)
+- [ ] TASK-01300: WorkflowBuilderUI2: variable passing between nodes
+- [ ] TASK-01301: WorkflowBuilderUI2: loop/repeat node type
+- [ ] TASK-01302: WorkflowBuilderUI2: error handling node type
+- [ ] TASK-01303: WorkflowBuilderUI2: notification node type
+- [ ] TASK-01304: WorkflowBuilderUI2: template library of common workflows
+- [ ] TASK-01305: WorkflowBuilderUI2: workflow execution history log
+
+## PERFORMANCE & CODE QUALITY
+
+- [ ] TASK-01306: Implement virtual scrolling for all large data tables
+- [ ] TASK-01307: Implement WebWorker for heavy computations (indicators)
+- [ ] TASK-01308: Move indicator calculations to Web Worker thread
+- [ ] TASK-01309: Use canvas 2D direct rendering for high-frequency chart updates
+- [ ] TASK-01310: Implement request deduplication for market data API calls
+- [ ] TASK-01311: Add SWR-style caching for REST API responses
+- [ ] TASK-01312: Implement WebSocket connection pooling with shared connections
+- [ ] TASK-01313: Add exponential backoff for WebSocket reconnect attempts
+- [ ] TASK-01314: Implement lazy loading for all UI2 pages (dynamic import)
+- [ ] TASK-01315: Add React.Suspense boundaries for page loading states
+- [ ] TASK-01316: Implement service worker for offline asset caching
+- [ ] TASK-01317: Add proper loading skeleton states for all panels
+- [ ] TASK-01318: Implement error boundary with recovery for each component
+- [ ] TASK-01319: Add performance FPS monitoring overlay (dev mode)
+- [ ] TASK-01320: Implement chart rendering throttle (max 30fps)
+- [ ] TASK-01321: Audit and add React.memo to all pure components
+- [ ] TASK-01322: Audit and add useMemo for expensive computations
+- [ ] TASK-01323: Audit and add useCallback for event handlers
+- [ ] TASK-01324: Remove all console.log from production code paths
+- [ ] TASK-01325: Implement data normalization in Zustand store
+- [ ] TASK-01326: Add optimistic UI updates for order submission
+- [ ] TASK-01327: Implement request cancellation on component unmount (AbortController)
+- [ ] TASK-01328: Add bundle size analysis tooling
+- [ ] TASK-01329: Implement code splitting per major route
+- [ ] TASK-01330: Add TypeScript strict mode compliance for all files
+
+## ACCESSIBILITY IMPROVEMENTS
+
+- [ ] TASK-01331: Add keyboard navigation for all interactive elements
+- [ ] TASK-01332: Add aria-label to all icon-only buttons
+- [ ] TASK-01333: Add aria-live regions for real-time data updates
+- [ ] TASK-01334: Add role=grid for all data tables with proper navigation
+- [ ] TASK-01335: Add focus trap for all modal/dialog components
+- [ ] TASK-01336: Ensure color contrast ratio > 4.5:1 for all text elements
+- [ ] TASK-01337: Add high-contrast mode toggle in settings
+- [ ] TASK-01338: Add reduce-motion mode (disable all animations)
+- [ ] TASK-01339: Add screen reader announcements for order confirmations
+- [ ] TASK-01340: Add keyboard shortcuts reference panel (?-key)
+- [ ] TASK-01341: Add visible focus indicators (outline rings) on all interactive elements
+- [ ] TASK-01342: Ensure all form inputs have visible text labels
+- [ ] TASK-01343: Add proper heading hierarchy (h1>h2>h3) throughout
+- [ ] TASK-01344: Add alt text for all chart images/visualizations
+- [ ] TASK-01345: Add skip-to-content link at page top
+
+## BLOOMBERG TERMINAL â€” DESIGN SYSTEM
+
+- [ ] TASK-01346: Apply Bloomberg amber (#f5a623) as primary accent globally
+- [ ] TASK-01347: Use IBM Plex Mono / Roboto Mono for all numerical data
+- [ ] TASK-01348: Use dark background (#0a0a0a) for all panel backgrounds
+- [ ] TASK-01349: Use panel bg (#111111) for secondary/elevated surfaces
+- [ ] TASK-01350: Use border (#1e1e1e) for all panel/section borders
+- [ ] TASK-01351: Apply 2px amber top border to all major panel headers
+- [ ] TASK-01352: Terminal-style uppercase labels for all panel titles
+- [ ] TASK-01353: All numbers rendered in monospace font family
+- [ ] TASK-01354: Green (#26a69a) for all positive values throughout app
+- [ ] TASK-01355: Red (#ef5350) for all negative values throughout app
+- [ ] TASK-01356: Subtle amber glow on interactive element hover states
+- [ ] TASK-01357: Panel title bars with gradient from amber/6% to transparent
+- [ ] TASK-01358: Compact dense layout: minimize whitespace between elements
+- [ ] TASK-01359: Status dot indicators: amber=live, red=disconnected, green=ok
+- [ ] TASK-01360: Loading states: amber pulsing/skeleton animation pattern
+- [ ] TASK-01361: Error states: red background flash momentary effect
+- [ ] TASK-01362: Price flash: green flash on uptick, red flash on downtick
+- [ ] TASK-01363: Implement Bloomberg-style command line (F11 key toggle)
+- [ ] TASK-01364: Implement window tiling system (Bloomberg-style panels)
+- [ ] TASK-01365: Add function key shortcuts bar (F1-F8 display)
+- [ ] TASK-01366: Add white-on-black mode option (classic Bloomberg)
+- [ ] TASK-01367: Implement theme presets: Bloomberg, TradingView Dark, Light
+- [ ] TASK-01368: Compact mode: reduce all padding/margins for small screens
+- [ ] TASK-01369: Professional mode: ultra-dense data display option
+- [ ] TASK-01370: Apply amber-tinted custom scrollbar styling
+- [ ] TASK-01371: Apply custom text selection color (amber tint)
+- [ ] TASK-01372: Use minimal custom scrollbars on all panels
+- [ ] TASK-01373: Bloomberg-style panel maximize/restore behavior
+- [ ] TASK-01374: Panel drag-and-drop reposition capability
+- [ ] TASK-01375: Saved layout: restore last session panel arrangement
+- [ ] TASK-01376: User preference persistence (localStorage for all settings)
+- [ ] TASK-01377: Consistent 9-11px font size for all data displays
+
+## BACKEND â€” API INFRASTRUCTURE
+
+- [ ] TASK-01378: Add /api/v4/quotes/stream WebSocket endpoint for real-time quotes
+- [ ] TASK-01379: Add /api/v4/bars/stream WebSocket endpoint for real-time OHLCV
+- [ ] TASK-01380: Add /api/v4/orderbook/stream WebSocket for L2 market depth
+- [ ] TASK-01381: Add /api/v4/trades/stream WebSocket for time & sales
+- [ ] TASK-01382: Implement /api/v4/news endpoint (aggregated news articles)
+- [ ] TASK-01383: Implement /api/v4/fundamentals/{symbol} endpoint
+- [ ] TASK-01384: Implement /api/v4/earnings/{symbol} endpoint
+- [ ] TASK-01385: Implement /api/v4/analyst/{symbol} endpoint with ratings
+- [ ] TASK-01386: Implement /api/v4/screener endpoint with filter engine
+- [ ] TASK-01387: Implement /api/v4/alerts CRUD endpoints (create/read/update/delete)
+- [ ] TASK-01388: Implement /api/v4/watchlists CRUD endpoints
+- [ ] TASK-01389: Implement /api/v4/portfolio endpoint with real positions
+- [ ] TASK-01390: Implement /api/v4/risk/var endpoint for VaR calculation
+- [ ] TASK-01391: Implement /api/v4/risk/stress endpoint for stress tests
+- [ ] TASK-01392: Implement /api/v4/yieldcurve endpoint for Treasury rates
+- [ ] TASK-01393: Implement /api/v4/fxrates endpoint for currency pairs
+- [ ] TASK-01394: Implement /api/v4/commodities endpoint for commodity prices
+- [ ] TASK-01395: Implement /api/v4/economic-calendar endpoint with events
+- [ ] TASK-01396: Implement /api/v4/options/greeks endpoint for computation
+- [ ] TASK-01397: Implement /api/v4/options/iv-surface endpoint
+- [ ] TASK-01398: Add proper rate limiting middleware to all endpoints
+- [ ] TASK-01399: Add JWT authentication middleware
+- [ ] TASK-01400: Add request/response logging with timing measurement
+- [ ] TASK-01401: Add gzip response compression middleware
+- [ ] TASK-01402: Add proper CORS configuration for production
+- [ ] TASK-01403: Add health check /api/health endpoint
+- [ ] TASK-01404: Add metrics /api/metrics endpoint (Prometheus format)
+- [ ] TASK-01405: Implement SQLite database for user data persistence
+- [ ] TASK-01406: Add API versioning strategy (v4/v5 migration path)
+- [ ] TASK-01407: Add OpenAPI/Swagger documentation generation
+- [ ] TASK-01408: Add request validation with Pydantic v2 for all endpoints
+- [ ] TASK-01409: Implement in-memory caching layer for frequently accessed data
+- [ ] TASK-01410: Add WebSocket heartbeat/ping-pong keepalive
+- [ ] TASK-01411: Add graceful shutdown handler for clean connection close
+- [ ] TASK-01412: Add request ID tracking for debugging
+
+## BACKEND â€” DATA PROVIDERS
+
+- [ ] TASK-01413: Integrate Alpaca Markets API for live US equity data
+- [ ] TASK-01414: Alpaca: real-time quotes via WebSocket streaming
+- [ ] TASK-01415: Alpaca: historical bars (minute, hour, day timeframes)
+- [ ] TASK-01416: Alpaca: order routing (submit/cancel/modify orders)
+- [ ] TASK-01417: Alpaca: account and position data retrieval
+- [ ] TASK-01418: Integrate yfinance for historical fundamental data
+- [ ] TASK-01419: yfinance: daily/weekly/monthly OHLCV bar data
+- [ ] TASK-01420: yfinance: fundamental data (P/E, EPS, revenue, etc)
+- [ ] TASK-01421: yfinance: earnings dates and surprise data
+- [ ] TASK-01422: yfinance: options chain data (all strikes/expiries)
+- [ ] TASK-01423: yfinance: company profile and description
+- [ ] TASK-01424: yfinance: institutional holders data
+- [ ] TASK-01425: yfinance: insider transactions data
+- [ ] TASK-01426: Integrate Alpha Vantage for economic indicators
+- [ ] TASK-01427: Alpha Vantage: GDP, CPI, NFP economic series
+- [ ] TASK-01428: Alpha Vantage: sector performance data
+- [ ] TASK-01429: Integrate FRED API for macro data
+- [ ] TASK-01430: FRED: 500+ economic time series access
+- [ ] TASK-01431: FRED: real-time data update polling
+- [ ] TASK-01432: Data validation: check for missing bars in time series
+- [ ] TASK-01433: Data validation: check for price outlier anomalies
+- [ ] TASK-01434: Data normalization: handle stock split adjustments
+- [ ] TASK-01435: Data normalization: handle dividend adjustments
+- [ ] TASK-01436: Implement data pipeline health monitoring
+- [ ] TASK-01437: Data pipeline: alert on feed delay > 5 seconds
+- [ ] TASK-01438: Data pipeline: automatic failover to backup data source
+- [ ] TASK-01439: Cache historical data in local SQLite for offline access
+- [ ] TASK-01440: Implement data quality scoring per symbol per source
+- [ ] TASK-01441: Add data refresh scheduler (configurable intervals)
+- [ ] TASK-01442: Add stale data detection and warning system
+
+## BACKEND â€” COMPUTATION ENGINES
+
+- [ ] TASK-01443: Implement 60+ technical indicators in Python backend
+- [ ] TASK-01444: Backend indicator: SMA (configurable period)
+- [ ] TASK-01445: Backend indicator: EMA (configurable period)
+- [ ] TASK-01446: Backend indicator: WMA (configurable period)
+- [ ] TASK-01447: Backend indicator: Bollinger Bands (period, std_dev)
+- [ ] TASK-01448: Backend indicator: RSI (period)
+- [ ] TASK-01449: Backend indicator: MACD (fast, slow, signal)
+- [ ] TASK-01450: Backend indicator: Stochastic (K, D, smooth)
+- [ ] TASK-01451: Backend indicator: ATR (period)
+- [ ] TASK-01452: Backend indicator: ADX (period)
+- [ ] TASK-01453: Backend indicator: CCI (period)
+- [ ] TASK-01454: Backend indicator: OBV (volume indicator)
+- [ ] TASK-01455: Backend indicator: VWAP (session basis)
+- [ ] TASK-01456: Backend indicator: Ichimoku Cloud (full 5 components)
+- [ ] TASK-01457: Backend indicator: Parabolic SAR (step, max)
+- [ ] TASK-01458: Backend indicator: Williams %R (period)
+- [ ] TASK-01459: Backend indicator: MFI (period)
+- [ ] TASK-01460: Backend indicator: CMF (period)
+- [ ] TASK-01461: Backend indicator: Force Index (period)
+- [ ] TASK-01462: Backend indicator: Aroon Up/Down (period)
+- [ ] TASK-01463: Backend indicator: Supertrend (period, multiplier)
+- [ ] TASK-01464: Backend indicator: Keltner Channels (period, multiplier)
+- [ ] TASK-01465: Backend indicator: Donchian Channels (period)
+- [ ] TASK-01466: Backend indicator: Volume Profile (num_bins)
+- [ ] TASK-01467: Implement Black-Scholes-Merton options pricing engine
+- [ ] TASK-01468: BSM: European call/put pricing
+- [ ] TASK-01469: BSM: implied volatility solver (Newton-Raphson)
+- [ ] TASK-01470: BSM: all Greeks computation (delta, gamma, theta, vega, rho)
+- [ ] TASK-01471: BSM: American option pricing (binomial tree)
+- [ ] TASK-01472: Implement Monte Carlo simulation engine
+- [ ] TASK-01473: Monte Carlo: geometric Brownian motion paths
+- [ ] TASK-01474: Monte Carlo: bootstrap historical returns
+- [ ] TASK-01475: Monte Carlo: drawdown distribution computation
+- [ ] TASK-01476: Monte Carlo: percentile statistics computation
+- [ ] TASK-01477: Implement portfolio optimization engine
+- [ ] TASK-01478: Optimizer: mean-variance optimal portfolio
+- [ ] TASK-01479: Optimizer: minimum variance portfolio
+- [ ] TASK-01480: Optimizer: maximum Sharpe portfolio
+- [ ] TASK-01481: Optimizer: risk parity allocation
+- [ ] TASK-01482: Optimizer: Black-Litterman model
+- [ ] TASK-01483: Optimizer: efficient frontier calculation
+- [ ] TASK-01484: Implement VaR computation engine
+- [ ] TASK-01485: VaR: parametric (variance-covariance) method
+- [ ] TASK-01486: VaR: historical simulation method
+- [ ] TASK-01487: VaR: Monte Carlo simulation method
+- [ ] TASK-01488: VaR: component VaR decomposition
+- [ ] TASK-01489: Implement stress testing engine
+- [ ] TASK-01490: Stress: historical scenario replay
+- [ ] TASK-01491: Stress: factor shock scenarios
+- [ ] TASK-01492: Stress: custom scenario builder
+- [ ] TASK-01493: Implement P&L attribution engine
+- [ ] TASK-01494: PnL: sector-level attribution
+- [ ] TASK-01495: PnL: factor-level attribution (Brinson model)
+- [ ] TASK-01496: PnL: Greeks-based attribution for options
+- [ ] TASK-01497: Implement yield curve construction engine
+- [ ] TASK-01498: Yield curve: bootstrap from treasury prices
+- [ ] TASK-01499: Yield curve: interpolation (cubic spline)
+- [ ] TASK-01500: Yield curve: Nelson-Siegel model fitting
+- [ ] TASK-01501: Implement bond analytics engine
+- [ ] TASK-01502: Bond: price from yield calculation
+- [ ] TASK-01503: Bond: yield from price calculation
+- [ ] TASK-01504: Bond: duration and convexity calculation
+- [ ] TASK-01505: Bond: DV01 calculation
+
+## TESTING â€” UNIT TESTS
+
+- [ ] TASK-01506: Write unit tests for BacktestEngine.run() all strategies
+- [ ] TASK-01507: Write unit tests for BacktestEngine MA cross strategy signals
+- [ ] TASK-01508: Write unit tests for BacktestEngine RSI mean reversion signals
+- [ ] TASK-01509: Write unit tests for BacktestEngine Bollinger band signals
+- [ ] TASK-01510: Write unit tests for BacktestEngine breakout strategy signals
+- [ ] TASK-01511: Write unit tests for all commission models (Fixed, PerShare, Percentage, Tiered)
+- [ ] TASK-01512: Write unit tests for all slippage models (Fixed, Volume)
+- [ ] TASK-01513: Write unit tests for position sizers (FixedFractional, ATR, Kelly)
+- [ ] TASK-01514: Write unit tests for BacktestMetrics calculation accuracy
+- [ ] TASK-01515: Write unit tests for BSM European call pricing
+- [ ] TASK-01516: Write unit tests for BSM European put pricing
+- [ ] TASK-01517: Write unit tests for BSM implied vol solver convergence
+- [ ] TASK-01518: Write unit tests for BSM Greeks (delta, gamma, theta, vega, rho)
+- [ ] TASK-01519: Write unit tests for VaR parametric calculation
+- [ ] TASK-01520: Write unit tests for VaR historical simulation
+- [ ] TASK-01521: Write unit tests for portfolio optimizer (mean-variance)
+- [ ] TASK-01522: Write unit tests for portfolio optimizer (min variance)
+- [ ] TASK-01523: Write unit tests for SMA indicator correctness
+- [ ] TASK-01524: Write unit tests for EMA indicator correctness
+- [ ] TASK-01525: Write unit tests for RSI indicator correctness
+- [ ] TASK-01526: Write unit tests for MACD indicator correctness
+- [ ] TASK-01527: Write unit tests for Bollinger Bands indicator correctness
+- [ ] TASK-01528: Write unit tests for ATR indicator correctness
+- [ ] TASK-01529: Write unit tests for VWAP indicator correctness
+- [ ] TASK-01530: Write unit tests for Stochastic indicator correctness
+- [ ] TASK-01531: Write unit tests for order book aggregation logic
+- [ ] TASK-01532: Write unit tests for P&L calculation engine
+- [ ] TASK-01533: Write unit tests for Brinson attribution model
+- [ ] TASK-01534: Write unit tests for Monte Carlo path generation
+- [ ] TASK-01535: Write unit tests for yield curve bootstrap
+- [ ] TASK-01536: Write unit tests for bond pricing calculations
+- [ ] TASK-01537: Write unit tests for FX cross-rate matrix computation
+- [ ] TASK-01538: Write unit tests for economic calendar data parsing
+- [ ] TASK-01539: Write unit tests for screener filter engine
+- [ ] TASK-01540: Write unit tests for alert trigger evaluation
+
+## TESTING â€” INTEGRATION TESTS
+
+- [ ] TASK-01541: Write integration tests for /api/v4/backtest/run endpoint
+- [ ] TASK-01542: Write integration tests for /api/v4/backtest/walkforward
+- [ ] TASK-01543: Write integration tests for /api/v4/backtest/montecarlo
+- [ ] TASK-01544: Write integration tests for /api/v4/options/chain endpoint
+- [ ] TASK-01545: Write integration tests for /api/v4/options/greeks endpoint
+- [ ] TASK-01546: Write integration tests for /api/v4/risk/var endpoint
+- [ ] TASK-01547: Write integration tests for /api/v4/screener endpoint
+- [ ] TASK-01548: Write integration tests for /api/v4/indicators/compute endpoint
+- [ ] TASK-01549: Write integration tests for /api/v4/portfolio endpoint
+- [ ] TASK-01550: Write integration tests for /api/v4/alerts CRUD
+- [ ] TASK-01551: Write integration tests for /api/v4/watchlists CRUD
+- [ ] TASK-01552: Write integration tests for all API endpoints returning 200
+- [ ] TASK-01553: Write integration tests for all API validation (400 on bad input)
+- [ ] TASK-01554: Write integration tests for WebSocket connection lifecycle
+- [ ] TASK-01555: Write integration tests for data provider fallback chain
+
+## TESTING â€” E2E TESTS
+
+- [ ] TASK-01556: Write E2E test: load Trading page, verify chart renders
+- [ ] TASK-01557: Write E2E test: load Dashboard, verify all widgets render
+- [ ] TASK-01558: Write E2E test: run backtest, verify results display
+- [ ] TASK-01559: Write E2E test: options chain loads with Greek values
+- [ ] TASK-01560: Write E2E test: screener executes and shows results
+- [ ] TASK-01561: Write E2E test: watchlist add/remove symbol works
+- [ ] TASK-01562: Write E2E test: alert creation and display works
+- [ ] TASK-01563: Write E2E test: portfolio page shows positions
+- [ ] TASK-01564: Write E2E test: risk page shows VaR calculations
+- [ ] TASK-01565: Write E2E test: sentiment page shows data
+- [ ] TASK-01566: Write E2E test: economic calendar displays events
+- [ ] TASK-01567: Write E2E test: settings changes persist
+- [ ] TASK-01568: Write E2E test: all sidebar navigation works
+- [ ] TASK-01569: Write E2E test: command palette opens and searches
+- [ ] TASK-01570: Write E2E test: order ticket submission flow
+
+## PER-PAGE BLOOMBERG STYLING (175 PAGES Ã— 10 TASKS)
+
+- [ ] TASK-01571: DashboardUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01572: DashboardUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01573: DashboardUI2: use monospace font for all numerical data displays
+- [ ] TASK-01574: DashboardUI2: add amber 2px top border to all panels
+- [ ] TASK-01575: DashboardUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01576: DashboardUI2: add loading skeleton state for data fetch
+- [ ] TASK-01577: DashboardUI2: add error boundary with recovery UI
+- [ ] TASK-01578: DashboardUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01579: DashboardUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01580: DashboardUI2: add proper aria labels for accessibility
+- [ ] TASK-01581: TradingUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01582: TradingUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01583: TradingUI2: use monospace font for all numerical data displays
+- [ ] TASK-01584: TradingUI2: add amber 2px top border to all panels
+- [ ] TASK-01585: TradingUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01586: TradingUI2: add loading skeleton state for data fetch
+- [ ] TASK-01587: TradingUI2: add error boundary with recovery UI
+- [ ] TASK-01588: TradingUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01589: TradingUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01590: TradingUI2: add proper aria labels for accessibility
+- [ ] TASK-01591: PortfolioUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01592: PortfolioUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01593: PortfolioUI2: use monospace font for all numerical data displays
+- [ ] TASK-01594: PortfolioUI2: add amber 2px top border to all panels
+- [ ] TASK-01595: PortfolioUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01596: PortfolioUI2: add loading skeleton state for data fetch
+- [ ] TASK-01597: PortfolioUI2: add error boundary with recovery UI
+- [ ] TASK-01598: PortfolioUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01599: PortfolioUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01600: PortfolioUI2: add proper aria labels for accessibility
+- [ ] TASK-01601: PortfolioV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01602: PortfolioV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01603: PortfolioV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01604: PortfolioV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01605: PortfolioV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01606: PortfolioV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01607: PortfolioV2UI2: add error boundary with recovery UI
+- [ ] TASK-01608: PortfolioV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01609: PortfolioV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01610: PortfolioV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01611: RiskUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01612: RiskUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01613: RiskUI2: use monospace font for all numerical data displays
+- [ ] TASK-01614: RiskUI2: add amber 2px top border to all panels
+- [ ] TASK-01615: RiskUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01616: RiskUI2: add loading skeleton state for data fetch
+- [ ] TASK-01617: RiskUI2: add error boundary with recovery UI
+- [ ] TASK-01618: RiskUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01619: RiskUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01620: RiskUI2: add proper aria labels for accessibility
+- [ ] TASK-01621: AlertsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01622: AlertsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01623: AlertsUI2: use monospace font for all numerical data displays
+- [ ] TASK-01624: AlertsUI2: add amber 2px top border to all panels
+- [ ] TASK-01625: AlertsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01626: AlertsUI2: add loading skeleton state for data fetch
+- [ ] TASK-01627: AlertsUI2: add error boundary with recovery UI
+- [ ] TASK-01628: AlertsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01629: AlertsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01630: AlertsUI2: add proper aria labels for accessibility
+- [ ] TASK-01631: OrdersUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01632: OrdersUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01633: OrdersUI2: use monospace font for all numerical data displays
+- [ ] TASK-01634: OrdersUI2: add amber 2px top border to all panels
+- [ ] TASK-01635: OrdersUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01636: OrdersUI2: add loading skeleton state for data fetch
+- [ ] TASK-01637: OrdersUI2: add error boundary with recovery UI
+- [ ] TASK-01638: OrdersUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01639: OrdersUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01640: OrdersUI2: add proper aria labels for accessibility
+- [ ] TASK-01641: ScreenersUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01642: ScreenersUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01643: ScreenersUI2: use monospace font for all numerical data displays
+- [ ] TASK-01644: ScreenersUI2: add amber 2px top border to all panels
+- [ ] TASK-01645: ScreenersUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01646: ScreenersUI2: add loading skeleton state for data fetch
+- [ ] TASK-01647: ScreenersUI2: add error boundary with recovery UI
+- [ ] TASK-01648: ScreenersUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01649: ScreenersUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01650: ScreenersUI2: add proper aria labels for accessibility
+- [ ] TASK-01651: ResearchUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01652: ResearchUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01653: ResearchUI2: use monospace font for all numerical data displays
+- [ ] TASK-01654: ResearchUI2: add amber 2px top border to all panels
+- [ ] TASK-01655: ResearchUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01656: ResearchUI2: add loading skeleton state for data fetch
+- [ ] TASK-01657: ResearchUI2: add error boundary with recovery UI
+- [ ] TASK-01658: ResearchUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01659: ResearchUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01660: ResearchUI2: add proper aria labels for accessibility
+- [ ] TASK-01661: SentimentUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01662: SentimentUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01663: SentimentUI2: use monospace font for all numerical data displays
+- [ ] TASK-01664: SentimentUI2: add amber 2px top border to all panels
+- [ ] TASK-01665: SentimentUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01666: SentimentUI2: add loading skeleton state for data fetch
+- [ ] TASK-01667: SentimentUI2: add error boundary with recovery UI
+- [ ] TASK-01668: SentimentUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01669: SentimentUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01670: SentimentUI2: add proper aria labels for accessibility
+- [ ] TASK-01671: SentimentV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01672: SentimentV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01673: SentimentV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01674: SentimentV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01675: SentimentV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01676: SentimentV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01677: SentimentV2UI2: add error boundary with recovery UI
+- [ ] TASK-01678: SentimentV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01679: SentimentV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01680: SentimentV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01681: MonteCarloUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01682: MonteCarloUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01683: MonteCarloUI2: use monospace font for all numerical data displays
+- [ ] TASK-01684: MonteCarloUI2: add amber 2px top border to all panels
+- [ ] TASK-01685: MonteCarloUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01686: MonteCarloUI2: add loading skeleton state for data fetch
+- [ ] TASK-01687: MonteCarloUI2: add error boundary with recovery UI
+- [ ] TASK-01688: MonteCarloUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01689: MonteCarloUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01690: MonteCarloUI2: add proper aria labels for accessibility
+- [ ] TASK-01691: MonteCarloV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01692: MonteCarloV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01693: MonteCarloV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01694: MonteCarloV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01695: MonteCarloV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01696: MonteCarloV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01697: MonteCarloV2UI2: add error boundary with recovery UI
+- [ ] TASK-01698: MonteCarloV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01699: MonteCarloV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01700: MonteCarloV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01701: WalkForwardUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01702: WalkForwardUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01703: WalkForwardUI2: use monospace font for all numerical data displays
+- [ ] TASK-01704: WalkForwardUI2: add amber 2px top border to all panels
+- [ ] TASK-01705: WalkForwardUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01706: WalkForwardUI2: add loading skeleton state for data fetch
+- [ ] TASK-01707: WalkForwardUI2: add error boundary with recovery UI
+- [ ] TASK-01708: WalkForwardUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01709: WalkForwardUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01710: WalkForwardUI2: add proper aria labels for accessibility
+- [ ] TASK-01711: WalkForwardV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01712: WalkForwardV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01713: WalkForwardV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01714: WalkForwardV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01715: WalkForwardV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01716: WalkForwardV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01717: WalkForwardV2UI2: add error boundary with recovery UI
+- [ ] TASK-01718: WalkForwardV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01719: WalkForwardV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01720: WalkForwardV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01721: WalkForwardV3UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01722: WalkForwardV3UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01723: WalkForwardV3UI2: use monospace font for all numerical data displays
+- [ ] TASK-01724: WalkForwardV3UI2: add amber 2px top border to all panels
+- [ ] TASK-01725: WalkForwardV3UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01726: WalkForwardV3UI2: add loading skeleton state for data fetch
+- [ ] TASK-01727: WalkForwardV3UI2: add error boundary with recovery UI
+- [ ] TASK-01728: WalkForwardV3UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01729: WalkForwardV3UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01730: WalkForwardV3UI2: add proper aria labels for accessibility
+- [ ] TASK-01731: BacktesterV3UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01732: BacktesterV3UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01733: BacktesterV3UI2: use monospace font for all numerical data displays
+- [ ] TASK-01734: BacktesterV3UI2: add amber 2px top border to all panels
+- [ ] TASK-01735: BacktesterV3UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01736: BacktesterV3UI2: add loading skeleton state for data fetch
+- [ ] TASK-01737: BacktesterV3UI2: add error boundary with recovery UI
+- [ ] TASK-01738: BacktesterV3UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01739: BacktesterV3UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01740: BacktesterV3UI2: add proper aria labels for accessibility
+- [ ] TASK-01741: BacktestUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01742: BacktestUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01743: BacktestUI2: use monospace font for all numerical data displays
+- [ ] TASK-01744: BacktestUI2: add amber 2px top border to all panels
+- [ ] TASK-01745: BacktestUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01746: BacktestUI2: add loading skeleton state for data fetch
+- [ ] TASK-01747: BacktestUI2: add error boundary with recovery UI
+- [ ] TASK-01748: BacktestUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01749: BacktestUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01750: BacktestUI2: add proper aria labels for accessibility
+- [ ] TASK-01751: BacktestV4UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01752: BacktestV4UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01753: BacktestV4UI2: use monospace font for all numerical data displays
+- [ ] TASK-01754: BacktestV4UI2: add amber 2px top border to all panels
+- [ ] TASK-01755: BacktestV4UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01756: BacktestV4UI2: add loading skeleton state for data fetch
+- [ ] TASK-01757: BacktestV4UI2: add error boundary with recovery UI
+- [ ] TASK-01758: BacktestV4UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01759: BacktestV4UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01760: BacktestV4UI2: add proper aria labels for accessibility
+- [ ] TASK-01761: OptionsMatrixUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01762: OptionsMatrixUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01763: OptionsMatrixUI2: use monospace font for all numerical data displays
+- [ ] TASK-01764: OptionsMatrixUI2: add amber 2px top border to all panels
+- [ ] TASK-01765: OptionsMatrixUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01766: OptionsMatrixUI2: add loading skeleton state for data fetch
+- [ ] TASK-01767: OptionsMatrixUI2: add error boundary with recovery UI
+- [ ] TASK-01768: OptionsMatrixUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01769: OptionsMatrixUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01770: OptionsMatrixUI2: add proper aria labels for accessibility
+- [ ] TASK-01771: ExecutionCockpitUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01772: ExecutionCockpitUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01773: ExecutionCockpitUI2: use monospace font for all numerical data displays
+- [ ] TASK-01774: ExecutionCockpitUI2: add amber 2px top border to all panels
+- [ ] TASK-01775: ExecutionCockpitUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01776: ExecutionCockpitUI2: add loading skeleton state for data fetch
+- [ ] TASK-01777: ExecutionCockpitUI2: add error boundary with recovery UI
+- [ ] TASK-01778: ExecutionCockpitUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01779: ExecutionCockpitUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01780: ExecutionCockpitUI2: add proper aria labels for accessibility
+- [ ] TASK-01781: ControlTowerUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01782: ControlTowerUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01783: ControlTowerUI2: use monospace font for all numerical data displays
+- [ ] TASK-01784: ControlTowerUI2: add amber 2px top border to all panels
+- [ ] TASK-01785: ControlTowerUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01786: ControlTowerUI2: add loading skeleton state for data fetch
+- [ ] TASK-01787: ControlTowerUI2: add error boundary with recovery UI
+- [ ] TASK-01788: ControlTowerUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01789: ControlTowerUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01790: ControlTowerUI2: add proper aria labels for accessibility
+- [ ] TASK-01791: WorkflowBuilderUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01792: WorkflowBuilderUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01793: WorkflowBuilderUI2: use monospace font for all numerical data displays
+- [ ] TASK-01794: WorkflowBuilderUI2: add amber 2px top border to all panels
+- [ ] TASK-01795: WorkflowBuilderUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01796: WorkflowBuilderUI2: add loading skeleton state for data fetch
+- [ ] TASK-01797: WorkflowBuilderUI2: add error boundary with recovery UI
+- [ ] TASK-01798: WorkflowBuilderUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01799: WorkflowBuilderUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01800: WorkflowBuilderUI2: add proper aria labels for accessibility
+- [ ] TASK-01801: AutopilotUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01802: AutopilotUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01803: AutopilotUI2: use monospace font for all numerical data displays
+- [ ] TASK-01804: AutopilotUI2: add amber 2px top border to all panels
+- [ ] TASK-01805: AutopilotUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01806: AutopilotUI2: add loading skeleton state for data fetch
+- [ ] TASK-01807: AutopilotUI2: add error boundary with recovery UI
+- [ ] TASK-01808: AutopilotUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01809: AutopilotUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01810: AutopilotUI2: add proper aria labels for accessibility
+- [ ] TASK-01811: AutopilotV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01812: AutopilotV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01813: AutopilotV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01814: AutopilotV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01815: AutopilotV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01816: AutopilotV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01817: AutopilotV2UI2: add error boundary with recovery UI
+- [ ] TASK-01818: AutopilotV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01819: AutopilotV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01820: AutopilotV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01821: NovaUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01822: NovaUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01823: NovaUI2: use monospace font for all numerical data displays
+- [ ] TASK-01824: NovaUI2: add amber 2px top border to all panels
+- [ ] TASK-01825: NovaUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01826: NovaUI2: add loading skeleton state for data fetch
+- [ ] TASK-01827: NovaUI2: add error boundary with recovery UI
+- [ ] TASK-01828: NovaUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01829: NovaUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01830: NovaUI2: add proper aria labels for accessibility
+- [ ] TASK-01831: StrategyStudioV3UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01832: StrategyStudioV3UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01833: StrategyStudioV3UI2: use monospace font for all numerical data displays
+- [ ] TASK-01834: StrategyStudioV3UI2: add amber 2px top border to all panels
+- [ ] TASK-01835: StrategyStudioV3UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01836: StrategyStudioV3UI2: add loading skeleton state for data fetch
+- [ ] TASK-01837: StrategyStudioV3UI2: add error boundary with recovery UI
+- [ ] TASK-01838: StrategyStudioV3UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01839: StrategyStudioV3UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01840: StrategyStudioV3UI2: add proper aria labels for accessibility
+- [ ] TASK-01841: StrategyBuilderV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01842: StrategyBuilderV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01843: StrategyBuilderV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01844: StrategyBuilderV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01845: StrategyBuilderV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01846: StrategyBuilderV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01847: StrategyBuilderV2UI2: add error boundary with recovery UI
+- [ ] TASK-01848: StrategyBuilderV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01849: StrategyBuilderV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01850: StrategyBuilderV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01851: SettingsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01852: SettingsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01853: SettingsUI2: use monospace font for all numerical data displays
+- [ ] TASK-01854: SettingsUI2: add amber 2px top border to all panels
+- [ ] TASK-01855: SettingsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01856: SettingsUI2: add loading skeleton state for data fetch
+- [ ] TASK-01857: SettingsUI2: add error boundary with recovery UI
+- [ ] TASK-01858: SettingsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01859: SettingsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01860: SettingsUI2: add proper aria labels for accessibility
+- [ ] TASK-01861: RunsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01862: RunsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01863: RunsUI2: use monospace font for all numerical data displays
+- [ ] TASK-01864: RunsUI2: add amber 2px top border to all panels
+- [ ] TASK-01865: RunsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01866: RunsUI2: add loading skeleton state for data fetch
+- [ ] TASK-01867: RunsUI2: add error boundary with recovery UI
+- [ ] TASK-01868: RunsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01869: RunsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01870: RunsUI2: add proper aria labels for accessibility
+- [ ] TASK-01871: AutomationUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01872: AutomationUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01873: AutomationUI2: use monospace font for all numerical data displays
+- [ ] TASK-01874: AutomationUI2: add amber 2px top border to all panels
+- [ ] TASK-01875: AutomationUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01876: AutomationUI2: add loading skeleton state for data fetch
+- [ ] TASK-01877: AutomationUI2: add error boundary with recovery UI
+- [ ] TASK-01878: AutomationUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01879: AutomationUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01880: AutomationUI2: add proper aria labels for accessibility
+- [ ] TASK-01881: AutomationV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01882: AutomationV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01883: AutomationV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01884: AutomationV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01885: AutomationV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01886: AutomationV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01887: AutomationV2UI2: add error boundary with recovery UI
+- [ ] TASK-01888: AutomationV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01889: AutomationV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01890: AutomationV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01891: OpsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01892: OpsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01893: OpsUI2: use monospace font for all numerical data displays
+- [ ] TASK-01894: OpsUI2: add amber 2px top border to all panels
+- [ ] TASK-01895: OpsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01896: OpsUI2: add loading skeleton state for data fetch
+- [ ] TASK-01897: OpsUI2: add error boundary with recovery UI
+- [ ] TASK-01898: OpsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01899: OpsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01900: OpsUI2: add proper aria labels for accessibility
+- [ ] TASK-01901: SearchUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01902: SearchUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01903: SearchUI2: use monospace font for all numerical data displays
+- [ ] TASK-01904: SearchUI2: add amber 2px top border to all panels
+- [ ] TASK-01905: SearchUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01906: SearchUI2: add loading skeleton state for data fetch
+- [ ] TASK-01907: SearchUI2: add error boundary with recovery UI
+- [ ] TASK-01908: SearchUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01909: SearchUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01910: SearchUI2: add proper aria labels for accessibility
+- [ ] TASK-01911: SearchV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01912: SearchV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01913: SearchV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01914: SearchV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01915: SearchV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01916: SearchV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01917: SearchV2UI2: add error boundary with recovery UI
+- [ ] TASK-01918: SearchV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01919: SearchV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01920: SearchV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01921: SearchUXV3UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01922: SearchUXV3UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01923: SearchUXV3UI2: use monospace font for all numerical data displays
+- [ ] TASK-01924: SearchUXV3UI2: add amber 2px top border to all panels
+- [ ] TASK-01925: SearchUXV3UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01926: SearchUXV3UI2: add loading skeleton state for data fetch
+- [ ] TASK-01927: SearchUXV3UI2: add error boundary with recovery UI
+- [ ] TASK-01928: SearchUXV3UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01929: SearchUXV3UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01930: SearchUXV3UI2: add proper aria labels for accessibility
+- [ ] TASK-01931: EconomicCalendarUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01932: EconomicCalendarUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01933: EconomicCalendarUI2: use monospace font for all numerical data displays
+- [ ] TASK-01934: EconomicCalendarUI2: add amber 2px top border to all panels
+- [ ] TASK-01935: EconomicCalendarUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01936: EconomicCalendarUI2: add loading skeleton state for data fetch
+- [ ] TASK-01937: EconomicCalendarUI2: add error boundary with recovery UI
+- [ ] TASK-01938: EconomicCalendarUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01939: EconomicCalendarUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01940: EconomicCalendarUI2: add proper aria labels for accessibility
+- [ ] TASK-01941: BlotterUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01942: BlotterUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01943: BlotterUI2: use monospace font for all numerical data displays
+- [ ] TASK-01944: BlotterUI2: add amber 2px top border to all panels
+- [ ] TASK-01945: BlotterUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01946: BlotterUI2: add loading skeleton state for data fetch
+- [ ] TASK-01947: BlotterUI2: add error boundary with recovery UI
+- [ ] TASK-01948: BlotterUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01949: BlotterUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01950: BlotterUI2: add proper aria labels for accessibility
+- [ ] TASK-01951: BrokerV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01952: BrokerV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01953: BrokerV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-01954: BrokerV2UI2: add amber 2px top border to all panels
+- [ ] TASK-01955: BrokerV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01956: BrokerV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-01957: BrokerV2UI2: add error boundary with recovery UI
+- [ ] TASK-01958: BrokerV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01959: BrokerV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01960: BrokerV2UI2: add proper aria labels for accessibility
+- [ ] TASK-01961: AgentUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01962: AgentUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01963: AgentUI2: use monospace font for all numerical data displays
+- [ ] TASK-01964: AgentUI2: add amber 2px top border to all panels
+- [ ] TASK-01965: AgentUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01966: AgentUI2: add loading skeleton state for data fetch
+- [ ] TASK-01967: AgentUI2: add error boundary with recovery UI
+- [ ] TASK-01968: AgentUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01969: AgentUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01970: AgentUI2: add proper aria labels for accessibility
+- [ ] TASK-01971: AgentBuilderUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01972: AgentBuilderUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01973: AgentBuilderUI2: use monospace font for all numerical data displays
+- [ ] TASK-01974: AgentBuilderUI2: add amber 2px top border to all panels
+- [ ] TASK-01975: AgentBuilderUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01976: AgentBuilderUI2: add loading skeleton state for data fetch
+- [ ] TASK-01977: AgentBuilderUI2: add error boundary with recovery UI
+- [ ] TASK-01978: AgentBuilderUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01979: AgentBuilderUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01980: AgentBuilderUI2: add proper aria labels for accessibility
+- [ ] TASK-01981: AgentRegistryUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01982: AgentRegistryUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01983: AgentRegistryUI2: use monospace font for all numerical data displays
+- [ ] TASK-01984: AgentRegistryUI2: add amber 2px top border to all panels
+- [ ] TASK-01985: AgentRegistryUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01986: AgentRegistryUI2: add loading skeleton state for data fetch
+- [ ] TASK-01987: AgentRegistryUI2: add error boundary with recovery UI
+- [ ] TASK-01988: AgentRegistryUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01989: AgentRegistryUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-01990: AgentRegistryUI2: add proper aria labels for accessibility
+- [ ] TASK-01991: PerformanceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-01992: PerformanceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-01993: PerformanceUI2: use monospace font for all numerical data displays
+- [ ] TASK-01994: PerformanceUI2: add amber 2px top border to all panels
+- [ ] TASK-01995: PerformanceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-01996: PerformanceUI2: add loading skeleton state for data fetch
+- [ ] TASK-01997: PerformanceUI2: add error boundary with recovery UI
+- [ ] TASK-01998: PerformanceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-01999: PerformanceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02000: PerformanceUI2: add proper aria labels for accessibility
+- [ ] TASK-02001: PerformanceV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02002: PerformanceV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02003: PerformanceV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-02004: PerformanceV2UI2: add amber 2px top border to all panels
+- [ ] TASK-02005: PerformanceV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02006: PerformanceV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-02007: PerformanceV2UI2: add error boundary with recovery UI
+- [ ] TASK-02008: PerformanceV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02009: PerformanceV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02010: PerformanceV2UI2: add proper aria labels for accessibility
+- [ ] TASK-02011: PlatformHealthUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02012: PlatformHealthUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02013: PlatformHealthUI2: use monospace font for all numerical data displays
+- [ ] TASK-02014: PlatformHealthUI2: add amber 2px top border to all panels
+- [ ] TASK-02015: PlatformHealthUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02016: PlatformHealthUI2: add loading skeleton state for data fetch
+- [ ] TASK-02017: PlatformHealthUI2: add error boundary with recovery UI
+- [ ] TASK-02018: PlatformHealthUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02019: PlatformHealthUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02020: PlatformHealthUI2: add proper aria labels for accessibility
+- [ ] TASK-02021: PlatformHealthV4UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02022: PlatformHealthV4UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02023: PlatformHealthV4UI2: use monospace font for all numerical data displays
+- [ ] TASK-02024: PlatformHealthV4UI2: add amber 2px top border to all panels
+- [ ] TASK-02025: PlatformHealthV4UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02026: PlatformHealthV4UI2: add loading skeleton state for data fetch
+- [ ] TASK-02027: PlatformHealthV4UI2: add error boundary with recovery UI
+- [ ] TASK-02028: PlatformHealthV4UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02029: PlatformHealthV4UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02030: PlatformHealthV4UI2: add proper aria labels for accessibility
+- [ ] TASK-02031: SystemHealthUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02032: SystemHealthUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02033: SystemHealthUI2: use monospace font for all numerical data displays
+- [ ] TASK-02034: SystemHealthUI2: add amber 2px top border to all panels
+- [ ] TASK-02035: SystemHealthUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02036: SystemHealthUI2: add loading skeleton state for data fetch
+- [ ] TASK-02037: SystemHealthUI2: add error boundary with recovery UI
+- [ ] TASK-02038: SystemHealthUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02039: SystemHealthUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02040: SystemHealthUI2: add proper aria labels for accessibility
+- [ ] TASK-02041: ObservabilityUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02042: ObservabilityUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02043: ObservabilityUI2: use monospace font for all numerical data displays
+- [ ] TASK-02044: ObservabilityUI2: add amber 2px top border to all panels
+- [ ] TASK-02045: ObservabilityUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02046: ObservabilityUI2: add loading skeleton state for data fetch
+- [ ] TASK-02047: ObservabilityUI2: add error boundary with recovery UI
+- [ ] TASK-02048: ObservabilityUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02049: ObservabilityUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02050: ObservabilityUI2: add proper aria labels for accessibility
+- [ ] TASK-02051: ObservabilityV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02052: ObservabilityV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02053: ObservabilityV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-02054: ObservabilityV2UI2: add amber 2px top border to all panels
+- [ ] TASK-02055: ObservabilityV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02056: ObservabilityV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-02057: ObservabilityV2UI2: add error boundary with recovery UI
+- [ ] TASK-02058: ObservabilityV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02059: ObservabilityV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02060: ObservabilityV2UI2: add proper aria labels for accessibility
+- [ ] TASK-02061: TelemetryUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02062: TelemetryUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02063: TelemetryUI2: use monospace font for all numerical data displays
+- [ ] TASK-02064: TelemetryUI2: add amber 2px top border to all panels
+- [ ] TASK-02065: TelemetryUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02066: TelemetryUI2: add loading skeleton state for data fetch
+- [ ] TASK-02067: TelemetryUI2: add error boundary with recovery UI
+- [ ] TASK-02068: TelemetryUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02069: TelemetryUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02070: TelemetryUI2: add proper aria labels for accessibility
+- [ ] TASK-02071: IncidentsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02072: IncidentsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02073: IncidentsUI2: use monospace font for all numerical data displays
+- [ ] TASK-02074: IncidentsUI2: add amber 2px top border to all panels
+- [ ] TASK-02075: IncidentsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02076: IncidentsUI2: add loading skeleton state for data fetch
+- [ ] TASK-02077: IncidentsUI2: add error boundary with recovery UI
+- [ ] TASK-02078: IncidentsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02079: IncidentsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02080: IncidentsUI2: add proper aria labels for accessibility
+- [ ] TASK-02081: ComplianceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02082: ComplianceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02083: ComplianceUI2: use monospace font for all numerical data displays
+- [ ] TASK-02084: ComplianceUI2: add amber 2px top border to all panels
+- [ ] TASK-02085: ComplianceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02086: ComplianceUI2: add loading skeleton state for data fetch
+- [ ] TASK-02087: ComplianceUI2: add error boundary with recovery UI
+- [ ] TASK-02088: ComplianceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02089: ComplianceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02090: ComplianceUI2: add proper aria labels for accessibility
+- [ ] TASK-02091: AuditorUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02092: AuditorUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02093: AuditorUI2: use monospace font for all numerical data displays
+- [ ] TASK-02094: AuditorUI2: add amber 2px top border to all panels
+- [ ] TASK-02095: AuditorUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02096: AuditorUI2: add loading skeleton state for data fetch
+- [ ] TASK-02097: AuditorUI2: add error boundary with recovery UI
+- [ ] TASK-02098: AuditorUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02099: AuditorUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02100: AuditorUI2: add proper aria labels for accessibility
+- [ ] TASK-02101: DataHealthUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02102: DataHealthUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02103: DataHealthUI2: use monospace font for all numerical data displays
+- [ ] TASK-02104: DataHealthUI2: add amber 2px top border to all panels
+- [ ] TASK-02105: DataHealthUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02106: DataHealthUI2: add loading skeleton state for data fetch
+- [ ] TASK-02107: DataHealthUI2: add error boundary with recovery UI
+- [ ] TASK-02108: DataHealthUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02109: DataHealthUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02110: DataHealthUI2: add proper aria labels for accessibility
+- [ ] TASK-02111: ProductizationUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02112: ProductizationUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02113: ProductizationUI2: use monospace font for all numerical data displays
+- [ ] TASK-02114: ProductizationUI2: add amber 2px top border to all panels
+- [ ] TASK-02115: ProductizationUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02116: ProductizationUI2: add loading skeleton state for data fetch
+- [ ] TASK-02117: ProductizationUI2: add error boundary with recovery UI
+- [ ] TASK-02118: ProductizationUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02119: ProductizationUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02120: ProductizationUI2: add proper aria labels for accessibility
+- [ ] TASK-02121: GlobalReadinessUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02122: GlobalReadinessUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02123: GlobalReadinessUI2: use monospace font for all numerical data displays
+- [ ] TASK-02124: GlobalReadinessUI2: add amber 2px top border to all panels
+- [ ] TASK-02125: GlobalReadinessUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02126: GlobalReadinessUI2: add loading skeleton state for data fetch
+- [ ] TASK-02127: GlobalReadinessUI2: add error boundary with recovery UI
+- [ ] TASK-02128: GlobalReadinessUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02129: GlobalReadinessUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02130: GlobalReadinessUI2: add proper aria labels for accessibility
+- [ ] TASK-02131: MarketplaceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02132: MarketplaceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02133: MarketplaceUI2: use monospace font for all numerical data displays
+- [ ] TASK-02134: MarketplaceUI2: add amber 2px top border to all panels
+- [ ] TASK-02135: MarketplaceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02136: MarketplaceUI2: add loading skeleton state for data fetch
+- [ ] TASK-02137: MarketplaceUI2: add error boundary with recovery UI
+- [ ] TASK-02138: MarketplaceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02139: MarketplaceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02140: MarketplaceUI2: add proper aria labels for accessibility
+- [ ] TASK-02141: DerivativesOmsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02142: DerivativesOmsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02143: DerivativesOmsUI2: use monospace font for all numerical data displays
+- [ ] TASK-02144: DerivativesOmsUI2: add amber 2px top border to all panels
+- [ ] TASK-02145: DerivativesOmsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02146: DerivativesOmsUI2: add loading skeleton state for data fetch
+- [ ] TASK-02147: DerivativesOmsUI2: add error boundary with recovery UI
+- [ ] TASK-02148: DerivativesOmsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02149: DerivativesOmsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02150: DerivativesOmsUI2: add proper aria labels for accessibility
+- [ ] TASK-02151: HedgeFundUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02152: HedgeFundUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02153: HedgeFundUI2: use monospace font for all numerical data displays
+- [ ] TASK-02154: HedgeFundUI2: add amber 2px top border to all panels
+- [ ] TASK-02155: HedgeFundUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02156: HedgeFundUI2: add loading skeleton state for data fetch
+- [ ] TASK-02157: HedgeFundUI2: add error boundary with recovery UI
+- [ ] TASK-02158: HedgeFundUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02159: HedgeFundUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02160: HedgeFundUI2: add proper aria labels for accessibility
+- [ ] TASK-02161: LiquidityUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02162: LiquidityUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02163: LiquidityUI2: use monospace font for all numerical data displays
+- [ ] TASK-02164: LiquidityUI2: add amber 2px top border to all panels
+- [ ] TASK-02165: LiquidityUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02166: LiquidityUI2: add loading skeleton state for data fetch
+- [ ] TASK-02167: LiquidityUI2: add error boundary with recovery UI
+- [ ] TASK-02168: LiquidityUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02169: LiquidityUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02170: LiquidityUI2: add proper aria labels for accessibility
+- [ ] TASK-02171: VolSurfaceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02172: VolSurfaceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02173: VolSurfaceUI2: use monospace font for all numerical data displays
+- [ ] TASK-02174: VolSurfaceUI2: add amber 2px top border to all panels
+- [ ] TASK-02175: VolSurfaceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02176: VolSurfaceUI2: add loading skeleton state for data fetch
+- [ ] TASK-02177: VolSurfaceUI2: add error boundary with recovery UI
+- [ ] TASK-02178: VolSurfaceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02179: VolSurfaceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02180: VolSurfaceUI2: add proper aria labels for accessibility
+- [ ] TASK-02181: VolScannerUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02182: VolScannerUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02183: VolScannerUI2: use monospace font for all numerical data displays
+- [ ] TASK-02184: VolScannerUI2: add amber 2px top border to all panels
+- [ ] TASK-02185: VolScannerUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02186: VolScannerUI2: add loading skeleton state for data fetch
+- [ ] TASK-02187: VolScannerUI2: add error boundary with recovery UI
+- [ ] TASK-02188: VolScannerUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02189: VolScannerUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02190: VolScannerUI2: add proper aria labels for accessibility
+- [ ] TASK-02191: PayoffLabUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02192: PayoffLabUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02193: PayoffLabUI2: use monospace font for all numerical data displays
+- [ ] TASK-02194: PayoffLabUI2: add amber 2px top border to all panels
+- [ ] TASK-02195: PayoffLabUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02196: PayoffLabUI2: add loading skeleton state for data fetch
+- [ ] TASK-02197: PayoffLabUI2: add error boundary with recovery UI
+- [ ] TASK-02198: PayoffLabUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02199: PayoffLabUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02200: PayoffLabUI2: add proper aria labels for accessibility
+- [ ] TASK-02201: FuturesCurveUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02202: FuturesCurveUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02203: FuturesCurveUI2: use monospace font for all numerical data displays
+- [ ] TASK-02204: FuturesCurveUI2: add amber 2px top border to all panels
+- [ ] TASK-02205: FuturesCurveUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02206: FuturesCurveUI2: add loading skeleton state for data fetch
+- [ ] TASK-02207: FuturesCurveUI2: add error boundary with recovery UI
+- [ ] TASK-02208: FuturesCurveUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02209: FuturesCurveUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02210: FuturesCurveUI2: add proper aria labels for accessibility
+- [ ] TASK-02211: SpreadToolsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02212: SpreadToolsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02213: SpreadToolsUI2: use monospace font for all numerical data displays
+- [ ] TASK-02214: SpreadToolsUI2: add amber 2px top border to all panels
+- [ ] TASK-02215: SpreadToolsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02216: SpreadToolsUI2: add loading skeleton state for data fetch
+- [ ] TASK-02217: SpreadToolsUI2: add error boundary with recovery UI
+- [ ] TASK-02218: SpreadToolsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02219: SpreadToolsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02220: SpreadToolsUI2: add proper aria labels for accessibility
+- [ ] TASK-02221: CrossAssetQuoteUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02222: CrossAssetQuoteUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02223: CrossAssetQuoteUI2: use monospace font for all numerical data displays
+- [ ] TASK-02224: CrossAssetQuoteUI2: add amber 2px top border to all panels
+- [ ] TASK-02225: CrossAssetQuoteUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02226: CrossAssetQuoteUI2: add loading skeleton state for data fetch
+- [ ] TASK-02227: CrossAssetQuoteUI2: add error boundary with recovery UI
+- [ ] TASK-02228: CrossAssetQuoteUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02229: CrossAssetQuoteUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02230: CrossAssetQuoteUI2: add proper aria labels for accessibility
+- [ ] TASK-02231: MicrostructureUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02232: MicrostructureUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02233: MicrostructureUI2: use monospace font for all numerical data displays
+- [ ] TASK-02234: MicrostructureUI2: add amber 2px top border to all panels
+- [ ] TASK-02235: MicrostructureUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02236: MicrostructureUI2: add loading skeleton state for data fetch
+- [ ] TASK-02237: MicrostructureUI2: add error boundary with recovery UI
+- [ ] TASK-02238: MicrostructureUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02239: MicrostructureUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02240: MicrostructureUI2: add proper aria labels for accessibility
+- [ ] TASK-02241: FactorModelUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02242: FactorModelUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02243: FactorModelUI2: use monospace font for all numerical data displays
+- [ ] TASK-02244: FactorModelUI2: add amber 2px top border to all panels
+- [ ] TASK-02245: FactorModelUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02246: FactorModelUI2: add loading skeleton state for data fetch
+- [ ] TASK-02247: FactorModelUI2: add error boundary with recovery UI
+- [ ] TASK-02248: FactorModelUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02249: FactorModelUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02250: FactorModelUI2: add proper aria labels for accessibility
+- [ ] TASK-02251: SmartRoutingUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02252: SmartRoutingUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02253: SmartRoutingUI2: use monospace font for all numerical data displays
+- [ ] TASK-02254: SmartRoutingUI2: add amber 2px top border to all panels
+- [ ] TASK-02255: SmartRoutingUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02256: SmartRoutingUI2: add loading skeleton state for data fetch
+- [ ] TASK-02257: SmartRoutingUI2: add error boundary with recovery UI
+- [ ] TASK-02258: SmartRoutingUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02259: SmartRoutingUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02260: SmartRoutingUI2: add proper aria labels for accessibility
+- [ ] TASK-02261: RatesMonitorUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02262: RatesMonitorUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02263: RatesMonitorUI2: use monospace font for all numerical data displays
+- [ ] TASK-02264: RatesMonitorUI2: add amber 2px top border to all panels
+- [ ] TASK-02265: RatesMonitorUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02266: RatesMonitorUI2: add loading skeleton state for data fetch
+- [ ] TASK-02267: RatesMonitorUI2: add error boundary with recovery UI
+- [ ] TASK-02268: RatesMonitorUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02269: RatesMonitorUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02270: RatesMonitorUI2: add proper aria labels for accessibility
+- [ ] TASK-02271: CorporateActionsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02272: CorporateActionsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02273: CorporateActionsUI2: use monospace font for all numerical data displays
+- [ ] TASK-02274: CorporateActionsUI2: add amber 2px top border to all panels
+- [ ] TASK-02275: CorporateActionsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02276: CorporateActionsUI2: add loading skeleton state for data fetch
+- [ ] TASK-02277: CorporateActionsUI2: add error boundary with recovery UI
+- [ ] TASK-02278: CorporateActionsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02279: CorporateActionsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02280: CorporateActionsUI2: add proper aria labels for accessibility
+- [ ] TASK-02281: PreTradeRiskUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02282: PreTradeRiskUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02283: PreTradeRiskUI2: use monospace font for all numerical data displays
+- [ ] TASK-02284: PreTradeRiskUI2: add amber 2px top border to all panels
+- [ ] TASK-02285: PreTradeRiskUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02286: PreTradeRiskUI2: add loading skeleton state for data fetch
+- [ ] TASK-02287: PreTradeRiskUI2: add error boundary with recovery UI
+- [ ] TASK-02288: PreTradeRiskUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02289: PreTradeRiskUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02290: PreTradeRiskUI2: add proper aria labels for accessibility
+- [ ] TASK-02291: StressScenariosUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02292: StressScenariosUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02293: StressScenariosUI2: use monospace font for all numerical data displays
+- [ ] TASK-02294: StressScenariosUI2: add amber 2px top border to all panels
+- [ ] TASK-02295: StressScenariosUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02296: StressScenariosUI2: add loading skeleton state for data fetch
+- [ ] TASK-02297: StressScenariosUI2: add error boundary with recovery UI
+- [ ] TASK-02298: StressScenariosUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02299: StressScenariosUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02300: StressScenariosUI2: add proper aria labels for accessibility
+- [ ] TASK-02301: RegimeUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02302: RegimeUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02303: RegimeUI2: use monospace font for all numerical data displays
+- [ ] TASK-02304: RegimeUI2: add amber 2px top border to all panels
+- [ ] TASK-02305: RegimeUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02306: RegimeUI2: add loading skeleton state for data fetch
+- [ ] TASK-02307: RegimeUI2: add error boundary with recovery UI
+- [ ] TASK-02308: RegimeUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02309: RegimeUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02310: RegimeUI2: add proper aria labels for accessibility
+- [ ] TASK-02311: ScenarioSimUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02312: ScenarioSimUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02313: ScenarioSimUI2: use monospace font for all numerical data displays
+- [ ] TASK-02314: ScenarioSimUI2: add amber 2px top border to all panels
+- [ ] TASK-02315: ScenarioSimUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02316: ScenarioSimUI2: add loading skeleton state for data fetch
+- [ ] TASK-02317: ScenarioSimUI2: add error boundary with recovery UI
+- [ ] TASK-02318: ScenarioSimUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02319: ScenarioSimUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02320: ScenarioSimUI2: add proper aria labels for accessibility
+- [ ] TASK-02321: StrategyOptimizerUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02322: StrategyOptimizerUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02323: StrategyOptimizerUI2: use monospace font for all numerical data displays
+- [ ] TASK-02324: StrategyOptimizerUI2: add amber 2px top border to all panels
+- [ ] TASK-02325: StrategyOptimizerUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02326: StrategyOptimizerUI2: add loading skeleton state for data fetch
+- [ ] TASK-02327: StrategyOptimizerUI2: add error boundary with recovery UI
+- [ ] TASK-02328: StrategyOptimizerUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02329: StrategyOptimizerUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02330: StrategyOptimizerUI2: add proper aria labels for accessibility
+- [ ] TASK-02331: StrategySimUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02332: StrategySimUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02333: StrategySimUI2: use monospace font for all numerical data displays
+- [ ] TASK-02334: StrategySimUI2: add amber 2px top border to all panels
+- [ ] TASK-02335: StrategySimUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02336: StrategySimUI2: add loading skeleton state for data fetch
+- [ ] TASK-02337: StrategySimUI2: add error boundary with recovery UI
+- [ ] TASK-02338: StrategySimUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02339: StrategySimUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02340: StrategySimUI2: add proper aria labels for accessibility
+- [ ] TASK-02341: CollaborationUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02342: CollaborationUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02343: CollaborationUI2: use monospace font for all numerical data displays
+- [ ] TASK-02344: CollaborationUI2: add amber 2px top border to all panels
+- [ ] TASK-02345: CollaborationUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02346: CollaborationUI2: add loading skeleton state for data fetch
+- [ ] TASK-02347: CollaborationUI2: add error boundary with recovery UI
+- [ ] TASK-02348: CollaborationUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02349: CollaborationUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02350: CollaborationUI2: add proper aria labels for accessibility
+- [ ] TASK-02351: BqlQueryUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02352: BqlQueryUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02353: BqlQueryUI2: use monospace font for all numerical data displays
+- [ ] TASK-02354: BqlQueryUI2: add amber 2px top border to all panels
+- [ ] TASK-02355: BqlQueryUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02356: BqlQueryUI2: add loading skeleton state for data fetch
+- [ ] TASK-02357: BqlQueryUI2: add error boundary with recovery UI
+- [ ] TASK-02358: BqlQueryUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02359: BqlQueryUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02360: BqlQueryUI2: add proper aria labels for accessibility
+- [ ] TASK-02361: QueryStudioUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02362: QueryStudioUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02363: QueryStudioUI2: use monospace font for all numerical data displays
+- [ ] TASK-02364: QueryStudioUI2: add amber 2px top border to all panels
+- [ ] TASK-02365: QueryStudioUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02366: QueryStudioUI2: add loading skeleton state for data fetch
+- [ ] TASK-02367: QueryStudioUI2: add error boundary with recovery UI
+- [ ] TASK-02368: QueryStudioUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02369: QueryStudioUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02370: QueryStudioUI2: add proper aria labels for accessibility
+- [ ] TASK-02371: DatasetSnapshotUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02372: DatasetSnapshotUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02373: DatasetSnapshotUI2: use monospace font for all numerical data displays
+- [ ] TASK-02374: DatasetSnapshotUI2: add amber 2px top border to all panels
+- [ ] TASK-02375: DatasetSnapshotUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02376: DatasetSnapshotUI2: add loading skeleton state for data fetch
+- [ ] TASK-02377: DatasetSnapshotUI2: add error boundary with recovery UI
+- [ ] TASK-02378: DatasetSnapshotUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02379: DatasetSnapshotUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02380: DatasetSnapshotUI2: add proper aria labels for accessibility
+- [ ] TASK-02381: ResearchNotebookUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02382: ResearchNotebookUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02383: ResearchNotebookUI2: use monospace font for all numerical data displays
+- [ ] TASK-02384: ResearchNotebookUI2: add amber 2px top border to all panels
+- [ ] TASK-02385: ResearchNotebookUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02386: ResearchNotebookUI2: add loading skeleton state for data fetch
+- [ ] TASK-02387: ResearchNotebookUI2: add error boundary with recovery UI
+- [ ] TASK-02388: ResearchNotebookUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02389: ResearchNotebookUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02390: ResearchNotebookUI2: add proper aria labels for accessibility
+- [ ] TASK-02391: ExportUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02392: ExportUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02393: ExportUI2: use monospace font for all numerical data displays
+- [ ] TASK-02394: ExportUI2: add amber 2px top border to all panels
+- [ ] TASK-02395: ExportUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02396: ExportUI2: add loading skeleton state for data fetch
+- [ ] TASK-02397: ExportUI2: add error boundary with recovery UI
+- [ ] TASK-02398: ExportUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02399: ExportUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02400: ExportUI2: add proper aria labels for accessibility
+- [ ] TASK-02401: ReplayUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02402: ReplayUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02403: ReplayUI2: use monospace font for all numerical data displays
+- [ ] TASK-02404: ReplayUI2: add amber 2px top border to all panels
+- [ ] TASK-02405: ReplayUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02406: ReplayUI2: add loading skeleton state for data fetch
+- [ ] TASK-02407: ReplayUI2: add error boundary with recovery UI
+- [ ] TASK-02408: ReplayUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02409: ReplayUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02410: ReplayUI2: add proper aria labels for accessibility
+- [ ] TASK-02411: DecisionExplorerUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02412: DecisionExplorerUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02413: DecisionExplorerUI2: use monospace font for all numerical data displays
+- [ ] TASK-02414: DecisionExplorerUI2: add amber 2px top border to all panels
+- [ ] TASK-02415: DecisionExplorerUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02416: DecisionExplorerUI2: add loading skeleton state for data fetch
+- [ ] TASK-02417: DecisionExplorerUI2: add error boundary with recovery UI
+- [ ] TASK-02418: DecisionExplorerUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02419: DecisionExplorerUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02420: DecisionExplorerUI2: add proper aria labels for accessibility
+- [ ] TASK-02421: DecisionExplainerV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02422: DecisionExplainerV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02423: DecisionExplainerV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-02424: DecisionExplainerV2UI2: add amber 2px top border to all panels
+- [ ] TASK-02425: DecisionExplainerV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02426: DecisionExplainerV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-02427: DecisionExplainerV2UI2: add error boundary with recovery UI
+- [ ] TASK-02428: DecisionExplainerV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02429: DecisionExplainerV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02430: DecisionExplainerV2UI2: add proper aria labels for accessibility
+- [ ] TASK-02431: PnlExplainUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02432: PnlExplainUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02433: PnlExplainUI2: use monospace font for all numerical data displays
+- [ ] TASK-02434: PnlExplainUI2: add amber 2px top border to all panels
+- [ ] TASK-02435: PnlExplainUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02436: PnlExplainUI2: add loading skeleton state for data fetch
+- [ ] TASK-02437: PnlExplainUI2: add error boundary with recovery UI
+- [ ] TASK-02438: PnlExplainUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02439: PnlExplainUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02440: PnlExplainUI2: add proper aria labels for accessibility
+- [ ] TASK-02441: HedgeEngineUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02442: HedgeEngineUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02443: HedgeEngineUI2: use monospace font for all numerical data displays
+- [ ] TASK-02444: HedgeEngineUI2: add amber 2px top border to all panels
+- [ ] TASK-02445: HedgeEngineUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02446: HedgeEngineUI2: add loading skeleton state for data fetch
+- [ ] TASK-02447: HedgeEngineUI2: add error boundary with recovery UI
+- [ ] TASK-02448: HedgeEngineUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02449: HedgeEngineUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02450: HedgeEngineUI2: add proper aria labels for accessibility
+- [ ] TASK-02451: RiskNetworkUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02452: RiskNetworkUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02453: RiskNetworkUI2: use monospace font for all numerical data displays
+- [ ] TASK-02454: RiskNetworkUI2: add amber 2px top border to all panels
+- [ ] TASK-02455: RiskNetworkUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02456: RiskNetworkUI2: add loading skeleton state for data fetch
+- [ ] TASK-02457: RiskNetworkUI2: add error boundary with recovery UI
+- [ ] TASK-02458: RiskNetworkUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02459: RiskNetworkUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02460: RiskNetworkUI2: add proper aria labels for accessibility
+- [ ] TASK-02461: ConvergenceCockpitV1UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02462: ConvergenceCockpitV1UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02463: ConvergenceCockpitV1UI2: use monospace font for all numerical data displays
+- [ ] TASK-02464: ConvergenceCockpitV1UI2: add amber 2px top border to all panels
+- [ ] TASK-02465: ConvergenceCockpitV1UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02466: ConvergenceCockpitV1UI2: add loading skeleton state for data fetch
+- [ ] TASK-02467: ConvergenceCockpitV1UI2: add error boundary with recovery UI
+- [ ] TASK-02468: ConvergenceCockpitV1UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02469: ConvergenceCockpitV1UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02470: ConvergenceCockpitV1UI2: add proper aria labels for accessibility
+- [ ] TASK-02471: ReconciliationUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02472: ReconciliationUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02473: ReconciliationUI2: use monospace font for all numerical data displays
+- [ ] TASK-02474: ReconciliationUI2: add amber 2px top border to all panels
+- [ ] TASK-02475: ReconciliationUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02476: ReconciliationUI2: add loading skeleton state for data fetch
+- [ ] TASK-02477: ReconciliationUI2: add error boundary with recovery UI
+- [ ] TASK-02478: ReconciliationUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02479: ReconciliationUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02480: ReconciliationUI2: add proper aria labels for accessibility
+- [ ] TASK-02481: ThemeClusteringUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02482: ThemeClusteringUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02483: ThemeClusteringUI2: use monospace font for all numerical data displays
+- [ ] TASK-02484: ThemeClusteringUI2: add amber 2px top border to all panels
+- [ ] TASK-02485: ThemeClusteringUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02486: ThemeClusteringUI2: add loading skeleton state for data fetch
+- [ ] TASK-02487: ThemeClusteringUI2: add error boundary with recovery UI
+- [ ] TASK-02488: ThemeClusteringUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02489: ThemeClusteringUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02490: ThemeClusteringUI2: add proper aria labels for accessibility
+- [ ] TASK-02491: AnomaliesUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02492: AnomaliesUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02493: AnomaliesUI2: use monospace font for all numerical data displays
+- [ ] TASK-02494: AnomaliesUI2: add amber 2px top border to all panels
+- [ ] TASK-02495: AnomaliesUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02496: AnomaliesUI2: add loading skeleton state for data fetch
+- [ ] TASK-02497: AnomaliesUI2: add error boundary with recovery UI
+- [ ] TASK-02498: AnomaliesUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02499: AnomaliesUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02500: AnomaliesUI2: add proper aria labels for accessibility
+- [ ] TASK-02501: DriftDetectionUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02502: DriftDetectionUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02503: DriftDetectionUI2: use monospace font for all numerical data displays
+- [ ] TASK-02504: DriftDetectionUI2: add amber 2px top border to all panels
+- [ ] TASK-02505: DriftDetectionUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02506: DriftDetectionUI2: add loading skeleton state for data fetch
+- [ ] TASK-02507: DriftDetectionUI2: add error boundary with recovery UI
+- [ ] TASK-02508: DriftDetectionUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02509: DriftDetectionUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02510: DriftDetectionUI2: add proper aria labels for accessibility
+- [ ] TASK-02511: NewsEnrichmentUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02512: NewsEnrichmentUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02513: NewsEnrichmentUI2: use monospace font for all numerical data displays
+- [ ] TASK-02514: NewsEnrichmentUI2: add amber 2px top border to all panels
+- [ ] TASK-02515: NewsEnrichmentUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02516: NewsEnrichmentUI2: add loading skeleton state for data fetch
+- [ ] TASK-02517: NewsEnrichmentUI2: add error boundary with recovery UI
+- [ ] TASK-02518: NewsEnrichmentUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02519: NewsEnrichmentUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02520: NewsEnrichmentUI2: add proper aria labels for accessibility
+- [ ] TASK-02521: AltDataUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02522: AltDataUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02523: AltDataUI2: use monospace font for all numerical data displays
+- [ ] TASK-02524: AltDataUI2: add amber 2px top border to all panels
+- [ ] TASK-02525: AltDataUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02526: AltDataUI2: add loading skeleton state for data fetch
+- [ ] TASK-02527: AltDataUI2: add error boundary with recovery UI
+- [ ] TASK-02528: AltDataUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02529: AltDataUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02530: AltDataUI2: add proper aria labels for accessibility
+- [ ] TASK-02531: SignalMarketUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02532: SignalMarketUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02533: SignalMarketUI2: use monospace font for all numerical data displays
+- [ ] TASK-02534: SignalMarketUI2: add amber 2px top border to all panels
+- [ ] TASK-02535: SignalMarketUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02536: SignalMarketUI2: add loading skeleton state for data fetch
+- [ ] TASK-02537: SignalMarketUI2: add error boundary with recovery UI
+- [ ] TASK-02538: SignalMarketUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02539: SignalMarketUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02540: SignalMarketUI2: add proper aria labels for accessibility
+- [ ] TASK-02541: SignalProvenanceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02542: SignalProvenanceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02543: SignalProvenanceUI2: use monospace font for all numerical data displays
+- [ ] TASK-02544: SignalProvenanceUI2: add amber 2px top border to all panels
+- [ ] TASK-02545: SignalProvenanceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02546: SignalProvenanceUI2: add loading skeleton state for data fetch
+- [ ] TASK-02547: SignalProvenanceUI2: add error boundary with recovery UI
+- [ ] TASK-02548: SignalProvenanceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02549: SignalProvenanceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02550: SignalProvenanceUI2: add proper aria labels for accessibility
+- [ ] TASK-02551: AttributionUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02552: AttributionUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02553: AttributionUI2: use monospace font for all numerical data displays
+- [ ] TASK-02554: AttributionUI2: add amber 2px top border to all panels
+- [ ] TASK-02555: AttributionUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02556: AttributionUI2: add loading skeleton state for data fetch
+- [ ] TASK-02557: AttributionUI2: add error boundary with recovery UI
+- [ ] TASK-02558: AttributionUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02559: AttributionUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02560: AttributionUI2: add proper aria labels for accessibility
+- [ ] TASK-02561: ScoringUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02562: ScoringUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02563: ScoringUI2: use monospace font for all numerical data displays
+- [ ] TASK-02564: ScoringUI2: add amber 2px top border to all panels
+- [ ] TASK-02565: ScoringUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02566: ScoringUI2: add loading skeleton state for data fetch
+- [ ] TASK-02567: ScoringUI2: add error boundary with recovery UI
+- [ ] TASK-02568: ScoringUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02569: ScoringUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02570: ScoringUI2: add proper aria labels for accessibility
+- [ ] TASK-02571: DiscoveryUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02572: DiscoveryUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02573: DiscoveryUI2: use monospace font for all numerical data displays
+- [ ] TASK-02574: DiscoveryUI2: add amber 2px top border to all panels
+- [ ] TASK-02575: DiscoveryUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02576: DiscoveryUI2: add loading skeleton state for data fetch
+- [ ] TASK-02577: DiscoveryUI2: add error boundary with recovery UI
+- [ ] TASK-02578: DiscoveryUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02579: DiscoveryUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02580: DiscoveryUI2: add proper aria labels for accessibility
+- [ ] TASK-02581: MonitorUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02582: MonitorUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02583: MonitorUI2: use monospace font for all numerical data displays
+- [ ] TASK-02584: MonitorUI2: add amber 2px top border to all panels
+- [ ] TASK-02585: MonitorUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02586: MonitorUI2: add loading skeleton state for data fetch
+- [ ] TASK-02587: MonitorUI2: add error boundary with recovery UI
+- [ ] TASK-02588: MonitorUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02589: MonitorUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02590: MonitorUI2: add proper aria labels for accessibility
+- [ ] TASK-02591: KillSwitchRecoveryUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02592: KillSwitchRecoveryUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02593: KillSwitchRecoveryUI2: use monospace font for all numerical data displays
+- [ ] TASK-02594: KillSwitchRecoveryUI2: add amber 2px top border to all panels
+- [ ] TASK-02595: KillSwitchRecoveryUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02596: KillSwitchRecoveryUI2: add loading skeleton state for data fetch
+- [ ] TASK-02597: KillSwitchRecoveryUI2: add error boundary with recovery UI
+- [ ] TASK-02598: KillSwitchRecoveryUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02599: KillSwitchRecoveryUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02600: KillSwitchRecoveryUI2: add proper aria labels for accessibility
+- [ ] TASK-02601: CrossAccountUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02602: CrossAccountUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02603: CrossAccountUI2: use monospace font for all numerical data displays
+- [ ] TASK-02604: CrossAccountUI2: add amber 2px top border to all panels
+- [ ] TASK-02605: CrossAccountUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02606: CrossAccountUI2: add loading skeleton state for data fetch
+- [ ] TASK-02607: CrossAccountUI2: add error boundary with recovery UI
+- [ ] TASK-02608: CrossAccountUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02609: CrossAccountUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02610: CrossAccountUI2: add proper aria labels for accessibility
+- [ ] TASK-02611: CrossMarginUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02612: CrossMarginUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02613: CrossMarginUI2: use monospace font for all numerical data displays
+- [ ] TASK-02614: CrossMarginUI2: add amber 2px top border to all panels
+- [ ] TASK-02615: CrossMarginUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02616: CrossMarginUI2: add loading skeleton state for data fetch
+- [ ] TASK-02617: CrossMarginUI2: add error boundary with recovery UI
+- [ ] TASK-02618: CrossMarginUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02619: CrossMarginUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02620: CrossMarginUI2: add proper aria labels for accessibility
+- [ ] TASK-02621: SweepV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02622: SweepV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02623: SweepV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-02624: SweepV2UI2: add amber 2px top border to all panels
+- [ ] TASK-02625: SweepV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02626: SweepV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-02627: SweepV2UI2: add error boundary with recovery UI
+- [ ] TASK-02628: SweepV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02629: SweepV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02630: SweepV2UI2: add proper aria labels for accessibility
+- [ ] TASK-02631: BacktestContractUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02632: BacktestContractUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02633: BacktestContractUI2: use monospace font for all numerical data displays
+- [ ] TASK-02634: BacktestContractUI2: add amber 2px top border to all panels
+- [ ] TASK-02635: BacktestContractUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02636: BacktestContractUI2: add loading skeleton state for data fetch
+- [ ] TASK-02637: BacktestContractUI2: add error boundary with recovery UI
+- [ ] TASK-02638: BacktestContractUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02639: BacktestContractUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02640: BacktestContractUI2: add proper aria labels for accessibility
+- [ ] TASK-02641: NLWorkflowUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02642: NLWorkflowUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02643: NLWorkflowUI2: use monospace font for all numerical data displays
+- [ ] TASK-02644: NLWorkflowUI2: add amber 2px top border to all panels
+- [ ] TASK-02645: NLWorkflowUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02646: NLWorkflowUI2: add loading skeleton state for data fetch
+- [ ] TASK-02647: NLWorkflowUI2: add error boundary with recovery UI
+- [ ] TASK-02648: NLWorkflowUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02649: NLWorkflowUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02650: NLWorkflowUI2: add proper aria labels for accessibility
+- [ ] TASK-02651: WorkflowsV3UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02652: WorkflowsV3UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02653: WorkflowsV3UI2: use monospace font for all numerical data displays
+- [ ] TASK-02654: WorkflowsV3UI2: add amber 2px top border to all panels
+- [ ] TASK-02655: WorkflowsV3UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02656: WorkflowsV3UI2: add loading skeleton state for data fetch
+- [ ] TASK-02657: WorkflowsV3UI2: add error boundary with recovery UI
+- [ ] TASK-02658: WorkflowsV3UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02659: WorkflowsV3UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02660: WorkflowsV3UI2: add proper aria labels for accessibility
+- [ ] TASK-02661: RobustnessUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02662: RobustnessUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02663: RobustnessUI2: use monospace font for all numerical data displays
+- [ ] TASK-02664: RobustnessUI2: add amber 2px top border to all panels
+- [ ] TASK-02665: RobustnessUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02666: RobustnessUI2: add loading skeleton state for data fetch
+- [ ] TASK-02667: RobustnessUI2: add error boundary with recovery UI
+- [ ] TASK-02668: RobustnessUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02669: RobustnessUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02670: RobustnessUI2: add proper aria labels for accessibility
+- [ ] TASK-02671: MarketSessionV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02672: MarketSessionV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02673: MarketSessionV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-02674: MarketSessionV2UI2: add amber 2px top border to all panels
+- [ ] TASK-02675: MarketSessionV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02676: MarketSessionV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-02677: MarketSessionV2UI2: add error boundary with recovery UI
+- [ ] TASK-02678: MarketSessionV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02679: MarketSessionV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02680: MarketSessionV2UI2: add proper aria labels for accessibility
+- [ ] TASK-02681: MarketHoursUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02682: MarketHoursUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02683: MarketHoursUI2: use monospace font for all numerical data displays
+- [ ] TASK-02684: MarketHoursUI2: add amber 2px top border to all panels
+- [ ] TASK-02685: MarketHoursUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02686: MarketHoursUI2: add loading skeleton state for data fetch
+- [ ] TASK-02687: MarketHoursUI2: add error boundary with recovery UI
+- [ ] TASK-02688: MarketHoursUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02689: MarketHoursUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02690: MarketHoursUI2: add proper aria labels for accessibility
+- [ ] TASK-02691: GreeksServiceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02692: GreeksServiceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02693: GreeksServiceUI2: use monospace font for all numerical data displays
+- [ ] TASK-02694: GreeksServiceUI2: add amber 2px top border to all panels
+- [ ] TASK-02695: GreeksServiceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02696: GreeksServiceUI2: add loading skeleton state for data fetch
+- [ ] TASK-02697: GreeksServiceUI2: add error boundary with recovery UI
+- [ ] TASK-02698: GreeksServiceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02699: GreeksServiceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02700: GreeksServiceUI2: add proper aria labels for accessibility
+- [ ] TASK-02701: RiskGovernanceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02702: RiskGovernanceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02703: RiskGovernanceUI2: use monospace font for all numerical data displays
+- [ ] TASK-02704: RiskGovernanceUI2: add amber 2px top border to all panels
+- [ ] TASK-02705: RiskGovernanceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02706: RiskGovernanceUI2: add loading skeleton state for data fetch
+- [ ] TASK-02707: RiskGovernanceUI2: add error boundary with recovery UI
+- [ ] TASK-02708: RiskGovernanceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02709: RiskGovernanceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02710: RiskGovernanceUI2: add proper aria labels for accessibility
+- [ ] TASK-02711: DerivativesGovUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02712: DerivativesGovUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02713: DerivativesGovUI2: use monospace font for all numerical data displays
+- [ ] TASK-02714: DerivativesGovUI2: add amber 2px top border to all panels
+- [ ] TASK-02715: DerivativesGovUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02716: DerivativesGovUI2: add loading skeleton state for data fetch
+- [ ] TASK-02717: DerivativesGovUI2: add error boundary with recovery UI
+- [ ] TASK-02718: DerivativesGovUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02719: DerivativesGovUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02720: DerivativesGovUI2: add proper aria labels for accessibility
+- [ ] TASK-02721: EntitlementsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02722: EntitlementsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02723: EntitlementsUI2: use monospace font for all numerical data displays
+- [ ] TASK-02724: EntitlementsUI2: add amber 2px top border to all panels
+- [ ] TASK-02725: EntitlementsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02726: EntitlementsUI2: add loading skeleton state for data fetch
+- [ ] TASK-02727: EntitlementsUI2: add error boundary with recovery UI
+- [ ] TASK-02728: EntitlementsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02729: EntitlementsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02730: EntitlementsUI2: add proper aria labels for accessibility
+- [ ] TASK-02731: AccessibilityAuditUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02732: AccessibilityAuditUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02733: AccessibilityAuditUI2: use monospace font for all numerical data displays
+- [ ] TASK-02734: AccessibilityAuditUI2: add amber 2px top border to all panels
+- [ ] TASK-02735: AccessibilityAuditUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02736: AccessibilityAuditUI2: add loading skeleton state for data fetch
+- [ ] TASK-02737: AccessibilityAuditUI2: add error boundary with recovery UI
+- [ ] TASK-02738: AccessibilityAuditUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02739: AccessibilityAuditUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02740: AccessibilityAuditUI2: add proper aria labels for accessibility
+- [ ] TASK-02741: AppSandboxUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02742: AppSandboxUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02743: AppSandboxUI2: use monospace font for all numerical data displays
+- [ ] TASK-02744: AppSandboxUI2: add amber 2px top border to all panels
+- [ ] TASK-02745: AppSandboxUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02746: AppSandboxUI2: add loading skeleton state for data fetch
+- [ ] TASK-02747: AppSandboxUI2: add error boundary with recovery UI
+- [ ] TASK-02748: AppSandboxUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02749: AppSandboxUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02750: AppSandboxUI2: add proper aria labels for accessibility
+- [ ] TASK-02751: SandboxRunnerUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02752: SandboxRunnerUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02753: SandboxRunnerUI2: use monospace font for all numerical data displays
+- [ ] TASK-02754: SandboxRunnerUI2: add amber 2px top border to all panels
+- [ ] TASK-02755: SandboxRunnerUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02756: SandboxRunnerUI2: add loading skeleton state for data fetch
+- [ ] TASK-02757: SandboxRunnerUI2: add error boundary with recovery UI
+- [ ] TASK-02758: SandboxRunnerUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02759: SandboxRunnerUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02760: SandboxRunnerUI2: add proper aria labels for accessibility
+- [ ] TASK-02761: PluginRuntimeUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02762: PluginRuntimeUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02763: PluginRuntimeUI2: use monospace font for all numerical data displays
+- [ ] TASK-02764: PluginRuntimeUI2: add amber 2px top border to all panels
+- [ ] TASK-02765: PluginRuntimeUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02766: PluginRuntimeUI2: add loading skeleton state for data fetch
+- [ ] TASK-02767: PluginRuntimeUI2: add error boundary with recovery UI
+- [ ] TASK-02768: PluginRuntimeUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02769: PluginRuntimeUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02770: PluginRuntimeUI2: add proper aria labels for accessibility
+- [ ] TASK-02771: DevPortalUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02772: DevPortalUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02773: DevPortalUI2: use monospace font for all numerical data displays
+- [ ] TASK-02774: DevPortalUI2: add amber 2px top border to all panels
+- [ ] TASK-02775: DevPortalUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02776: DevPortalUI2: add loading skeleton state for data fetch
+- [ ] TASK-02777: DevPortalUI2: add error boundary with recovery UI
+- [ ] TASK-02778: DevPortalUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02779: DevPortalUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02780: DevPortalUI2: add proper aria labels for accessibility
+- [ ] TASK-02781: SdkApiUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02782: SdkApiUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02783: SdkApiUI2: use monospace font for all numerical data displays
+- [ ] TASK-02784: SdkApiUI2: add amber 2px top border to all panels
+- [ ] TASK-02785: SdkApiUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02786: SdkApiUI2: add loading skeleton state for data fetch
+- [ ] TASK-02787: SdkApiUI2: add error boundary with recovery UI
+- [ ] TASK-02788: SdkApiUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02789: SdkApiUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02790: SdkApiUI2: add proper aria labels for accessibility
+- [ ] TASK-02791: ExportBundleUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02792: ExportBundleUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02793: ExportBundleUI2: use monospace font for all numerical data displays
+- [ ] TASK-02794: ExportBundleUI2: add amber 2px top border to all panels
+- [ ] TASK-02795: ExportBundleUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02796: ExportBundleUI2: add loading skeleton state for data fetch
+- [ ] TASK-02797: ExportBundleUI2: add error boundary with recovery UI
+- [ ] TASK-02798: ExportBundleUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02799: ExportBundleUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02800: ExportBundleUI2: add proper aria labels for accessibility
+- [ ] TASK-02801: MarketplaceTrustUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02802: MarketplaceTrustUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02803: MarketplaceTrustUI2: use monospace font for all numerical data displays
+- [ ] TASK-02804: MarketplaceTrustUI2: add amber 2px top border to all panels
+- [ ] TASK-02805: MarketplaceTrustUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02806: MarketplaceTrustUI2: add loading skeleton state for data fetch
+- [ ] TASK-02807: MarketplaceTrustUI2: add error boundary with recovery UI
+- [ ] TASK-02808: MarketplaceTrustUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02809: MarketplaceTrustUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02810: MarketplaceTrustUI2: add proper aria labels for accessibility
+- [ ] TASK-02811: BillingEventsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02812: BillingEventsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02813: BillingEventsUI2: use monospace font for all numerical data displays
+- [ ] TASK-02814: BillingEventsUI2: add amber 2px top border to all panels
+- [ ] TASK-02815: BillingEventsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02816: BillingEventsUI2: add loading skeleton state for data fetch
+- [ ] TASK-02817: BillingEventsUI2: add error boundary with recovery UI
+- [ ] TASK-02818: BillingEventsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02819: BillingEventsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02820: BillingEventsUI2: add proper aria labels for accessibility
+- [ ] TASK-02821: UsageMeteringUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02822: UsageMeteringUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02823: UsageMeteringUI2: use monospace font for all numerical data displays
+- [ ] TASK-02824: UsageMeteringUI2: add amber 2px top border to all panels
+- [ ] TASK-02825: UsageMeteringUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02826: UsageMeteringUI2: add loading skeleton state for data fetch
+- [ ] TASK-02827: UsageMeteringUI2: add error boundary with recovery UI
+- [ ] TASK-02828: UsageMeteringUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02829: UsageMeteringUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02830: UsageMeteringUI2: add proper aria labels for accessibility
+- [ ] TASK-02831: CostProfilerUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02832: CostProfilerUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02833: CostProfilerUI2: use monospace font for all numerical data displays
+- [ ] TASK-02834: CostProfilerUI2: add amber 2px top border to all panels
+- [ ] TASK-02835: CostProfilerUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02836: CostProfilerUI2: add loading skeleton state for data fetch
+- [ ] TASK-02837: CostProfilerUI2: add error boundary with recovery UI
+- [ ] TASK-02838: CostProfilerUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02839: CostProfilerUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02840: CostProfilerUI2: add proper aria labels for accessibility
+- [ ] TASK-02841: TenantQuotaUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02842: TenantQuotaUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02843: TenantQuotaUI2: use monospace font for all numerical data displays
+- [ ] TASK-02844: TenantQuotaUI2: add amber 2px top border to all panels
+- [ ] TASK-02845: TenantQuotaUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02846: TenantQuotaUI2: add loading skeleton state for data fetch
+- [ ] TASK-02847: TenantQuotaUI2: add error boundary with recovery UI
+- [ ] TASK-02848: TenantQuotaUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02849: TenantQuotaUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02850: TenantQuotaUI2: add proper aria labels for accessibility
+- [ ] TASK-02851: DataResidencyUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02852: DataResidencyUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02853: DataResidencyUI2: use monospace font for all numerical data displays
+- [ ] TASK-02854: DataResidencyUI2: add amber 2px top border to all panels
+- [ ] TASK-02855: DataResidencyUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02856: DataResidencyUI2: add loading skeleton state for data fetch
+- [ ] TASK-02857: DataResidencyUI2: add error boundary with recovery UI
+- [ ] TASK-02858: DataResidencyUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02859: DataResidencyUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02860: DataResidencyUI2: add proper aria labels for accessibility
+- [ ] TASK-02861: JurisdictionUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02862: JurisdictionUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02863: JurisdictionUI2: use monospace font for all numerical data displays
+- [ ] TASK-02864: JurisdictionUI2: add amber 2px top border to all panels
+- [ ] TASK-02865: JurisdictionUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02866: JurisdictionUI2: add loading skeleton state for data fetch
+- [ ] TASK-02867: JurisdictionUI2: add error boundary with recovery UI
+- [ ] TASK-02868: JurisdictionUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02869: JurisdictionUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02870: JurisdictionUI2: add proper aria labels for accessibility
+- [ ] TASK-02871: MultiRegionUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02872: MultiRegionUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02873: MultiRegionUI2: use monospace font for all numerical data displays
+- [ ] TASK-02874: MultiRegionUI2: add amber 2px top border to all panels
+- [ ] TASK-02875: MultiRegionUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02876: MultiRegionUI2: add loading skeleton state for data fetch
+- [ ] TASK-02877: MultiRegionUI2: add error boundary with recovery UI
+- [ ] TASK-02878: MultiRegionUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02879: MultiRegionUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02880: MultiRegionUI2: add proper aria labels for accessibility
+- [ ] TASK-02881: RegionalFailoverUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02882: RegionalFailoverUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02883: RegionalFailoverUI2: use monospace font for all numerical data displays
+- [ ] TASK-02884: RegionalFailoverUI2: add amber 2px top border to all panels
+- [ ] TASK-02885: RegionalFailoverUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02886: RegionalFailoverUI2: add loading skeleton state for data fetch
+- [ ] TASK-02887: RegionalFailoverUI2: add error boundary with recovery UI
+- [ ] TASK-02888: RegionalFailoverUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02889: RegionalFailoverUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02890: RegionalFailoverUI2: add proper aria labels for accessibility
+- [ ] TASK-02891: SafeActionsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02892: SafeActionsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02893: SafeActionsUI2: use monospace font for all numerical data displays
+- [ ] TASK-02894: SafeActionsUI2: add amber 2px top border to all panels
+- [ ] TASK-02895: SafeActionsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02896: SafeActionsUI2: add loading skeleton state for data fetch
+- [ ] TASK-02897: SafeActionsUI2: add error boundary with recovery UI
+- [ ] TASK-02898: SafeActionsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02899: SafeActionsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02900: SafeActionsUI2: add proper aria labels for accessibility
+- [ ] TASK-02901: CapacityPlanUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02902: CapacityPlanUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02903: CapacityPlanUI2: use monospace font for all numerical data displays
+- [ ] TASK-02904: CapacityPlanUI2: add amber 2px top border to all panels
+- [ ] TASK-02905: CapacityPlanUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02906: CapacityPlanUI2: add loading skeleton state for data fetch
+- [ ] TASK-02907: CapacityPlanUI2: add error boundary with recovery UI
+- [ ] TASK-02908: CapacityPlanUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02909: CapacityPlanUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02910: CapacityPlanUI2: add proper aria labels for accessibility
+- [ ] TASK-02911: SupportSlaUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02912: SupportSlaUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02913: SupportSlaUI2: use monospace font for all numerical data displays
+- [ ] TASK-02914: SupportSlaUI2: add amber 2px top border to all panels
+- [ ] TASK-02915: SupportSlaUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02916: SupportSlaUI2: add loading skeleton state for data fetch
+- [ ] TASK-02917: SupportSlaUI2: add error boundary with recovery UI
+- [ ] TASK-02918: SupportSlaUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02919: SupportSlaUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02920: SupportSlaUI2: add proper aria labels for accessibility
+- [ ] TASK-02921: ThirdPartyRiskUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02922: ThirdPartyRiskUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02923: ThirdPartyRiskUI2: use monospace font for all numerical data displays
+- [ ] TASK-02924: ThirdPartyRiskUI2: add amber 2px top border to all panels
+- [ ] TASK-02925: ThirdPartyRiskUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02926: ThirdPartyRiskUI2: add loading skeleton state for data fetch
+- [ ] TASK-02927: ThirdPartyRiskUI2: add error boundary with recovery UI
+- [ ] TASK-02928: ThirdPartyRiskUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02929: ThirdPartyRiskUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02930: ThirdPartyRiskUI2: add proper aria labels for accessibility
+- [ ] TASK-02931: PartnerCiUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02932: PartnerCiUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02933: PartnerCiUI2: use monospace font for all numerical data displays
+- [ ] TASK-02934: PartnerCiUI2: add amber 2px top border to all panels
+- [ ] TASK-02935: PartnerCiUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02936: PartnerCiUI2: add loading skeleton state for data fetch
+- [ ] TASK-02937: PartnerCiUI2: add error boundary with recovery UI
+- [ ] TASK-02938: PartnerCiUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02939: PartnerCiUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02940: PartnerCiUI2: add proper aria labels for accessibility
+- [ ] TASK-02941: PolicyCodeUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02942: PolicyCodeUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02943: PolicyCodeUI2: use monospace font for all numerical data displays
+- [ ] TASK-02944: PolicyCodeUI2: add amber 2px top border to all panels
+- [ ] TASK-02945: PolicyCodeUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02946: PolicyCodeUI2: add loading skeleton state for data fetch
+- [ ] TASK-02947: PolicyCodeUI2: add error boundary with recovery UI
+- [ ] TASK-02948: PolicyCodeUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02949: PolicyCodeUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02950: PolicyCodeUI2: add proper aria labels for accessibility
+- [ ] TASK-02951: ApprovalChainUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02952: ApprovalChainUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02953: ApprovalChainUI2: use monospace font for all numerical data displays
+- [ ] TASK-02954: ApprovalChainUI2: add amber 2px top border to all panels
+- [ ] TASK-02955: ApprovalChainUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02956: ApprovalChainUI2: add loading skeleton state for data fetch
+- [ ] TASK-02957: ApprovalChainUI2: add error boundary with recovery UI
+- [ ] TASK-02958: ApprovalChainUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02959: ApprovalChainUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02960: ApprovalChainUI2: add proper aria labels for accessibility
+- [ ] TASK-02961: ApprovalQueueUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02962: ApprovalQueueUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02963: ApprovalQueueUI2: use monospace font for all numerical data displays
+- [ ] TASK-02964: ApprovalQueueUI2: add amber 2px top border to all panels
+- [ ] TASK-02965: ApprovalQueueUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02966: ApprovalQueueUI2: add loading skeleton state for data fetch
+- [ ] TASK-02967: ApprovalQueueUI2: add error boundary with recovery UI
+- [ ] TASK-02968: ApprovalQueueUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02969: ApprovalQueueUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02970: ApprovalQueueUI2: add proper aria labels for accessibility
+- [ ] TASK-02971: PolicyAttestationUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02972: PolicyAttestationUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02973: PolicyAttestationUI2: use monospace font for all numerical data displays
+- [ ] TASK-02974: PolicyAttestationUI2: add amber 2px top border to all panels
+- [ ] TASK-02975: PolicyAttestationUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02976: PolicyAttestationUI2: add loading skeleton state for data fetch
+- [ ] TASK-02977: PolicyAttestationUI2: add error boundary with recovery UI
+- [ ] TASK-02978: PolicyAttestationUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02979: PolicyAttestationUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02980: PolicyAttestationUI2: add proper aria labels for accessibility
+- [ ] TASK-02981: PolicySignalUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02982: PolicySignalUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02983: PolicySignalUI2: use monospace font for all numerical data displays
+- [ ] TASK-02984: PolicySignalUI2: add amber 2px top border to all panels
+- [ ] TASK-02985: PolicySignalUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02986: PolicySignalUI2: add loading skeleton state for data fetch
+- [ ] TASK-02987: PolicySignalUI2: add error boundary with recovery UI
+- [ ] TASK-02988: PolicySignalUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02989: PolicySignalUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-02990: PolicySignalUI2: add proper aria labels for accessibility
+- [ ] TASK-02991: SurveillanceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-02992: SurveillanceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-02993: SurveillanceUI2: use monospace font for all numerical data displays
+- [ ] TASK-02994: SurveillanceUI2: add amber 2px top border to all panels
+- [ ] TASK-02995: SurveillanceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-02996: SurveillanceUI2: add loading skeleton state for data fetch
+- [ ] TASK-02997: SurveillanceUI2: add error boundary with recovery UI
+- [ ] TASK-02998: SurveillanceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-02999: SurveillanceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03000: SurveillanceUI2: add proper aria labels for accessibility
+- [ ] TASK-03001: SupervisoryUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03002: SupervisoryUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03003: SupervisoryUI2: use monospace font for all numerical data displays
+- [ ] TASK-03004: SupervisoryUI2: add amber 2px top border to all panels
+- [ ] TASK-03005: SupervisoryUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03006: SupervisoryUI2: add loading skeleton state for data fetch
+- [ ] TASK-03007: SupervisoryUI2: add error boundary with recovery UI
+- [ ] TASK-03008: SupervisoryUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03009: SupervisoryUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03010: SupervisoryUI2: add proper aria labels for accessibility
+- [ ] TASK-03011: ControlFrameworkUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03012: ControlFrameworkUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03013: ControlFrameworkUI2: use monospace font for all numerical data displays
+- [ ] TASK-03014: ControlFrameworkUI2: add amber 2px top border to all panels
+- [ ] TASK-03015: ControlFrameworkUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03016: ControlFrameworkUI2: add loading skeleton state for data fetch
+- [ ] TASK-03017: ControlFrameworkUI2: add error boundary with recovery UI
+- [ ] TASK-03018: ControlFrameworkUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03019: ControlFrameworkUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03020: ControlFrameworkUI2: add proper aria labels for accessibility
+- [ ] TASK-03021: ControlsDomainUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03022: ControlsDomainUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03023: ControlsDomainUI2: use monospace font for all numerical data displays
+- [ ] TASK-03024: ControlsDomainUI2: add amber 2px top border to all panels
+- [ ] TASK-03025: ControlsDomainUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03026: ControlsDomainUI2: add loading skeleton state for data fetch
+- [ ] TASK-03027: ControlsDomainUI2: add error boundary with recovery UI
+- [ ] TASK-03028: ControlsDomainUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03029: ControlsDomainUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03030: ControlsDomainUI2: add proper aria labels for accessibility
+- [ ] TASK-03031: AiGovernanceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03032: AiGovernanceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03033: AiGovernanceUI2: use monospace font for all numerical data displays
+- [ ] TASK-03034: AiGovernanceUI2: add amber 2px top border to all panels
+- [ ] TASK-03035: AiGovernanceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03036: AiGovernanceUI2: add loading skeleton state for data fetch
+- [ ] TASK-03037: AiGovernanceUI2: add error boundary with recovery UI
+- [ ] TASK-03038: AiGovernanceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03039: AiGovernanceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03040: AiGovernanceUI2: add proper aria labels for accessibility
+- [ ] TASK-03041: AIProviderStatusUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03042: AIProviderStatusUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03043: AIProviderStatusUI2: use monospace font for all numerical data displays
+- [ ] TASK-03044: AIProviderStatusUI2: add amber 2px top border to all panels
+- [ ] TASK-03045: AIProviderStatusUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03046: AIProviderStatusUI2: add loading skeleton state for data fetch
+- [ ] TASK-03047: AIProviderStatusUI2: add error boundary with recovery UI
+- [ ] TASK-03048: AIProviderStatusUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03049: AIProviderStatusUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03050: AIProviderStatusUI2: add proper aria labels for accessibility
+- [ ] TASK-03051: AIStrategyUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03052: AIStrategyUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03053: AIStrategyUI2: use monospace font for all numerical data displays
+- [ ] TASK-03054: AIStrategyUI2: add amber 2px top border to all panels
+- [ ] TASK-03055: AIStrategyUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03056: AIStrategyUI2: add loading skeleton state for data fetch
+- [ ] TASK-03057: AIStrategyUI2: add error boundary with recovery UI
+- [ ] TASK-03058: AIStrategyUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03059: AIStrategyUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03060: AIStrategyUI2: add proper aria labels for accessibility
+- [ ] TASK-03061: ModelRouterUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03062: ModelRouterUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03063: ModelRouterUI2: use monospace font for all numerical data displays
+- [ ] TASK-03064: ModelRouterUI2: add amber 2px top border to all panels
+- [ ] TASK-03065: ModelRouterUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03066: ModelRouterUI2: add loading skeleton state for data fetch
+- [ ] TASK-03067: ModelRouterUI2: add error boundary with recovery UI
+- [ ] TASK-03068: ModelRouterUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03069: ModelRouterUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03070: ModelRouterUI2: add proper aria labels for accessibility
+- [ ] TASK-03071: PromptFirewallUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03072: PromptFirewallUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03073: PromptFirewallUI2: use monospace font for all numerical data displays
+- [ ] TASK-03074: PromptFirewallUI2: add amber 2px top border to all panels
+- [ ] TASK-03075: PromptFirewallUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03076: PromptFirewallUI2: add loading skeleton state for data fetch
+- [ ] TASK-03077: PromptFirewallUI2: add error boundary with recovery UI
+- [ ] TASK-03078: PromptFirewallUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03079: PromptFirewallUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03080: PromptFirewallUI2: add proper aria labels for accessibility
+- [ ] TASK-03081: EvalHarnessUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03082: EvalHarnessUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03083: EvalHarnessUI2: use monospace font for all numerical data displays
+- [ ] TASK-03084: EvalHarnessUI2: add amber 2px top border to all panels
+- [ ] TASK-03085: EvalHarnessUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03086: EvalHarnessUI2: add loading skeleton state for data fetch
+- [ ] TASK-03087: EvalHarnessUI2: add error boundary with recovery UI
+- [ ] TASK-03088: EvalHarnessUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03089: EvalHarnessUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03090: EvalHarnessUI2: add proper aria labels for accessibility
+- [ ] TASK-03091: AgentEvalHarnessUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03092: AgentEvalHarnessUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03093: AgentEvalHarnessUI2: use monospace font for all numerical data displays
+- [ ] TASK-03094: AgentEvalHarnessUI2: add amber 2px top border to all panels
+- [ ] TASK-03095: AgentEvalHarnessUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03096: AgentEvalHarnessUI2: add loading skeleton state for data fetch
+- [ ] TASK-03097: AgentEvalHarnessUI2: add error boundary with recovery UI
+- [ ] TASK-03098: AgentEvalHarnessUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03099: AgentEvalHarnessUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03100: AgentEvalHarnessUI2: add proper aria labels for accessibility
+- [ ] TASK-03101: AgentToolsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03102: AgentToolsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03103: AgentToolsUI2: use monospace font for all numerical data displays
+- [ ] TASK-03104: AgentToolsUI2: add amber 2px top border to all panels
+- [ ] TASK-03105: AgentToolsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03106: AgentToolsUI2: add loading skeleton state for data fetch
+- [ ] TASK-03107: AgentToolsUI2: add error boundary with recovery UI
+- [ ] TASK-03108: AgentToolsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03109: AgentToolsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03110: AgentToolsUI2: add proper aria labels for accessibility
+- [ ] TASK-03111: SearchExplainUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03112: SearchExplainUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03113: SearchExplainUI2: use monospace font for all numerical data displays
+- [ ] TASK-03114: SearchExplainUI2: add amber 2px top border to all panels
+- [ ] TASK-03115: SearchExplainUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03116: SearchExplainUI2: add loading skeleton state for data fetch
+- [ ] TASK-03117: SearchExplainUI2: add error boundary with recovery UI
+- [ ] TASK-03118: SearchExplainUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03119: SearchExplainUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03120: SearchExplainUI2: add proper aria labels for accessibility
+- [ ] TASK-03121: EvidenceGraphUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03122: EvidenceGraphUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03123: EvidenceGraphUI2: use monospace font for all numerical data displays
+- [ ] TASK-03124: EvidenceGraphUI2: add amber 2px top border to all panels
+- [ ] TASK-03125: EvidenceGraphUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03126: EvidenceGraphUI2: add loading skeleton state for data fetch
+- [ ] TASK-03127: EvidenceGraphUI2: add error boundary with recovery UI
+- [ ] TASK-03128: EvidenceGraphUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03129: EvidenceGraphUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03130: EvidenceGraphUI2: add proper aria labels for accessibility
+- [ ] TASK-03131: EvidenceVaultUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03132: EvidenceVaultUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03133: EvidenceVaultUI2: use monospace font for all numerical data displays
+- [ ] TASK-03134: EvidenceVaultUI2: add amber 2px top border to all panels
+- [ ] TASK-03135: EvidenceVaultUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03136: EvidenceVaultUI2: add loading skeleton state for data fetch
+- [ ] TASK-03137: EvidenceVaultUI2: add error boundary with recovery UI
+- [ ] TASK-03138: EvidenceVaultUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03139: EvidenceVaultUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03140: EvidenceVaultUI2: add proper aria labels for accessibility
+- [ ] TASK-03141: ResearchGovernanceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03142: ResearchGovernanceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03143: ResearchGovernanceUI2: use monospace font for all numerical data displays
+- [ ] TASK-03144: ResearchGovernanceUI2: add amber 2px top border to all panels
+- [ ] TASK-03145: ResearchGovernanceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03146: ResearchGovernanceUI2: add loading skeleton state for data fetch
+- [ ] TASK-03147: ResearchGovernanceUI2: add error boundary with recovery UI
+- [ ] TASK-03148: ResearchGovernanceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03149: ResearchGovernanceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03150: ResearchGovernanceUI2: add proper aria labels for accessibility
+- [ ] TASK-03151: ResearchQueueUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03152: ResearchQueueUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03153: ResearchQueueUI2: use monospace font for all numerical data displays
+- [ ] TASK-03154: ResearchQueueUI2: add amber 2px top border to all panels
+- [ ] TASK-03155: ResearchQueueUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03156: ResearchQueueUI2: add loading skeleton state for data fetch
+- [ ] TASK-03157: ResearchQueueUI2: add error boundary with recovery UI
+- [ ] TASK-03158: ResearchQueueUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03159: ResearchQueueUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03160: ResearchQueueUI2: add proper aria labels for accessibility
+- [ ] TASK-03161: EntityResolutionUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03162: EntityResolutionUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03163: EntityResolutionUI2: use monospace font for all numerical data displays
+- [ ] TASK-03164: EntityResolutionUI2: add amber 2px top border to all panels
+- [ ] TASK-03165: EntityResolutionUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03166: EntityResolutionUI2: add loading skeleton state for data fetch
+- [ ] TASK-03167: EntityResolutionUI2: add error boundary with recovery UI
+- [ ] TASK-03168: EntityResolutionUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03169: EntityResolutionUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03170: EntityResolutionUI2: add proper aria labels for accessibility
+- [ ] TASK-03171: DataSpineUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03172: DataSpineUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03173: DataSpineUI2: use monospace font for all numerical data displays
+- [ ] TASK-03174: DataSpineUI2: add amber 2px top border to all panels
+- [ ] TASK-03175: DataSpineUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03176: DataSpineUI2: add loading skeleton state for data fetch
+- [ ] TASK-03177: DataSpineUI2: add error boundary with recovery UI
+- [ ] TASK-03178: DataSpineUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03179: DataSpineUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03180: DataSpineUI2: add proper aria labels for accessibility
+- [ ] TASK-03181: ElasticsearchUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03182: ElasticsearchUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03183: ElasticsearchUI2: use monospace font for all numerical data displays
+- [ ] TASK-03184: ElasticsearchUI2: add amber 2px top border to all panels
+- [ ] TASK-03185: ElasticsearchUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03186: ElasticsearchUI2: add loading skeleton state for data fetch
+- [ ] TASK-03187: ElasticsearchUI2: add error boundary with recovery UI
+- [ ] TASK-03188: ElasticsearchUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03189: ElasticsearchUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03190: ElasticsearchUI2: add proper aria labels for accessibility
+- [ ] TASK-03191: ElastiHackUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03192: ElastiHackUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03193: ElastiHackUI2: use monospace font for all numerical data displays
+- [ ] TASK-03194: ElastiHackUI2: add amber 2px top border to all panels
+- [ ] TASK-03195: ElastiHackUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03196: ElastiHackUI2: add loading skeleton state for data fetch
+- [ ] TASK-03197: ElastiHackUI2: add error boundary with recovery UI
+- [ ] TASK-03198: ElastiHackUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03199: ElastiHackUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03200: ElastiHackUI2: add proper aria labels for accessibility
+- [ ] TASK-03201: EsOpsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03202: EsOpsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03203: EsOpsUI2: use monospace font for all numerical data displays
+- [ ] TASK-03204: EsOpsUI2: add amber 2px top border to all panels
+- [ ] TASK-03205: EsOpsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03206: EsOpsUI2: add loading skeleton state for data fetch
+- [ ] TASK-03207: EsOpsUI2: add error boundary with recovery UI
+- [ ] TASK-03208: EsOpsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03209: EsOpsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03210: EsOpsUI2: add proper aria labels for accessibility
+- [ ] TASK-03211: DlqOpsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03212: DlqOpsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03213: DlqOpsUI2: use monospace font for all numerical data displays
+- [ ] TASK-03214: DlqOpsUI2: add amber 2px top border to all panels
+- [ ] TASK-03215: DlqOpsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03216: DlqOpsUI2: add loading skeleton state for data fetch
+- [ ] TASK-03217: DlqOpsUI2: add error boundary with recovery UI
+- [ ] TASK-03218: DlqOpsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03219: DlqOpsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03220: DlqOpsUI2: add proper aria labels for accessibility
+- [ ] TASK-03221: ExtObservabilityUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03222: ExtObservabilityUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03223: ExtObservabilityUI2: use monospace font for all numerical data displays
+- [ ] TASK-03224: ExtObservabilityUI2: add amber 2px top border to all panels
+- [ ] TASK-03225: ExtObservabilityUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03226: ExtObservabilityUI2: add loading skeleton state for data fetch
+- [ ] TASK-03227: ExtObservabilityUI2: add error boundary with recovery UI
+- [ ] TASK-03228: ExtObservabilityUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03229: ExtObservabilityUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03230: ExtObservabilityUI2: add proper aria labels for accessibility
+- [ ] TASK-03231: HotPathUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03232: HotPathUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03233: HotPathUI2: use monospace font for all numerical data displays
+- [ ] TASK-03234: HotPathUI2: add amber 2px top border to all panels
+- [ ] TASK-03235: HotPathUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03236: HotPathUI2: add loading skeleton state for data fetch
+- [ ] TASK-03237: HotPathUI2: add error boundary with recovery UI
+- [ ] TASK-03238: HotPathUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03239: HotPathUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03240: HotPathUI2: add proper aria labels for accessibility
+- [ ] TASK-03241: LatencyBudgetUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03242: LatencyBudgetUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03243: LatencyBudgetUI2: use monospace font for all numerical data displays
+- [ ] TASK-03244: LatencyBudgetUI2: add amber 2px top border to all panels
+- [ ] TASK-03245: LatencyBudgetUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03246: LatencyBudgetUI2: add loading skeleton state for data fetch
+- [ ] TASK-03247: LatencyBudgetUI2: add error boundary with recovery UI
+- [ ] TASK-03248: LatencyBudgetUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03249: LatencyBudgetUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03250: LatencyBudgetUI2: add proper aria labels for accessibility
+- [ ] TASK-03251: PerfBudgetUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03252: PerfBudgetUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03253: PerfBudgetUI2: use monospace font for all numerical data displays
+- [ ] TASK-03254: PerfBudgetUI2: add amber 2px top border to all panels
+- [ ] TASK-03255: PerfBudgetUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03256: PerfBudgetUI2: add loading skeleton state for data fetch
+- [ ] TASK-03257: PerfBudgetUI2: add error boundary with recovery UI
+- [ ] TASK-03258: PerfBudgetUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03259: PerfBudgetUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03260: PerfBudgetUI2: add proper aria labels for accessibility
+- [ ] TASK-03261: PlatformDebtUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03262: PlatformDebtUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03263: PlatformDebtUI2: use monospace font for all numerical data displays
+- [ ] TASK-03264: PlatformDebtUI2: add amber 2px top border to all panels
+- [ ] TASK-03265: PlatformDebtUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03266: PlatformDebtUI2: add loading skeleton state for data fetch
+- [ ] TASK-03267: PlatformDebtUI2: add error boundary with recovery UI
+- [ ] TASK-03268: PlatformDebtUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03269: PlatformDebtUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03270: PlatformDebtUI2: add proper aria labels for accessibility
+- [ ] TASK-03271: ReleaseQualityUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03272: ReleaseQualityUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03273: ReleaseQualityUI2: use monospace font for all numerical data displays
+- [ ] TASK-03274: ReleaseQualityUI2: add amber 2px top border to all panels
+- [ ] TASK-03275: ReleaseQualityUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03276: ReleaseQualityUI2: add loading skeleton state for data fetch
+- [ ] TASK-03277: ReleaseQualityUI2: add error boundary with recovery UI
+- [ ] TASK-03278: ReleaseQualityUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03279: ReleaseQualityUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03280: ReleaseQualityUI2: add proper aria labels for accessibility
+- [ ] TASK-03281: ReliabilityEconUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03282: ReliabilityEconUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03283: ReliabilityEconUI2: use monospace font for all numerical data displays
+- [ ] TASK-03284: ReliabilityEconUI2: add amber 2px top border to all panels
+- [ ] TASK-03285: ReliabilityEconUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03286: ReliabilityEconUI2: add loading skeleton state for data fetch
+- [ ] TASK-03287: ReliabilityEconUI2: add error boundary with recovery UI
+- [ ] TASK-03288: ReliabilityEconUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03289: ReliabilityEconUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03290: ReliabilityEconUI2: add proper aria labels for accessibility
+- [ ] TASK-03291: SsoHardeningUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03292: SsoHardeningUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03293: SsoHardeningUI2: use monospace font for all numerical data displays
+- [ ] TASK-03294: SsoHardeningUI2: add amber 2px top border to all panels
+- [ ] TASK-03295: SsoHardeningUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03296: SsoHardeningUI2: add loading skeleton state for data fetch
+- [ ] TASK-03297: SsoHardeningUI2: add error boundary with recovery UI
+- [ ] TASK-03298: SsoHardeningUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03299: SsoHardeningUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03300: SsoHardeningUI2: add proper aria labels for accessibility
+- [ ] TASK-03301: CompatMatrixUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03302: CompatMatrixUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03303: CompatMatrixUI2: use monospace font for all numerical data displays
+- [ ] TASK-03304: CompatMatrixUI2: add amber 2px top border to all panels
+- [ ] TASK-03305: CompatMatrixUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03306: CompatMatrixUI2: add loading skeleton state for data fetch
+- [ ] TASK-03307: CompatMatrixUI2: add error boundary with recovery UI
+- [ ] TASK-03308: CompatMatrixUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03309: CompatMatrixUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03310: CompatMatrixUI2: add proper aria labels for accessibility
+- [ ] TASK-03311: OperatorEnableUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03312: OperatorEnableUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03313: OperatorEnableUI2: use monospace font for all numerical data displays
+- [ ] TASK-03314: OperatorEnableUI2: add amber 2px top border to all panels
+- [ ] TASK-03315: OperatorEnableUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03316: OperatorEnableUI2: add loading skeleton state for data fetch
+- [ ] TASK-03317: OperatorEnableUI2: add error boundary with recovery UI
+- [ ] TASK-03318: OperatorEnableUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03319: OperatorEnableUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03320: OperatorEnableUI2: add proper aria labels for accessibility
+- [ ] TASK-03321: OpsAutomationAiUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03322: OpsAutomationAiUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03323: OpsAutomationAiUI2: use monospace font for all numerical data displays
+- [ ] TASK-03324: OpsAutomationAiUI2: add amber 2px top border to all panels
+- [ ] TASK-03325: OpsAutomationAiUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03326: OpsAutomationAiUI2: add loading skeleton state for data fetch
+- [ ] TASK-03327: OpsAutomationAiUI2: add error boundary with recovery UI
+- [ ] TASK-03328: OpsAutomationAiUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03329: OpsAutomationAiUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03330: OpsAutomationAiUI2: add proper aria labels for accessibility
+- [ ] TASK-03331: IncidentAiUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03332: IncidentAiUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03333: IncidentAiUI2: use monospace font for all numerical data displays
+- [ ] TASK-03334: IncidentAiUI2: add amber 2px top border to all panels
+- [ ] TASK-03335: IncidentAiUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03336: IncidentAiUI2: add loading skeleton state for data fetch
+- [ ] TASK-03337: IncidentAiUI2: add error boundary with recovery UI
+- [ ] TASK-03338: IncidentAiUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03339: IncidentAiUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03340: IncidentAiUI2: add proper aria labels for accessibility
+- [ ] TASK-03341: IncidentComplianceUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03342: IncidentComplianceUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03343: IncidentComplianceUI2: use monospace font for all numerical data displays
+- [ ] TASK-03344: IncidentComplianceUI2: add amber 2px top border to all panels
+- [ ] TASK-03345: IncidentComplianceUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03346: IncidentComplianceUI2: add loading skeleton state for data fetch
+- [ ] TASK-03347: IncidentComplianceUI2: add error boundary with recovery UI
+- [ ] TASK-03348: IncidentComplianceUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03349: IncidentComplianceUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03350: IncidentComplianceUI2: add proper aria labels for accessibility
+- [ ] TASK-03351: AuditReplayUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03352: AuditReplayUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03353: AuditReplayUI2: use monospace font for all numerical data displays
+- [ ] TASK-03354: AuditReplayUI2: add amber 2px top border to all panels
+- [ ] TASK-03355: AuditReplayUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03356: AuditReplayUI2: add loading skeleton state for data fetch
+- [ ] TASK-03357: AuditReplayUI2: add error boundary with recovery UI
+- [ ] TASK-03358: AuditReplayUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03359: AuditReplayUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03360: AuditReplayUI2: add proper aria labels for accessibility
+- [ ] TASK-03361: AutopilotCommandCenterUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03362: AutopilotCommandCenterUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03363: AutopilotCommandCenterUI2: use monospace font for all numerical data displays
+- [ ] TASK-03364: AutopilotCommandCenterUI2: add amber 2px top border to all panels
+- [ ] TASK-03365: AutopilotCommandCenterUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03366: AutopilotCommandCenterUI2: add loading skeleton state for data fetch
+- [ ] TASK-03367: AutopilotCommandCenterUI2: add error boundary with recovery UI
+- [ ] TASK-03368: AutopilotCommandCenterUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03369: AutopilotCommandCenterUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03370: AutopilotCommandCenterUI2: add proper aria labels for accessibility
+- [ ] TASK-03371: AutopilotExplainUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03372: AutopilotExplainUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03373: AutopilotExplainUI2: use monospace font for all numerical data displays
+- [ ] TASK-03374: AutopilotExplainUI2: add amber 2px top border to all panels
+- [ ] TASK-03375: AutopilotExplainUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03376: AutopilotExplainUI2: add loading skeleton state for data fetch
+- [ ] TASK-03377: AutopilotExplainUI2: add error boundary with recovery UI
+- [ ] TASK-03378: AutopilotExplainUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03379: AutopilotExplainUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03380: AutopilotExplainUI2: add proper aria labels for accessibility
+- [ ] TASK-03381: AutopilotOptionsUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03382: AutopilotOptionsUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03383: AutopilotOptionsUI2: use monospace font for all numerical data displays
+- [ ] TASK-03384: AutopilotOptionsUI2: add amber 2px top border to all panels
+- [ ] TASK-03385: AutopilotOptionsUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03386: AutopilotOptionsUI2: add loading skeleton state for data fetch
+- [ ] TASK-03387: AutopilotOptionsUI2: add error boundary with recovery UI
+- [ ] TASK-03388: AutopilotOptionsUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03389: AutopilotOptionsUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03390: AutopilotOptionsUI2: add proper aria labels for accessibility
+- [ ] TASK-03391: AutopilotPlaybookUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03392: AutopilotPlaybookUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03393: AutopilotPlaybookUI2: use monospace font for all numerical data displays
+- [ ] TASK-03394: AutopilotPlaybookUI2: add amber 2px top border to all panels
+- [ ] TASK-03395: AutopilotPlaybookUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03396: AutopilotPlaybookUI2: add loading skeleton state for data fetch
+- [ ] TASK-03397: AutopilotPlaybookUI2: add error boundary with recovery UI
+- [ ] TASK-03398: AutopilotPlaybookUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03399: AutopilotPlaybookUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03400: AutopilotPlaybookUI2: add proper aria labels for accessibility
+- [ ] TASK-03401: JobQueueV2UI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03402: JobQueueV2UI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03403: JobQueueV2UI2: use monospace font for all numerical data displays
+- [ ] TASK-03404: JobQueueV2UI2: add amber 2px top border to all panels
+- [ ] TASK-03405: JobQueueV2UI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03406: JobQueueV2UI2: add loading skeleton state for data fetch
+- [ ] TASK-03407: JobQueueV2UI2: add error boundary with recovery UI
+- [ ] TASK-03408: JobQueueV2UI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03409: JobQueueV2UI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03410: JobQueueV2UI2: add proper aria labels for accessibility
+- [ ] TASK-03411: RetentionPolicyUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03412: RetentionPolicyUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03413: RetentionPolicyUI2: use monospace font for all numerical data displays
+- [ ] TASK-03414: RetentionPolicyUI2: add amber 2px top border to all panels
+- [ ] TASK-03415: RetentionPolicyUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03416: RetentionPolicyUI2: add loading skeleton state for data fetch
+- [ ] TASK-03417: RetentionPolicyUI2: add error boundary with recovery UI
+- [ ] TASK-03418: RetentionPolicyUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03419: RetentionPolicyUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03420: RetentionPolicyUI2: add proper aria labels for accessibility
+- [ ] TASK-03421: KriScoringUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03422: KriScoringUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03423: KriScoringUI2: use monospace font for all numerical data displays
+- [ ] TASK-03424: KriScoringUI2: add amber 2px top border to all panels
+- [ ] TASK-03425: KriScoringUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03426: KriScoringUI2: add loading skeleton state for data fetch
+- [ ] TASK-03427: KriScoringUI2: add error boundary with recovery UI
+- [ ] TASK-03428: KriScoringUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03429: KriScoringUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03430: KriScoringUI2: add proper aria labels for accessibility
+- [ ] TASK-03431: BrokerScoringUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03432: BrokerScoringUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03433: BrokerScoringUI2: use monospace font for all numerical data displays
+- [ ] TASK-03434: BrokerScoringUI2: add amber 2px top border to all panels
+- [ ] TASK-03435: BrokerScoringUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03436: BrokerScoringUI2: add loading skeleton state for data fetch
+- [ ] TASK-03437: BrokerScoringUI2: add error boundary with recovery UI
+- [ ] TASK-03438: BrokerScoringUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03439: BrokerScoringUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03440: BrokerScoringUI2: add proper aria labels for accessibility
+- [ ] TASK-03441: RiskAdjExecUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03442: RiskAdjExecUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03443: RiskAdjExecUI2: use monospace font for all numerical data displays
+- [ ] TASK-03444: RiskAdjExecUI2: add amber 2px top border to all panels
+- [ ] TASK-03445: RiskAdjExecUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03446: RiskAdjExecUI2: add loading skeleton state for data fetch
+- [ ] TASK-03447: RiskAdjExecUI2: add error boundary with recovery UI
+- [ ] TASK-03448: RiskAdjExecUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03449: RiskAdjExecUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03450: RiskAdjExecUI2: add proper aria labels for accessibility
+- [ ] TASK-03451: PortfolioOptimizerUI2: convert all className strings to inline CSSProperties
+- [ ] TASK-03452: PortfolioOptimizerUI2: apply Bloomberg amber (#f5a623) accent to headers/buttons
+- [ ] TASK-03453: PortfolioOptimizerUI2: use monospace font for all numerical data displays
+- [ ] TASK-03454: PortfolioOptimizerUI2: add amber 2px top border to all panels
+- [ ] TASK-03455: PortfolioOptimizerUI2: ensure dark bg (#0a0a0a) and panel bg (#111111)
+- [ ] TASK-03456: PortfolioOptimizerUI2: add loading skeleton state for data fetch
+- [ ] TASK-03457: PortfolioOptimizerUI2: add error boundary with recovery UI
+- [ ] TASK-03458: PortfolioOptimizerUI2: add keyboard navigation for all interactive elements
+- [ ] TASK-03459: PortfolioOptimizerUI2: verify no demo/mock data â€” real API only
+- [ ] TASK-03460: PortfolioOptimizerUI2: add proper aria labels for accessibility
+
+
+
+## PER-INDICATOR SUBTASKS (110 INDICATORS Ã— 10)
+
+- [ ] TASK-03461: Frontend: add SMA to indicator picker dropdown
+- [ ] TASK-03462: Frontend: SMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03463: Frontend: SMA color and style picker (line width, opacity)
+- [ ] TASK-03464: Frontend: SMA toggle visibility (eye icon)
+- [ ] TASK-03465: Frontend: SMA render correctly in sub-pane or overlay
+- [ ] TASK-03466: Backend: SMA calculation function implementation
+- [ ] TASK-03467: Backend: SMA vectorized numpy computation for performance
+- [ ] TASK-03468: Test: SMA calculation unit test with known values
+- [ ] TASK-03469: Test: SMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03470: Test: SMA parameter validation (negative period, zero)
+- [ ] TASK-03471: Frontend: add EMA to indicator picker dropdown
+- [ ] TASK-03472: Frontend: EMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03473: Frontend: EMA color and style picker (line width, opacity)
+- [ ] TASK-03474: Frontend: EMA toggle visibility (eye icon)
+- [ ] TASK-03475: Frontend: EMA render correctly in sub-pane or overlay
+- [ ] TASK-03476: Backend: EMA calculation function implementation
+- [ ] TASK-03477: Backend: EMA vectorized numpy computation for performance
+- [ ] TASK-03478: Test: EMA calculation unit test with known values
+- [ ] TASK-03479: Test: EMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03480: Test: EMA parameter validation (negative period, zero)
+- [ ] TASK-03481: Frontend: add WMA to indicator picker dropdown
+- [ ] TASK-03482: Frontend: WMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03483: Frontend: WMA color and style picker (line width, opacity)
+- [ ] TASK-03484: Frontend: WMA toggle visibility (eye icon)
+- [ ] TASK-03485: Frontend: WMA render correctly in sub-pane or overlay
+- [ ] TASK-03486: Backend: WMA calculation function implementation
+- [ ] TASK-03487: Backend: WMA vectorized numpy computation for performance
+- [ ] TASK-03488: Test: WMA calculation unit test with known values
+- [ ] TASK-03489: Test: WMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03490: Test: WMA parameter validation (negative period, zero)
+- [ ] TASK-03491: Frontend: add HMA to indicator picker dropdown
+- [ ] TASK-03492: Frontend: HMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03493: Frontend: HMA color and style picker (line width, opacity)
+- [ ] TASK-03494: Frontend: HMA toggle visibility (eye icon)
+- [ ] TASK-03495: Frontend: HMA render correctly in sub-pane or overlay
+- [ ] TASK-03496: Backend: HMA calculation function implementation
+- [ ] TASK-03497: Backend: HMA vectorized numpy computation for performance
+- [ ] TASK-03498: Test: HMA calculation unit test with known values
+- [ ] TASK-03499: Test: HMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03500: Test: HMA parameter validation (negative period, zero)
+- [ ] TASK-03501: Frontend: add DEMA to indicator picker dropdown
+- [ ] TASK-03502: Frontend: DEMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03503: Frontend: DEMA color and style picker (line width, opacity)
+- [ ] TASK-03504: Frontend: DEMA toggle visibility (eye icon)
+- [ ] TASK-03505: Frontend: DEMA render correctly in sub-pane or overlay
+- [ ] TASK-03506: Backend: DEMA calculation function implementation
+- [ ] TASK-03507: Backend: DEMA vectorized numpy computation for performance
+- [ ] TASK-03508: Test: DEMA calculation unit test with known values
+- [ ] TASK-03509: Test: DEMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03510: Test: DEMA parameter validation (negative period, zero)
+- [ ] TASK-03511: Frontend: add TEMA to indicator picker dropdown
+- [ ] TASK-03512: Frontend: TEMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03513: Frontend: TEMA color and style picker (line width, opacity)
+- [ ] TASK-03514: Frontend: TEMA toggle visibility (eye icon)
+- [ ] TASK-03515: Frontend: TEMA render correctly in sub-pane or overlay
+- [ ] TASK-03516: Backend: TEMA calculation function implementation
+- [ ] TASK-03517: Backend: TEMA vectorized numpy computation for performance
+- [ ] TASK-03518: Test: TEMA calculation unit test with known values
+- [ ] TASK-03519: Test: TEMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03520: Test: TEMA parameter validation (negative period, zero)
+- [ ] TASK-03521: Frontend: add KAMA to indicator picker dropdown
+- [ ] TASK-03522: Frontend: KAMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03523: Frontend: KAMA color and style picker (line width, opacity)
+- [ ] TASK-03524: Frontend: KAMA toggle visibility (eye icon)
+- [ ] TASK-03525: Frontend: KAMA render correctly in sub-pane or overlay
+- [ ] TASK-03526: Backend: KAMA calculation function implementation
+- [ ] TASK-03527: Backend: KAMA vectorized numpy computation for performance
+- [ ] TASK-03528: Test: KAMA calculation unit test with known values
+- [ ] TASK-03529: Test: KAMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03530: Test: KAMA parameter validation (negative period, zero)
+- [ ] TASK-03531: Frontend: add ALMA to indicator picker dropdown
+- [ ] TASK-03532: Frontend: ALMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03533: Frontend: ALMA color and style picker (line width, opacity)
+- [ ] TASK-03534: Frontend: ALMA toggle visibility (eye icon)
+- [ ] TASK-03535: Frontend: ALMA render correctly in sub-pane or overlay
+- [ ] TASK-03536: Backend: ALMA calculation function implementation
+- [ ] TASK-03537: Backend: ALMA vectorized numpy computation for performance
+- [ ] TASK-03538: Test: ALMA calculation unit test with known values
+- [ ] TASK-03539: Test: ALMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03540: Test: ALMA parameter validation (negative period, zero)
+- [ ] TASK-03541: Frontend: add VWAP to indicator picker dropdown
+- [ ] TASK-03542: Frontend: VWAP parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03543: Frontend: VWAP color and style picker (line width, opacity)
+- [ ] TASK-03544: Frontend: VWAP toggle visibility (eye icon)
+- [ ] TASK-03545: Frontend: VWAP render correctly in sub-pane or overlay
+- [ ] TASK-03546: Backend: VWAP calculation function implementation
+- [ ] TASK-03547: Backend: VWAP vectorized numpy computation for performance
+- [ ] TASK-03548: Test: VWAP calculation unit test with known values
+- [ ] TASK-03549: Test: VWAP edge case (empty data, single bar, NaN values)
+- [ ] TASK-03550: Test: VWAP parameter validation (negative period, zero)
+- [ ] TASK-03551: Frontend: add Anchored VWAP to indicator picker dropdown
+- [ ] TASK-03552: Frontend: Anchored VWAP parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03553: Frontend: Anchored VWAP color and style picker (line width, opacity)
+- [ ] TASK-03554: Frontend: Anchored VWAP toggle visibility (eye icon)
+- [ ] TASK-03555: Frontend: Anchored VWAP render correctly in sub-pane or overlay
+- [ ] TASK-03556: Backend: Anchored VWAP calculation function implementation
+- [ ] TASK-03557: Backend: Anchored VWAP vectorized numpy computation for performance
+- [ ] TASK-03558: Test: Anchored VWAP calculation unit test with known values
+- [ ] TASK-03559: Test: Anchored VWAP edge case (empty data, single bar, NaN values)
+- [ ] TASK-03560: Test: Anchored VWAP parameter validation (negative period, zero)
+- [ ] TASK-03561: Frontend: add Bollinger Bands to indicator picker dropdown
+- [ ] TASK-03562: Frontend: Bollinger Bands parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03563: Frontend: Bollinger Bands color and style picker (line width, opacity)
+- [ ] TASK-03564: Frontend: Bollinger Bands toggle visibility (eye icon)
+- [ ] TASK-03565: Frontend: Bollinger Bands render correctly in sub-pane or overlay
+- [ ] TASK-03566: Backend: Bollinger Bands calculation function implementation
+- [ ] TASK-03567: Backend: Bollinger Bands vectorized numpy computation for performance
+- [ ] TASK-03568: Test: Bollinger Bands calculation unit test with known values
+- [ ] TASK-03569: Test: Bollinger Bands edge case (empty data, single bar, NaN values)
+- [ ] TASK-03570: Test: Bollinger Bands parameter validation (negative period, zero)
+- [ ] TASK-03571: Frontend: add BB Width to indicator picker dropdown
+- [ ] TASK-03572: Frontend: BB Width parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03573: Frontend: BB Width color and style picker (line width, opacity)
+- [ ] TASK-03574: Frontend: BB Width toggle visibility (eye icon)
+- [ ] TASK-03575: Frontend: BB Width render correctly in sub-pane or overlay
+- [ ] TASK-03576: Backend: BB Width calculation function implementation
+- [ ] TASK-03577: Backend: BB Width vectorized numpy computation for performance
+- [ ] TASK-03578: Test: BB Width calculation unit test with known values
+- [ ] TASK-03579: Test: BB Width edge case (empty data, single bar, NaN values)
+- [ ] TASK-03580: Test: BB Width parameter validation (negative period, zero)
+- [ ] TASK-03581: Frontend: add BB %B to indicator picker dropdown
+- [ ] TASK-03582: Frontend: BB %B parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03583: Frontend: BB %B color and style picker (line width, opacity)
+- [ ] TASK-03584: Frontend: BB %B toggle visibility (eye icon)
+- [ ] TASK-03585: Frontend: BB %B render correctly in sub-pane or overlay
+- [ ] TASK-03586: Backend: BB %B calculation function implementation
+- [ ] TASK-03587: Backend: BB %B vectorized numpy computation for performance
+- [ ] TASK-03588: Test: BB %B calculation unit test with known values
+- [ ] TASK-03589: Test: BB %B edge case (empty data, single bar, NaN values)
+- [ ] TASK-03590: Test: BB %B parameter validation (negative period, zero)
+- [ ] TASK-03591: Frontend: add Keltner Channel to indicator picker dropdown
+- [ ] TASK-03592: Frontend: Keltner Channel parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03593: Frontend: Keltner Channel color and style picker (line width, opacity)
+- [ ] TASK-03594: Frontend: Keltner Channel toggle visibility (eye icon)
+- [ ] TASK-03595: Frontend: Keltner Channel render correctly in sub-pane or overlay
+- [ ] TASK-03596: Backend: Keltner Channel calculation function implementation
+- [ ] TASK-03597: Backend: Keltner Channel vectorized numpy computation for performance
+- [ ] TASK-03598: Test: Keltner Channel calculation unit test with known values
+- [ ] TASK-03599: Test: Keltner Channel edge case (empty data, single bar, NaN values)
+- [ ] TASK-03600: Test: Keltner Channel parameter validation (negative period, zero)
+- [ ] TASK-03601: Frontend: add Donchian Channel to indicator picker dropdown
+- [ ] TASK-03602: Frontend: Donchian Channel parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03603: Frontend: Donchian Channel color and style picker (line width, opacity)
+- [ ] TASK-03604: Frontend: Donchian Channel toggle visibility (eye icon)
+- [ ] TASK-03605: Frontend: Donchian Channel render correctly in sub-pane or overlay
+- [ ] TASK-03606: Backend: Donchian Channel calculation function implementation
+- [ ] TASK-03607: Backend: Donchian Channel vectorized numpy computation for performance
+- [ ] TASK-03608: Test: Donchian Channel calculation unit test with known values
+- [ ] TASK-03609: Test: Donchian Channel edge case (empty data, single bar, NaN values)
+- [ ] TASK-03610: Test: Donchian Channel parameter validation (negative period, zero)
+- [ ] TASK-03611: Frontend: add Envelope to indicator picker dropdown
+- [ ] TASK-03612: Frontend: Envelope parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03613: Frontend: Envelope color and style picker (line width, opacity)
+- [ ] TASK-03614: Frontend: Envelope toggle visibility (eye icon)
+- [ ] TASK-03615: Frontend: Envelope render correctly in sub-pane or overlay
+- [ ] TASK-03616: Backend: Envelope calculation function implementation
+- [ ] TASK-03617: Backend: Envelope vectorized numpy computation for performance
+- [ ] TASK-03618: Test: Envelope calculation unit test with known values
+- [ ] TASK-03619: Test: Envelope edge case (empty data, single bar, NaN values)
+- [ ] TASK-03620: Test: Envelope parameter validation (negative period, zero)
+- [ ] TASK-03621: Frontend: add PSAR to indicator picker dropdown
+- [ ] TASK-03622: Frontend: PSAR parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03623: Frontend: PSAR color and style picker (line width, opacity)
+- [ ] TASK-03624: Frontend: PSAR toggle visibility (eye icon)
+- [ ] TASK-03625: Frontend: PSAR render correctly in sub-pane or overlay
+- [ ] TASK-03626: Backend: PSAR calculation function implementation
+- [ ] TASK-03627: Backend: PSAR vectorized numpy computation for performance
+- [ ] TASK-03628: Test: PSAR calculation unit test with known values
+- [ ] TASK-03629: Test: PSAR edge case (empty data, single bar, NaN values)
+- [ ] TASK-03630: Test: PSAR parameter validation (negative period, zero)
+- [ ] TASK-03631: Frontend: add Supertrend to indicator picker dropdown
+- [ ] TASK-03632: Frontend: Supertrend parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03633: Frontend: Supertrend color and style picker (line width, opacity)
+- [ ] TASK-03634: Frontend: Supertrend toggle visibility (eye icon)
+- [ ] TASK-03635: Frontend: Supertrend render correctly in sub-pane or overlay
+- [ ] TASK-03636: Backend: Supertrend calculation function implementation
+- [ ] TASK-03637: Backend: Supertrend vectorized numpy computation for performance
+- [ ] TASK-03638: Test: Supertrend calculation unit test with known values
+- [ ] TASK-03639: Test: Supertrend edge case (empty data, single bar, NaN values)
+- [ ] TASK-03640: Test: Supertrend parameter validation (negative period, zero)
+- [ ] TASK-03641: Frontend: add Ichimoku Cloud to indicator picker dropdown
+- [ ] TASK-03642: Frontend: Ichimoku Cloud parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03643: Frontend: Ichimoku Cloud color and style picker (line width, opacity)
+- [ ] TASK-03644: Frontend: Ichimoku Cloud toggle visibility (eye icon)
+- [ ] TASK-03645: Frontend: Ichimoku Cloud render correctly in sub-pane or overlay
+- [ ] TASK-03646: Backend: Ichimoku Cloud calculation function implementation
+- [ ] TASK-03647: Backend: Ichimoku Cloud vectorized numpy computation for performance
+- [ ] TASK-03648: Test: Ichimoku Cloud calculation unit test with known values
+- [ ] TASK-03649: Test: Ichimoku Cloud edge case (empty data, single bar, NaN values)
+- [ ] TASK-03650: Test: Ichimoku Cloud parameter validation (negative period, zero)
+- [ ] TASK-03651: Frontend: add RSI to indicator picker dropdown
+- [ ] TASK-03652: Frontend: RSI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03653: Frontend: RSI color and style picker (line width, opacity)
+- [ ] TASK-03654: Frontend: RSI toggle visibility (eye icon)
+- [ ] TASK-03655: Frontend: RSI render correctly in sub-pane or overlay
+- [ ] TASK-03656: Backend: RSI calculation function implementation
+- [ ] TASK-03657: Backend: RSI vectorized numpy computation for performance
+- [ ] TASK-03658: Test: RSI calculation unit test with known values
+- [ ] TASK-03659: Test: RSI edge case (empty data, single bar, NaN values)
+- [ ] TASK-03660: Test: RSI parameter validation (negative period, zero)
+- [ ] TASK-03661: Frontend: add Stochastic to indicator picker dropdown
+- [ ] TASK-03662: Frontend: Stochastic parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03663: Frontend: Stochastic color and style picker (line width, opacity)
+- [ ] TASK-03664: Frontend: Stochastic toggle visibility (eye icon)
+- [ ] TASK-03665: Frontend: Stochastic render correctly in sub-pane or overlay
+- [ ] TASK-03666: Backend: Stochastic calculation function implementation
+- [ ] TASK-03667: Backend: Stochastic vectorized numpy computation for performance
+- [ ] TASK-03668: Test: Stochastic calculation unit test with known values
+- [ ] TASK-03669: Test: Stochastic edge case (empty data, single bar, NaN values)
+- [ ] TASK-03670: Test: Stochastic parameter validation (negative period, zero)
+- [ ] TASK-03671: Frontend: add Stochastic RSI to indicator picker dropdown
+- [ ] TASK-03672: Frontend: Stochastic RSI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03673: Frontend: Stochastic RSI color and style picker (line width, opacity)
+- [ ] TASK-03674: Frontend: Stochastic RSI toggle visibility (eye icon)
+- [ ] TASK-03675: Frontend: Stochastic RSI render correctly in sub-pane or overlay
+- [ ] TASK-03676: Backend: Stochastic RSI calculation function implementation
+- [ ] TASK-03677: Backend: Stochastic RSI vectorized numpy computation for performance
+- [ ] TASK-03678: Test: Stochastic RSI calculation unit test with known values
+- [ ] TASK-03679: Test: Stochastic RSI edge case (empty data, single bar, NaN values)
+- [ ] TASK-03680: Test: Stochastic RSI parameter validation (negative period, zero)
+- [ ] TASK-03681: Frontend: add Williams %R to indicator picker dropdown
+- [ ] TASK-03682: Frontend: Williams %R parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03683: Frontend: Williams %R color and style picker (line width, opacity)
+- [ ] TASK-03684: Frontend: Williams %R toggle visibility (eye icon)
+- [ ] TASK-03685: Frontend: Williams %R render correctly in sub-pane or overlay
+- [ ] TASK-03686: Backend: Williams %R calculation function implementation
+- [ ] TASK-03687: Backend: Williams %R vectorized numpy computation for performance
+- [ ] TASK-03688: Test: Williams %R calculation unit test with known values
+- [ ] TASK-03689: Test: Williams %R edge case (empty data, single bar, NaN values)
+- [ ] TASK-03690: Test: Williams %R parameter validation (negative period, zero)
+- [ ] TASK-03691: Frontend: add CCI to indicator picker dropdown
+- [ ] TASK-03692: Frontend: CCI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03693: Frontend: CCI color and style picker (line width, opacity)
+- [ ] TASK-03694: Frontend: CCI toggle visibility (eye icon)
+- [ ] TASK-03695: Frontend: CCI render correctly in sub-pane or overlay
+- [ ] TASK-03696: Backend: CCI calculation function implementation
+- [ ] TASK-03697: Backend: CCI vectorized numpy computation for performance
+- [ ] TASK-03698: Test: CCI calculation unit test with known values
+- [ ] TASK-03699: Test: CCI edge case (empty data, single bar, NaN values)
+- [ ] TASK-03700: Test: CCI parameter validation (negative period, zero)
+- [ ] TASK-03701: Frontend: add ROC to indicator picker dropdown
+- [ ] TASK-03702: Frontend: ROC parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03703: Frontend: ROC color and style picker (line width, opacity)
+- [ ] TASK-03704: Frontend: ROC toggle visibility (eye icon)
+- [ ] TASK-03705: Frontend: ROC render correctly in sub-pane or overlay
+- [ ] TASK-03706: Backend: ROC calculation function implementation
+- [ ] TASK-03707: Backend: ROC vectorized numpy computation for performance
+- [ ] TASK-03708: Test: ROC calculation unit test with known values
+- [ ] TASK-03709: Test: ROC edge case (empty data, single bar, NaN values)
+- [ ] TASK-03710: Test: ROC parameter validation (negative period, zero)
+- [ ] TASK-03711: Frontend: add Momentum to indicator picker dropdown
+- [ ] TASK-03712: Frontend: Momentum parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03713: Frontend: Momentum color and style picker (line width, opacity)
+- [ ] TASK-03714: Frontend: Momentum toggle visibility (eye icon)
+- [ ] TASK-03715: Frontend: Momentum render correctly in sub-pane or overlay
+- [ ] TASK-03716: Backend: Momentum calculation function implementation
+- [ ] TASK-03717: Backend: Momentum vectorized numpy computation for performance
+- [ ] TASK-03718: Test: Momentum calculation unit test with known values
+- [ ] TASK-03719: Test: Momentum edge case (empty data, single bar, NaN values)
+- [ ] TASK-03720: Test: Momentum parameter validation (negative period, zero)
+- [ ] TASK-03721: Frontend: add MACD to indicator picker dropdown
+- [ ] TASK-03722: Frontend: MACD parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03723: Frontend: MACD color and style picker (line width, opacity)
+- [ ] TASK-03724: Frontend: MACD toggle visibility (eye icon)
+- [ ] TASK-03725: Frontend: MACD render correctly in sub-pane or overlay
+- [ ] TASK-03726: Backend: MACD calculation function implementation
+- [ ] TASK-03727: Backend: MACD vectorized numpy computation for performance
+- [ ] TASK-03728: Test: MACD calculation unit test with known values
+- [ ] TASK-03729: Test: MACD edge case (empty data, single bar, NaN values)
+- [ ] TASK-03730: Test: MACD parameter validation (negative period, zero)
+- [ ] TASK-03731: Frontend: add MACD Histogram to indicator picker dropdown
+- [ ] TASK-03732: Frontend: MACD Histogram parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03733: Frontend: MACD Histogram color and style picker (line width, opacity)
+- [ ] TASK-03734: Frontend: MACD Histogram toggle visibility (eye icon)
+- [ ] TASK-03735: Frontend: MACD Histogram render correctly in sub-pane or overlay
+- [ ] TASK-03736: Backend: MACD Histogram calculation function implementation
+- [ ] TASK-03737: Backend: MACD Histogram vectorized numpy computation for performance
+- [ ] TASK-03738: Test: MACD Histogram calculation unit test with known values
+- [ ] TASK-03739: Test: MACD Histogram edge case (empty data, single bar, NaN values)
+- [ ] TASK-03740: Test: MACD Histogram parameter validation (negative period, zero)
+- [ ] TASK-03741: Frontend: add PPO to indicator picker dropdown
+- [ ] TASK-03742: Frontend: PPO parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03743: Frontend: PPO color and style picker (line width, opacity)
+- [ ] TASK-03744: Frontend: PPO toggle visibility (eye icon)
+- [ ] TASK-03745: Frontend: PPO render correctly in sub-pane or overlay
+- [ ] TASK-03746: Backend: PPO calculation function implementation
+- [ ] TASK-03747: Backend: PPO vectorized numpy computation for performance
+- [ ] TASK-03748: Test: PPO calculation unit test with known values
+- [ ] TASK-03749: Test: PPO edge case (empty data, single bar, NaN values)
+- [ ] TASK-03750: Test: PPO parameter validation (negative period, zero)
+- [ ] TASK-03751: Frontend: add DPO to indicator picker dropdown
+- [ ] TASK-03752: Frontend: DPO parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03753: Frontend: DPO color and style picker (line width, opacity)
+- [ ] TASK-03754: Frontend: DPO toggle visibility (eye icon)
+- [ ] TASK-03755: Frontend: DPO render correctly in sub-pane or overlay
+- [ ] TASK-03756: Backend: DPO calculation function implementation
+- [ ] TASK-03757: Backend: DPO vectorized numpy computation for performance
+- [ ] TASK-03758: Test: DPO calculation unit test with known values
+- [ ] TASK-03759: Test: DPO edge case (empty data, single bar, NaN values)
+- [ ] TASK-03760: Test: DPO parameter validation (negative period, zero)
+- [ ] TASK-03761: Frontend: add TSI to indicator picker dropdown
+- [ ] TASK-03762: Frontend: TSI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03763: Frontend: TSI color and style picker (line width, opacity)
+- [ ] TASK-03764: Frontend: TSI toggle visibility (eye icon)
+- [ ] TASK-03765: Frontend: TSI render correctly in sub-pane or overlay
+- [ ] TASK-03766: Backend: TSI calculation function implementation
+- [ ] TASK-03767: Backend: TSI vectorized numpy computation for performance
+- [ ] TASK-03768: Test: TSI calculation unit test with known values
+- [ ] TASK-03769: Test: TSI edge case (empty data, single bar, NaN values)
+- [ ] TASK-03770: Test: TSI parameter validation (negative period, zero)
+- [ ] TASK-03771: Frontend: add CMO to indicator picker dropdown
+- [ ] TASK-03772: Frontend: CMO parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03773: Frontend: CMO color and style picker (line width, opacity)
+- [ ] TASK-03774: Frontend: CMO toggle visibility (eye icon)
+- [ ] TASK-03775: Frontend: CMO render correctly in sub-pane or overlay
+- [ ] TASK-03776: Backend: CMO calculation function implementation
+- [ ] TASK-03777: Backend: CMO vectorized numpy computation for performance
+- [ ] TASK-03778: Test: CMO calculation unit test with known values
+- [ ] TASK-03779: Test: CMO edge case (empty data, single bar, NaN values)
+- [ ] TASK-03780: Test: CMO parameter validation (negative period, zero)
+- [ ] TASK-03781: Frontend: add Aroon Oscillator to indicator picker dropdown
+- [ ] TASK-03782: Frontend: Aroon Oscillator parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03783: Frontend: Aroon Oscillator color and style picker (line width, opacity)
+- [ ] TASK-03784: Frontend: Aroon Oscillator toggle visibility (eye icon)
+- [ ] TASK-03785: Frontend: Aroon Oscillator render correctly in sub-pane or overlay
+- [ ] TASK-03786: Backend: Aroon Oscillator calculation function implementation
+- [ ] TASK-03787: Backend: Aroon Oscillator vectorized numpy computation for performance
+- [ ] TASK-03788: Test: Aroon Oscillator calculation unit test with known values
+- [ ] TASK-03789: Test: Aroon Oscillator edge case (empty data, single bar, NaN values)
+- [ ] TASK-03790: Test: Aroon Oscillator parameter validation (negative period, zero)
+- [ ] TASK-03791: Frontend: add Aroon Up/Down to indicator picker dropdown
+- [ ] TASK-03792: Frontend: Aroon Up/Down parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03793: Frontend: Aroon Up/Down color and style picker (line width, opacity)
+- [ ] TASK-03794: Frontend: Aroon Up/Down toggle visibility (eye icon)
+- [ ] TASK-03795: Frontend: Aroon Up/Down render correctly in sub-pane or overlay
+- [ ] TASK-03796: Backend: Aroon Up/Down calculation function implementation
+- [ ] TASK-03797: Backend: Aroon Up/Down vectorized numpy computation for performance
+- [ ] TASK-03798: Test: Aroon Up/Down calculation unit test with known values
+- [ ] TASK-03799: Test: Aroon Up/Down edge case (empty data, single bar, NaN values)
+- [ ] TASK-03800: Test: Aroon Up/Down parameter validation (negative period, zero)
+- [ ] TASK-03801: Frontend: add ADX to indicator picker dropdown
+- [ ] TASK-03802: Frontend: ADX parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03803: Frontend: ADX color and style picker (line width, opacity)
+- [ ] TASK-03804: Frontend: ADX toggle visibility (eye icon)
+- [ ] TASK-03805: Frontend: ADX render correctly in sub-pane or overlay
+- [ ] TASK-03806: Backend: ADX calculation function implementation
+- [ ] TASK-03807: Backend: ADX vectorized numpy computation for performance
+- [ ] TASK-03808: Test: ADX calculation unit test with known values
+- [ ] TASK-03809: Test: ADX edge case (empty data, single bar, NaN values)
+- [ ] TASK-03810: Test: ADX parameter validation (negative period, zero)
+- [ ] TASK-03811: Frontend: add +DI/-DI to indicator picker dropdown
+- [ ] TASK-03812: Frontend: +DI/-DI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03813: Frontend: +DI/-DI color and style picker (line width, opacity)
+- [ ] TASK-03814: Frontend: +DI/-DI toggle visibility (eye icon)
+- [ ] TASK-03815: Frontend: +DI/-DI render correctly in sub-pane or overlay
+- [ ] TASK-03816: Backend: +DI/-DI calculation function implementation
+- [ ] TASK-03817: Backend: +DI/-DI vectorized numpy computation for performance
+- [ ] TASK-03818: Test: +DI/-DI calculation unit test with known values
+- [ ] TASK-03819: Test: +DI/-DI edge case (empty data, single bar, NaN values)
+- [ ] TASK-03820: Test: +DI/-DI parameter validation (negative period, zero)
+- [ ] TASK-03821: Frontend: add DMI to indicator picker dropdown
+- [ ] TASK-03822: Frontend: DMI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03823: Frontend: DMI color and style picker (line width, opacity)
+- [ ] TASK-03824: Frontend: DMI toggle visibility (eye icon)
+- [ ] TASK-03825: Frontend: DMI render correctly in sub-pane or overlay
+- [ ] TASK-03826: Backend: DMI calculation function implementation
+- [ ] TASK-03827: Backend: DMI vectorized numpy computation for performance
+- [ ] TASK-03828: Test: DMI calculation unit test with known values
+- [ ] TASK-03829: Test: DMI edge case (empty data, single bar, NaN values)
+- [ ] TASK-03830: Test: DMI parameter validation (negative period, zero)
+- [ ] TASK-03831: Frontend: add ATR to indicator picker dropdown
+- [ ] TASK-03832: Frontend: ATR parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03833: Frontend: ATR color and style picker (line width, opacity)
+- [ ] TASK-03834: Frontend: ATR toggle visibility (eye icon)
+- [ ] TASK-03835: Frontend: ATR render correctly in sub-pane or overlay
+- [ ] TASK-03836: Backend: ATR calculation function implementation
+- [ ] TASK-03837: Backend: ATR vectorized numpy computation for performance
+- [ ] TASK-03838: Test: ATR calculation unit test with known values
+- [ ] TASK-03839: Test: ATR edge case (empty data, single bar, NaN values)
+- [ ] TASK-03840: Test: ATR parameter validation (negative period, zero)
+- [ ] TASK-03841: Frontend: add Historical Volatility to indicator picker dropdown
+- [ ] TASK-03842: Frontend: Historical Volatility parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03843: Frontend: Historical Volatility color and style picker (line width, opacity)
+- [ ] TASK-03844: Frontend: Historical Volatility toggle visibility (eye icon)
+- [ ] TASK-03845: Frontend: Historical Volatility render correctly in sub-pane or overlay
+- [ ] TASK-03846: Backend: Historical Volatility calculation function implementation
+- [ ] TASK-03847: Backend: Historical Volatility vectorized numpy computation for performance
+- [ ] TASK-03848: Test: Historical Volatility calculation unit test with known values
+- [ ] TASK-03849: Test: Historical Volatility edge case (empty data, single bar, NaN values)
+- [ ] TASK-03850: Test: Historical Volatility parameter validation (negative period, zero)
+- [ ] TASK-03851: Frontend: add Chaikin Volatility to indicator picker dropdown
+- [ ] TASK-03852: Frontend: Chaikin Volatility parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03853: Frontend: Chaikin Volatility color and style picker (line width, opacity)
+- [ ] TASK-03854: Frontend: Chaikin Volatility toggle visibility (eye icon)
+- [ ] TASK-03855: Frontend: Chaikin Volatility render correctly in sub-pane or overlay
+- [ ] TASK-03856: Backend: Chaikin Volatility calculation function implementation
+- [ ] TASK-03857: Backend: Chaikin Volatility vectorized numpy computation for performance
+- [ ] TASK-03858: Test: Chaikin Volatility calculation unit test with known values
+- [ ] TASK-03859: Test: Chaikin Volatility edge case (empty data, single bar, NaN values)
+- [ ] TASK-03860: Test: Chaikin Volatility parameter validation (negative period, zero)
+- [ ] TASK-03861: Frontend: add Volume to indicator picker dropdown
+- [ ] TASK-03862: Frontend: Volume parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03863: Frontend: Volume color and style picker (line width, opacity)
+- [ ] TASK-03864: Frontend: Volume toggle visibility (eye icon)
+- [ ] TASK-03865: Frontend: Volume render correctly in sub-pane or overlay
+- [ ] TASK-03866: Backend: Volume calculation function implementation
+- [ ] TASK-03867: Backend: Volume vectorized numpy computation for performance
+- [ ] TASK-03868: Test: Volume calculation unit test with known values
+- [ ] TASK-03869: Test: Volume edge case (empty data, single bar, NaN values)
+- [ ] TASK-03870: Test: Volume parameter validation (negative period, zero)
+- [ ] TASK-03871: Frontend: add Volume MA to indicator picker dropdown
+- [ ] TASK-03872: Frontend: Volume MA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03873: Frontend: Volume MA color and style picker (line width, opacity)
+- [ ] TASK-03874: Frontend: Volume MA toggle visibility (eye icon)
+- [ ] TASK-03875: Frontend: Volume MA render correctly in sub-pane or overlay
+- [ ] TASK-03876: Backend: Volume MA calculation function implementation
+- [ ] TASK-03877: Backend: Volume MA vectorized numpy computation for performance
+- [ ] TASK-03878: Test: Volume MA calculation unit test with known values
+- [ ] TASK-03879: Test: Volume MA edge case (empty data, single bar, NaN values)
+- [ ] TASK-03880: Test: Volume MA parameter validation (negative period, zero)
+- [ ] TASK-03881: Frontend: add OBV to indicator picker dropdown
+- [ ] TASK-03882: Frontend: OBV parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03883: Frontend: OBV color and style picker (line width, opacity)
+- [ ] TASK-03884: Frontend: OBV toggle visibility (eye icon)
+- [ ] TASK-03885: Frontend: OBV render correctly in sub-pane or overlay
+- [ ] TASK-03886: Backend: OBV calculation function implementation
+- [ ] TASK-03887: Backend: OBV vectorized numpy computation for performance
+- [ ] TASK-03888: Test: OBV calculation unit test with known values
+- [ ] TASK-03889: Test: OBV edge case (empty data, single bar, NaN values)
+- [ ] TASK-03890: Test: OBV parameter validation (negative period, zero)
+- [ ] TASK-03891: Frontend: add Volume Oscillator to indicator picker dropdown
+- [ ] TASK-03892: Frontend: Volume Oscillator parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03893: Frontend: Volume Oscillator color and style picker (line width, opacity)
+- [ ] TASK-03894: Frontend: Volume Oscillator toggle visibility (eye icon)
+- [ ] TASK-03895: Frontend: Volume Oscillator render correctly in sub-pane or overlay
+- [ ] TASK-03896: Backend: Volume Oscillator calculation function implementation
+- [ ] TASK-03897: Backend: Volume Oscillator vectorized numpy computation for performance
+- [ ] TASK-03898: Test: Volume Oscillator calculation unit test with known values
+- [ ] TASK-03899: Test: Volume Oscillator edge case (empty data, single bar, NaN values)
+- [ ] TASK-03900: Test: Volume Oscillator parameter validation (negative period, zero)
+- [ ] TASK-03901: Frontend: add CMF to indicator picker dropdown
+- [ ] TASK-03902: Frontend: CMF parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03903: Frontend: CMF color and style picker (line width, opacity)
+- [ ] TASK-03904: Frontend: CMF toggle visibility (eye icon)
+- [ ] TASK-03905: Frontend: CMF render correctly in sub-pane or overlay
+- [ ] TASK-03906: Backend: CMF calculation function implementation
+- [ ] TASK-03907: Backend: CMF vectorized numpy computation for performance
+- [ ] TASK-03908: Test: CMF calculation unit test with known values
+- [ ] TASK-03909: Test: CMF edge case (empty data, single bar, NaN values)
+- [ ] TASK-03910: Test: CMF parameter validation (negative period, zero)
+- [ ] TASK-03911: Frontend: add MFI to indicator picker dropdown
+- [ ] TASK-03912: Frontend: MFI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03913: Frontend: MFI color and style picker (line width, opacity)
+- [ ] TASK-03914: Frontend: MFI toggle visibility (eye icon)
+- [ ] TASK-03915: Frontend: MFI render correctly in sub-pane or overlay
+- [ ] TASK-03916: Backend: MFI calculation function implementation
+- [ ] TASK-03917: Backend: MFI vectorized numpy computation for performance
+- [ ] TASK-03918: Test: MFI calculation unit test with known values
+- [ ] TASK-03919: Test: MFI edge case (empty data, single bar, NaN values)
+- [ ] TASK-03920: Test: MFI parameter validation (negative period, zero)
+- [ ] TASK-03921: Frontend: add A/D Line to indicator picker dropdown
+- [ ] TASK-03922: Frontend: A/D Line parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03923: Frontend: A/D Line color and style picker (line width, opacity)
+- [ ] TASK-03924: Frontend: A/D Line toggle visibility (eye icon)
+- [ ] TASK-03925: Frontend: A/D Line render correctly in sub-pane or overlay
+- [ ] TASK-03926: Backend: A/D Line calculation function implementation
+- [ ] TASK-03927: Backend: A/D Line vectorized numpy computation for performance
+- [ ] TASK-03928: Test: A/D Line calculation unit test with known values
+- [ ] TASK-03929: Test: A/D Line edge case (empty data, single bar, NaN values)
+- [ ] TASK-03930: Test: A/D Line parameter validation (negative period, zero)
+- [ ] TASK-03931: Frontend: add Force Index to indicator picker dropdown
+- [ ] TASK-03932: Frontend: Force Index parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03933: Frontend: Force Index color and style picker (line width, opacity)
+- [ ] TASK-03934: Frontend: Force Index toggle visibility (eye icon)
+- [ ] TASK-03935: Frontend: Force Index render correctly in sub-pane or overlay
+- [ ] TASK-03936: Backend: Force Index calculation function implementation
+- [ ] TASK-03937: Backend: Force Index vectorized numpy computation for performance
+- [ ] TASK-03938: Test: Force Index calculation unit test with known values
+- [ ] TASK-03939: Test: Force Index edge case (empty data, single bar, NaN values)
+- [ ] TASK-03940: Test: Force Index parameter validation (negative period, zero)
+- [ ] TASK-03941: Frontend: add Ease of Movement to indicator picker dropdown
+- [ ] TASK-03942: Frontend: Ease of Movement parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03943: Frontend: Ease of Movement color and style picker (line width, opacity)
+- [ ] TASK-03944: Frontend: Ease of Movement toggle visibility (eye icon)
+- [ ] TASK-03945: Frontend: Ease of Movement render correctly in sub-pane or overlay
+- [ ] TASK-03946: Backend: Ease of Movement calculation function implementation
+- [ ] TASK-03947: Backend: Ease of Movement vectorized numpy computation for performance
+- [ ] TASK-03948: Test: Ease of Movement calculation unit test with known values
+- [ ] TASK-03949: Test: Ease of Movement edge case (empty data, single bar, NaN values)
+- [ ] TASK-03950: Test: Ease of Movement parameter validation (negative period, zero)
+- [ ] TASK-03951: Frontend: add Elder Ray Bull to indicator picker dropdown
+- [ ] TASK-03952: Frontend: Elder Ray Bull parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03953: Frontend: Elder Ray Bull color and style picker (line width, opacity)
+- [ ] TASK-03954: Frontend: Elder Ray Bull toggle visibility (eye icon)
+- [ ] TASK-03955: Frontend: Elder Ray Bull render correctly in sub-pane or overlay
+- [ ] TASK-03956: Backend: Elder Ray Bull calculation function implementation
+- [ ] TASK-03957: Backend: Elder Ray Bull vectorized numpy computation for performance
+- [ ] TASK-03958: Test: Elder Ray Bull calculation unit test with known values
+- [ ] TASK-03959: Test: Elder Ray Bull edge case (empty data, single bar, NaN values)
+- [ ] TASK-03960: Test: Elder Ray Bull parameter validation (negative period, zero)
+- [ ] TASK-03961: Frontend: add Elder Ray Bear to indicator picker dropdown
+- [ ] TASK-03962: Frontend: Elder Ray Bear parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03963: Frontend: Elder Ray Bear color and style picker (line width, opacity)
+- [ ] TASK-03964: Frontend: Elder Ray Bear toggle visibility (eye icon)
+- [ ] TASK-03965: Frontend: Elder Ray Bear render correctly in sub-pane or overlay
+- [ ] TASK-03966: Backend: Elder Ray Bear calculation function implementation
+- [ ] TASK-03967: Backend: Elder Ray Bear vectorized numpy computation for performance
+- [ ] TASK-03968: Test: Elder Ray Bear calculation unit test with known values
+- [ ] TASK-03969: Test: Elder Ray Bear edge case (empty data, single bar, NaN values)
+- [ ] TASK-03970: Test: Elder Ray Bear parameter validation (negative period, zero)
+- [ ] TASK-03971: Frontend: add TRIX to indicator picker dropdown
+- [ ] TASK-03972: Frontend: TRIX parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03973: Frontend: TRIX color and style picker (line width, opacity)
+- [ ] TASK-03974: Frontend: TRIX toggle visibility (eye icon)
+- [ ] TASK-03975: Frontend: TRIX render correctly in sub-pane or overlay
+- [ ] TASK-03976: Backend: TRIX calculation function implementation
+- [ ] TASK-03977: Backend: TRIX vectorized numpy computation for performance
+- [ ] TASK-03978: Test: TRIX calculation unit test with known values
+- [ ] TASK-03979: Test: TRIX edge case (empty data, single bar, NaN values)
+- [ ] TASK-03980: Test: TRIX parameter validation (negative period, zero)
+- [ ] TASK-03981: Frontend: add Mass Index to indicator picker dropdown
+- [ ] TASK-03982: Frontend: Mass Index parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03983: Frontend: Mass Index color and style picker (line width, opacity)
+- [ ] TASK-03984: Frontend: Mass Index toggle visibility (eye icon)
+- [ ] TASK-03985: Frontend: Mass Index render correctly in sub-pane or overlay
+- [ ] TASK-03986: Backend: Mass Index calculation function implementation
+- [ ] TASK-03987: Backend: Mass Index vectorized numpy computation for performance
+- [ ] TASK-03988: Test: Mass Index calculation unit test with known values
+- [ ] TASK-03989: Test: Mass Index edge case (empty data, single bar, NaN values)
+- [ ] TASK-03990: Test: Mass Index parameter validation (negative period, zero)
+- [ ] TASK-03991: Frontend: add Vortex Indicator to indicator picker dropdown
+- [ ] TASK-03992: Frontend: Vortex Indicator parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-03993: Frontend: Vortex Indicator color and style picker (line width, opacity)
+- [ ] TASK-03994: Frontend: Vortex Indicator toggle visibility (eye icon)
+- [ ] TASK-03995: Frontend: Vortex Indicator render correctly in sub-pane or overlay
+- [ ] TASK-03996: Backend: Vortex Indicator calculation function implementation
+- [ ] TASK-03997: Backend: Vortex Indicator vectorized numpy computation for performance
+- [ ] TASK-03998: Test: Vortex Indicator calculation unit test with known values
+- [ ] TASK-03999: Test: Vortex Indicator edge case (empty data, single bar, NaN values)
+- [ ] TASK-04000: Test: Vortex Indicator parameter validation (negative period, zero)
+- [ ] TASK-04001: Frontend: add Schaff Trend Cycle to indicator picker dropdown
+- [ ] TASK-04002: Frontend: Schaff Trend Cycle parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04003: Frontend: Schaff Trend Cycle color and style picker (line width, opacity)
+- [ ] TASK-04004: Frontend: Schaff Trend Cycle toggle visibility (eye icon)
+- [ ] TASK-04005: Frontend: Schaff Trend Cycle render correctly in sub-pane or overlay
+- [ ] TASK-04006: Backend: Schaff Trend Cycle calculation function implementation
+- [ ] TASK-04007: Backend: Schaff Trend Cycle vectorized numpy computation for performance
+- [ ] TASK-04008: Test: Schaff Trend Cycle calculation unit test with known values
+- [ ] TASK-04009: Test: Schaff Trend Cycle edge case (empty data, single bar, NaN values)
+- [ ] TASK-04010: Test: Schaff Trend Cycle parameter validation (negative period, zero)
+- [ ] TASK-04011: Frontend: add KST to indicator picker dropdown
+- [ ] TASK-04012: Frontend: KST parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04013: Frontend: KST color and style picker (line width, opacity)
+- [ ] TASK-04014: Frontend: KST toggle visibility (eye icon)
+- [ ] TASK-04015: Frontend: KST render correctly in sub-pane or overlay
+- [ ] TASK-04016: Backend: KST calculation function implementation
+- [ ] TASK-04017: Backend: KST vectorized numpy computation for performance
+- [ ] TASK-04018: Test: KST calculation unit test with known values
+- [ ] TASK-04019: Test: KST edge case (empty data, single bar, NaN values)
+- [ ] TASK-04020: Test: KST parameter validation (negative period, zero)
+- [ ] TASK-04021: Frontend: add Fisher Transform to indicator picker dropdown
+- [ ] TASK-04022: Frontend: Fisher Transform parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04023: Frontend: Fisher Transform color and style picker (line width, opacity)
+- [ ] TASK-04024: Frontend: Fisher Transform toggle visibility (eye icon)
+- [ ] TASK-04025: Frontend: Fisher Transform render correctly in sub-pane or overlay
+- [ ] TASK-04026: Backend: Fisher Transform calculation function implementation
+- [ ] TASK-04027: Backend: Fisher Transform vectorized numpy computation for performance
+- [ ] TASK-04028: Test: Fisher Transform calculation unit test with known values
+- [ ] TASK-04029: Test: Fisher Transform edge case (empty data, single bar, NaN values)
+- [ ] TASK-04030: Test: Fisher Transform parameter validation (negative period, zero)
+- [ ] TASK-04031: Frontend: add Coppock Curve to indicator picker dropdown
+- [ ] TASK-04032: Frontend: Coppock Curve parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04033: Frontend: Coppock Curve color and style picker (line width, opacity)
+- [ ] TASK-04034: Frontend: Coppock Curve toggle visibility (eye icon)
+- [ ] TASK-04035: Frontend: Coppock Curve render correctly in sub-pane or overlay
+- [ ] TASK-04036: Backend: Coppock Curve calculation function implementation
+- [ ] TASK-04037: Backend: Coppock Curve vectorized numpy computation for performance
+- [ ] TASK-04038: Test: Coppock Curve calculation unit test with known values
+- [ ] TASK-04039: Test: Coppock Curve edge case (empty data, single bar, NaN values)
+- [ ] TASK-04040: Test: Coppock Curve parameter validation (negative period, zero)
+- [ ] TASK-04041: Frontend: add Pivot Points Traditional to indicator picker dropdown
+- [ ] TASK-04042: Frontend: Pivot Points Traditional parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04043: Frontend: Pivot Points Traditional color and style picker (line width, opacity)
+- [ ] TASK-04044: Frontend: Pivot Points Traditional toggle visibility (eye icon)
+- [ ] TASK-04045: Frontend: Pivot Points Traditional render correctly in sub-pane or overlay
+- [ ] TASK-04046: Backend: Pivot Points Traditional calculation function implementation
+- [ ] TASK-04047: Backend: Pivot Points Traditional vectorized numpy computation for performance
+- [ ] TASK-04048: Test: Pivot Points Traditional calculation unit test with known values
+- [ ] TASK-04049: Test: Pivot Points Traditional edge case (empty data, single bar, NaN values)
+- [ ] TASK-04050: Test: Pivot Points Traditional parameter validation (negative period, zero)
+- [ ] TASK-04051: Frontend: add Pivot Points Fibonacci to indicator picker dropdown
+- [ ] TASK-04052: Frontend: Pivot Points Fibonacci parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04053: Frontend: Pivot Points Fibonacci color and style picker (line width, opacity)
+- [ ] TASK-04054: Frontend: Pivot Points Fibonacci toggle visibility (eye icon)
+- [ ] TASK-04055: Frontend: Pivot Points Fibonacci render correctly in sub-pane or overlay
+- [ ] TASK-04056: Backend: Pivot Points Fibonacci calculation function implementation
+- [ ] TASK-04057: Backend: Pivot Points Fibonacci vectorized numpy computation for performance
+- [ ] TASK-04058: Test: Pivot Points Fibonacci calculation unit test with known values
+- [ ] TASK-04059: Test: Pivot Points Fibonacci edge case (empty data, single bar, NaN values)
+- [ ] TASK-04060: Test: Pivot Points Fibonacci parameter validation (negative period, zero)
+- [ ] TASK-04061: Frontend: add Pivot Points Woodie to indicator picker dropdown
+- [ ] TASK-04062: Frontend: Pivot Points Woodie parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04063: Frontend: Pivot Points Woodie color and style picker (line width, opacity)
+- [ ] TASK-04064: Frontend: Pivot Points Woodie toggle visibility (eye icon)
+- [ ] TASK-04065: Frontend: Pivot Points Woodie render correctly in sub-pane or overlay
+- [ ] TASK-04066: Backend: Pivot Points Woodie calculation function implementation
+- [ ] TASK-04067: Backend: Pivot Points Woodie vectorized numpy computation for performance
+- [ ] TASK-04068: Test: Pivot Points Woodie calculation unit test with known values
+- [ ] TASK-04069: Test: Pivot Points Woodie edge case (empty data, single bar, NaN values)
+- [ ] TASK-04070: Test: Pivot Points Woodie parameter validation (negative period, zero)
+- [ ] TASK-04071: Frontend: add Pivot Points Camarilla to indicator picker dropdown
+- [ ] TASK-04072: Frontend: Pivot Points Camarilla parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04073: Frontend: Pivot Points Camarilla color and style picker (line width, opacity)
+- [ ] TASK-04074: Frontend: Pivot Points Camarilla toggle visibility (eye icon)
+- [ ] TASK-04075: Frontend: Pivot Points Camarilla render correctly in sub-pane or overlay
+- [ ] TASK-04076: Backend: Pivot Points Camarilla calculation function implementation
+- [ ] TASK-04077: Backend: Pivot Points Camarilla vectorized numpy computation for performance
+- [ ] TASK-04078: Test: Pivot Points Camarilla calculation unit test with known values
+- [ ] TASK-04079: Test: Pivot Points Camarilla edge case (empty data, single bar, NaN values)
+- [ ] TASK-04080: Test: Pivot Points Camarilla parameter validation (negative period, zero)
+- [ ] TASK-04081: Frontend: add Average Daily Range to indicator picker dropdown
+- [ ] TASK-04082: Frontend: Average Daily Range parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04083: Frontend: Average Daily Range color and style picker (line width, opacity)
+- [ ] TASK-04084: Frontend: Average Daily Range toggle visibility (eye icon)
+- [ ] TASK-04085: Frontend: Average Daily Range render correctly in sub-pane or overlay
+- [ ] TASK-04086: Backend: Average Daily Range calculation function implementation
+- [ ] TASK-04087: Backend: Average Daily Range vectorized numpy computation for performance
+- [ ] TASK-04088: Test: Average Daily Range calculation unit test with known values
+- [ ] TASK-04089: Test: Average Daily Range edge case (empty data, single bar, NaN values)
+- [ ] TASK-04090: Test: Average Daily Range parameter validation (negative period, zero)
+- [ ] TASK-04091: Frontend: add Chandelier Exit to indicator picker dropdown
+- [ ] TASK-04092: Frontend: Chandelier Exit parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04093: Frontend: Chandelier Exit color and style picker (line width, opacity)
+- [ ] TASK-04094: Frontend: Chandelier Exit toggle visibility (eye icon)
+- [ ] TASK-04095: Frontend: Chandelier Exit render correctly in sub-pane or overlay
+- [ ] TASK-04096: Backend: Chandelier Exit calculation function implementation
+- [ ] TASK-04097: Backend: Chandelier Exit vectorized numpy computation for performance
+- [ ] TASK-04098: Test: Chandelier Exit calculation unit test with known values
+- [ ] TASK-04099: Test: Chandelier Exit edge case (empty data, single bar, NaN values)
+- [ ] TASK-04100: Test: Chandelier Exit parameter validation (negative period, zero)
+- [ ] TASK-04101: Frontend: add ZigZag to indicator picker dropdown
+- [ ] TASK-04102: Frontend: ZigZag parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04103: Frontend: ZigZag color and style picker (line width, opacity)
+- [ ] TASK-04104: Frontend: ZigZag toggle visibility (eye icon)
+- [ ] TASK-04105: Frontend: ZigZag render correctly in sub-pane or overlay
+- [ ] TASK-04106: Backend: ZigZag calculation function implementation
+- [ ] TASK-04107: Backend: ZigZag vectorized numpy computation for performance
+- [ ] TASK-04108: Test: ZigZag calculation unit test with known values
+- [ ] TASK-04109: Test: ZigZag edge case (empty data, single bar, NaN values)
+- [ ] TASK-04110: Test: ZigZag parameter validation (negative period, zero)
+- [ ] TASK-04111: Frontend: add 52W High/Low to indicator picker dropdown
+- [ ] TASK-04112: Frontend: 52W High/Low parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04113: Frontend: 52W High/Low color and style picker (line width, opacity)
+- [ ] TASK-04114: Frontend: 52W High/Low toggle visibility (eye icon)
+- [ ] TASK-04115: Frontend: 52W High/Low render correctly in sub-pane or overlay
+- [ ] TASK-04116: Backend: 52W High/Low calculation function implementation
+- [ ] TASK-04117: Backend: 52W High/Low vectorized numpy computation for performance
+- [ ] TASK-04118: Test: 52W High/Low calculation unit test with known values
+- [ ] TASK-04119: Test: 52W High/Low edge case (empty data, single bar, NaN values)
+- [ ] TASK-04120: Test: 52W High/Low parameter validation (negative period, zero)
+- [ ] TASK-04121: Frontend: add Fractal (Williams) to indicator picker dropdown
+- [ ] TASK-04122: Frontend: Fractal (Williams) parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04123: Frontend: Fractal (Williams) color and style picker (line width, opacity)
+- [ ] TASK-04124: Frontend: Fractal (Williams) toggle visibility (eye icon)
+- [ ] TASK-04125: Frontend: Fractal (Williams) render correctly in sub-pane or overlay
+- [ ] TASK-04126: Backend: Fractal (Williams) calculation function implementation
+- [ ] TASK-04127: Backend: Fractal (Williams) vectorized numpy computation for performance
+- [ ] TASK-04128: Test: Fractal (Williams) calculation unit test with known values
+- [ ] TASK-04129: Test: Fractal (Williams) edge case (empty data, single bar, NaN values)
+- [ ] TASK-04130: Test: Fractal (Williams) parameter validation (negative period, zero)
+- [ ] TASK-04131: Frontend: add Volume Profile Visible to indicator picker dropdown
+- [ ] TASK-04132: Frontend: Volume Profile Visible parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04133: Frontend: Volume Profile Visible color and style picker (line width, opacity)
+- [ ] TASK-04134: Frontend: Volume Profile Visible toggle visibility (eye icon)
+- [ ] TASK-04135: Frontend: Volume Profile Visible render correctly in sub-pane or overlay
+- [ ] TASK-04136: Backend: Volume Profile Visible calculation function implementation
+- [ ] TASK-04137: Backend: Volume Profile Visible vectorized numpy computation for performance
+- [ ] TASK-04138: Test: Volume Profile Visible calculation unit test with known values
+- [ ] TASK-04139: Test: Volume Profile Visible edge case (empty data, single bar, NaN values)
+- [ ] TASK-04140: Test: Volume Profile Visible parameter validation (negative period, zero)
+- [ ] TASK-04141: Frontend: add Volume Profile Fixed to indicator picker dropdown
+- [ ] TASK-04142: Frontend: Volume Profile Fixed parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04143: Frontend: Volume Profile Fixed color and style picker (line width, opacity)
+- [ ] TASK-04144: Frontend: Volume Profile Fixed toggle visibility (eye icon)
+- [ ] TASK-04145: Frontend: Volume Profile Fixed render correctly in sub-pane or overlay
+- [ ] TASK-04146: Backend: Volume Profile Fixed calculation function implementation
+- [ ] TASK-04147: Backend: Volume Profile Fixed vectorized numpy computation for performance
+- [ ] TASK-04148: Test: Volume Profile Fixed calculation unit test with known values
+- [ ] TASK-04149: Test: Volume Profile Fixed edge case (empty data, single bar, NaN values)
+- [ ] TASK-04150: Test: Volume Profile Fixed parameter validation (negative period, zero)
+- [ ] TASK-04151: Frontend: add Volume Profile Session to indicator picker dropdown
+- [ ] TASK-04152: Frontend: Volume Profile Session parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04153: Frontend: Volume Profile Session color and style picker (line width, opacity)
+- [ ] TASK-04154: Frontend: Volume Profile Session toggle visibility (eye icon)
+- [ ] TASK-04155: Frontend: Volume Profile Session render correctly in sub-pane or overlay
+- [ ] TASK-04156: Backend: Volume Profile Session calculation function implementation
+- [ ] TASK-04157: Backend: Volume Profile Session vectorized numpy computation for performance
+- [ ] TASK-04158: Test: Volume Profile Session calculation unit test with known values
+- [ ] TASK-04159: Test: Volume Profile Session edge case (empty data, single bar, NaN values)
+- [ ] TASK-04160: Test: Volume Profile Session parameter validation (negative period, zero)
+- [ ] TASK-04161: Frontend: add Market Profile to indicator picker dropdown
+- [ ] TASK-04162: Frontend: Market Profile parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04163: Frontend: Market Profile color and style picker (line width, opacity)
+- [ ] TASK-04164: Frontend: Market Profile toggle visibility (eye icon)
+- [ ] TASK-04165: Frontend: Market Profile render correctly in sub-pane or overlay
+- [ ] TASK-04166: Backend: Market Profile calculation function implementation
+- [ ] TASK-04167: Backend: Market Profile vectorized numpy computation for performance
+- [ ] TASK-04168: Test: Market Profile calculation unit test with known values
+- [ ] TASK-04169: Test: Market Profile edge case (empty data, single bar, NaN values)
+- [ ] TASK-04170: Test: Market Profile parameter validation (negative period, zero)
+- [ ] TASK-04171: Frontend: add Value Area High/Low to indicator picker dropdown
+- [ ] TASK-04172: Frontend: Value Area High/Low parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04173: Frontend: Value Area High/Low color and style picker (line width, opacity)
+- [ ] TASK-04174: Frontend: Value Area High/Low toggle visibility (eye icon)
+- [ ] TASK-04175: Frontend: Value Area High/Low render correctly in sub-pane or overlay
+- [ ] TASK-04176: Backend: Value Area High/Low calculation function implementation
+- [ ] TASK-04177: Backend: Value Area High/Low vectorized numpy computation for performance
+- [ ] TASK-04178: Test: Value Area High/Low calculation unit test with known values
+- [ ] TASK-04179: Test: Value Area High/Low edge case (empty data, single bar, NaN values)
+- [ ] TASK-04180: Test: Value Area High/Low parameter validation (negative period, zero)
+- [ ] TASK-04181: Frontend: add Point of Control to indicator picker dropdown
+- [ ] TASK-04182: Frontend: Point of Control parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04183: Frontend: Point of Control color and style picker (line width, opacity)
+- [ ] TASK-04184: Frontend: Point of Control toggle visibility (eye icon)
+- [ ] TASK-04185: Frontend: Point of Control render correctly in sub-pane or overlay
+- [ ] TASK-04186: Backend: Point of Control calculation function implementation
+- [ ] TASK-04187: Backend: Point of Control vectorized numpy computation for performance
+- [ ] TASK-04188: Test: Point of Control calculation unit test with known values
+- [ ] TASK-04189: Test: Point of Control edge case (empty data, single bar, NaN values)
+- [ ] TASK-04190: Test: Point of Control parameter validation (negative period, zero)
+- [ ] TASK-04191: Frontend: add Delta Volume to indicator picker dropdown
+- [ ] TASK-04192: Frontend: Delta Volume parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04193: Frontend: Delta Volume color and style picker (line width, opacity)
+- [ ] TASK-04194: Frontend: Delta Volume toggle visibility (eye icon)
+- [ ] TASK-04195: Frontend: Delta Volume render correctly in sub-pane or overlay
+- [ ] TASK-04196: Backend: Delta Volume calculation function implementation
+- [ ] TASK-04197: Backend: Delta Volume vectorized numpy computation for performance
+- [ ] TASK-04198: Test: Delta Volume calculation unit test with known values
+- [ ] TASK-04199: Test: Delta Volume edge case (empty data, single bar, NaN values)
+- [ ] TASK-04200: Test: Delta Volume parameter validation (negative period, zero)
+- [ ] TASK-04201: Frontend: add Cumulative Delta to indicator picker dropdown
+- [ ] TASK-04202: Frontend: Cumulative Delta parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04203: Frontend: Cumulative Delta color and style picker (line width, opacity)
+- [ ] TASK-04204: Frontend: Cumulative Delta toggle visibility (eye icon)
+- [ ] TASK-04205: Frontend: Cumulative Delta render correctly in sub-pane or overlay
+- [ ] TASK-04206: Backend: Cumulative Delta calculation function implementation
+- [ ] TASK-04207: Backend: Cumulative Delta vectorized numpy computation for performance
+- [ ] TASK-04208: Test: Cumulative Delta calculation unit test with known values
+- [ ] TASK-04209: Test: Cumulative Delta edge case (empty data, single bar, NaN values)
+- [ ] TASK-04210: Test: Cumulative Delta parameter validation (negative period, zero)
+- [ ] TASK-04211: Frontend: add Volume Delta Histogram to indicator picker dropdown
+- [ ] TASK-04212: Frontend: Volume Delta Histogram parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04213: Frontend: Volume Delta Histogram color and style picker (line width, opacity)
+- [ ] TASK-04214: Frontend: Volume Delta Histogram toggle visibility (eye icon)
+- [ ] TASK-04215: Frontend: Volume Delta Histogram render correctly in sub-pane or overlay
+- [ ] TASK-04216: Backend: Volume Delta Histogram calculation function implementation
+- [ ] TASK-04217: Backend: Volume Delta Histogram vectorized numpy computation for performance
+- [ ] TASK-04218: Test: Volume Delta Histogram calculation unit test with known values
+- [ ] TASK-04219: Test: Volume Delta Histogram edge case (empty data, single bar, NaN values)
+- [ ] TASK-04220: Test: Volume Delta Histogram parameter validation (negative period, zero)
+- [ ] TASK-04221: Frontend: add Relative Volume to indicator picker dropdown
+- [ ] TASK-04222: Frontend: Relative Volume parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04223: Frontend: Relative Volume color and style picker (line width, opacity)
+- [ ] TASK-04224: Frontend: Relative Volume toggle visibility (eye icon)
+- [ ] TASK-04225: Frontend: Relative Volume render correctly in sub-pane or overlay
+- [ ] TASK-04226: Backend: Relative Volume calculation function implementation
+- [ ] TASK-04227: Backend: Relative Volume vectorized numpy computation for performance
+- [ ] TASK-04228: Test: Relative Volume calculation unit test with known values
+- [ ] TASK-04229: Test: Relative Volume edge case (empty data, single bar, NaN values)
+- [ ] TASK-04230: Test: Relative Volume parameter validation (negative period, zero)
+- [ ] TASK-04231: Frontend: add Squeeze Momentum to indicator picker dropdown
+- [ ] TASK-04232: Frontend: Squeeze Momentum parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04233: Frontend: Squeeze Momentum color and style picker (line width, opacity)
+- [ ] TASK-04234: Frontend: Squeeze Momentum toggle visibility (eye icon)
+- [ ] TASK-04235: Frontend: Squeeze Momentum render correctly in sub-pane or overlay
+- [ ] TASK-04236: Backend: Squeeze Momentum calculation function implementation
+- [ ] TASK-04237: Backend: Squeeze Momentum vectorized numpy computation for performance
+- [ ] TASK-04238: Test: Squeeze Momentum calculation unit test with known values
+- [ ] TASK-04239: Test: Squeeze Momentum edge case (empty data, single bar, NaN values)
+- [ ] TASK-04240: Test: Squeeze Momentum parameter validation (negative period, zero)
+- [ ] TASK-04241: Frontend: add TTM Squeeze to indicator picker dropdown
+- [ ] TASK-04242: Frontend: TTM Squeeze parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04243: Frontend: TTM Squeeze color and style picker (line width, opacity)
+- [ ] TASK-04244: Frontend: TTM Squeeze toggle visibility (eye icon)
+- [ ] TASK-04245: Frontend: TTM Squeeze render correctly in sub-pane or overlay
+- [ ] TASK-04246: Backend: TTM Squeeze calculation function implementation
+- [ ] TASK-04247: Backend: TTM Squeeze vectorized numpy computation for performance
+- [ ] TASK-04248: Test: TTM Squeeze calculation unit test with known values
+- [ ] TASK-04249: Test: TTM Squeeze edge case (empty data, single bar, NaN values)
+- [ ] TASK-04250: Test: TTM Squeeze parameter validation (negative period, zero)
+- [ ] TASK-04251: Frontend: add Elder Impulse System to indicator picker dropdown
+- [ ] TASK-04252: Frontend: Elder Impulse System parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04253: Frontend: Elder Impulse System color and style picker (line width, opacity)
+- [ ] TASK-04254: Frontend: Elder Impulse System toggle visibility (eye icon)
+- [ ] TASK-04255: Frontend: Elder Impulse System render correctly in sub-pane or overlay
+- [ ] TASK-04256: Backend: Elder Impulse System calculation function implementation
+- [ ] TASK-04257: Backend: Elder Impulse System vectorized numpy computation for performance
+- [ ] TASK-04258: Test: Elder Impulse System calculation unit test with known values
+- [ ] TASK-04259: Test: Elder Impulse System edge case (empty data, single bar, NaN values)
+- [ ] TASK-04260: Test: Elder Impulse System parameter validation (negative period, zero)
+- [ ] TASK-04261: Frontend: add Linear Regression Channel to indicator picker dropdown
+- [ ] TASK-04262: Frontend: Linear Regression Channel parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04263: Frontend: Linear Regression Channel color and style picker (line width, opacity)
+- [ ] TASK-04264: Frontend: Linear Regression Channel toggle visibility (eye icon)
+- [ ] TASK-04265: Frontend: Linear Regression Channel render correctly in sub-pane or overlay
+- [ ] TASK-04266: Backend: Linear Regression Channel calculation function implementation
+- [ ] TASK-04267: Backend: Linear Regression Channel vectorized numpy computation for performance
+- [ ] TASK-04268: Test: Linear Regression Channel calculation unit test with known values
+- [ ] TASK-04269: Test: Linear Regression Channel edge case (empty data, single bar, NaN values)
+- [ ] TASK-04270: Test: Linear Regression Channel parameter validation (negative period, zero)
+- [ ] TASK-04271: Frontend: add Standard Deviation Channel to indicator picker dropdown
+- [ ] TASK-04272: Frontend: Standard Deviation Channel parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04273: Frontend: Standard Deviation Channel color and style picker (line width, opacity)
+- [ ] TASK-04274: Frontend: Standard Deviation Channel toggle visibility (eye icon)
+- [ ] TASK-04275: Frontend: Standard Deviation Channel render correctly in sub-pane or overlay
+- [ ] TASK-04276: Backend: Standard Deviation Channel calculation function implementation
+- [ ] TASK-04277: Backend: Standard Deviation Channel vectorized numpy computation for performance
+- [ ] TASK-04278: Test: Standard Deviation Channel calculation unit test with known values
+- [ ] TASK-04279: Test: Standard Deviation Channel edge case (empty data, single bar, NaN values)
+- [ ] TASK-04280: Test: Standard Deviation Channel parameter validation (negative period, zero)
+- [ ] TASK-04281: Frontend: add Regression Line to indicator picker dropdown
+- [ ] TASK-04282: Frontend: Regression Line parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04283: Frontend: Regression Line color and style picker (line width, opacity)
+- [ ] TASK-04284: Frontend: Regression Line toggle visibility (eye icon)
+- [ ] TASK-04285: Frontend: Regression Line render correctly in sub-pane or overlay
+- [ ] TASK-04286: Backend: Regression Line calculation function implementation
+- [ ] TASK-04287: Backend: Regression Line vectorized numpy computation for performance
+- [ ] TASK-04288: Test: Regression Line calculation unit test with known values
+- [ ] TASK-04289: Test: Regression Line edge case (empty data, single bar, NaN values)
+- [ ] TASK-04290: Test: Regression Line parameter validation (negative period, zero)
+- [ ] TASK-04291: Frontend: add VIDYA to indicator picker dropdown
+- [ ] TASK-04292: Frontend: VIDYA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04293: Frontend: VIDYA color and style picker (line width, opacity)
+- [ ] TASK-04294: Frontend: VIDYA toggle visibility (eye icon)
+- [ ] TASK-04295: Frontend: VIDYA render correctly in sub-pane or overlay
+- [ ] TASK-04296: Backend: VIDYA calculation function implementation
+- [ ] TASK-04297: Backend: VIDYA vectorized numpy computation for performance
+- [ ] TASK-04298: Test: VIDYA calculation unit test with known values
+- [ ] TASK-04299: Test: VIDYA edge case (empty data, single bar, NaN values)
+- [ ] TASK-04300: Test: VIDYA parameter validation (negative period, zero)
+- [ ] TASK-04301: Frontend: add Rainbow MA to indicator picker dropdown
+- [ ] TASK-04302: Frontend: Rainbow MA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04303: Frontend: Rainbow MA color and style picker (line width, opacity)
+- [ ] TASK-04304: Frontend: Rainbow MA toggle visibility (eye icon)
+- [ ] TASK-04305: Frontend: Rainbow MA render correctly in sub-pane or overlay
+- [ ] TASK-04306: Backend: Rainbow MA calculation function implementation
+- [ ] TASK-04307: Backend: Rainbow MA vectorized numpy computation for performance
+- [ ] TASK-04308: Test: Rainbow MA calculation unit test with known values
+- [ ] TASK-04309: Test: Rainbow MA edge case (empty data, single bar, NaN values)
+- [ ] TASK-04310: Test: Rainbow MA parameter validation (negative period, zero)
+- [ ] TASK-04311: Frontend: add Guppy MMA to indicator picker dropdown
+- [ ] TASK-04312: Frontend: Guppy MMA parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04313: Frontend: Guppy MMA color and style picker (line width, opacity)
+- [ ] TASK-04314: Frontend: Guppy MMA toggle visibility (eye icon)
+- [ ] TASK-04315: Frontend: Guppy MMA render correctly in sub-pane or overlay
+- [ ] TASK-04316: Backend: Guppy MMA calculation function implementation
+- [ ] TASK-04317: Backend: Guppy MMA vectorized numpy computation for performance
+- [ ] TASK-04318: Test: Guppy MMA calculation unit test with known values
+- [ ] TASK-04319: Test: Guppy MMA edge case (empty data, single bar, NaN values)
+- [ ] TASK-04320: Test: Guppy MMA parameter validation (negative period, zero)
+- [ ] TASK-04321: Frontend: add Alligator to indicator picker dropdown
+- [ ] TASK-04322: Frontend: Alligator parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04323: Frontend: Alligator color and style picker (line width, opacity)
+- [ ] TASK-04324: Frontend: Alligator toggle visibility (eye icon)
+- [ ] TASK-04325: Frontend: Alligator render correctly in sub-pane or overlay
+- [ ] TASK-04326: Backend: Alligator calculation function implementation
+- [ ] TASK-04327: Backend: Alligator vectorized numpy computation for performance
+- [ ] TASK-04328: Test: Alligator calculation unit test with known values
+- [ ] TASK-04329: Test: Alligator edge case (empty data, single bar, NaN values)
+- [ ] TASK-04330: Test: Alligator parameter validation (negative period, zero)
+- [ ] TASK-04331: Frontend: add AO to indicator picker dropdown
+- [ ] TASK-04332: Frontend: AO parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04333: Frontend: AO color and style picker (line width, opacity)
+- [ ] TASK-04334: Frontend: AO toggle visibility (eye icon)
+- [ ] TASK-04335: Frontend: AO render correctly in sub-pane or overlay
+- [ ] TASK-04336: Backend: AO calculation function implementation
+- [ ] TASK-04337: Backend: AO vectorized numpy computation for performance
+- [ ] TASK-04338: Test: AO calculation unit test with known values
+- [ ] TASK-04339: Test: AO edge case (empty data, single bar, NaN values)
+- [ ] TASK-04340: Test: AO parameter validation (negative period, zero)
+- [ ] TASK-04341: Frontend: add AC to indicator picker dropdown
+- [ ] TASK-04342: Frontend: AC parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04343: Frontend: AC color and style picker (line width, opacity)
+- [ ] TASK-04344: Frontend: AC toggle visibility (eye icon)
+- [ ] TASK-04345: Frontend: AC render correctly in sub-pane or overlay
+- [ ] TASK-04346: Backend: AC calculation function implementation
+- [ ] TASK-04347: Backend: AC vectorized numpy computation for performance
+- [ ] TASK-04348: Test: AC calculation unit test with known values
+- [ ] TASK-04349: Test: AC edge case (empty data, single bar, NaN values)
+- [ ] TASK-04350: Test: AC parameter validation (negative period, zero)
+- [ ] TASK-04351: Frontend: add DeMarker to indicator picker dropdown
+- [ ] TASK-04352: Frontend: DeMarker parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04353: Frontend: DeMarker color and style picker (line width, opacity)
+- [ ] TASK-04354: Frontend: DeMarker toggle visibility (eye icon)
+- [ ] TASK-04355: Frontend: DeMarker render correctly in sub-pane or overlay
+- [ ] TASK-04356: Backend: DeMarker calculation function implementation
+- [ ] TASK-04357: Backend: DeMarker vectorized numpy computation for performance
+- [ ] TASK-04358: Test: DeMarker calculation unit test with known values
+- [ ] TASK-04359: Test: DeMarker edge case (empty data, single bar, NaN values)
+- [ ] TASK-04360: Test: DeMarker parameter validation (negative period, zero)
+- [ ] TASK-04361: Frontend: add Klinger Volume Osc to indicator picker dropdown
+- [ ] TASK-04362: Frontend: Klinger Volume Osc parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04363: Frontend: Klinger Volume Osc color and style picker (line width, opacity)
+- [ ] TASK-04364: Frontend: Klinger Volume Osc toggle visibility (eye icon)
+- [ ] TASK-04365: Frontend: Klinger Volume Osc render correctly in sub-pane or overlay
+- [ ] TASK-04366: Backend: Klinger Volume Osc calculation function implementation
+- [ ] TASK-04367: Backend: Klinger Volume Osc vectorized numpy computation for performance
+- [ ] TASK-04368: Test: Klinger Volume Osc calculation unit test with known values
+- [ ] TASK-04369: Test: Klinger Volume Osc edge case (empty data, single bar, NaN values)
+- [ ] TASK-04370: Test: Klinger Volume Osc parameter validation (negative period, zero)
+- [ ] TASK-04371: Frontend: add Choppiness Index to indicator picker dropdown
+- [ ] TASK-04372: Frontend: Choppiness Index parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04373: Frontend: Choppiness Index color and style picker (line width, opacity)
+- [ ] TASK-04374: Frontend: Choppiness Index toggle visibility (eye icon)
+- [ ] TASK-04375: Frontend: Choppiness Index render correctly in sub-pane or overlay
+- [ ] TASK-04376: Backend: Choppiness Index calculation function implementation
+- [ ] TASK-04377: Backend: Choppiness Index vectorized numpy computation for performance
+- [ ] TASK-04378: Test: Choppiness Index calculation unit test with known values
+- [ ] TASK-04379: Test: Choppiness Index edge case (empty data, single bar, NaN values)
+- [ ] TASK-04380: Test: Choppiness Index parameter validation (negative period, zero)
+- [ ] TASK-04381: Frontend: add Connors RSI to indicator picker dropdown
+- [ ] TASK-04382: Frontend: Connors RSI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04383: Frontend: Connors RSI color and style picker (line width, opacity)
+- [ ] TASK-04384: Frontend: Connors RSI toggle visibility (eye icon)
+- [ ] TASK-04385: Frontend: Connors RSI render correctly in sub-pane or overlay
+- [ ] TASK-04386: Backend: Connors RSI calculation function implementation
+- [ ] TASK-04387: Backend: Connors RSI vectorized numpy computation for performance
+- [ ] TASK-04388: Test: Connors RSI calculation unit test with known values
+- [ ] TASK-04389: Test: Connors RSI edge case (empty data, single bar, NaN values)
+- [ ] TASK-04390: Test: Connors RSI parameter validation (negative period, zero)
+- [ ] TASK-04391: Frontend: add Ultimate Oscillator to indicator picker dropdown
+- [ ] TASK-04392: Frontend: Ultimate Oscillator parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04393: Frontend: Ultimate Oscillator color and style picker (line width, opacity)
+- [ ] TASK-04394: Frontend: Ultimate Oscillator toggle visibility (eye icon)
+- [ ] TASK-04395: Frontend: Ultimate Oscillator render correctly in sub-pane or overlay
+- [ ] TASK-04396: Backend: Ultimate Oscillator calculation function implementation
+- [ ] TASK-04397: Backend: Ultimate Oscillator vectorized numpy computation for performance
+- [ ] TASK-04398: Test: Ultimate Oscillator calculation unit test with known values
+- [ ] TASK-04399: Test: Ultimate Oscillator edge case (empty data, single bar, NaN values)
+- [ ] TASK-04400: Test: Ultimate Oscillator parameter validation (negative period, zero)
+- [ ] TASK-04401: Frontend: add Ehlers Fisher to indicator picker dropdown
+- [ ] TASK-04402: Frontend: Ehlers Fisher parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04403: Frontend: Ehlers Fisher color and style picker (line width, opacity)
+- [ ] TASK-04404: Frontend: Ehlers Fisher toggle visibility (eye icon)
+- [ ] TASK-04405: Frontend: Ehlers Fisher render correctly in sub-pane or overlay
+- [ ] TASK-04406: Backend: Ehlers Fisher calculation function implementation
+- [ ] TASK-04407: Backend: Ehlers Fisher vectorized numpy computation for performance
+- [ ] TASK-04408: Test: Ehlers Fisher calculation unit test with known values
+- [ ] TASK-04409: Test: Ehlers Fisher edge case (empty data, single bar, NaN values)
+- [ ] TASK-04410: Test: Ehlers Fisher parameter validation (negative period, zero)
+- [ ] TASK-04411: Frontend: add Laguerre RSI to indicator picker dropdown
+- [ ] TASK-04412: Frontend: Laguerre RSI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04413: Frontend: Laguerre RSI color and style picker (line width, opacity)
+- [ ] TASK-04414: Frontend: Laguerre RSI toggle visibility (eye icon)
+- [ ] TASK-04415: Frontend: Laguerre RSI render correctly in sub-pane or overlay
+- [ ] TASK-04416: Backend: Laguerre RSI calculation function implementation
+- [ ] TASK-04417: Backend: Laguerre RSI vectorized numpy computation for performance
+- [ ] TASK-04418: Test: Laguerre RSI calculation unit test with known values
+- [ ] TASK-04419: Test: Laguerre RSI edge case (empty data, single bar, NaN values)
+- [ ] TASK-04420: Test: Laguerre RSI parameter validation (negative period, zero)
+- [ ] TASK-04421: Frontend: add McGinley Dynamic to indicator picker dropdown
+- [ ] TASK-04422: Frontend: McGinley Dynamic parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04423: Frontend: McGinley Dynamic color and style picker (line width, opacity)
+- [ ] TASK-04424: Frontend: McGinley Dynamic toggle visibility (eye icon)
+- [ ] TASK-04425: Frontend: McGinley Dynamic render correctly in sub-pane or overlay
+- [ ] TASK-04426: Backend: McGinley Dynamic calculation function implementation
+- [ ] TASK-04427: Backend: McGinley Dynamic vectorized numpy computation for performance
+- [ ] TASK-04428: Test: McGinley Dynamic calculation unit test with known values
+- [ ] TASK-04429: Test: McGinley Dynamic edge case (empty data, single bar, NaN values)
+- [ ] TASK-04430: Test: McGinley Dynamic parameter validation (negative period, zero)
+- [ ] TASK-04431: Frontend: add RVI to indicator picker dropdown
+- [ ] TASK-04432: Frontend: RVI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04433: Frontend: RVI color and style picker (line width, opacity)
+- [ ] TASK-04434: Frontend: RVI toggle visibility (eye icon)
+- [ ] TASK-04435: Frontend: RVI render correctly in sub-pane or overlay
+- [ ] TASK-04436: Backend: RVI calculation function implementation
+- [ ] TASK-04437: Backend: RVI vectorized numpy computation for performance
+- [ ] TASK-04438: Test: RVI calculation unit test with known values
+- [ ] TASK-04439: Test: RVI edge case (empty data, single bar, NaN values)
+- [ ] TASK-04440: Test: RVI parameter validation (negative period, zero)
+- [ ] TASK-04441: Frontend: add Balance of Power to indicator picker dropdown
+- [ ] TASK-04442: Frontend: Balance of Power parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04443: Frontend: Balance of Power color and style picker (line width, opacity)
+- [ ] TASK-04444: Frontend: Balance of Power toggle visibility (eye icon)
+- [ ] TASK-04445: Frontend: Balance of Power render correctly in sub-pane or overlay
+- [ ] TASK-04446: Backend: Balance of Power calculation function implementation
+- [ ] TASK-04447: Backend: Balance of Power vectorized numpy computation for performance
+- [ ] TASK-04448: Test: Balance of Power calculation unit test with known values
+- [ ] TASK-04449: Test: Balance of Power edge case (empty data, single bar, NaN values)
+- [ ] TASK-04450: Test: Balance of Power parameter validation (negative period, zero)
+- [ ] TASK-04451: Frontend: add Net Volume to indicator picker dropdown
+- [ ] TASK-04452: Frontend: Net Volume parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04453: Frontend: Net Volume color and style picker (line width, opacity)
+- [ ] TASK-04454: Frontend: Net Volume toggle visibility (eye icon)
+- [ ] TASK-04455: Frontend: Net Volume render correctly in sub-pane or overlay
+- [ ] TASK-04456: Backend: Net Volume calculation function implementation
+- [ ] TASK-04457: Backend: Net Volume vectorized numpy computation for performance
+- [ ] TASK-04458: Test: Net Volume calculation unit test with known values
+- [ ] TASK-04459: Test: Net Volume edge case (empty data, single bar, NaN values)
+- [ ] TASK-04460: Test: Net Volume parameter validation (negative period, zero)
+- [ ] TASK-04461: Frontend: add Positive Volume Index to indicator picker dropdown
+- [ ] TASK-04462: Frontend: Positive Volume Index parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04463: Frontend: Positive Volume Index color and style picker (line width, opacity)
+- [ ] TASK-04464: Frontend: Positive Volume Index toggle visibility (eye icon)
+- [ ] TASK-04465: Frontend: Positive Volume Index render correctly in sub-pane or overlay
+- [ ] TASK-04466: Backend: Positive Volume Index calculation function implementation
+- [ ] TASK-04467: Backend: Positive Volume Index vectorized numpy computation for performance
+- [ ] TASK-04468: Test: Positive Volume Index calculation unit test with known values
+- [ ] TASK-04469: Test: Positive Volume Index edge case (empty data, single bar, NaN values)
+- [ ] TASK-04470: Test: Positive Volume Index parameter validation (negative period, zero)
+- [ ] TASK-04471: Frontend: add Negative Volume Index to indicator picker dropdown
+- [ ] TASK-04472: Frontend: Negative Volume Index parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04473: Frontend: Negative Volume Index color and style picker (line width, opacity)
+- [ ] TASK-04474: Frontend: Negative Volume Index toggle visibility (eye icon)
+- [ ] TASK-04475: Frontend: Negative Volume Index render correctly in sub-pane or overlay
+- [ ] TASK-04476: Backend: Negative Volume Index calculation function implementation
+- [ ] TASK-04477: Backend: Negative Volume Index vectorized numpy computation for performance
+- [ ] TASK-04478: Test: Negative Volume Index calculation unit test with known values
+- [ ] TASK-04479: Test: Negative Volume Index edge case (empty data, single bar, NaN values)
+- [ ] TASK-04480: Test: Negative Volume Index parameter validation (negative period, zero)
+- [ ] TASK-04481: Frontend: add PVT to indicator picker dropdown
+- [ ] TASK-04482: Frontend: PVT parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04483: Frontend: PVT color and style picker (line width, opacity)
+- [ ] TASK-04484: Frontend: PVT toggle visibility (eye icon)
+- [ ] TASK-04485: Frontend: PVT render correctly in sub-pane or overlay
+- [ ] TASK-04486: Backend: PVT calculation function implementation
+- [ ] TASK-04487: Backend: PVT vectorized numpy computation for performance
+- [ ] TASK-04488: Test: PVT calculation unit test with known values
+- [ ] TASK-04489: Test: PVT edge case (empty data, single bar, NaN values)
+- [ ] TASK-04490: Test: PVT parameter validation (negative period, zero)
+- [ ] TASK-04491: Frontend: add Trend Intensity to indicator picker dropdown
+- [ ] TASK-04492: Frontend: Trend Intensity parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04493: Frontend: Trend Intensity color and style picker (line width, opacity)
+- [ ] TASK-04494: Frontend: Trend Intensity toggle visibility (eye icon)
+- [ ] TASK-04495: Frontend: Trend Intensity render correctly in sub-pane or overlay
+- [ ] TASK-04496: Backend: Trend Intensity calculation function implementation
+- [ ] TASK-04497: Backend: Trend Intensity vectorized numpy computation for performance
+- [ ] TASK-04498: Test: Trend Intensity calculation unit test with known values
+- [ ] TASK-04499: Test: Trend Intensity edge case (empty data, single bar, NaN values)
+- [ ] TASK-04500: Test: Trend Intensity parameter validation (negative period, zero)
+- [ ] TASK-04501: Frontend: add VHF to indicator picker dropdown
+- [ ] TASK-04502: Frontend: VHF parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04503: Frontend: VHF color and style picker (line width, opacity)
+- [ ] TASK-04504: Frontend: VHF toggle visibility (eye icon)
+- [ ] TASK-04505: Frontend: VHF render correctly in sub-pane or overlay
+- [ ] TASK-04506: Backend: VHF calculation function implementation
+- [ ] TASK-04507: Backend: VHF vectorized numpy computation for performance
+- [ ] TASK-04508: Test: VHF calculation unit test with known values
+- [ ] TASK-04509: Test: VHF edge case (empty data, single bar, NaN values)
+- [ ] TASK-04510: Test: VHF parameter validation (negative period, zero)
+- [ ] TASK-04511: Frontend: add Qstick to indicator picker dropdown
+- [ ] TASK-04512: Frontend: Qstick parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04513: Frontend: Qstick color and style picker (line width, opacity)
+- [ ] TASK-04514: Frontend: Qstick toggle visibility (eye icon)
+- [ ] TASK-04515: Frontend: Qstick render correctly in sub-pane or overlay
+- [ ] TASK-04516: Backend: Qstick calculation function implementation
+- [ ] TASK-04517: Backend: Qstick vectorized numpy computation for performance
+- [ ] TASK-04518: Test: Qstick calculation unit test with known values
+- [ ] TASK-04519: Test: Qstick edge case (empty data, single bar, NaN values)
+- [ ] TASK-04520: Test: Qstick parameter validation (negative period, zero)
+- [ ] TASK-04521: Frontend: add Swing Index to indicator picker dropdown
+- [ ] TASK-04522: Frontend: Swing Index parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04523: Frontend: Swing Index color and style picker (line width, opacity)
+- [ ] TASK-04524: Frontend: Swing Index toggle visibility (eye icon)
+- [ ] TASK-04525: Frontend: Swing Index render correctly in sub-pane or overlay
+- [ ] TASK-04526: Backend: Swing Index calculation function implementation
+- [ ] TASK-04527: Backend: Swing Index vectorized numpy computation for performance
+- [ ] TASK-04528: Test: Swing Index calculation unit test with known values
+- [ ] TASK-04529: Test: Swing Index edge case (empty data, single bar, NaN values)
+- [ ] TASK-04530: Test: Swing Index parameter validation (negative period, zero)
+- [ ] TASK-04531: Frontend: add ASI to indicator picker dropdown
+- [ ] TASK-04532: Frontend: ASI parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04533: Frontend: ASI color and style picker (line width, opacity)
+- [ ] TASK-04534: Frontend: ASI toggle visibility (eye icon)
+- [ ] TASK-04535: Frontend: ASI render correctly in sub-pane or overlay
+- [ ] TASK-04536: Backend: ASI calculation function implementation
+- [ ] TASK-04537: Backend: ASI vectorized numpy computation for performance
+- [ ] TASK-04538: Test: ASI calculation unit test with known values
+- [ ] TASK-04539: Test: ASI edge case (empty data, single bar, NaN values)
+- [ ] TASK-04540: Test: ASI parameter validation (negative period, zero)
+- [ ] TASK-04541: Frontend: add Hurst Exponent to indicator picker dropdown
+- [ ] TASK-04542: Frontend: Hurst Exponent parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04543: Frontend: Hurst Exponent color and style picker (line width, opacity)
+- [ ] TASK-04544: Frontend: Hurst Exponent toggle visibility (eye icon)
+- [ ] TASK-04545: Frontend: Hurst Exponent render correctly in sub-pane or overlay
+- [ ] TASK-04546: Backend: Hurst Exponent calculation function implementation
+- [ ] TASK-04547: Backend: Hurst Exponent vectorized numpy computation for performance
+- [ ] TASK-04548: Test: Hurst Exponent calculation unit test with known values
+- [ ] TASK-04549: Test: Hurst Exponent edge case (empty data, single bar, NaN values)
+- [ ] TASK-04550: Test: Hurst Exponent parameter validation (negative period, zero)
+- [ ] TASK-04551: Frontend: add Fractal Dimension to indicator picker dropdown
+- [ ] TASK-04552: Frontend: Fractal Dimension parameter inputs UI (period, multiplier, etc)
+- [ ] TASK-04553: Frontend: Fractal Dimension color and style picker (line width, opacity)
+- [ ] TASK-04554: Frontend: Fractal Dimension toggle visibility (eye icon)
+- [ ] TASK-04555: Frontend: Fractal Dimension render correctly in sub-pane or overlay
+- [ ] TASK-04556: Backend: Fractal Dimension calculation function implementation
+- [ ] TASK-04557: Backend: Fractal Dimension vectorized numpy computation for performance
+- [ ] TASK-04558: Test: Fractal Dimension calculation unit test with known values
+- [ ] TASK-04559: Test: Fractal Dimension edge case (empty data, single bar, NaN values)
+- [ ] TASK-04560: Test: Fractal Dimension parameter validation (negative period, zero)
+
+
+## PER-DRAWING TOOL SUBTASKS (54 TOOLS Ã— 8)
+
+- [ ] TASK-04561: Drawing Trend Line: mouse interaction (click-drag-release) handler
+- [ ] TASK-04562: Drawing Trend Line: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04563: Drawing Trend Line: property panel UI (color, width, style)
+- [ ] TASK-04564: Drawing Trend Line: persistence (save/load via JSON)
+- [ ] TASK-04565: Drawing Trend Line: click selection and move/resize handles
+- [ ] TASK-04566: Drawing Trend Line: snap to OHLC price levels (magnet)
+- [ ] TASK-04567: Drawing Trend Line: deletion confirmation and undo integration
+- [ ] TASK-04568: Test: Drawing Trend Line creation E2E test
+- [ ] TASK-04569: Drawing Extended Line: mouse interaction (click-drag-release) handler
+- [ ] TASK-04570: Drawing Extended Line: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04571: Drawing Extended Line: property panel UI (color, width, style)
+- [ ] TASK-04572: Drawing Extended Line: persistence (save/load via JSON)
+- [ ] TASK-04573: Drawing Extended Line: click selection and move/resize handles
+- [ ] TASK-04574: Drawing Extended Line: snap to OHLC price levels (magnet)
+- [ ] TASK-04575: Drawing Extended Line: deletion confirmation and undo integration
+- [ ] TASK-04576: Test: Drawing Extended Line creation E2E test
+- [ ] TASK-04577: Drawing Ray: mouse interaction (click-drag-release) handler
+- [ ] TASK-04578: Drawing Ray: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04579: Drawing Ray: property panel UI (color, width, style)
+- [ ] TASK-04580: Drawing Ray: persistence (save/load via JSON)
+- [ ] TASK-04581: Drawing Ray: click selection and move/resize handles
+- [ ] TASK-04582: Drawing Ray: snap to OHLC price levels (magnet)
+- [ ] TASK-04583: Drawing Ray: deletion confirmation and undo integration
+- [ ] TASK-04584: Test: Drawing Ray creation E2E test
+- [ ] TASK-04585: Drawing Horizontal Line: mouse interaction (click-drag-release) handler
+- [ ] TASK-04586: Drawing Horizontal Line: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04587: Drawing Horizontal Line: property panel UI (color, width, style)
+- [ ] TASK-04588: Drawing Horizontal Line: persistence (save/load via JSON)
+- [ ] TASK-04589: Drawing Horizontal Line: click selection and move/resize handles
+- [ ] TASK-04590: Drawing Horizontal Line: snap to OHLC price levels (magnet)
+- [ ] TASK-04591: Drawing Horizontal Line: deletion confirmation and undo integration
+- [ ] TASK-04592: Test: Drawing Horizontal Line creation E2E test
+- [ ] TASK-04593: Drawing Vertical Line: mouse interaction (click-drag-release) handler
+- [ ] TASK-04594: Drawing Vertical Line: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04595: Drawing Vertical Line: property panel UI (color, width, style)
+- [ ] TASK-04596: Drawing Vertical Line: persistence (save/load via JSON)
+- [ ] TASK-04597: Drawing Vertical Line: click selection and move/resize handles
+- [ ] TASK-04598: Drawing Vertical Line: snap to OHLC price levels (magnet)
+- [ ] TASK-04599: Drawing Vertical Line: deletion confirmation and undo integration
+- [ ] TASK-04600: Test: Drawing Vertical Line creation E2E test
+- [ ] TASK-04601: Drawing Cross/Plus: mouse interaction (click-drag-release) handler
+- [ ] TASK-04602: Drawing Cross/Plus: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04603: Drawing Cross/Plus: property panel UI (color, width, style)
+- [ ] TASK-04604: Drawing Cross/Plus: persistence (save/load via JSON)
+- [ ] TASK-04605: Drawing Cross/Plus: click selection and move/resize handles
+- [ ] TASK-04606: Drawing Cross/Plus: snap to OHLC price levels (magnet)
+- [ ] TASK-04607: Drawing Cross/Plus: deletion confirmation and undo integration
+- [ ] TASK-04608: Test: Drawing Cross/Plus creation E2E test
+- [ ] TASK-04609: Drawing Arrow: mouse interaction (click-drag-release) handler
+- [ ] TASK-04610: Drawing Arrow: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04611: Drawing Arrow: property panel UI (color, width, style)
+- [ ] TASK-04612: Drawing Arrow: persistence (save/load via JSON)
+- [ ] TASK-04613: Drawing Arrow: click selection and move/resize handles
+- [ ] TASK-04614: Drawing Arrow: snap to OHLC price levels (magnet)
+- [ ] TASK-04615: Drawing Arrow: deletion confirmation and undo integration
+- [ ] TASK-04616: Test: Drawing Arrow creation E2E test
+- [ ] TASK-04617: Drawing Rectangle: mouse interaction (click-drag-release) handler
+- [ ] TASK-04618: Drawing Rectangle: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04619: Drawing Rectangle: property panel UI (color, width, style)
+- [ ] TASK-04620: Drawing Rectangle: persistence (save/load via JSON)
+- [ ] TASK-04621: Drawing Rectangle: click selection and move/resize handles
+- [ ] TASK-04622: Drawing Rectangle: snap to OHLC price levels (magnet)
+- [ ] TASK-04623: Drawing Rectangle: deletion confirmation and undo integration
+- [ ] TASK-04624: Test: Drawing Rectangle creation E2E test
+- [ ] TASK-04625: Drawing Circle: mouse interaction (click-drag-release) handler
+- [ ] TASK-04626: Drawing Circle: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04627: Drawing Circle: property panel UI (color, width, style)
+- [ ] TASK-04628: Drawing Circle: persistence (save/load via JSON)
+- [ ] TASK-04629: Drawing Circle: click selection and move/resize handles
+- [ ] TASK-04630: Drawing Circle: snap to OHLC price levels (magnet)
+- [ ] TASK-04631: Drawing Circle: deletion confirmation and undo integration
+- [ ] TASK-04632: Test: Drawing Circle creation E2E test
+- [ ] TASK-04633: Drawing Triangle: mouse interaction (click-drag-release) handler
+- [ ] TASK-04634: Drawing Triangle: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04635: Drawing Triangle: property panel UI (color, width, style)
+- [ ] TASK-04636: Drawing Triangle: persistence (save/load via JSON)
+- [ ] TASK-04637: Drawing Triangle: click selection and move/resize handles
+- [ ] TASK-04638: Drawing Triangle: snap to OHLC price levels (magnet)
+- [ ] TASK-04639: Drawing Triangle: deletion confirmation and undo integration
+- [ ] TASK-04640: Test: Drawing Triangle creation E2E test
+- [ ] TASK-04641: Drawing Ellipse: mouse interaction (click-drag-release) handler
+- [ ] TASK-04642: Drawing Ellipse: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04643: Drawing Ellipse: property panel UI (color, width, style)
+- [ ] TASK-04644: Drawing Ellipse: persistence (save/load via JSON)
+- [ ] TASK-04645: Drawing Ellipse: click selection and move/resize handles
+- [ ] TASK-04646: Drawing Ellipse: snap to OHLC price levels (magnet)
+- [ ] TASK-04647: Drawing Ellipse: deletion confirmation and undo integration
+- [ ] TASK-04648: Test: Drawing Ellipse creation E2E test
+- [ ] TASK-04649: Drawing Parallel Channel: mouse interaction (click-drag-release) handler
+- [ ] TASK-04650: Drawing Parallel Channel: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04651: Drawing Parallel Channel: property panel UI (color, width, style)
+- [ ] TASK-04652: Drawing Parallel Channel: persistence (save/load via JSON)
+- [ ] TASK-04653: Drawing Parallel Channel: click selection and move/resize handles
+- [ ] TASK-04654: Drawing Parallel Channel: snap to OHLC price levels (magnet)
+- [ ] TASK-04655: Drawing Parallel Channel: deletion confirmation and undo integration
+- [ ] TASK-04656: Test: Drawing Parallel Channel creation E2E test
+- [ ] TASK-04657: Drawing Regression Channel: mouse interaction (click-drag-release) handler
+- [ ] TASK-04658: Drawing Regression Channel: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04659: Drawing Regression Channel: property panel UI (color, width, style)
+- [ ] TASK-04660: Drawing Regression Channel: persistence (save/load via JSON)
+- [ ] TASK-04661: Drawing Regression Channel: click selection and move/resize handles
+- [ ] TASK-04662: Drawing Regression Channel: snap to OHLC price levels (magnet)
+- [ ] TASK-04663: Drawing Regression Channel: deletion confirmation and undo integration
+- [ ] TASK-04664: Test: Drawing Regression Channel creation E2E test
+- [ ] TASK-04665: Drawing Flat Top/Bottom Channel: mouse interaction (click-drag-release) handler
+- [ ] TASK-04666: Drawing Flat Top/Bottom Channel: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04667: Drawing Flat Top/Bottom Channel: property panel UI (color, width, style)
+- [ ] TASK-04668: Drawing Flat Top/Bottom Channel: persistence (save/load via JSON)
+- [ ] TASK-04669: Drawing Flat Top/Bottom Channel: click selection and move/resize handles
+- [ ] TASK-04670: Drawing Flat Top/Bottom Channel: snap to OHLC price levels (magnet)
+- [ ] TASK-04671: Drawing Flat Top/Bottom Channel: deletion confirmation and undo integration
+- [ ] TASK-04672: Test: Drawing Flat Top/Bottom Channel creation E2E test
+- [ ] TASK-04673: Drawing Disjoint Angle: mouse interaction (click-drag-release) handler
+- [ ] TASK-04674: Drawing Disjoint Angle: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04675: Drawing Disjoint Angle: property panel UI (color, width, style)
+- [ ] TASK-04676: Drawing Disjoint Angle: persistence (save/load via JSON)
+- [ ] TASK-04677: Drawing Disjoint Angle: click selection and move/resize handles
+- [ ] TASK-04678: Drawing Disjoint Angle: snap to OHLC price levels (magnet)
+- [ ] TASK-04679: Drawing Disjoint Angle: deletion confirmation and undo integration
+- [ ] TASK-04680: Test: Drawing Disjoint Angle creation E2E test
+- [ ] TASK-04681: Drawing Pitchfork: mouse interaction (click-drag-release) handler
+- [ ] TASK-04682: Drawing Pitchfork: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04683: Drawing Pitchfork: property panel UI (color, width, style)
+- [ ] TASK-04684: Drawing Pitchfork: persistence (save/load via JSON)
+- [ ] TASK-04685: Drawing Pitchfork: click selection and move/resize handles
+- [ ] TASK-04686: Drawing Pitchfork: snap to OHLC price levels (magnet)
+- [ ] TASK-04687: Drawing Pitchfork: deletion confirmation and undo integration
+- [ ] TASK-04688: Test: Drawing Pitchfork creation E2E test
+- [ ] TASK-04689: Drawing Schiff Pitchfork: mouse interaction (click-drag-release) handler
+- [ ] TASK-04690: Drawing Schiff Pitchfork: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04691: Drawing Schiff Pitchfork: property panel UI (color, width, style)
+- [ ] TASK-04692: Drawing Schiff Pitchfork: persistence (save/load via JSON)
+- [ ] TASK-04693: Drawing Schiff Pitchfork: click selection and move/resize handles
+- [ ] TASK-04694: Drawing Schiff Pitchfork: snap to OHLC price levels (magnet)
+- [ ] TASK-04695: Drawing Schiff Pitchfork: deletion confirmation and undo integration
+- [ ] TASK-04696: Test: Drawing Schiff Pitchfork creation E2E test
+- [ ] TASK-04697: Drawing Modified Schiff: mouse interaction (click-drag-release) handler
+- [ ] TASK-04698: Drawing Modified Schiff: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04699: Drawing Modified Schiff: property panel UI (color, width, style)
+- [ ] TASK-04700: Drawing Modified Schiff: persistence (save/load via JSON)
+- [ ] TASK-04701: Drawing Modified Schiff: click selection and move/resize handles
+- [ ] TASK-04702: Drawing Modified Schiff: snap to OHLC price levels (magnet)
+- [ ] TASK-04703: Drawing Modified Schiff: deletion confirmation and undo integration
+- [ ] TASK-04704: Test: Drawing Modified Schiff creation E2E test
+- [ ] TASK-04705: Drawing Pitchfan: mouse interaction (click-drag-release) handler
+- [ ] TASK-04706: Drawing Pitchfan: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04707: Drawing Pitchfan: property panel UI (color, width, style)
+- [ ] TASK-04708: Drawing Pitchfan: persistence (save/load via JSON)
+- [ ] TASK-04709: Drawing Pitchfan: click selection and move/resize handles
+- [ ] TASK-04710: Drawing Pitchfan: snap to OHLC price levels (magnet)
+- [ ] TASK-04711: Drawing Pitchfan: deletion confirmation and undo integration
+- [ ] TASK-04712: Test: Drawing Pitchfan creation E2E test
+- [ ] TASK-04713: Drawing Fibonacci Retracement: mouse interaction (click-drag-release) handler
+- [ ] TASK-04714: Drawing Fibonacci Retracement: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04715: Drawing Fibonacci Retracement: property panel UI (color, width, style)
+- [ ] TASK-04716: Drawing Fibonacci Retracement: persistence (save/load via JSON)
+- [ ] TASK-04717: Drawing Fibonacci Retracement: click selection and move/resize handles
+- [ ] TASK-04718: Drawing Fibonacci Retracement: snap to OHLC price levels (magnet)
+- [ ] TASK-04719: Drawing Fibonacci Retracement: deletion confirmation and undo integration
+- [ ] TASK-04720: Test: Drawing Fibonacci Retracement creation E2E test
+- [ ] TASK-04721: Drawing Fibonacci Extension: mouse interaction (click-drag-release) handler
+- [ ] TASK-04722: Drawing Fibonacci Extension: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04723: Drawing Fibonacci Extension: property panel UI (color, width, style)
+- [ ] TASK-04724: Drawing Fibonacci Extension: persistence (save/load via JSON)
+- [ ] TASK-04725: Drawing Fibonacci Extension: click selection and move/resize handles
+- [ ] TASK-04726: Drawing Fibonacci Extension: snap to OHLC price levels (magnet)
+- [ ] TASK-04727: Drawing Fibonacci Extension: deletion confirmation and undo integration
+- [ ] TASK-04728: Test: Drawing Fibonacci Extension creation E2E test
+- [ ] TASK-04729: Drawing Fibonacci Channel: mouse interaction (click-drag-release) handler
+- [ ] TASK-04730: Drawing Fibonacci Channel: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04731: Drawing Fibonacci Channel: property panel UI (color, width, style)
+- [ ] TASK-04732: Drawing Fibonacci Channel: persistence (save/load via JSON)
+- [ ] TASK-04733: Drawing Fibonacci Channel: click selection and move/resize handles
+- [ ] TASK-04734: Drawing Fibonacci Channel: snap to OHLC price levels (magnet)
+- [ ] TASK-04735: Drawing Fibonacci Channel: deletion confirmation and undo integration
+- [ ] TASK-04736: Test: Drawing Fibonacci Channel creation E2E test
+- [ ] TASK-04737: Drawing Fibonacci Fan: mouse interaction (click-drag-release) handler
+- [ ] TASK-04738: Drawing Fibonacci Fan: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04739: Drawing Fibonacci Fan: property panel UI (color, width, style)
+- [ ] TASK-04740: Drawing Fibonacci Fan: persistence (save/load via JSON)
+- [ ] TASK-04741: Drawing Fibonacci Fan: click selection and move/resize handles
+- [ ] TASK-04742: Drawing Fibonacci Fan: snap to OHLC price levels (magnet)
+- [ ] TASK-04743: Drawing Fibonacci Fan: deletion confirmation and undo integration
+- [ ] TASK-04744: Test: Drawing Fibonacci Fan creation E2E test
+- [ ] TASK-04745: Drawing Fibonacci Arc: mouse interaction (click-drag-release) handler
+- [ ] TASK-04746: Drawing Fibonacci Arc: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04747: Drawing Fibonacci Arc: property panel UI (color, width, style)
+- [ ] TASK-04748: Drawing Fibonacci Arc: persistence (save/load via JSON)
+- [ ] TASK-04749: Drawing Fibonacci Arc: click selection and move/resize handles
+- [ ] TASK-04750: Drawing Fibonacci Arc: snap to OHLC price levels (magnet)
+- [ ] TASK-04751: Drawing Fibonacci Arc: deletion confirmation and undo integration
+- [ ] TASK-04752: Test: Drawing Fibonacci Arc creation E2E test
+- [ ] TASK-04753: Drawing Fibonacci Spiral: mouse interaction (click-drag-release) handler
+- [ ] TASK-04754: Drawing Fibonacci Spiral: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04755: Drawing Fibonacci Spiral: property panel UI (color, width, style)
+- [ ] TASK-04756: Drawing Fibonacci Spiral: persistence (save/load via JSON)
+- [ ] TASK-04757: Drawing Fibonacci Spiral: click selection and move/resize handles
+- [ ] TASK-04758: Drawing Fibonacci Spiral: snap to OHLC price levels (magnet)
+- [ ] TASK-04759: Drawing Fibonacci Spiral: deletion confirmation and undo integration
+- [ ] TASK-04760: Test: Drawing Fibonacci Spiral creation E2E test
+- [ ] TASK-04761: Drawing Fibonacci Time Zones: mouse interaction (click-drag-release) handler
+- [ ] TASK-04762: Drawing Fibonacci Time Zones: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04763: Drawing Fibonacci Time Zones: property panel UI (color, width, style)
+- [ ] TASK-04764: Drawing Fibonacci Time Zones: persistence (save/load via JSON)
+- [ ] TASK-04765: Drawing Fibonacci Time Zones: click selection and move/resize handles
+- [ ] TASK-04766: Drawing Fibonacci Time Zones: snap to OHLC price levels (magnet)
+- [ ] TASK-04767: Drawing Fibonacci Time Zones: deletion confirmation and undo integration
+- [ ] TASK-04768: Test: Drawing Fibonacci Time Zones creation E2E test
+- [ ] TASK-04769: Drawing Gann Box: mouse interaction (click-drag-release) handler
+- [ ] TASK-04770: Drawing Gann Box: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04771: Drawing Gann Box: property panel UI (color, width, style)
+- [ ] TASK-04772: Drawing Gann Box: persistence (save/load via JSON)
+- [ ] TASK-04773: Drawing Gann Box: click selection and move/resize handles
+- [ ] TASK-04774: Drawing Gann Box: snap to OHLC price levels (magnet)
+- [ ] TASK-04775: Drawing Gann Box: deletion confirmation and undo integration
+- [ ] TASK-04776: Test: Drawing Gann Box creation E2E test
+- [ ] TASK-04777: Drawing Gann Fan: mouse interaction (click-drag-release) handler
+- [ ] TASK-04778: Drawing Gann Fan: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04779: Drawing Gann Fan: property panel UI (color, width, style)
+- [ ] TASK-04780: Drawing Gann Fan: persistence (save/load via JSON)
+- [ ] TASK-04781: Drawing Gann Fan: click selection and move/resize handles
+- [ ] TASK-04782: Drawing Gann Fan: snap to OHLC price levels (magnet)
+- [ ] TASK-04783: Drawing Gann Fan: deletion confirmation and undo integration
+- [ ] TASK-04784: Test: Drawing Gann Fan creation E2E test
+- [ ] TASK-04785: Drawing Gann Square: mouse interaction (click-drag-release) handler
+- [ ] TASK-04786: Drawing Gann Square: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04787: Drawing Gann Square: property panel UI (color, width, style)
+- [ ] TASK-04788: Drawing Gann Square: persistence (save/load via JSON)
+- [ ] TASK-04789: Drawing Gann Square: click selection and move/resize handles
+- [ ] TASK-04790: Drawing Gann Square: snap to OHLC price levels (magnet)
+- [ ] TASK-04791: Drawing Gann Square: deletion confirmation and undo integration
+- [ ] TASK-04792: Test: Drawing Gann Square creation E2E test
+- [ ] TASK-04793: Drawing Elliott Wave 12345: mouse interaction (click-drag-release) handler
+- [ ] TASK-04794: Drawing Elliott Wave 12345: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04795: Drawing Elliott Wave 12345: property panel UI (color, width, style)
+- [ ] TASK-04796: Drawing Elliott Wave 12345: persistence (save/load via JSON)
+- [ ] TASK-04797: Drawing Elliott Wave 12345: click selection and move/resize handles
+- [ ] TASK-04798: Drawing Elliott Wave 12345: snap to OHLC price levels (magnet)
+- [ ] TASK-04799: Drawing Elliott Wave 12345: deletion confirmation and undo integration
+- [ ] TASK-04800: Test: Drawing Elliott Wave 12345 creation E2E test
+- [ ] TASK-04801: Drawing Elliott Wave ABC: mouse interaction (click-drag-release) handler
+- [ ] TASK-04802: Drawing Elliott Wave ABC: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04803: Drawing Elliott Wave ABC: property panel UI (color, width, style)
+- [ ] TASK-04804: Drawing Elliott Wave ABC: persistence (save/load via JSON)
+- [ ] TASK-04805: Drawing Elliott Wave ABC: click selection and move/resize handles
+- [ ] TASK-04806: Drawing Elliott Wave ABC: snap to OHLC price levels (magnet)
+- [ ] TASK-04807: Drawing Elliott Wave ABC: deletion confirmation and undo integration
+- [ ] TASK-04808: Test: Drawing Elliott Wave ABC creation E2E test
+- [ ] TASK-04809: Drawing XABCD Harmonic: mouse interaction (click-drag-release) handler
+- [ ] TASK-04810: Drawing XABCD Harmonic: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04811: Drawing XABCD Harmonic: property panel UI (color, width, style)
+- [ ] TASK-04812: Drawing XABCD Harmonic: persistence (save/load via JSON)
+- [ ] TASK-04813: Drawing XABCD Harmonic: click selection and move/resize handles
+- [ ] TASK-04814: Drawing XABCD Harmonic: snap to OHLC price levels (magnet)
+- [ ] TASK-04815: Drawing XABCD Harmonic: deletion confirmation and undo integration
+- [ ] TASK-04816: Test: Drawing XABCD Harmonic creation E2E test
+- [ ] TASK-04817: Drawing Cypher Harmonic: mouse interaction (click-drag-release) handler
+- [ ] TASK-04818: Drawing Cypher Harmonic: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04819: Drawing Cypher Harmonic: property panel UI (color, width, style)
+- [ ] TASK-04820: Drawing Cypher Harmonic: persistence (save/load via JSON)
+- [ ] TASK-04821: Drawing Cypher Harmonic: click selection and move/resize handles
+- [ ] TASK-04822: Drawing Cypher Harmonic: snap to OHLC price levels (magnet)
+- [ ] TASK-04823: Drawing Cypher Harmonic: deletion confirmation and undo integration
+- [ ] TASK-04824: Test: Drawing Cypher Harmonic creation E2E test
+- [ ] TASK-04825: Drawing Bat Harmonic: mouse interaction (click-drag-release) handler
+- [ ] TASK-04826: Drawing Bat Harmonic: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04827: Drawing Bat Harmonic: property panel UI (color, width, style)
+- [ ] TASK-04828: Drawing Bat Harmonic: persistence (save/load via JSON)
+- [ ] TASK-04829: Drawing Bat Harmonic: click selection and move/resize handles
+- [ ] TASK-04830: Drawing Bat Harmonic: snap to OHLC price levels (magnet)
+- [ ] TASK-04831: Drawing Bat Harmonic: deletion confirmation and undo integration
+- [ ] TASK-04832: Test: Drawing Bat Harmonic creation E2E test
+- [ ] TASK-04833: Drawing Gartley Harmonic: mouse interaction (click-drag-release) handler
+- [ ] TASK-04834: Drawing Gartley Harmonic: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04835: Drawing Gartley Harmonic: property panel UI (color, width, style)
+- [ ] TASK-04836: Drawing Gartley Harmonic: persistence (save/load via JSON)
+- [ ] TASK-04837: Drawing Gartley Harmonic: click selection and move/resize handles
+- [ ] TASK-04838: Drawing Gartley Harmonic: snap to OHLC price levels (magnet)
+- [ ] TASK-04839: Drawing Gartley Harmonic: deletion confirmation and undo integration
+- [ ] TASK-04840: Test: Drawing Gartley Harmonic creation E2E test
+- [ ] TASK-04841: Drawing Butterfly Harmonic: mouse interaction (click-drag-release) handler
+- [ ] TASK-04842: Drawing Butterfly Harmonic: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04843: Drawing Butterfly Harmonic: property panel UI (color, width, style)
+- [ ] TASK-04844: Drawing Butterfly Harmonic: persistence (save/load via JSON)
+- [ ] TASK-04845: Drawing Butterfly Harmonic: click selection and move/resize handles
+- [ ] TASK-04846: Drawing Butterfly Harmonic: snap to OHLC price levels (magnet)
+- [ ] TASK-04847: Drawing Butterfly Harmonic: deletion confirmation and undo integration
+- [ ] TASK-04848: Test: Drawing Butterfly Harmonic creation E2E test
+- [ ] TASK-04849: Drawing Crab Harmonic: mouse interaction (click-drag-release) handler
+- [ ] TASK-04850: Drawing Crab Harmonic: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04851: Drawing Crab Harmonic: property panel UI (color, width, style)
+- [ ] TASK-04852: Drawing Crab Harmonic: persistence (save/load via JSON)
+- [ ] TASK-04853: Drawing Crab Harmonic: click selection and move/resize handles
+- [ ] TASK-04854: Drawing Crab Harmonic: snap to OHLC price levels (magnet)
+- [ ] TASK-04855: Drawing Crab Harmonic: deletion confirmation and undo integration
+- [ ] TASK-04856: Test: Drawing Crab Harmonic creation E2E test
+- [ ] TASK-04857: Drawing Head and Shoulders: mouse interaction (click-drag-release) handler
+- [ ] TASK-04858: Drawing Head and Shoulders: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04859: Drawing Head and Shoulders: property panel UI (color, width, style)
+- [ ] TASK-04860: Drawing Head and Shoulders: persistence (save/load via JSON)
+- [ ] TASK-04861: Drawing Head and Shoulders: click selection and move/resize handles
+- [ ] TASK-04862: Drawing Head and Shoulders: snap to OHLC price levels (magnet)
+- [ ] TASK-04863: Drawing Head and Shoulders: deletion confirmation and undo integration
+- [ ] TASK-04864: Test: Drawing Head and Shoulders creation E2E test
+- [ ] TASK-04865: Drawing Double Top/Bottom: mouse interaction (click-drag-release) handler
+- [ ] TASK-04866: Drawing Double Top/Bottom: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04867: Drawing Double Top/Bottom: property panel UI (color, width, style)
+- [ ] TASK-04868: Drawing Double Top/Bottom: persistence (save/load via JSON)
+- [ ] TASK-04869: Drawing Double Top/Bottom: click selection and move/resize handles
+- [ ] TASK-04870: Drawing Double Top/Bottom: snap to OHLC price levels (magnet)
+- [ ] TASK-04871: Drawing Double Top/Bottom: deletion confirmation and undo integration
+- [ ] TASK-04872: Test: Drawing Double Top/Bottom creation E2E test
+- [ ] TASK-04873: Drawing Cup and Handle: mouse interaction (click-drag-release) handler
+- [ ] TASK-04874: Drawing Cup and Handle: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04875: Drawing Cup and Handle: property panel UI (color, width, style)
+- [ ] TASK-04876: Drawing Cup and Handle: persistence (save/load via JSON)
+- [ ] TASK-04877: Drawing Cup and Handle: click selection and move/resize handles
+- [ ] TASK-04878: Drawing Cup and Handle: snap to OHLC price levels (magnet)
+- [ ] TASK-04879: Drawing Cup and Handle: deletion confirmation and undo integration
+- [ ] TASK-04880: Test: Drawing Cup and Handle creation E2E test
+- [ ] TASK-04881: Drawing Flag/Pennant: mouse interaction (click-drag-release) handler
+- [ ] TASK-04882: Drawing Flag/Pennant: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04883: Drawing Flag/Pennant: property panel UI (color, width, style)
+- [ ] TASK-04884: Drawing Flag/Pennant: persistence (save/load via JSON)
+- [ ] TASK-04885: Drawing Flag/Pennant: click selection and move/resize handles
+- [ ] TASK-04886: Drawing Flag/Pennant: snap to OHLC price levels (magnet)
+- [ ] TASK-04887: Drawing Flag/Pennant: deletion confirmation and undo integration
+- [ ] TASK-04888: Test: Drawing Flag/Pennant creation E2E test
+- [ ] TASK-04889: Drawing Wedge: mouse interaction (click-drag-release) handler
+- [ ] TASK-04890: Drawing Wedge: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04891: Drawing Wedge: property panel UI (color, width, style)
+- [ ] TASK-04892: Drawing Wedge: persistence (save/load via JSON)
+- [ ] TASK-04893: Drawing Wedge: click selection and move/resize handles
+- [ ] TASK-04894: Drawing Wedge: snap to OHLC price levels (magnet)
+- [ ] TASK-04895: Drawing Wedge: deletion confirmation and undo integration
+- [ ] TASK-04896: Test: Drawing Wedge creation E2E test
+- [ ] TASK-04897: Drawing Triangle Pattern: mouse interaction (click-drag-release) handler
+- [ ] TASK-04898: Drawing Triangle Pattern: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04899: Drawing Triangle Pattern: property panel UI (color, width, style)
+- [ ] TASK-04900: Drawing Triangle Pattern: persistence (save/load via JSON)
+- [ ] TASK-04901: Drawing Triangle Pattern: click selection and move/resize handles
+- [ ] TASK-04902: Drawing Triangle Pattern: snap to OHLC price levels (magnet)
+- [ ] TASK-04903: Drawing Triangle Pattern: deletion confirmation and undo integration
+- [ ] TASK-04904: Test: Drawing Triangle Pattern creation E2E test
+- [ ] TASK-04905: Drawing Text Label: mouse interaction (click-drag-release) handler
+- [ ] TASK-04906: Drawing Text Label: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04907: Drawing Text Label: property panel UI (color, width, style)
+- [ ] TASK-04908: Drawing Text Label: persistence (save/load via JSON)
+- [ ] TASK-04909: Drawing Text Label: click selection and move/resize handles
+- [ ] TASK-04910: Drawing Text Label: snap to OHLC price levels (magnet)
+- [ ] TASK-04911: Drawing Text Label: deletion confirmation and undo integration
+- [ ] TASK-04912: Test: Drawing Text Label creation E2E test
+- [ ] TASK-04913: Drawing Price Label: mouse interaction (click-drag-release) handler
+- [ ] TASK-04914: Drawing Price Label: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04915: Drawing Price Label: property panel UI (color, width, style)
+- [ ] TASK-04916: Drawing Price Label: persistence (save/load via JSON)
+- [ ] TASK-04917: Drawing Price Label: click selection and move/resize handles
+- [ ] TASK-04918: Drawing Price Label: snap to OHLC price levels (magnet)
+- [ ] TASK-04919: Drawing Price Label: deletion confirmation and undo integration
+- [ ] TASK-04920: Test: Drawing Price Label creation E2E test
+- [ ] TASK-04921: Drawing Note/Sticky: mouse interaction (click-drag-release) handler
+- [ ] TASK-04922: Drawing Note/Sticky: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04923: Drawing Note/Sticky: property panel UI (color, width, style)
+- [ ] TASK-04924: Drawing Note/Sticky: persistence (save/load via JSON)
+- [ ] TASK-04925: Drawing Note/Sticky: click selection and move/resize handles
+- [ ] TASK-04926: Drawing Note/Sticky: snap to OHLC price levels (magnet)
+- [ ] TASK-04927: Drawing Note/Sticky: deletion confirmation and undo integration
+- [ ] TASK-04928: Test: Drawing Note/Sticky creation E2E test
+- [ ] TASK-04929: Drawing Long Position: mouse interaction (click-drag-release) handler
+- [ ] TASK-04930: Drawing Long Position: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04931: Drawing Long Position: property panel UI (color, width, style)
+- [ ] TASK-04932: Drawing Long Position: persistence (save/load via JSON)
+- [ ] TASK-04933: Drawing Long Position: click selection and move/resize handles
+- [ ] TASK-04934: Drawing Long Position: snap to OHLC price levels (magnet)
+- [ ] TASK-04935: Drawing Long Position: deletion confirmation and undo integration
+- [ ] TASK-04936: Test: Drawing Long Position creation E2E test
+- [ ] TASK-04937: Drawing Short Position: mouse interaction (click-drag-release) handler
+- [ ] TASK-04938: Drawing Short Position: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04939: Drawing Short Position: property panel UI (color, width, style)
+- [ ] TASK-04940: Drawing Short Position: persistence (save/load via JSON)
+- [ ] TASK-04941: Drawing Short Position: click selection and move/resize handles
+- [ ] TASK-04942: Drawing Short Position: snap to OHLC price levels (magnet)
+- [ ] TASK-04943: Drawing Short Position: deletion confirmation and undo integration
+- [ ] TASK-04944: Test: Drawing Short Position creation E2E test
+- [ ] TASK-04945: Drawing Forecast Line: mouse interaction (click-drag-release) handler
+- [ ] TASK-04946: Drawing Forecast Line: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04947: Drawing Forecast Line: property panel UI (color, width, style)
+- [ ] TASK-04948: Drawing Forecast Line: persistence (save/load via JSON)
+- [ ] TASK-04949: Drawing Forecast Line: click selection and move/resize handles
+- [ ] TASK-04950: Drawing Forecast Line: snap to OHLC price levels (magnet)
+- [ ] TASK-04951: Drawing Forecast Line: deletion confirmation and undo integration
+- [ ] TASK-04952: Test: Drawing Forecast Line creation E2E test
+- [ ] TASK-04953: Drawing Date Range: mouse interaction (click-drag-release) handler
+- [ ] TASK-04954: Drawing Date Range: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04955: Drawing Date Range: property panel UI (color, width, style)
+- [ ] TASK-04956: Drawing Date Range: persistence (save/load via JSON)
+- [ ] TASK-04957: Drawing Date Range: click selection and move/resize handles
+- [ ] TASK-04958: Drawing Date Range: snap to OHLC price levels (magnet)
+- [ ] TASK-04959: Drawing Date Range: deletion confirmation and undo integration
+- [ ] TASK-04960: Test: Drawing Date Range creation E2E test
+- [ ] TASK-04961: Drawing Price Range: mouse interaction (click-drag-release) handler
+- [ ] TASK-04962: Drawing Price Range: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04963: Drawing Price Range: property panel UI (color, width, style)
+- [ ] TASK-04964: Drawing Price Range: persistence (save/load via JSON)
+- [ ] TASK-04965: Drawing Price Range: click selection and move/resize handles
+- [ ] TASK-04966: Drawing Price Range: snap to OHLC price levels (magnet)
+- [ ] TASK-04967: Drawing Price Range: deletion confirmation and undo integration
+- [ ] TASK-04968: Test: Drawing Price Range creation E2E test
+- [ ] TASK-04969: Drawing Brush (Freehand): mouse interaction (click-drag-release) handler
+- [ ] TASK-04970: Drawing Brush (Freehand): lightweight-charts rendering (series/plugin)
+- [ ] TASK-04971: Drawing Brush (Freehand): property panel UI (color, width, style)
+- [ ] TASK-04972: Drawing Brush (Freehand): persistence (save/load via JSON)
+- [ ] TASK-04973: Drawing Brush (Freehand): click selection and move/resize handles
+- [ ] TASK-04974: Drawing Brush (Freehand): snap to OHLC price levels (magnet)
+- [ ] TASK-04975: Drawing Brush (Freehand): deletion confirmation and undo integration
+- [ ] TASK-04976: Test: Drawing Brush (Freehand) creation E2E test
+- [ ] TASK-04977: Drawing Highlighter: mouse interaction (click-drag-release) handler
+- [ ] TASK-04978: Drawing Highlighter: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04979: Drawing Highlighter: property panel UI (color, width, style)
+- [ ] TASK-04980: Drawing Highlighter: persistence (save/load via JSON)
+- [ ] TASK-04981: Drawing Highlighter: click selection and move/resize handles
+- [ ] TASK-04982: Drawing Highlighter: snap to OHLC price levels (magnet)
+- [ ] TASK-04983: Drawing Highlighter: deletion confirmation and undo integration
+- [ ] TASK-04984: Test: Drawing Highlighter creation E2E test
+- [ ] TASK-04985: Drawing Measurement: mouse interaction (click-drag-release) handler
+- [ ] TASK-04986: Drawing Measurement: lightweight-charts rendering (series/plugin)
+- [ ] TASK-04987: Drawing Measurement: property panel UI (color, width, style)
+- [ ] TASK-04988: Drawing Measurement: persistence (save/load via JSON)
+- [ ] TASK-04989: Drawing Measurement: click selection and move/resize handles
+- [ ] TASK-04990: Drawing Measurement: snap to OHLC price levels (magnet)
+- [ ] TASK-04991: Drawing Measurement: deletion confirmation and undo integration
+- [ ] TASK-04992: Test: Drawing Measurement creation E2E test
+
+
+## PER-API ENDPOINT SUBTASKS (50 ENDPOINTS Ã— 12)
+
+- [ ] TASK-04993: Backend: define GET /api/v4/quotes/{symbol} route handler (real-time quote data)
+- [ ] TASK-04994: Backend: Pydantic request model for GET /api/v4/quotes/{symbol}
+- [ ] TASK-04995: Backend: Pydantic response model for GET /api/v4/quotes/{symbol}
+- [ ] TASK-04996: Backend: input validation and error handling for /api/v4/quotes/{symbol}
+- [ ] TASK-04997: Backend: rate limiting for GET /api/v4/quotes/{symbol}
+- [ ] TASK-04998: Backend: caching layer for /api/v4/quotes/{symbol} responses
+- [ ] TASK-04999: Frontend: API client function for GET /api/v4/quotes/{symbol}
+- [ ] TASK-05000: Frontend: Zustand store slice for /api/v4/quotes/{symbol} data
+- [ ] TASK-05001: Frontend: loading/error state handling for /api/v4/quotes/{symbol}
+- [ ] TASK-05002: Test: unit test for GET /api/v4/quotes/{symbol} handler logic
+- [ ] TASK-05003: Test: integration test GET /api/v4/quotes/{symbol} returns 200
+- [ ] TASK-05004: Test: integration test GET /api/v4/quotes/{symbol} validates bad input
+- [ ] TASK-05005: Backend: define GET /api/v4/bars/{symbol} route handler (OHLCV bar data by timeframe)
+- [ ] TASK-05006: Backend: Pydantic request model for GET /api/v4/bars/{symbol}
+- [ ] TASK-05007: Backend: Pydantic response model for GET /api/v4/bars/{symbol}
+- [ ] TASK-05008: Backend: input validation and error handling for /api/v4/bars/{symbol}
+- [ ] TASK-05009: Backend: rate limiting for GET /api/v4/bars/{symbol}
+- [ ] TASK-05010: Backend: caching layer for /api/v4/bars/{symbol} responses
+- [ ] TASK-05011: Frontend: API client function for GET /api/v4/bars/{symbol}
+- [ ] TASK-05012: Frontend: Zustand store slice for /api/v4/bars/{symbol} data
+- [ ] TASK-05013: Frontend: loading/error state handling for /api/v4/bars/{symbol}
+- [ ] TASK-05014: Test: unit test for GET /api/v4/bars/{symbol} handler logic
+- [ ] TASK-05015: Test: integration test GET /api/v4/bars/{symbol} returns 200
+- [ ] TASK-05016: Test: integration test GET /api/v4/bars/{symbol} validates bad input
+- [ ] TASK-05017: Backend: define WS /api/v4/quotes/stream route handler (WebSocket real-time quotes)
+- [ ] TASK-05018: Backend: Pydantic request model for WS /api/v4/quotes/stream
+- [ ] TASK-05019: Backend: Pydantic response model for WS /api/v4/quotes/stream
+- [ ] TASK-05020: Backend: input validation and error handling for /api/v4/quotes/stream
+- [ ] TASK-05021: Backend: rate limiting for WS /api/v4/quotes/stream
+- [ ] TASK-05022: Backend: caching layer for /api/v4/quotes/stream responses
+- [ ] TASK-05023: Frontend: API client function for WS /api/v4/quotes/stream
+- [ ] TASK-05024: Frontend: Zustand store slice for /api/v4/quotes/stream data
+- [ ] TASK-05025: Frontend: loading/error state handling for /api/v4/quotes/stream
+- [ ] TASK-05026: Test: unit test for WS /api/v4/quotes/stream handler logic
+- [ ] TASK-05027: Test: integration test WS /api/v4/quotes/stream returns 200
+- [ ] TASK-05028: Test: integration test WS /api/v4/quotes/stream validates bad input
+- [ ] TASK-05029: Backend: define WS /api/v4/bars/stream route handler (WebSocket real-time OHLCV)
+- [ ] TASK-05030: Backend: Pydantic request model for WS /api/v4/bars/stream
+- [ ] TASK-05031: Backend: Pydantic response model for WS /api/v4/bars/stream
+- [ ] TASK-05032: Backend: input validation and error handling for /api/v4/bars/stream
+- [ ] TASK-05033: Backend: rate limiting for WS /api/v4/bars/stream
+- [ ] TASK-05034: Backend: caching layer for /api/v4/bars/stream responses
+- [ ] TASK-05035: Frontend: API client function for WS /api/v4/bars/stream
+- [ ] TASK-05036: Frontend: Zustand store slice for /api/v4/bars/stream data
+- [ ] TASK-05037: Frontend: loading/error state handling for /api/v4/bars/stream
+- [ ] TASK-05038: Test: unit test for WS /api/v4/bars/stream handler logic
+- [ ] TASK-05039: Test: integration test WS /api/v4/bars/stream returns 200
+- [ ] TASK-05040: Test: integration test WS /api/v4/bars/stream validates bad input
+- [ ] TASK-05041: Backend: define WS /api/v4/orderbook/stream route handler (WebSocket L2 order book)
+- [ ] TASK-05042: Backend: Pydantic request model for WS /api/v4/orderbook/stream
+- [ ] TASK-05043: Backend: Pydantic response model for WS /api/v4/orderbook/stream
+- [ ] TASK-05044: Backend: input validation and error handling for /api/v4/orderbook/stream
+- [ ] TASK-05045: Backend: rate limiting for WS /api/v4/orderbook/stream
+- [ ] TASK-05046: Backend: caching layer for /api/v4/orderbook/stream responses
+- [ ] TASK-05047: Frontend: API client function for WS /api/v4/orderbook/stream
+- [ ] TASK-05048: Frontend: Zustand store slice for /api/v4/orderbook/stream data
+- [ ] TASK-05049: Frontend: loading/error state handling for /api/v4/orderbook/stream
+- [ ] TASK-05050: Test: unit test for WS /api/v4/orderbook/stream handler logic
+- [ ] TASK-05051: Test: integration test WS /api/v4/orderbook/stream returns 200
+- [ ] TASK-05052: Test: integration test WS /api/v4/orderbook/stream validates bad input
+- [ ] TASK-05053: Backend: define WS /api/v4/trades/stream route handler (WebSocket time & sales)
+- [ ] TASK-05054: Backend: Pydantic request model for WS /api/v4/trades/stream
+- [ ] TASK-05055: Backend: Pydantic response model for WS /api/v4/trades/stream
+- [ ] TASK-05056: Backend: input validation and error handling for /api/v4/trades/stream
+- [ ] TASK-05057: Backend: rate limiting for WS /api/v4/trades/stream
+- [ ] TASK-05058: Backend: caching layer for /api/v4/trades/stream responses
+- [ ] TASK-05059: Frontend: API client function for WS /api/v4/trades/stream
+- [ ] TASK-05060: Frontend: Zustand store slice for /api/v4/trades/stream data
+- [ ] TASK-05061: Frontend: loading/error state handling for /api/v4/trades/stream
+- [ ] TASK-05062: Test: unit test for WS /api/v4/trades/stream handler logic
+- [ ] TASK-05063: Test: integration test WS /api/v4/trades/stream returns 200
+- [ ] TASK-05064: Test: integration test WS /api/v4/trades/stream validates bad input
+- [ ] TASK-05065: Backend: define GET /api/v4/news route handler (aggregated news articles)
+- [ ] TASK-05066: Backend: Pydantic request model for GET /api/v4/news
+- [ ] TASK-05067: Backend: Pydantic response model for GET /api/v4/news
+- [ ] TASK-05068: Backend: input validation and error handling for /api/v4/news
+- [ ] TASK-05069: Backend: rate limiting for GET /api/v4/news
+- [ ] TASK-05070: Backend: caching layer for /api/v4/news responses
+- [ ] TASK-05071: Frontend: API client function for GET /api/v4/news
+- [ ] TASK-05072: Frontend: Zustand store slice for /api/v4/news data
+- [ ] TASK-05073: Frontend: loading/error state handling for /api/v4/news
+- [ ] TASK-05074: Test: unit test for GET /api/v4/news handler logic
+- [ ] TASK-05075: Test: integration test GET /api/v4/news returns 200
+- [ ] TASK-05076: Test: integration test GET /api/v4/news validates bad input
+- [ ] TASK-05077: Backend: define GET /api/v4/fundamentals/{symbol} route handler (fundamental data)
+- [ ] TASK-05078: Backend: Pydantic request model for GET /api/v4/fundamentals/{symbol}
+- [ ] TASK-05079: Backend: Pydantic response model for GET /api/v4/fundamentals/{symbol}
+- [ ] TASK-05080: Backend: input validation and error handling for /api/v4/fundamentals/{symbol}
+- [ ] TASK-05081: Backend: rate limiting for GET /api/v4/fundamentals/{symbol}
+- [ ] TASK-05082: Backend: caching layer for /api/v4/fundamentals/{symbol} responses
+- [ ] TASK-05083: Frontend: API client function for GET /api/v4/fundamentals/{symbol}
+- [ ] TASK-05084: Frontend: Zustand store slice for /api/v4/fundamentals/{symbol} data
+- [ ] TASK-05085: Frontend: loading/error state handling for /api/v4/fundamentals/{symbol}
+- [ ] TASK-05086: Test: unit test for GET /api/v4/fundamentals/{symbol} handler logic
+- [ ] TASK-05087: Test: integration test GET /api/v4/fundamentals/{symbol} returns 200
+- [ ] TASK-05088: Test: integration test GET /api/v4/fundamentals/{symbol} validates bad input
+- [ ] TASK-05089: Backend: define GET /api/v4/earnings/{symbol} route handler (earnings history)
+- [ ] TASK-05090: Backend: Pydantic request model for GET /api/v4/earnings/{symbol}
+- [ ] TASK-05091: Backend: Pydantic response model for GET /api/v4/earnings/{symbol}
+- [ ] TASK-05092: Backend: input validation and error handling for /api/v4/earnings/{symbol}
+- [ ] TASK-05093: Backend: rate limiting for GET /api/v4/earnings/{symbol}
+- [ ] TASK-05094: Backend: caching layer for /api/v4/earnings/{symbol} responses
+- [ ] TASK-05095: Frontend: API client function for GET /api/v4/earnings/{symbol}
+- [ ] TASK-05096: Frontend: Zustand store slice for /api/v4/earnings/{symbol} data
+- [ ] TASK-05097: Frontend: loading/error state handling for /api/v4/earnings/{symbol}
+- [ ] TASK-05098: Test: unit test for GET /api/v4/earnings/{symbol} handler logic
+- [ ] TASK-05099: Test: integration test GET /api/v4/earnings/{symbol} returns 200
+- [ ] TASK-05100: Test: integration test GET /api/v4/earnings/{symbol} validates bad input
+- [ ] TASK-05101: Backend: define GET /api/v4/analyst/{symbol} route handler (analyst ratings)
+- [ ] TASK-05102: Backend: Pydantic request model for GET /api/v4/analyst/{symbol}
+- [ ] TASK-05103: Backend: Pydantic response model for GET /api/v4/analyst/{symbol}
+- [ ] TASK-05104: Backend: input validation and error handling for /api/v4/analyst/{symbol}
+- [ ] TASK-05105: Backend: rate limiting for GET /api/v4/analyst/{symbol}
+- [ ] TASK-05106: Backend: caching layer for /api/v4/analyst/{symbol} responses
+- [ ] TASK-05107: Frontend: API client function for GET /api/v4/analyst/{symbol}
+- [ ] TASK-05108: Frontend: Zustand store slice for /api/v4/analyst/{symbol} data
+- [ ] TASK-05109: Frontend: loading/error state handling for /api/v4/analyst/{symbol}
+- [ ] TASK-05110: Test: unit test for GET /api/v4/analyst/{symbol} handler logic
+- [ ] TASK-05111: Test: integration test GET /api/v4/analyst/{symbol} returns 200
+- [ ] TASK-05112: Test: integration test GET /api/v4/analyst/{symbol} validates bad input
+- [ ] TASK-05113: Backend: define POST /api/v4/screener route handler (stock screener with filters)
+- [ ] TASK-05114: Backend: Pydantic request model for POST /api/v4/screener
+- [ ] TASK-05115: Backend: Pydantic response model for POST /api/v4/screener
+- [ ] TASK-05116: Backend: input validation and error handling for /api/v4/screener
+- [ ] TASK-05117: Backend: rate limiting for POST /api/v4/screener
+- [ ] TASK-05118: Backend: caching layer for /api/v4/screener responses
+- [ ] TASK-05119: Frontend: API client function for POST /api/v4/screener
+- [ ] TASK-05120: Frontend: Zustand store slice for /api/v4/screener data
+- [ ] TASK-05121: Frontend: loading/error state handling for /api/v4/screener
+- [ ] TASK-05122: Test: unit test for POST /api/v4/screener handler logic
+- [ ] TASK-05123: Test: integration test POST /api/v4/screener returns 200
+- [ ] TASK-05124: Test: integration test POST /api/v4/screener validates bad input
+- [ ] TASK-05125: Backend: define GET /api/v4/alerts route handler (list all alerts)
+- [ ] TASK-05126: Backend: Pydantic request model for GET /api/v4/alerts
+- [ ] TASK-05127: Backend: Pydantic response model for GET /api/v4/alerts
+- [ ] TASK-05128: Backend: input validation and error handling for /api/v4/alerts
+- [ ] TASK-05129: Backend: rate limiting for GET /api/v4/alerts
+- [ ] TASK-05130: Backend: caching layer for /api/v4/alerts responses
+- [ ] TASK-05131: Frontend: API client function for GET /api/v4/alerts
+- [ ] TASK-05132: Frontend: Zustand store slice for /api/v4/alerts data
+- [ ] TASK-05133: Frontend: loading/error state handling for /api/v4/alerts
+- [ ] TASK-05134: Test: unit test for GET /api/v4/alerts handler logic
+- [ ] TASK-05135: Test: integration test GET /api/v4/alerts returns 200
+- [ ] TASK-05136: Test: integration test GET /api/v4/alerts validates bad input
+- [ ] TASK-05137: Backend: define POST /api/v4/alerts route handler (create new alert)
+- [ ] TASK-05138: Backend: Pydantic request model for POST /api/v4/alerts
+- [ ] TASK-05139: Backend: Pydantic response model for POST /api/v4/alerts
+- [ ] TASK-05140: Backend: input validation and error handling for /api/v4/alerts
+- [ ] TASK-05141: Backend: rate limiting for POST /api/v4/alerts
+- [ ] TASK-05142: Backend: caching layer for /api/v4/alerts responses
+- [ ] TASK-05143: Frontend: API client function for POST /api/v4/alerts
+- [ ] TASK-05144: Frontend: Zustand store slice for /api/v4/alerts data
+- [ ] TASK-05145: Frontend: loading/error state handling for /api/v4/alerts
+- [ ] TASK-05146: Test: unit test for POST /api/v4/alerts handler logic
+- [ ] TASK-05147: Test: integration test POST /api/v4/alerts returns 200
+- [ ] TASK-05148: Test: integration test POST /api/v4/alerts validates bad input
+- [ ] TASK-05149: Backend: define PUT /api/v4/alerts/{id} route handler (update existing alert)
+- [ ] TASK-05150: Backend: Pydantic request model for PUT /api/v4/alerts/{id}
+- [ ] TASK-05151: Backend: Pydantic response model for PUT /api/v4/alerts/{id}
+- [ ] TASK-05152: Backend: input validation and error handling for /api/v4/alerts/{id}
+- [ ] TASK-05153: Backend: rate limiting for PUT /api/v4/alerts/{id}
+- [ ] TASK-05154: Backend: caching layer for /api/v4/alerts/{id} responses
+- [ ] TASK-05155: Frontend: API client function for PUT /api/v4/alerts/{id}
+- [ ] TASK-05156: Frontend: Zustand store slice for /api/v4/alerts/{id} data
+- [ ] TASK-05157: Frontend: loading/error state handling for /api/v4/alerts/{id}
+- [ ] TASK-05158: Test: unit test for PUT /api/v4/alerts/{id} handler logic
+- [ ] TASK-05159: Test: integration test PUT /api/v4/alerts/{id} returns 200
+- [ ] TASK-05160: Test: integration test PUT /api/v4/alerts/{id} validates bad input
+- [ ] TASK-05161: Backend: define DELETE /api/v4/alerts/{id} route handler (delete alert)
+- [ ] TASK-05162: Backend: Pydantic request model for DELETE /api/v4/alerts/{id}
+- [ ] TASK-05163: Backend: Pydantic response model for DELETE /api/v4/alerts/{id}
+- [ ] TASK-05164: Backend: input validation and error handling for /api/v4/alerts/{id}
+- [ ] TASK-05165: Backend: rate limiting for DELETE /api/v4/alerts/{id}
+- [ ] TASK-05166: Backend: caching layer for /api/v4/alerts/{id} responses
+- [ ] TASK-05167: Frontend: API client function for DELETE /api/v4/alerts/{id}
+- [ ] TASK-05168: Frontend: Zustand store slice for /api/v4/alerts/{id} data
+- [ ] TASK-05169: Frontend: loading/error state handling for /api/v4/alerts/{id}
+- [ ] TASK-05170: Test: unit test for DELETE /api/v4/alerts/{id} handler logic
+- [ ] TASK-05171: Test: integration test DELETE /api/v4/alerts/{id} returns 200
+- [ ] TASK-05172: Test: integration test DELETE /api/v4/alerts/{id} validates bad input
+- [ ] TASK-05173: Backend: define GET /api/v4/watchlists route handler (list all watchlists)
+- [ ] TASK-05174: Backend: Pydantic request model for GET /api/v4/watchlists
+- [ ] TASK-05175: Backend: Pydantic response model for GET /api/v4/watchlists
+- [ ] TASK-05176: Backend: input validation and error handling for /api/v4/watchlists
+- [ ] TASK-05177: Backend: rate limiting for GET /api/v4/watchlists
+- [ ] TASK-05178: Backend: caching layer for /api/v4/watchlists responses
+- [ ] TASK-05179: Frontend: API client function for GET /api/v4/watchlists
+- [ ] TASK-05180: Frontend: Zustand store slice for /api/v4/watchlists data
+- [ ] TASK-05181: Frontend: loading/error state handling for /api/v4/watchlists
+- [ ] TASK-05182: Test: unit test for GET /api/v4/watchlists handler logic
+- [ ] TASK-05183: Test: integration test GET /api/v4/watchlists returns 200
+- [ ] TASK-05184: Test: integration test GET /api/v4/watchlists validates bad input
+- [ ] TASK-05185: Backend: define POST /api/v4/watchlists route handler (create watchlist)
+- [ ] TASK-05186: Backend: Pydantic request model for POST /api/v4/watchlists
+- [ ] TASK-05187: Backend: Pydantic response model for POST /api/v4/watchlists
+- [ ] TASK-05188: Backend: input validation and error handling for /api/v4/watchlists
+- [ ] TASK-05189: Backend: rate limiting for POST /api/v4/watchlists
+- [ ] TASK-05190: Backend: caching layer for /api/v4/watchlists responses
+- [ ] TASK-05191: Frontend: API client function for POST /api/v4/watchlists
+- [ ] TASK-05192: Frontend: Zustand store slice for /api/v4/watchlists data
+- [ ] TASK-05193: Frontend: loading/error state handling for /api/v4/watchlists
+- [ ] TASK-05194: Test: unit test for POST /api/v4/watchlists handler logic
+- [ ] TASK-05195: Test: integration test POST /api/v4/watchlists returns 200
+- [ ] TASK-05196: Test: integration test POST /api/v4/watchlists validates bad input
+- [ ] TASK-05197: Backend: define PUT /api/v4/watchlists/{id} route handler (update watchlist)
+- [ ] TASK-05198: Backend: Pydantic request model for PUT /api/v4/watchlists/{id}
+- [ ] TASK-05199: Backend: Pydantic response model for PUT /api/v4/watchlists/{id}
+- [ ] TASK-05200: Backend: input validation and error handling for /api/v4/watchlists/{id}
+- [ ] TASK-05201: Backend: rate limiting for PUT /api/v4/watchlists/{id}
+- [ ] TASK-05202: Backend: caching layer for /api/v4/watchlists/{id} responses
+- [ ] TASK-05203: Frontend: API client function for PUT /api/v4/watchlists/{id}
+- [ ] TASK-05204: Frontend: Zustand store slice for /api/v4/watchlists/{id} data
+- [ ] TASK-05205: Frontend: loading/error state handling for /api/v4/watchlists/{id}
+- [ ] TASK-05206: Test: unit test for PUT /api/v4/watchlists/{id} handler logic
+- [ ] TASK-05207: Test: integration test PUT /api/v4/watchlists/{id} returns 200
+- [ ] TASK-05208: Test: integration test PUT /api/v4/watchlists/{id} validates bad input
+- [ ] TASK-05209: Backend: define DELETE /api/v4/watchlists/{id} route handler (delete watchlist)
+- [ ] TASK-05210: Backend: Pydantic request model for DELETE /api/v4/watchlists/{id}
+- [ ] TASK-05211: Backend: Pydantic response model for DELETE /api/v4/watchlists/{id}
+- [ ] TASK-05212: Backend: input validation and error handling for /api/v4/watchlists/{id}
+- [ ] TASK-05213: Backend: rate limiting for DELETE /api/v4/watchlists/{id}
+- [ ] TASK-05214: Backend: caching layer for /api/v4/watchlists/{id} responses
+- [ ] TASK-05215: Frontend: API client function for DELETE /api/v4/watchlists/{id}
+- [ ] TASK-05216: Frontend: Zustand store slice for /api/v4/watchlists/{id} data
+- [ ] TASK-05217: Frontend: loading/error state handling for /api/v4/watchlists/{id}
+- [ ] TASK-05218: Test: unit test for DELETE /api/v4/watchlists/{id} handler logic
+- [ ] TASK-05219: Test: integration test DELETE /api/v4/watchlists/{id} returns 200
+- [ ] TASK-05220: Test: integration test DELETE /api/v4/watchlists/{id} validates bad input
+- [ ] TASK-05221: Backend: define GET /api/v4/portfolio route handler (portfolio positions)
+- [ ] TASK-05222: Backend: Pydantic request model for GET /api/v4/portfolio
+- [ ] TASK-05223: Backend: Pydantic response model for GET /api/v4/portfolio
+- [ ] TASK-05224: Backend: input validation and error handling for /api/v4/portfolio
+- [ ] TASK-05225: Backend: rate limiting for GET /api/v4/portfolio
+- [ ] TASK-05226: Backend: caching layer for /api/v4/portfolio responses
+- [ ] TASK-05227: Frontend: API client function for GET /api/v4/portfolio
+- [ ] TASK-05228: Frontend: Zustand store slice for /api/v4/portfolio data
+- [ ] TASK-05229: Frontend: loading/error state handling for /api/v4/portfolio
+- [ ] TASK-05230: Test: unit test for GET /api/v4/portfolio handler logic
+- [ ] TASK-05231: Test: integration test GET /api/v4/portfolio returns 200
+- [ ] TASK-05232: Test: integration test GET /api/v4/portfolio validates bad input
+- [ ] TASK-05233: Backend: define GET /api/v4/portfolio/pnl route handler (portfolio P&L)
+- [ ] TASK-05234: Backend: Pydantic request model for GET /api/v4/portfolio/pnl
+- [ ] TASK-05235: Backend: Pydantic response model for GET /api/v4/portfolio/pnl
+- [ ] TASK-05236: Backend: input validation and error handling for /api/v4/portfolio/pnl
+- [ ] TASK-05237: Backend: rate limiting for GET /api/v4/portfolio/pnl
+- [ ] TASK-05238: Backend: caching layer for /api/v4/portfolio/pnl responses
+- [ ] TASK-05239: Frontend: API client function for GET /api/v4/portfolio/pnl
+- [ ] TASK-05240: Frontend: Zustand store slice for /api/v4/portfolio/pnl data
+- [ ] TASK-05241: Frontend: loading/error state handling for /api/v4/portfolio/pnl
+- [ ] TASK-05242: Test: unit test for GET /api/v4/portfolio/pnl handler logic
+- [ ] TASK-05243: Test: integration test GET /api/v4/portfolio/pnl returns 200
+- [ ] TASK-05244: Test: integration test GET /api/v4/portfolio/pnl validates bad input
+- [ ] TASK-05245: Backend: define GET /api/v4/portfolio/allocation route handler (portfolio allocation)
+- [ ] TASK-05246: Backend: Pydantic request model for GET /api/v4/portfolio/allocation
+- [ ] TASK-05247: Backend: Pydantic response model for GET /api/v4/portfolio/allocation
+- [ ] TASK-05248: Backend: input validation and error handling for /api/v4/portfolio/allocation
+- [ ] TASK-05249: Backend: rate limiting for GET /api/v4/portfolio/allocation
+- [ ] TASK-05250: Backend: caching layer for /api/v4/portfolio/allocation responses
+- [ ] TASK-05251: Frontend: API client function for GET /api/v4/portfolio/allocation
+- [ ] TASK-05252: Frontend: Zustand store slice for /api/v4/portfolio/allocation data
+- [ ] TASK-05253: Frontend: loading/error state handling for /api/v4/portfolio/allocation
+- [ ] TASK-05254: Test: unit test for GET /api/v4/portfolio/allocation handler logic
+- [ ] TASK-05255: Test: integration test GET /api/v4/portfolio/allocation returns 200
+- [ ] TASK-05256: Test: integration test GET /api/v4/portfolio/allocation validates bad input
+- [ ] TASK-05257: Backend: define POST /api/v4/risk/var route handler (calculate VaR)
+- [ ] TASK-05258: Backend: Pydantic request model for POST /api/v4/risk/var
+- [ ] TASK-05259: Backend: Pydantic response model for POST /api/v4/risk/var
+- [ ] TASK-05260: Backend: input validation and error handling for /api/v4/risk/var
+- [ ] TASK-05261: Backend: rate limiting for POST /api/v4/risk/var
+- [ ] TASK-05262: Backend: caching layer for /api/v4/risk/var responses
+- [ ] TASK-05263: Frontend: API client function for POST /api/v4/risk/var
+- [ ] TASK-05264: Frontend: Zustand store slice for /api/v4/risk/var data
+- [ ] TASK-05265: Frontend: loading/error state handling for /api/v4/risk/var
+- [ ] TASK-05266: Test: unit test for POST /api/v4/risk/var handler logic
+- [ ] TASK-05267: Test: integration test POST /api/v4/risk/var returns 200
+- [ ] TASK-05268: Test: integration test POST /api/v4/risk/var validates bad input
+- [ ] TASK-05269: Backend: define POST /api/v4/risk/stress route handler (run stress test)
+- [ ] TASK-05270: Backend: Pydantic request model for POST /api/v4/risk/stress
+- [ ] TASK-05271: Backend: Pydantic response model for POST /api/v4/risk/stress
+- [ ] TASK-05272: Backend: input validation and error handling for /api/v4/risk/stress
+- [ ] TASK-05273: Backend: rate limiting for POST /api/v4/risk/stress
+- [ ] TASK-05274: Backend: caching layer for /api/v4/risk/stress responses
+- [ ] TASK-05275: Frontend: API client function for POST /api/v4/risk/stress
+- [ ] TASK-05276: Frontend: Zustand store slice for /api/v4/risk/stress data
+- [ ] TASK-05277: Frontend: loading/error state handling for /api/v4/risk/stress
+- [ ] TASK-05278: Test: unit test for POST /api/v4/risk/stress handler logic
+- [ ] TASK-05279: Test: integration test POST /api/v4/risk/stress returns 200
+- [ ] TASK-05280: Test: integration test POST /api/v4/risk/stress validates bad input
+- [ ] TASK-05281: Backend: define GET /api/v4/risk/limits route handler (risk limits status)
+- [ ] TASK-05282: Backend: Pydantic request model for GET /api/v4/risk/limits
+- [ ] TASK-05283: Backend: Pydantic response model for GET /api/v4/risk/limits
+- [ ] TASK-05284: Backend: input validation and error handling for /api/v4/risk/limits
+- [ ] TASK-05285: Backend: rate limiting for GET /api/v4/risk/limits
+- [ ] TASK-05286: Backend: caching layer for /api/v4/risk/limits responses
+- [ ] TASK-05287: Frontend: API client function for GET /api/v4/risk/limits
+- [ ] TASK-05288: Frontend: Zustand store slice for /api/v4/risk/limits data
+- [ ] TASK-05289: Frontend: loading/error state handling for /api/v4/risk/limits
+- [ ] TASK-05290: Test: unit test for GET /api/v4/risk/limits handler logic
+- [ ] TASK-05291: Test: integration test GET /api/v4/risk/limits returns 200
+- [ ] TASK-05292: Test: integration test GET /api/v4/risk/limits validates bad input
+- [ ] TASK-05293: Backend: define GET /api/v4/yieldcurve route handler (Treasury yield curve)
+- [ ] TASK-05294: Backend: Pydantic request model for GET /api/v4/yieldcurve
+- [ ] TASK-05295: Backend: Pydantic response model for GET /api/v4/yieldcurve
+- [ ] TASK-05296: Backend: input validation and error handling for /api/v4/yieldcurve
+- [ ] TASK-05297: Backend: rate limiting for GET /api/v4/yieldcurve
+- [ ] TASK-05298: Backend: caching layer for /api/v4/yieldcurve responses
+- [ ] TASK-05299: Frontend: API client function for GET /api/v4/yieldcurve
+- [ ] TASK-05300: Frontend: Zustand store slice for /api/v4/yieldcurve data
+- [ ] TASK-05301: Frontend: loading/error state handling for /api/v4/yieldcurve
+- [ ] TASK-05302: Test: unit test for GET /api/v4/yieldcurve handler logic
+- [ ] TASK-05303: Test: integration test GET /api/v4/yieldcurve returns 200
+- [ ] TASK-05304: Test: integration test GET /api/v4/yieldcurve validates bad input
+- [ ] TASK-05305: Backend: define GET /api/v4/fxrates route handler (FX cross rates)
+- [ ] TASK-05306: Backend: Pydantic request model for GET /api/v4/fxrates
+- [ ] TASK-05307: Backend: Pydantic response model for GET /api/v4/fxrates
+- [ ] TASK-05308: Backend: input validation and error handling for /api/v4/fxrates
+- [ ] TASK-05309: Backend: rate limiting for GET /api/v4/fxrates
+- [ ] TASK-05310: Backend: caching layer for /api/v4/fxrates responses
+- [ ] TASK-05311: Frontend: API client function for GET /api/v4/fxrates
+- [ ] TASK-05312: Frontend: Zustand store slice for /api/v4/fxrates data
+- [ ] TASK-05313: Frontend: loading/error state handling for /api/v4/fxrates
+- [ ] TASK-05314: Test: unit test for GET /api/v4/fxrates handler logic
+- [ ] TASK-05315: Test: integration test GET /api/v4/fxrates returns 200
+- [ ] TASK-05316: Test: integration test GET /api/v4/fxrates validates bad input
+- [ ] TASK-05317: Backend: define GET /api/v4/commodities route handler (commodity prices)
+- [ ] TASK-05318: Backend: Pydantic request model for GET /api/v4/commodities
+- [ ] TASK-05319: Backend: Pydantic response model for GET /api/v4/commodities
+- [ ] TASK-05320: Backend: input validation and error handling for /api/v4/commodities
+- [ ] TASK-05321: Backend: rate limiting for GET /api/v4/commodities
+- [ ] TASK-05322: Backend: caching layer for /api/v4/commodities responses
+- [ ] TASK-05323: Frontend: API client function for GET /api/v4/commodities
+- [ ] TASK-05324: Frontend: Zustand store slice for /api/v4/commodities data
+- [ ] TASK-05325: Frontend: loading/error state handling for /api/v4/commodities
+- [ ] TASK-05326: Test: unit test for GET /api/v4/commodities handler logic
+- [ ] TASK-05327: Test: integration test GET /api/v4/commodities returns 200
+- [ ] TASK-05328: Test: integration test GET /api/v4/commodities validates bad input
+- [ ] TASK-05329: Backend: define GET /api/v4/economic-calendar route handler (economic events)
+- [ ] TASK-05330: Backend: Pydantic request model for GET /api/v4/economic-calendar
+- [ ] TASK-05331: Backend: Pydantic response model for GET /api/v4/economic-calendar
+- [ ] TASK-05332: Backend: input validation and error handling for /api/v4/economic-calendar
+- [ ] TASK-05333: Backend: rate limiting for GET /api/v4/economic-calendar
+- [ ] TASK-05334: Backend: caching layer for /api/v4/economic-calendar responses
+- [ ] TASK-05335: Frontend: API client function for GET /api/v4/economic-calendar
+- [ ] TASK-05336: Frontend: Zustand store slice for /api/v4/economic-calendar data
+- [ ] TASK-05337: Frontend: loading/error state handling for /api/v4/economic-calendar
+- [ ] TASK-05338: Test: unit test for GET /api/v4/economic-calendar handler logic
+- [ ] TASK-05339: Test: integration test GET /api/v4/economic-calendar returns 200
+- [ ] TASK-05340: Test: integration test GET /api/v4/economic-calendar validates bad input
+- [ ] TASK-05341: Backend: define GET /api/v4/options/chain/{symbol} route handler (options chain data)
+- [ ] TASK-05342: Backend: Pydantic request model for GET /api/v4/options/chain/{symbol}
+- [ ] TASK-05343: Backend: Pydantic response model for GET /api/v4/options/chain/{symbol}
+- [ ] TASK-05344: Backend: input validation and error handling for /api/v4/options/chain/{symbol}
+- [ ] TASK-05345: Backend: rate limiting for GET /api/v4/options/chain/{symbol}
+- [ ] TASK-05346: Backend: caching layer for /api/v4/options/chain/{symbol} responses
+- [ ] TASK-05347: Frontend: API client function for GET /api/v4/options/chain/{symbol}
+- [ ] TASK-05348: Frontend: Zustand store slice for /api/v4/options/chain/{symbol} data
+- [ ] TASK-05349: Frontend: loading/error state handling for /api/v4/options/chain/{symbol}
+- [ ] TASK-05350: Test: unit test for GET /api/v4/options/chain/{symbol} handler logic
+- [ ] TASK-05351: Test: integration test GET /api/v4/options/chain/{symbol} returns 200
+- [ ] TASK-05352: Test: integration test GET /api/v4/options/chain/{symbol} validates bad input
+- [ ] TASK-05353: Backend: define POST /api/v4/options/greeks route handler (compute Greeks)
+- [ ] TASK-05354: Backend: Pydantic request model for POST /api/v4/options/greeks
+- [ ] TASK-05355: Backend: Pydantic response model for POST /api/v4/options/greeks
+- [ ] TASK-05356: Backend: input validation and error handling for /api/v4/options/greeks
+- [ ] TASK-05357: Backend: rate limiting for POST /api/v4/options/greeks
+- [ ] TASK-05358: Backend: caching layer for /api/v4/options/greeks responses
+- [ ] TASK-05359: Frontend: API client function for POST /api/v4/options/greeks
+- [ ] TASK-05360: Frontend: Zustand store slice for /api/v4/options/greeks data
+- [ ] TASK-05361: Frontend: loading/error state handling for /api/v4/options/greeks
+- [ ] TASK-05362: Test: unit test for POST /api/v4/options/greeks handler logic
+- [ ] TASK-05363: Test: integration test POST /api/v4/options/greeks returns 200
+- [ ] TASK-05364: Test: integration test POST /api/v4/options/greeks validates bad input
+- [ ] TASK-05365: Backend: define GET /api/v4/options/iv-surface/{symbol} route handler (IV surface)
+- [ ] TASK-05366: Backend: Pydantic request model for GET /api/v4/options/iv-surface/{symbol}
+- [ ] TASK-05367: Backend: Pydantic response model for GET /api/v4/options/iv-surface/{symbol}
+- [ ] TASK-05368: Backend: input validation and error handling for /api/v4/options/iv-surface/{symbol}
+- [ ] TASK-05369: Backend: rate limiting for GET /api/v4/options/iv-surface/{symbol}
+- [ ] TASK-05370: Backend: caching layer for /api/v4/options/iv-surface/{symbol} responses
+- [ ] TASK-05371: Frontend: API client function for GET /api/v4/options/iv-surface/{symbol}
+- [ ] TASK-05372: Frontend: Zustand store slice for /api/v4/options/iv-surface/{symbol} data
+- [ ] TASK-05373: Frontend: loading/error state handling for /api/v4/options/iv-surface/{symbol}
+- [ ] TASK-05374: Test: unit test for GET /api/v4/options/iv-surface/{symbol} handler logic
+- [ ] TASK-05375: Test: integration test GET /api/v4/options/iv-surface/{symbol} returns 200
+- [ ] TASK-05376: Test: integration test GET /api/v4/options/iv-surface/{symbol} validates bad input
+- [ ] TASK-05377: Backend: define GET /api/v4/options/flow/{symbol} route handler (options flow)
+- [ ] TASK-05378: Backend: Pydantic request model for GET /api/v4/options/flow/{symbol}
+- [ ] TASK-05379: Backend: Pydantic response model for GET /api/v4/options/flow/{symbol}
+- [ ] TASK-05380: Backend: input validation and error handling for /api/v4/options/flow/{symbol}
+- [ ] TASK-05381: Backend: rate limiting for GET /api/v4/options/flow/{symbol}
+- [ ] TASK-05382: Backend: caching layer for /api/v4/options/flow/{symbol} responses
+- [ ] TASK-05383: Frontend: API client function for GET /api/v4/options/flow/{symbol}
+- [ ] TASK-05384: Frontend: Zustand store slice for /api/v4/options/flow/{symbol} data
+- [ ] TASK-05385: Frontend: loading/error state handling for /api/v4/options/flow/{symbol}
+- [ ] TASK-05386: Test: unit test for GET /api/v4/options/flow/{symbol} handler logic
+- [ ] TASK-05387: Test: integration test GET /api/v4/options/flow/{symbol} returns 200
+- [ ] TASK-05388: Test: integration test GET /api/v4/options/flow/{symbol} validates bad input
+- [ ] TASK-05389: Backend: define POST /api/v4/indicators/compute route handler (compute indicators)
+- [ ] TASK-05390: Backend: Pydantic request model for POST /api/v4/indicators/compute
+- [ ] TASK-05391: Backend: Pydantic response model for POST /api/v4/indicators/compute
+- [ ] TASK-05392: Backend: input validation and error handling for /api/v4/indicators/compute
+- [ ] TASK-05393: Backend: rate limiting for POST /api/v4/indicators/compute
+- [ ] TASK-05394: Backend: caching layer for /api/v4/indicators/compute responses
+- [ ] TASK-05395: Frontend: API client function for POST /api/v4/indicators/compute
+- [ ] TASK-05396: Frontend: Zustand store slice for /api/v4/indicators/compute data
+- [ ] TASK-05397: Frontend: loading/error state handling for /api/v4/indicators/compute
+- [ ] TASK-05398: Test: unit test for POST /api/v4/indicators/compute handler logic
+- [ ] TASK-05399: Test: integration test POST /api/v4/indicators/compute returns 200
+- [ ] TASK-05400: Test: integration test POST /api/v4/indicators/compute validates bad input
+- [ ] TASK-05401: Backend: define POST /api/v4/backtest/run route handler (run backtest)
+- [ ] TASK-05402: Backend: Pydantic request model for POST /api/v4/backtest/run
+- [ ] TASK-05403: Backend: Pydantic response model for POST /api/v4/backtest/run
+- [ ] TASK-05404: Backend: input validation and error handling for /api/v4/backtest/run
+- [ ] TASK-05405: Backend: rate limiting for POST /api/v4/backtest/run
+- [ ] TASK-05406: Backend: caching layer for /api/v4/backtest/run responses
+- [ ] TASK-05407: Frontend: API client function for POST /api/v4/backtest/run
+- [ ] TASK-05408: Frontend: Zustand store slice for /api/v4/backtest/run data
+- [ ] TASK-05409: Frontend: loading/error state handling for /api/v4/backtest/run
+- [ ] TASK-05410: Test: unit test for POST /api/v4/backtest/run handler logic
+- [ ] TASK-05411: Test: integration test POST /api/v4/backtest/run returns 200
+- [ ] TASK-05412: Test: integration test POST /api/v4/backtest/run validates bad input
+- [ ] TASK-05413: Backend: define POST /api/v4/backtest/walkforward route handler (walk-forward opt)
+- [ ] TASK-05414: Backend: Pydantic request model for POST /api/v4/backtest/walkforward
+- [ ] TASK-05415: Backend: Pydantic response model for POST /api/v4/backtest/walkforward
+- [ ] TASK-05416: Backend: input validation and error handling for /api/v4/backtest/walkforward
+- [ ] TASK-05417: Backend: rate limiting for POST /api/v4/backtest/walkforward
+- [ ] TASK-05418: Backend: caching layer for /api/v4/backtest/walkforward responses
+- [ ] TASK-05419: Frontend: API client function for POST /api/v4/backtest/walkforward
+- [ ] TASK-05420: Frontend: Zustand store slice for /api/v4/backtest/walkforward data
+- [ ] TASK-05421: Frontend: loading/error state handling for /api/v4/backtest/walkforward
+- [ ] TASK-05422: Test: unit test for POST /api/v4/backtest/walkforward handler logic
+- [ ] TASK-05423: Test: integration test POST /api/v4/backtest/walkforward returns 200
+- [ ] TASK-05424: Test: integration test POST /api/v4/backtest/walkforward validates bad input
+- [ ] TASK-05425: Backend: define POST /api/v4/backtest/montecarlo route handler (Monte Carlo simulation)
+- [ ] TASK-05426: Backend: Pydantic request model for POST /api/v4/backtest/montecarlo
+- [ ] TASK-05427: Backend: Pydantic response model for POST /api/v4/backtest/montecarlo
+- [ ] TASK-05428: Backend: input validation and error handling for /api/v4/backtest/montecarlo
+- [ ] TASK-05429: Backend: rate limiting for POST /api/v4/backtest/montecarlo
+- [ ] TASK-05430: Backend: caching layer for /api/v4/backtest/montecarlo responses
+- [ ] TASK-05431: Frontend: API client function for POST /api/v4/backtest/montecarlo
+- [ ] TASK-05432: Frontend: Zustand store slice for /api/v4/backtest/montecarlo data
+- [ ] TASK-05433: Frontend: loading/error state handling for /api/v4/backtest/montecarlo
+- [ ] TASK-05434: Test: unit test for POST /api/v4/backtest/montecarlo handler logic
+- [ ] TASK-05435: Test: integration test POST /api/v4/backtest/montecarlo returns 200
+- [ ] TASK-05436: Test: integration test POST /api/v4/backtest/montecarlo validates bad input
+- [ ] TASK-05437: Backend: define GET /api/v4/orders route handler (list all orders)
+- [ ] TASK-05438: Backend: Pydantic request model for GET /api/v4/orders
+- [ ] TASK-05439: Backend: Pydantic response model for GET /api/v4/orders
+- [ ] TASK-05440: Backend: input validation and error handling for /api/v4/orders
+- [ ] TASK-05441: Backend: rate limiting for GET /api/v4/orders
+- [ ] TASK-05442: Backend: caching layer for /api/v4/orders responses
+- [ ] TASK-05443: Frontend: API client function for GET /api/v4/orders
+- [ ] TASK-05444: Frontend: Zustand store slice for /api/v4/orders data
+- [ ] TASK-05445: Frontend: loading/error state handling for /api/v4/orders
+- [ ] TASK-05446: Test: unit test for GET /api/v4/orders handler logic
+- [ ] TASK-05447: Test: integration test GET /api/v4/orders returns 200
+- [ ] TASK-05448: Test: integration test GET /api/v4/orders validates bad input
+- [ ] TASK-05449: Backend: define POST /api/v4/orders route handler (submit new order)
+- [ ] TASK-05450: Backend: Pydantic request model for POST /api/v4/orders
+- [ ] TASK-05451: Backend: Pydantic response model for POST /api/v4/orders
+- [ ] TASK-05452: Backend: input validation and error handling for /api/v4/orders
+- [ ] TASK-05453: Backend: rate limiting for POST /api/v4/orders
+- [ ] TASK-05454: Backend: caching layer for /api/v4/orders responses
+- [ ] TASK-05455: Frontend: API client function for POST /api/v4/orders
+- [ ] TASK-05456: Frontend: Zustand store slice for /api/v4/orders data
+- [ ] TASK-05457: Frontend: loading/error state handling for /api/v4/orders
+- [ ] TASK-05458: Test: unit test for POST /api/v4/orders handler logic
+- [ ] TASK-05459: Test: integration test POST /api/v4/orders returns 200
+- [ ] TASK-05460: Test: integration test POST /api/v4/orders validates bad input
+- [ ] TASK-05461: Backend: define DELETE /api/v4/orders/{id} route handler (cancel order)
+- [ ] TASK-05462: Backend: Pydantic request model for DELETE /api/v4/orders/{id}
+- [ ] TASK-05463: Backend: Pydantic response model for DELETE /api/v4/orders/{id}
+- [ ] TASK-05464: Backend: input validation and error handling for /api/v4/orders/{id}
+- [ ] TASK-05465: Backend: rate limiting for DELETE /api/v4/orders/{id}
+- [ ] TASK-05466: Backend: caching layer for /api/v4/orders/{id} responses
+- [ ] TASK-05467: Frontend: API client function for DELETE /api/v4/orders/{id}
+- [ ] TASK-05468: Frontend: Zustand store slice for /api/v4/orders/{id} data
+- [ ] TASK-05469: Frontend: loading/error state handling for /api/v4/orders/{id}
+- [ ] TASK-05470: Test: unit test for DELETE /api/v4/orders/{id} handler logic
+- [ ] TASK-05471: Test: integration test DELETE /api/v4/orders/{id} returns 200
+- [ ] TASK-05472: Test: integration test DELETE /api/v4/orders/{id} validates bad input
+- [ ] TASK-05473: Backend: define PUT /api/v4/orders/{id} route handler (modify order)
+- [ ] TASK-05474: Backend: Pydantic request model for PUT /api/v4/orders/{id}
+- [ ] TASK-05475: Backend: Pydantic response model for PUT /api/v4/orders/{id}
+- [ ] TASK-05476: Backend: input validation and error handling for /api/v4/orders/{id}
+- [ ] TASK-05477: Backend: rate limiting for PUT /api/v4/orders/{id}
+- [ ] TASK-05478: Backend: caching layer for /api/v4/orders/{id} responses
+- [ ] TASK-05479: Frontend: API client function for PUT /api/v4/orders/{id}
+- [ ] TASK-05480: Frontend: Zustand store slice for /api/v4/orders/{id} data
+- [ ] TASK-05481: Frontend: loading/error state handling for /api/v4/orders/{id}
+- [ ] TASK-05482: Test: unit test for PUT /api/v4/orders/{id} handler logic
+- [ ] TASK-05483: Test: integration test PUT /api/v4/orders/{id} returns 200
+- [ ] TASK-05484: Test: integration test PUT /api/v4/orders/{id} validates bad input
+- [ ] TASK-05485: Backend: define GET /api/v4/trades route handler (list all trades)
+- [ ] TASK-05486: Backend: Pydantic request model for GET /api/v4/trades
+- [ ] TASK-05487: Backend: Pydantic response model for GET /api/v4/trades
+- [ ] TASK-05488: Backend: input validation and error handling for /api/v4/trades
+- [ ] TASK-05489: Backend: rate limiting for GET /api/v4/trades
+- [ ] TASK-05490: Backend: caching layer for /api/v4/trades responses
+- [ ] TASK-05491: Frontend: API client function for GET /api/v4/trades
+- [ ] TASK-05492: Frontend: Zustand store slice for /api/v4/trades data
+- [ ] TASK-05493: Frontend: loading/error state handling for /api/v4/trades
+- [ ] TASK-05494: Test: unit test for GET /api/v4/trades handler logic
+- [ ] TASK-05495: Test: integration test GET /api/v4/trades returns 200
+- [ ] TASK-05496: Test: integration test GET /api/v4/trades validates bad input
+- [ ] TASK-05497: Backend: define GET /api/v4/positions route handler (list all positions)
+- [ ] TASK-05498: Backend: Pydantic request model for GET /api/v4/positions
+- [ ] TASK-05499: Backend: Pydantic response model for GET /api/v4/positions
+- [ ] TASK-05500: Backend: input validation and error handling for /api/v4/positions
+- [ ] TASK-05501: Backend: rate limiting for GET /api/v4/positions
+- [ ] TASK-05502: Backend: caching layer for /api/v4/positions responses
+- [ ] TASK-05503: Frontend: API client function for GET /api/v4/positions
+- [ ] TASK-05504: Frontend: Zustand store slice for /api/v4/positions data
+- [ ] TASK-05505: Frontend: loading/error state handling for /api/v4/positions
+- [ ] TASK-05506: Test: unit test for GET /api/v4/positions handler logic
+- [ ] TASK-05507: Test: integration test GET /api/v4/positions returns 200
+- [ ] TASK-05508: Test: integration test GET /api/v4/positions validates bad input
+- [ ] TASK-05509: Backend: define GET /api/v4/account route handler (account summary)
+- [ ] TASK-05510: Backend: Pydantic request model for GET /api/v4/account
+- [ ] TASK-05511: Backend: Pydantic response model for GET /api/v4/account
+- [ ] TASK-05512: Backend: input validation and error handling for /api/v4/account
+- [ ] TASK-05513: Backend: rate limiting for GET /api/v4/account
+- [ ] TASK-05514: Backend: caching layer for /api/v4/account responses
+- [ ] TASK-05515: Frontend: API client function for GET /api/v4/account
+- [ ] TASK-05516: Frontend: Zustand store slice for /api/v4/account data
+- [ ] TASK-05517: Frontend: loading/error state handling for /api/v4/account
+- [ ] TASK-05518: Test: unit test for GET /api/v4/account handler logic
+- [ ] TASK-05519: Test: integration test GET /api/v4/account returns 200
+- [ ] TASK-05520: Test: integration test GET /api/v4/account validates bad input
+- [ ] TASK-05521: Backend: define GET /api/v4/market/breadth route handler (market breadth data)
+- [ ] TASK-05522: Backend: Pydantic request model for GET /api/v4/market/breadth
+- [ ] TASK-05523: Backend: Pydantic response model for GET /api/v4/market/breadth
+- [ ] TASK-05524: Backend: input validation and error handling for /api/v4/market/breadth
+- [ ] TASK-05525: Backend: rate limiting for GET /api/v4/market/breadth
+- [ ] TASK-05526: Backend: caching layer for /api/v4/market/breadth responses
+- [ ] TASK-05527: Frontend: API client function for GET /api/v4/market/breadth
+- [ ] TASK-05528: Frontend: Zustand store slice for /api/v4/market/breadth data
+- [ ] TASK-05529: Frontend: loading/error state handling for /api/v4/market/breadth
+- [ ] TASK-05530: Test: unit test for GET /api/v4/market/breadth handler logic
+- [ ] TASK-05531: Test: integration test GET /api/v4/market/breadth returns 200
+- [ ] TASK-05532: Test: integration test GET /api/v4/market/breadth validates bad input
+- [ ] TASK-05533: Backend: define GET /api/v4/market/movers route handler (top movers data)
+- [ ] TASK-05534: Backend: Pydantic request model for GET /api/v4/market/movers
+- [ ] TASK-05535: Backend: Pydantic response model for GET /api/v4/market/movers
+- [ ] TASK-05536: Backend: input validation and error handling for /api/v4/market/movers
+- [ ] TASK-05537: Backend: rate limiting for GET /api/v4/market/movers
+- [ ] TASK-05538: Backend: caching layer for /api/v4/market/movers responses
+- [ ] TASK-05539: Frontend: API client function for GET /api/v4/market/movers
+- [ ] TASK-05540: Frontend: Zustand store slice for /api/v4/market/movers data
+- [ ] TASK-05541: Frontend: loading/error state handling for /api/v4/market/movers
+- [ ] TASK-05542: Test: unit test for GET /api/v4/market/movers handler logic
+- [ ] TASK-05543: Test: integration test GET /api/v4/market/movers returns 200
+- [ ] TASK-05544: Test: integration test GET /api/v4/market/movers validates bad input
+- [ ] TASK-05545: Backend: define GET /api/v4/market/sectors route handler (sector performance)
+- [ ] TASK-05546: Backend: Pydantic request model for GET /api/v4/market/sectors
+- [ ] TASK-05547: Backend: Pydantic response model for GET /api/v4/market/sectors
+- [ ] TASK-05548: Backend: input validation and error handling for /api/v4/market/sectors
+- [ ] TASK-05549: Backend: rate limiting for GET /api/v4/market/sectors
+- [ ] TASK-05550: Backend: caching layer for /api/v4/market/sectors responses
+- [ ] TASK-05551: Frontend: API client function for GET /api/v4/market/sectors
+- [ ] TASK-05552: Frontend: Zustand store slice for /api/v4/market/sectors data
+- [ ] TASK-05553: Frontend: loading/error state handling for /api/v4/market/sectors
+- [ ] TASK-05554: Test: unit test for GET /api/v4/market/sectors handler logic
+- [ ] TASK-05555: Test: integration test GET /api/v4/market/sectors returns 200
+- [ ] TASK-05556: Test: integration test GET /api/v4/market/sectors validates bad input
+- [ ] TASK-05557: Backend: define GET /api/v4/sec/filings/{symbol} route handler (SEC filings)
+- [ ] TASK-05558: Backend: Pydantic request model for GET /api/v4/sec/filings/{symbol}
+- [ ] TASK-05559: Backend: Pydantic response model for GET /api/v4/sec/filings/{symbol}
+- [ ] TASK-05560: Backend: input validation and error handling for /api/v4/sec/filings/{symbol}
+- [ ] TASK-05561: Backend: rate limiting for GET /api/v4/sec/filings/{symbol}
+- [ ] TASK-05562: Backend: caching layer for /api/v4/sec/filings/{symbol} responses
+- [ ] TASK-05563: Frontend: API client function for GET /api/v4/sec/filings/{symbol}
+- [ ] TASK-05564: Frontend: Zustand store slice for /api/v4/sec/filings/{symbol} data
+- [ ] TASK-05565: Frontend: loading/error state handling for /api/v4/sec/filings/{symbol}
+- [ ] TASK-05566: Test: unit test for GET /api/v4/sec/filings/{symbol} handler logic
+- [ ] TASK-05567: Test: integration test GET /api/v4/sec/filings/{symbol} returns 200
+- [ ] TASK-05568: Test: integration test GET /api/v4/sec/filings/{symbol} validates bad input
+- [ ] TASK-05569: Backend: define GET /api/v4/sec/insiders/{symbol} route handler (insider transactions)
+- [ ] TASK-05570: Backend: Pydantic request model for GET /api/v4/sec/insiders/{symbol}
+- [ ] TASK-05571: Backend: Pydantic response model for GET /api/v4/sec/insiders/{symbol}
+- [ ] TASK-05572: Backend: input validation and error handling for /api/v4/sec/insiders/{symbol}
+- [ ] TASK-05573: Backend: rate limiting for GET /api/v4/sec/insiders/{symbol}
+- [ ] TASK-05574: Backend: caching layer for /api/v4/sec/insiders/{symbol} responses
+- [ ] TASK-05575: Frontend: API client function for GET /api/v4/sec/insiders/{symbol}
+- [ ] TASK-05576: Frontend: Zustand store slice for /api/v4/sec/insiders/{symbol} data
+- [ ] TASK-05577: Frontend: loading/error state handling for /api/v4/sec/insiders/{symbol}
+- [ ] TASK-05578: Test: unit test for GET /api/v4/sec/insiders/{symbol} handler logic
+- [ ] TASK-05579: Test: integration test GET /api/v4/sec/insiders/{symbol} returns 200
+- [ ] TASK-05580: Test: integration test GET /api/v4/sec/insiders/{symbol} validates bad input
+- [ ] TASK-05581: Backend: define GET /api/v4/social/sentiment/{symbol} route handler (social sentiment)
+- [ ] TASK-05582: Backend: Pydantic request model for GET /api/v4/social/sentiment/{symbol}
+- [ ] TASK-05583: Backend: Pydantic response model for GET /api/v4/social/sentiment/{symbol}
+- [ ] TASK-05584: Backend: input validation and error handling for /api/v4/social/sentiment/{symbol}
+- [ ] TASK-05585: Backend: rate limiting for GET /api/v4/social/sentiment/{symbol}
+- [ ] TASK-05586: Backend: caching layer for /api/v4/social/sentiment/{symbol} responses
+- [ ] TASK-05587: Frontend: API client function for GET /api/v4/social/sentiment/{symbol}
+- [ ] TASK-05588: Frontend: Zustand store slice for /api/v4/social/sentiment/{symbol} data
+- [ ] TASK-05589: Frontend: loading/error state handling for /api/v4/social/sentiment/{symbol}
+- [ ] TASK-05590: Test: unit test for GET /api/v4/social/sentiment/{symbol} handler logic
+- [ ] TASK-05591: Test: integration test GET /api/v4/social/sentiment/{symbol} returns 200
+- [ ] TASK-05592: Test: integration test GET /api/v4/social/sentiment/{symbol} validates bad input
+
+
+## PER-COMPONENT SUBTASKS (48 COMPONENTS Ã— 12)
+
+- [ ] TASK-05593: Component ChartFrame: Bloomberg amber theme styling
+- [ ] TASK-05594: Component ChartFrame: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05595: Component ChartFrame: responsive layout (desktop + laptop)
+- [ ] TASK-05596: Component ChartFrame: keyboard navigation support
+- [ ] TASK-05597: Component ChartFrame: aria labels and roles for accessibility
+- [ ] TASK-05598: Component ChartFrame: loading skeleton state
+- [ ] TASK-05599: Component ChartFrame: error state with retry button
+- [ ] TASK-05600: Component ChartFrame: animation/transition effects
+- [ ] TASK-05601: Component ChartFrame: React.memo optimization
+- [ ] TASK-05602: Component ChartFrame: TypeScript strict type safety
+- [ ] TASK-05603: Component ChartFrame: unit test with React Testing Library
+- [ ] TASK-05604: Component ChartFrame: visual regression test snapshot
+- [ ] TASK-05605: Component DataTable: Bloomberg amber theme styling
+- [ ] TASK-05606: Component DataTable: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05607: Component DataTable: responsive layout (desktop + laptop)
+- [ ] TASK-05608: Component DataTable: keyboard navigation support
+- [ ] TASK-05609: Component DataTable: aria labels and roles for accessibility
+- [ ] TASK-05610: Component DataTable: loading skeleton state
+- [ ] TASK-05611: Component DataTable: error state with retry button
+- [ ] TASK-05612: Component DataTable: animation/transition effects
+- [ ] TASK-05613: Component DataTable: React.memo optimization
+- [ ] TASK-05614: Component DataTable: TypeScript strict type safety
+- [ ] TASK-05615: Component DataTable: unit test with React Testing Library
+- [ ] TASK-05616: Component DataTable: visual regression test snapshot
+- [ ] TASK-05617: Component Panel: Bloomberg amber theme styling
+- [ ] TASK-05618: Component Panel: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05619: Component Panel: responsive layout (desktop + laptop)
+- [ ] TASK-05620: Component Panel: keyboard navigation support
+- [ ] TASK-05621: Component Panel: aria labels and roles for accessibility
+- [ ] TASK-05622: Component Panel: loading skeleton state
+- [ ] TASK-05623: Component Panel: error state with retry button
+- [ ] TASK-05624: Component Panel: animation/transition effects
+- [ ] TASK-05625: Component Panel: React.memo optimization
+- [ ] TASK-05626: Component Panel: TypeScript strict type safety
+- [ ] TASK-05627: Component Panel: unit test with React Testing Library
+- [ ] TASK-05628: Component Panel: visual regression test snapshot
+- [ ] TASK-05629: Component KPIStrip: Bloomberg amber theme styling
+- [ ] TASK-05630: Component KPIStrip: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05631: Component KPIStrip: responsive layout (desktop + laptop)
+- [ ] TASK-05632: Component KPIStrip: keyboard navigation support
+- [ ] TASK-05633: Component KPIStrip: aria labels and roles for accessibility
+- [ ] TASK-05634: Component KPIStrip: loading skeleton state
+- [ ] TASK-05635: Component KPIStrip: error state with retry button
+- [ ] TASK-05636: Component KPIStrip: animation/transition effects
+- [ ] TASK-05637: Component KPIStrip: React.memo optimization
+- [ ] TASK-05638: Component KPIStrip: TypeScript strict type safety
+- [ ] TASK-05639: Component KPIStrip: unit test with React Testing Library
+- [ ] TASK-05640: Component KPIStrip: visual regression test snapshot
+- [ ] TASK-05641: Component TickerBar: Bloomberg amber theme styling
+- [ ] TASK-05642: Component TickerBar: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05643: Component TickerBar: responsive layout (desktop + laptop)
+- [ ] TASK-05644: Component TickerBar: keyboard navigation support
+- [ ] TASK-05645: Component TickerBar: aria labels and roles for accessibility
+- [ ] TASK-05646: Component TickerBar: loading skeleton state
+- [ ] TASK-05647: Component TickerBar: error state with retry button
+- [ ] TASK-05648: Component TickerBar: animation/transition effects
+- [ ] TASK-05649: Component TickerBar: React.memo optimization
+- [ ] TASK-05650: Component TickerBar: TypeScript strict type safety
+- [ ] TASK-05651: Component TickerBar: unit test with React Testing Library
+- [ ] TASK-05652: Component TickerBar: visual regression test snapshot
+- [ ] TASK-05653: Component QuoteBar: Bloomberg amber theme styling
+- [ ] TASK-05654: Component QuoteBar: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05655: Component QuoteBar: responsive layout (desktop + laptop)
+- [ ] TASK-05656: Component QuoteBar: keyboard navigation support
+- [ ] TASK-05657: Component QuoteBar: aria labels and roles for accessibility
+- [ ] TASK-05658: Component QuoteBar: loading skeleton state
+- [ ] TASK-05659: Component QuoteBar: error state with retry button
+- [ ] TASK-05660: Component QuoteBar: animation/transition effects
+- [ ] TASK-05661: Component QuoteBar: React.memo optimization
+- [ ] TASK-05662: Component QuoteBar: TypeScript strict type safety
+- [ ] TASK-05663: Component QuoteBar: unit test with React Testing Library
+- [ ] TASK-05664: Component QuoteBar: visual regression test snapshot
+- [ ] TASK-05665: Component OrderBook: Bloomberg amber theme styling
+- [ ] TASK-05666: Component OrderBook: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05667: Component OrderBook: responsive layout (desktop + laptop)
+- [ ] TASK-05668: Component OrderBook: keyboard navigation support
+- [ ] TASK-05669: Component OrderBook: aria labels and roles for accessibility
+- [ ] TASK-05670: Component OrderBook: loading skeleton state
+- [ ] TASK-05671: Component OrderBook: error state with retry button
+- [ ] TASK-05672: Component OrderBook: animation/transition effects
+- [ ] TASK-05673: Component OrderBook: React.memo optimization
+- [ ] TASK-05674: Component OrderBook: TypeScript strict type safety
+- [ ] TASK-05675: Component OrderBook: unit test with React Testing Library
+- [ ] TASK-05676: Component OrderBook: visual regression test snapshot
+- [ ] TASK-05677: Component TimeSales: Bloomberg amber theme styling
+- [ ] TASK-05678: Component TimeSales: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05679: Component TimeSales: responsive layout (desktop + laptop)
+- [ ] TASK-05680: Component TimeSales: keyboard navigation support
+- [ ] TASK-05681: Component TimeSales: aria labels and roles for accessibility
+- [ ] TASK-05682: Component TimeSales: loading skeleton state
+- [ ] TASK-05683: Component TimeSales: error state with retry button
+- [ ] TASK-05684: Component TimeSales: animation/transition effects
+- [ ] TASK-05685: Component TimeSales: React.memo optimization
+- [ ] TASK-05686: Component TimeSales: TypeScript strict type safety
+- [ ] TASK-05687: Component TimeSales: unit test with React Testing Library
+- [ ] TASK-05688: Component TimeSales: visual regression test snapshot
+- [ ] TASK-05689: Component OrderTicket: Bloomberg amber theme styling
+- [ ] TASK-05690: Component OrderTicket: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05691: Component OrderTicket: responsive layout (desktop + laptop)
+- [ ] TASK-05692: Component OrderTicket: keyboard navigation support
+- [ ] TASK-05693: Component OrderTicket: aria labels and roles for accessibility
+- [ ] TASK-05694: Component OrderTicket: loading skeleton state
+- [ ] TASK-05695: Component OrderTicket: error state with retry button
+- [ ] TASK-05696: Component OrderTicket: animation/transition effects
+- [ ] TASK-05697: Component OrderTicket: React.memo optimization
+- [ ] TASK-05698: Component OrderTicket: TypeScript strict type safety
+- [ ] TASK-05699: Component OrderTicket: unit test with React Testing Library
+- [ ] TASK-05700: Component OrderTicket: visual regression test snapshot
+- [ ] TASK-05701: Component PositionTable: Bloomberg amber theme styling
+- [ ] TASK-05702: Component PositionTable: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05703: Component PositionTable: responsive layout (desktop + laptop)
+- [ ] TASK-05704: Component PositionTable: keyboard navigation support
+- [ ] TASK-05705: Component PositionTable: aria labels and roles for accessibility
+- [ ] TASK-05706: Component PositionTable: loading skeleton state
+- [ ] TASK-05707: Component PositionTable: error state with retry button
+- [ ] TASK-05708: Component PositionTable: animation/transition effects
+- [ ] TASK-05709: Component PositionTable: React.memo optimization
+- [ ] TASK-05710: Component PositionTable: TypeScript strict type safety
+- [ ] TASK-05711: Component PositionTable: unit test with React Testing Library
+- [ ] TASK-05712: Component PositionTable: visual regression test snapshot
+- [ ] TASK-05713: Component TradeLog: Bloomberg amber theme styling
+- [ ] TASK-05714: Component TradeLog: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05715: Component TradeLog: responsive layout (desktop + laptop)
+- [ ] TASK-05716: Component TradeLog: keyboard navigation support
+- [ ] TASK-05717: Component TradeLog: aria labels and roles for accessibility
+- [ ] TASK-05718: Component TradeLog: loading skeleton state
+- [ ] TASK-05719: Component TradeLog: error state with retry button
+- [ ] TASK-05720: Component TradeLog: animation/transition effects
+- [ ] TASK-05721: Component TradeLog: React.memo optimization
+- [ ] TASK-05722: Component TradeLog: TypeScript strict type safety
+- [ ] TASK-05723: Component TradeLog: unit test with React Testing Library
+- [ ] TASK-05724: Component TradeLog: visual regression test snapshot
+- [ ] TASK-05725: Component AlertList: Bloomberg amber theme styling
+- [ ] TASK-05726: Component AlertList: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05727: Component AlertList: responsive layout (desktop + laptop)
+- [ ] TASK-05728: Component AlertList: keyboard navigation support
+- [ ] TASK-05729: Component AlertList: aria labels and roles for accessibility
+- [ ] TASK-05730: Component AlertList: loading skeleton state
+- [ ] TASK-05731: Component AlertList: error state with retry button
+- [ ] TASK-05732: Component AlertList: animation/transition effects
+- [ ] TASK-05733: Component AlertList: React.memo optimization
+- [ ] TASK-05734: Component AlertList: TypeScript strict type safety
+- [ ] TASK-05735: Component AlertList: unit test with React Testing Library
+- [ ] TASK-05736: Component AlertList: visual regression test snapshot
+- [ ] TASK-05737: Component WatchlistTable: Bloomberg amber theme styling
+- [ ] TASK-05738: Component WatchlistTable: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05739: Component WatchlistTable: responsive layout (desktop + laptop)
+- [ ] TASK-05740: Component WatchlistTable: keyboard navigation support
+- [ ] TASK-05741: Component WatchlistTable: aria labels and roles for accessibility
+- [ ] TASK-05742: Component WatchlistTable: loading skeleton state
+- [ ] TASK-05743: Component WatchlistTable: error state with retry button
+- [ ] TASK-05744: Component WatchlistTable: animation/transition effects
+- [ ] TASK-05745: Component WatchlistTable: React.memo optimization
+- [ ] TASK-05746: Component WatchlistTable: TypeScript strict type safety
+- [ ] TASK-05747: Component WatchlistTable: unit test with React Testing Library
+- [ ] TASK-05748: Component WatchlistTable: visual regression test snapshot
+- [ ] TASK-05749: Component NewsCard: Bloomberg amber theme styling
+- [ ] TASK-05750: Component NewsCard: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05751: Component NewsCard: responsive layout (desktop + laptop)
+- [ ] TASK-05752: Component NewsCard: keyboard navigation support
+- [ ] TASK-05753: Component NewsCard: aria labels and roles for accessibility
+- [ ] TASK-05754: Component NewsCard: loading skeleton state
+- [ ] TASK-05755: Component NewsCard: error state with retry button
+- [ ] TASK-05756: Component NewsCard: animation/transition effects
+- [ ] TASK-05757: Component NewsCard: React.memo optimization
+- [ ] TASK-05758: Component NewsCard: TypeScript strict type safety
+- [ ] TASK-05759: Component NewsCard: unit test with React Testing Library
+- [ ] TASK-05760: Component NewsCard: visual regression test snapshot
+- [ ] TASK-05761: Component SentimentGauge: Bloomberg amber theme styling
+- [ ] TASK-05762: Component SentimentGauge: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05763: Component SentimentGauge: responsive layout (desktop + laptop)
+- [ ] TASK-05764: Component SentimentGauge: keyboard navigation support
+- [ ] TASK-05765: Component SentimentGauge: aria labels and roles for accessibility
+- [ ] TASK-05766: Component SentimentGauge: loading skeleton state
+- [ ] TASK-05767: Component SentimentGauge: error state with retry button
+- [ ] TASK-05768: Component SentimentGauge: animation/transition effects
+- [ ] TASK-05769: Component SentimentGauge: React.memo optimization
+- [ ] TASK-05770: Component SentimentGauge: TypeScript strict type safety
+- [ ] TASK-05771: Component SentimentGauge: unit test with React Testing Library
+- [ ] TASK-05772: Component SentimentGauge: visual regression test snapshot
+- [ ] TASK-05773: Component VolumeProfile: Bloomberg amber theme styling
+- [ ] TASK-05774: Component VolumeProfile: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05775: Component VolumeProfile: responsive layout (desktop + laptop)
+- [ ] TASK-05776: Component VolumeProfile: keyboard navigation support
+- [ ] TASK-05777: Component VolumeProfile: aria labels and roles for accessibility
+- [ ] TASK-05778: Component VolumeProfile: loading skeleton state
+- [ ] TASK-05779: Component VolumeProfile: error state with retry button
+- [ ] TASK-05780: Component VolumeProfile: animation/transition effects
+- [ ] TASK-05781: Component VolumeProfile: React.memo optimization
+- [ ] TASK-05782: Component VolumeProfile: TypeScript strict type safety
+- [ ] TASK-05783: Component VolumeProfile: unit test with React Testing Library
+- [ ] TASK-05784: Component VolumeProfile: visual regression test snapshot
+- [ ] TASK-05785: Component HeatMap: Bloomberg amber theme styling
+- [ ] TASK-05786: Component HeatMap: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05787: Component HeatMap: responsive layout (desktop + laptop)
+- [ ] TASK-05788: Component HeatMap: keyboard navigation support
+- [ ] TASK-05789: Component HeatMap: aria labels and roles for accessibility
+- [ ] TASK-05790: Component HeatMap: loading skeleton state
+- [ ] TASK-05791: Component HeatMap: error state with retry button
+- [ ] TASK-05792: Component HeatMap: animation/transition effects
+- [ ] TASK-05793: Component HeatMap: React.memo optimization
+- [ ] TASK-05794: Component HeatMap: TypeScript strict type safety
+- [ ] TASK-05795: Component HeatMap: unit test with React Testing Library
+- [ ] TASK-05796: Component HeatMap: visual regression test snapshot
+- [ ] TASK-05797: Component TreeMap: Bloomberg amber theme styling
+- [ ] TASK-05798: Component TreeMap: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05799: Component TreeMap: responsive layout (desktop + laptop)
+- [ ] TASK-05800: Component TreeMap: keyboard navigation support
+- [ ] TASK-05801: Component TreeMap: aria labels and roles for accessibility
+- [ ] TASK-05802: Component TreeMap: loading skeleton state
+- [ ] TASK-05803: Component TreeMap: error state with retry button
+- [ ] TASK-05804: Component TreeMap: animation/transition effects
+- [ ] TASK-05805: Component TreeMap: React.memo optimization
+- [ ] TASK-05806: Component TreeMap: TypeScript strict type safety
+- [ ] TASK-05807: Component TreeMap: unit test with React Testing Library
+- [ ] TASK-05808: Component TreeMap: visual regression test snapshot
+- [ ] TASK-05809: Component DonutChart: Bloomberg amber theme styling
+- [ ] TASK-05810: Component DonutChart: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05811: Component DonutChart: responsive layout (desktop + laptop)
+- [ ] TASK-05812: Component DonutChart: keyboard navigation support
+- [ ] TASK-05813: Component DonutChart: aria labels and roles for accessibility
+- [ ] TASK-05814: Component DonutChart: loading skeleton state
+- [ ] TASK-05815: Component DonutChart: error state with retry button
+- [ ] TASK-05816: Component DonutChart: animation/transition effects
+- [ ] TASK-05817: Component DonutChart: React.memo optimization
+- [ ] TASK-05818: Component DonutChart: TypeScript strict type safety
+- [ ] TASK-05819: Component DonutChart: unit test with React Testing Library
+- [ ] TASK-05820: Component DonutChart: visual regression test snapshot
+- [ ] TASK-05821: Component BarChart: Bloomberg amber theme styling
+- [ ] TASK-05822: Component BarChart: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05823: Component BarChart: responsive layout (desktop + laptop)
+- [ ] TASK-05824: Component BarChart: keyboard navigation support
+- [ ] TASK-05825: Component BarChart: aria labels and roles for accessibility
+- [ ] TASK-05826: Component BarChart: loading skeleton state
+- [ ] TASK-05827: Component BarChart: error state with retry button
+- [ ] TASK-05828: Component BarChart: animation/transition effects
+- [ ] TASK-05829: Component BarChart: React.memo optimization
+- [ ] TASK-05830: Component BarChart: TypeScript strict type safety
+- [ ] TASK-05831: Component BarChart: unit test with React Testing Library
+- [ ] TASK-05832: Component BarChart: visual regression test snapshot
+- [ ] TASK-05833: Component LineChart: Bloomberg amber theme styling
+- [ ] TASK-05834: Component LineChart: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05835: Component LineChart: responsive layout (desktop + laptop)
+- [ ] TASK-05836: Component LineChart: keyboard navigation support
+- [ ] TASK-05837: Component LineChart: aria labels and roles for accessibility
+- [ ] TASK-05838: Component LineChart: loading skeleton state
+- [ ] TASK-05839: Component LineChart: error state with retry button
+- [ ] TASK-05840: Component LineChart: animation/transition effects
+- [ ] TASK-05841: Component LineChart: React.memo optimization
+- [ ] TASK-05842: Component LineChart: TypeScript strict type safety
+- [ ] TASK-05843: Component LineChart: unit test with React Testing Library
+- [ ] TASK-05844: Component LineChart: visual regression test snapshot
+- [ ] TASK-05845: Component CandlestickChart: Bloomberg amber theme styling
+- [ ] TASK-05846: Component CandlestickChart: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05847: Component CandlestickChart: responsive layout (desktop + laptop)
+- [ ] TASK-05848: Component CandlestickChart: keyboard navigation support
+- [ ] TASK-05849: Component CandlestickChart: aria labels and roles for accessibility
+- [ ] TASK-05850: Component CandlestickChart: loading skeleton state
+- [ ] TASK-05851: Component CandlestickChart: error state with retry button
+- [ ] TASK-05852: Component CandlestickChart: animation/transition effects
+- [ ] TASK-05853: Component CandlestickChart: React.memo optimization
+- [ ] TASK-05854: Component CandlestickChart: TypeScript strict type safety
+- [ ] TASK-05855: Component CandlestickChart: unit test with React Testing Library
+- [ ] TASK-05856: Component CandlestickChart: visual regression test snapshot
+- [ ] TASK-05857: Component SankeyDiagram: Bloomberg amber theme styling
+- [ ] TASK-05858: Component SankeyDiagram: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05859: Component SankeyDiagram: responsive layout (desktop + laptop)
+- [ ] TASK-05860: Component SankeyDiagram: keyboard navigation support
+- [ ] TASK-05861: Component SankeyDiagram: aria labels and roles for accessibility
+- [ ] TASK-05862: Component SankeyDiagram: loading skeleton state
+- [ ] TASK-05863: Component SankeyDiagram: error state with retry button
+- [ ] TASK-05864: Component SankeyDiagram: animation/transition effects
+- [ ] TASK-05865: Component SankeyDiagram: React.memo optimization
+- [ ] TASK-05866: Component SankeyDiagram: TypeScript strict type safety
+- [ ] TASK-05867: Component SankeyDiagram: unit test with React Testing Library
+- [ ] TASK-05868: Component SankeyDiagram: visual regression test snapshot
+- [ ] TASK-05869: Component ScatterPlot: Bloomberg amber theme styling
+- [ ] TASK-05870: Component ScatterPlot: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05871: Component ScatterPlot: responsive layout (desktop + laptop)
+- [ ] TASK-05872: Component ScatterPlot: keyboard navigation support
+- [ ] TASK-05873: Component ScatterPlot: aria labels and roles for accessibility
+- [ ] TASK-05874: Component ScatterPlot: loading skeleton state
+- [ ] TASK-05875: Component ScatterPlot: error state with retry button
+- [ ] TASK-05876: Component ScatterPlot: animation/transition effects
+- [ ] TASK-05877: Component ScatterPlot: React.memo optimization
+- [ ] TASK-05878: Component ScatterPlot: TypeScript strict type safety
+- [ ] TASK-05879: Component ScatterPlot: unit test with React Testing Library
+- [ ] TASK-05880: Component ScatterPlot: visual regression test snapshot
+- [ ] TASK-05881: Component FunnelChart: Bloomberg amber theme styling
+- [ ] TASK-05882: Component FunnelChart: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05883: Component FunnelChart: responsive layout (desktop + laptop)
+- [ ] TASK-05884: Component FunnelChart: keyboard navigation support
+- [ ] TASK-05885: Component FunnelChart: aria labels and roles for accessibility
+- [ ] TASK-05886: Component FunnelChart: loading skeleton state
+- [ ] TASK-05887: Component FunnelChart: error state with retry button
+- [ ] TASK-05888: Component FunnelChart: animation/transition effects
+- [ ] TASK-05889: Component FunnelChart: React.memo optimization
+- [ ] TASK-05890: Component FunnelChart: TypeScript strict type safety
+- [ ] TASK-05891: Component FunnelChart: unit test with React Testing Library
+- [ ] TASK-05892: Component FunnelChart: visual regression test snapshot
+- [ ] TASK-05893: Component GaugeWidget: Bloomberg amber theme styling
+- [ ] TASK-05894: Component GaugeWidget: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05895: Component GaugeWidget: responsive layout (desktop + laptop)
+- [ ] TASK-05896: Component GaugeWidget: keyboard navigation support
+- [ ] TASK-05897: Component GaugeWidget: aria labels and roles for accessibility
+- [ ] TASK-05898: Component GaugeWidget: loading skeleton state
+- [ ] TASK-05899: Component GaugeWidget: error state with retry button
+- [ ] TASK-05900: Component GaugeWidget: animation/transition effects
+- [ ] TASK-05901: Component GaugeWidget: React.memo optimization
+- [ ] TASK-05902: Component GaugeWidget: TypeScript strict type safety
+- [ ] TASK-05903: Component GaugeWidget: unit test with React Testing Library
+- [ ] TASK-05904: Component GaugeWidget: visual regression test snapshot
+- [ ] TASK-05905: Component SparkLine: Bloomberg amber theme styling
+- [ ] TASK-05906: Component SparkLine: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05907: Component SparkLine: responsive layout (desktop + laptop)
+- [ ] TASK-05908: Component SparkLine: keyboard navigation support
+- [ ] TASK-05909: Component SparkLine: aria labels and roles for accessibility
+- [ ] TASK-05910: Component SparkLine: loading skeleton state
+- [ ] TASK-05911: Component SparkLine: error state with retry button
+- [ ] TASK-05912: Component SparkLine: animation/transition effects
+- [ ] TASK-05913: Component SparkLine: React.memo optimization
+- [ ] TASK-05914: Component SparkLine: TypeScript strict type safety
+- [ ] TASK-05915: Component SparkLine: unit test with React Testing Library
+- [ ] TASK-05916: Component SparkLine: visual regression test snapshot
+- [ ] TASK-05917: Component MiniChart: Bloomberg amber theme styling
+- [ ] TASK-05918: Component MiniChart: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05919: Component MiniChart: responsive layout (desktop + laptop)
+- [ ] TASK-05920: Component MiniChart: keyboard navigation support
+- [ ] TASK-05921: Component MiniChart: aria labels and roles for accessibility
+- [ ] TASK-05922: Component MiniChart: loading skeleton state
+- [ ] TASK-05923: Component MiniChart: error state with retry button
+- [ ] TASK-05924: Component MiniChart: animation/transition effects
+- [ ] TASK-05925: Component MiniChart: React.memo optimization
+- [ ] TASK-05926: Component MiniChart: TypeScript strict type safety
+- [ ] TASK-05927: Component MiniChart: unit test with React Testing Library
+- [ ] TASK-05928: Component MiniChart: visual regression test snapshot
+- [ ] TASK-05929: Component TabPanel: Bloomberg amber theme styling
+- [ ] TASK-05930: Component TabPanel: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05931: Component TabPanel: responsive layout (desktop + laptop)
+- [ ] TASK-05932: Component TabPanel: keyboard navigation support
+- [ ] TASK-05933: Component TabPanel: aria labels and roles for accessibility
+- [ ] TASK-05934: Component TabPanel: loading skeleton state
+- [ ] TASK-05935: Component TabPanel: error state with retry button
+- [ ] TASK-05936: Component TabPanel: animation/transition effects
+- [ ] TASK-05937: Component TabPanel: React.memo optimization
+- [ ] TASK-05938: Component TabPanel: TypeScript strict type safety
+- [ ] TASK-05939: Component TabPanel: unit test with React Testing Library
+- [ ] TASK-05940: Component TabPanel: visual regression test snapshot
+- [ ] TASK-05941: Component Modal: Bloomberg amber theme styling
+- [ ] TASK-05942: Component Modal: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05943: Component Modal: responsive layout (desktop + laptop)
+- [ ] TASK-05944: Component Modal: keyboard navigation support
+- [ ] TASK-05945: Component Modal: aria labels and roles for accessibility
+- [ ] TASK-05946: Component Modal: loading skeleton state
+- [ ] TASK-05947: Component Modal: error state with retry button
+- [ ] TASK-05948: Component Modal: animation/transition effects
+- [ ] TASK-05949: Component Modal: React.memo optimization
+- [ ] TASK-05950: Component Modal: TypeScript strict type safety
+- [ ] TASK-05951: Component Modal: unit test with React Testing Library
+- [ ] TASK-05952: Component Modal: visual regression test snapshot
+- [ ] TASK-05953: Component Tooltip: Bloomberg amber theme styling
+- [ ] TASK-05954: Component Tooltip: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05955: Component Tooltip: responsive layout (desktop + laptop)
+- [ ] TASK-05956: Component Tooltip: keyboard navigation support
+- [ ] TASK-05957: Component Tooltip: aria labels and roles for accessibility
+- [ ] TASK-05958: Component Tooltip: loading skeleton state
+- [ ] TASK-05959: Component Tooltip: error state with retry button
+- [ ] TASK-05960: Component Tooltip: animation/transition effects
+- [ ] TASK-05961: Component Tooltip: React.memo optimization
+- [ ] TASK-05962: Component Tooltip: TypeScript strict type safety
+- [ ] TASK-05963: Component Tooltip: unit test with React Testing Library
+- [ ] TASK-05964: Component Tooltip: visual regression test snapshot
+- [ ] TASK-05965: Component Breadcrumb: Bloomberg amber theme styling
+- [ ] TASK-05966: Component Breadcrumb: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05967: Component Breadcrumb: responsive layout (desktop + laptop)
+- [ ] TASK-05968: Component Breadcrumb: keyboard navigation support
+- [ ] TASK-05969: Component Breadcrumb: aria labels and roles for accessibility
+- [ ] TASK-05970: Component Breadcrumb: loading skeleton state
+- [ ] TASK-05971: Component Breadcrumb: error state with retry button
+- [ ] TASK-05972: Component Breadcrumb: animation/transition effects
+- [ ] TASK-05973: Component Breadcrumb: React.memo optimization
+- [ ] TASK-05974: Component Breadcrumb: TypeScript strict type safety
+- [ ] TASK-05975: Component Breadcrumb: unit test with React Testing Library
+- [ ] TASK-05976: Component Breadcrumb: visual regression test snapshot
+- [ ] TASK-05977: Component CommandPalette: Bloomberg amber theme styling
+- [ ] TASK-05978: Component CommandPalette: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05979: Component CommandPalette: responsive layout (desktop + laptop)
+- [ ] TASK-05980: Component CommandPalette: keyboard navigation support
+- [ ] TASK-05981: Component CommandPalette: aria labels and roles for accessibility
+- [ ] TASK-05982: Component CommandPalette: loading skeleton state
+- [ ] TASK-05983: Component CommandPalette: error state with retry button
+- [ ] TASK-05984: Component CommandPalette: animation/transition effects
+- [ ] TASK-05985: Component CommandPalette: React.memo optimization
+- [ ] TASK-05986: Component CommandPalette: TypeScript strict type safety
+- [ ] TASK-05987: Component CommandPalette: unit test with React Testing Library
+- [ ] TASK-05988: Component CommandPalette: visual regression test snapshot
+- [ ] TASK-05989: Component StatusBar: Bloomberg amber theme styling
+- [ ] TASK-05990: Component StatusBar: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-05991: Component StatusBar: responsive layout (desktop + laptop)
+- [ ] TASK-05992: Component StatusBar: keyboard navigation support
+- [ ] TASK-05993: Component StatusBar: aria labels and roles for accessibility
+- [ ] TASK-05994: Component StatusBar: loading skeleton state
+- [ ] TASK-05995: Component StatusBar: error state with retry button
+- [ ] TASK-05996: Component StatusBar: animation/transition effects
+- [ ] TASK-05997: Component StatusBar: React.memo optimization
+- [ ] TASK-05998: Component StatusBar: TypeScript strict type safety
+- [ ] TASK-05999: Component StatusBar: unit test with React Testing Library
+- [ ] TASK-06000: Component StatusBar: visual regression test snapshot
+- [ ] TASK-06001: Component Sidebar: Bloomberg amber theme styling
+- [ ] TASK-06002: Component Sidebar: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06003: Component Sidebar: responsive layout (desktop + laptop)
+- [ ] TASK-06004: Component Sidebar: keyboard navigation support
+- [ ] TASK-06005: Component Sidebar: aria labels and roles for accessibility
+- [ ] TASK-06006: Component Sidebar: loading skeleton state
+- [ ] TASK-06007: Component Sidebar: error state with retry button
+- [ ] TASK-06008: Component Sidebar: animation/transition effects
+- [ ] TASK-06009: Component Sidebar: React.memo optimization
+- [ ] TASK-06010: Component Sidebar: TypeScript strict type safety
+- [ ] TASK-06011: Component Sidebar: unit test with React Testing Library
+- [ ] TASK-06012: Component Sidebar: visual regression test snapshot
+- [ ] TASK-06013: Component TopBar: Bloomberg amber theme styling
+- [ ] TASK-06014: Component TopBar: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06015: Component TopBar: responsive layout (desktop + laptop)
+- [ ] TASK-06016: Component TopBar: keyboard navigation support
+- [ ] TASK-06017: Component TopBar: aria labels and roles for accessibility
+- [ ] TASK-06018: Component TopBar: loading skeleton state
+- [ ] TASK-06019: Component TopBar: error state with retry button
+- [ ] TASK-06020: Component TopBar: animation/transition effects
+- [ ] TASK-06021: Component TopBar: React.memo optimization
+- [ ] TASK-06022: Component TopBar: TypeScript strict type safety
+- [ ] TASK-06023: Component TopBar: unit test with React Testing Library
+- [ ] TASK-06024: Component TopBar: visual regression test snapshot
+- [ ] TASK-06025: Component NotificationToast: Bloomberg amber theme styling
+- [ ] TASK-06026: Component NotificationToast: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06027: Component NotificationToast: responsive layout (desktop + laptop)
+- [ ] TASK-06028: Component NotificationToast: keyboard navigation support
+- [ ] TASK-06029: Component NotificationToast: aria labels and roles for accessibility
+- [ ] TASK-06030: Component NotificationToast: loading skeleton state
+- [ ] TASK-06031: Component NotificationToast: error state with retry button
+- [ ] TASK-06032: Component NotificationToast: animation/transition effects
+- [ ] TASK-06033: Component NotificationToast: React.memo optimization
+- [ ] TASK-06034: Component NotificationToast: TypeScript strict type safety
+- [ ] TASK-06035: Component NotificationToast: unit test with React Testing Library
+- [ ] TASK-06036: Component NotificationToast: visual regression test snapshot
+- [ ] TASK-06037: Component DropdownMenu: Bloomberg amber theme styling
+- [ ] TASK-06038: Component DropdownMenu: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06039: Component DropdownMenu: responsive layout (desktop + laptop)
+- [ ] TASK-06040: Component DropdownMenu: keyboard navigation support
+- [ ] TASK-06041: Component DropdownMenu: aria labels and roles for accessibility
+- [ ] TASK-06042: Component DropdownMenu: loading skeleton state
+- [ ] TASK-06043: Component DropdownMenu: error state with retry button
+- [ ] TASK-06044: Component DropdownMenu: animation/transition effects
+- [ ] TASK-06045: Component DropdownMenu: React.memo optimization
+- [ ] TASK-06046: Component DropdownMenu: TypeScript strict type safety
+- [ ] TASK-06047: Component DropdownMenu: unit test with React Testing Library
+- [ ] TASK-06048: Component DropdownMenu: visual regression test snapshot
+- [ ] TASK-06049: Component SearchBar: Bloomberg amber theme styling
+- [ ] TASK-06050: Component SearchBar: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06051: Component SearchBar: responsive layout (desktop + laptop)
+- [ ] TASK-06052: Component SearchBar: keyboard navigation support
+- [ ] TASK-06053: Component SearchBar: aria labels and roles for accessibility
+- [ ] TASK-06054: Component SearchBar: loading skeleton state
+- [ ] TASK-06055: Component SearchBar: error state with retry button
+- [ ] TASK-06056: Component SearchBar: animation/transition effects
+- [ ] TASK-06057: Component SearchBar: React.memo optimization
+- [ ] TASK-06058: Component SearchBar: TypeScript strict type safety
+- [ ] TASK-06059: Component SearchBar: unit test with React Testing Library
+- [ ] TASK-06060: Component SearchBar: visual regression test snapshot
+- [ ] TASK-06061: Component DatePicker: Bloomberg amber theme styling
+- [ ] TASK-06062: Component DatePicker: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06063: Component DatePicker: responsive layout (desktop + laptop)
+- [ ] TASK-06064: Component DatePicker: keyboard navigation support
+- [ ] TASK-06065: Component DatePicker: aria labels and roles for accessibility
+- [ ] TASK-06066: Component DatePicker: loading skeleton state
+- [ ] TASK-06067: Component DatePicker: error state with retry button
+- [ ] TASK-06068: Component DatePicker: animation/transition effects
+- [ ] TASK-06069: Component DatePicker: React.memo optimization
+- [ ] TASK-06070: Component DatePicker: TypeScript strict type safety
+- [ ] TASK-06071: Component DatePicker: unit test with React Testing Library
+- [ ] TASK-06072: Component DatePicker: visual regression test snapshot
+- [ ] TASK-06073: Component RangeSlider: Bloomberg amber theme styling
+- [ ] TASK-06074: Component RangeSlider: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06075: Component RangeSlider: responsive layout (desktop + laptop)
+- [ ] TASK-06076: Component RangeSlider: keyboard navigation support
+- [ ] TASK-06077: Component RangeSlider: aria labels and roles for accessibility
+- [ ] TASK-06078: Component RangeSlider: loading skeleton state
+- [ ] TASK-06079: Component RangeSlider: error state with retry button
+- [ ] TASK-06080: Component RangeSlider: animation/transition effects
+- [ ] TASK-06081: Component RangeSlider: React.memo optimization
+- [ ] TASK-06082: Component RangeSlider: TypeScript strict type safety
+- [ ] TASK-06083: Component RangeSlider: unit test with React Testing Library
+- [ ] TASK-06084: Component RangeSlider: visual regression test snapshot
+- [ ] TASK-06085: Component ToggleSwitch: Bloomberg amber theme styling
+- [ ] TASK-06086: Component ToggleSwitch: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06087: Component ToggleSwitch: responsive layout (desktop + laptop)
+- [ ] TASK-06088: Component ToggleSwitch: keyboard navigation support
+- [ ] TASK-06089: Component ToggleSwitch: aria labels and roles for accessibility
+- [ ] TASK-06090: Component ToggleSwitch: loading skeleton state
+- [ ] TASK-06091: Component ToggleSwitch: error state with retry button
+- [ ] TASK-06092: Component ToggleSwitch: animation/transition effects
+- [ ] TASK-06093: Component ToggleSwitch: React.memo optimization
+- [ ] TASK-06094: Component ToggleSwitch: TypeScript strict type safety
+- [ ] TASK-06095: Component ToggleSwitch: unit test with React Testing Library
+- [ ] TASK-06096: Component ToggleSwitch: visual regression test snapshot
+- [ ] TASK-06097: Component RadioGroup: Bloomberg amber theme styling
+- [ ] TASK-06098: Component RadioGroup: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06099: Component RadioGroup: responsive layout (desktop + laptop)
+- [ ] TASK-06100: Component RadioGroup: keyboard navigation support
+- [ ] TASK-06101: Component RadioGroup: aria labels and roles for accessibility
+- [ ] TASK-06102: Component RadioGroup: loading skeleton state
+- [ ] TASK-06103: Component RadioGroup: error state with retry button
+- [ ] TASK-06104: Component RadioGroup: animation/transition effects
+- [ ] TASK-06105: Component RadioGroup: React.memo optimization
+- [ ] TASK-06106: Component RadioGroup: TypeScript strict type safety
+- [ ] TASK-06107: Component RadioGroup: unit test with React Testing Library
+- [ ] TASK-06108: Component RadioGroup: visual regression test snapshot
+- [ ] TASK-06109: Component Checkbox: Bloomberg amber theme styling
+- [ ] TASK-06110: Component Checkbox: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06111: Component Checkbox: responsive layout (desktop + laptop)
+- [ ] TASK-06112: Component Checkbox: keyboard navigation support
+- [ ] TASK-06113: Component Checkbox: aria labels and roles for accessibility
+- [ ] TASK-06114: Component Checkbox: loading skeleton state
+- [ ] TASK-06115: Component Checkbox: error state with retry button
+- [ ] TASK-06116: Component Checkbox: animation/transition effects
+- [ ] TASK-06117: Component Checkbox: React.memo optimization
+- [ ] TASK-06118: Component Checkbox: TypeScript strict type safety
+- [ ] TASK-06119: Component Checkbox: unit test with React Testing Library
+- [ ] TASK-06120: Component Checkbox: visual regression test snapshot
+- [ ] TASK-06121: Component Badge: Bloomberg amber theme styling
+- [ ] TASK-06122: Component Badge: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06123: Component Badge: responsive layout (desktop + laptop)
+- [ ] TASK-06124: Component Badge: keyboard navigation support
+- [ ] TASK-06125: Component Badge: aria labels and roles for accessibility
+- [ ] TASK-06126: Component Badge: loading skeleton state
+- [ ] TASK-06127: Component Badge: error state with retry button
+- [ ] TASK-06128: Component Badge: animation/transition effects
+- [ ] TASK-06129: Component Badge: React.memo optimization
+- [ ] TASK-06130: Component Badge: TypeScript strict type safety
+- [ ] TASK-06131: Component Badge: unit test with React Testing Library
+- [ ] TASK-06132: Component Badge: visual regression test snapshot
+- [ ] TASK-06133: Component Tag: Bloomberg amber theme styling
+- [ ] TASK-06134: Component Tag: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06135: Component Tag: responsive layout (desktop + laptop)
+- [ ] TASK-06136: Component Tag: keyboard navigation support
+- [ ] TASK-06137: Component Tag: aria labels and roles for accessibility
+- [ ] TASK-06138: Component Tag: loading skeleton state
+- [ ] TASK-06139: Component Tag: error state with retry button
+- [ ] TASK-06140: Component Tag: animation/transition effects
+- [ ] TASK-06141: Component Tag: React.memo optimization
+- [ ] TASK-06142: Component Tag: TypeScript strict type safety
+- [ ] TASK-06143: Component Tag: unit test with React Testing Library
+- [ ] TASK-06144: Component Tag: visual regression test snapshot
+- [ ] TASK-06145: Component ProgressBar: Bloomberg amber theme styling
+- [ ] TASK-06146: Component ProgressBar: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06147: Component ProgressBar: responsive layout (desktop + laptop)
+- [ ] TASK-06148: Component ProgressBar: keyboard navigation support
+- [ ] TASK-06149: Component ProgressBar: aria labels and roles for accessibility
+- [ ] TASK-06150: Component ProgressBar: loading skeleton state
+- [ ] TASK-06151: Component ProgressBar: error state with retry button
+- [ ] TASK-06152: Component ProgressBar: animation/transition effects
+- [ ] TASK-06153: Component ProgressBar: React.memo optimization
+- [ ] TASK-06154: Component ProgressBar: TypeScript strict type safety
+- [ ] TASK-06155: Component ProgressBar: unit test with React Testing Library
+- [ ] TASK-06156: Component ProgressBar: visual regression test snapshot
+- [ ] TASK-06157: Component Skeleton: Bloomberg amber theme styling
+- [ ] TASK-06158: Component Skeleton: dark mode color scheme (#0a0a0a bg)
+- [ ] TASK-06159: Component Skeleton: responsive layout (desktop + laptop)
+- [ ] TASK-06160: Component Skeleton: keyboard navigation support
+- [ ] TASK-06161: Component Skeleton: aria labels and roles for accessibility
+- [ ] TASK-06162: Component Skeleton: loading skeleton state
+- [ ] TASK-06163: Component Skeleton: error state with retry button
+- [ ] TASK-06164: Component Skeleton: animation/transition effects
+- [ ] TASK-06165: Component Skeleton: React.memo optimization
+- [ ] TASK-06166: Component Skeleton: TypeScript strict type safety
+- [ ] TASK-06167: Component Skeleton: unit test with React Testing Library
+- [ ] TASK-06168: Component Skeleton: visual regression test snapshot
+
+
+## PER-STRATEGY SUBTASKS (50 STRATEGIES Ã— 10)
+
+- [ ] TASK-06169: Strategy 'MA Crossover (2 SMA)': implement signal generation logic
+- [ ] TASK-06170: Strategy 'MA Crossover (2 SMA)': implement entry and exit rules
+- [ ] TASK-06171: Strategy 'MA Crossover (2 SMA)': add configurable parameters
+- [ ] TASK-06172: Strategy 'MA Crossover (2 SMA)': add parameter optimization ranges
+- [ ] TASK-06173: Strategy 'MA Crossover (2 SMA)': implement risk management rules
+- [ ] TASK-06174: Strategy 'MA Crossover (2 SMA)': backtest with 10 years of SPY data
+- [ ] TASK-06175: Strategy 'MA Crossover (2 SMA)': generate performance tearsheet
+- [ ] TASK-06176: Strategy 'MA Crossover (2 SMA)': walk-forward validation test
+- [ ] TASK-06177: Strategy 'MA Crossover (2 SMA)': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06178: Strategy 'MA Crossover (2 SMA)': unit test signal correctness
+- [ ] TASK-06179: Strategy 'MA Crossover (3 EMA)': implement signal generation logic
+- [ ] TASK-06180: Strategy 'MA Crossover (3 EMA)': implement entry and exit rules
+- [ ] TASK-06181: Strategy 'MA Crossover (3 EMA)': add configurable parameters
+- [ ] TASK-06182: Strategy 'MA Crossover (3 EMA)': add parameter optimization ranges
+- [ ] TASK-06183: Strategy 'MA Crossover (3 EMA)': implement risk management rules
+- [ ] TASK-06184: Strategy 'MA Crossover (3 EMA)': backtest with 10 years of SPY data
+- [ ] TASK-06185: Strategy 'MA Crossover (3 EMA)': generate performance tearsheet
+- [ ] TASK-06186: Strategy 'MA Crossover (3 EMA)': walk-forward validation test
+- [ ] TASK-06187: Strategy 'MA Crossover (3 EMA)': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06188: Strategy 'MA Crossover (3 EMA)': unit test signal correctness
+- [ ] TASK-06189: Strategy 'MA Crossover (SMA+EMA)': implement signal generation logic
+- [ ] TASK-06190: Strategy 'MA Crossover (SMA+EMA)': implement entry and exit rules
+- [ ] TASK-06191: Strategy 'MA Crossover (SMA+EMA)': add configurable parameters
+- [ ] TASK-06192: Strategy 'MA Crossover (SMA+EMA)': add parameter optimization ranges
+- [ ] TASK-06193: Strategy 'MA Crossover (SMA+EMA)': implement risk management rules
+- [ ] TASK-06194: Strategy 'MA Crossover (SMA+EMA)': backtest with 10 years of SPY data
+- [ ] TASK-06195: Strategy 'MA Crossover (SMA+EMA)': generate performance tearsheet
+- [ ] TASK-06196: Strategy 'MA Crossover (SMA+EMA)': walk-forward validation test
+- [ ] TASK-06197: Strategy 'MA Crossover (SMA+EMA)': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06198: Strategy 'MA Crossover (SMA+EMA)': unit test signal correctness
+- [ ] TASK-06199: Strategy 'RSI Mean Reversion': implement signal generation logic
+- [ ] TASK-06200: Strategy 'RSI Mean Reversion': implement entry and exit rules
+- [ ] TASK-06201: Strategy 'RSI Mean Reversion': add configurable parameters
+- [ ] TASK-06202: Strategy 'RSI Mean Reversion': add parameter optimization ranges
+- [ ] TASK-06203: Strategy 'RSI Mean Reversion': implement risk management rules
+- [ ] TASK-06204: Strategy 'RSI Mean Reversion': backtest with 10 years of SPY data
+- [ ] TASK-06205: Strategy 'RSI Mean Reversion': generate performance tearsheet
+- [ ] TASK-06206: Strategy 'RSI Mean Reversion': walk-forward validation test
+- [ ] TASK-06207: Strategy 'RSI Mean Reversion': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06208: Strategy 'RSI Mean Reversion': unit test signal correctness
+- [ ] TASK-06209: Strategy 'RSI Divergence': implement signal generation logic
+- [ ] TASK-06210: Strategy 'RSI Divergence': implement entry and exit rules
+- [ ] TASK-06211: Strategy 'RSI Divergence': add configurable parameters
+- [ ] TASK-06212: Strategy 'RSI Divergence': add parameter optimization ranges
+- [ ] TASK-06213: Strategy 'RSI Divergence': implement risk management rules
+- [ ] TASK-06214: Strategy 'RSI Divergence': backtest with 10 years of SPY data
+- [ ] TASK-06215: Strategy 'RSI Divergence': generate performance tearsheet
+- [ ] TASK-06216: Strategy 'RSI Divergence': walk-forward validation test
+- [ ] TASK-06217: Strategy 'RSI Divergence': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06218: Strategy 'RSI Divergence': unit test signal correctness
+- [ ] TASK-06219: Strategy 'RSI Range (30-70)': implement signal generation logic
+- [ ] TASK-06220: Strategy 'RSI Range (30-70)': implement entry and exit rules
+- [ ] TASK-06221: Strategy 'RSI Range (30-70)': add configurable parameters
+- [ ] TASK-06222: Strategy 'RSI Range (30-70)': add parameter optimization ranges
+- [ ] TASK-06223: Strategy 'RSI Range (30-70)': implement risk management rules
+- [ ] TASK-06224: Strategy 'RSI Range (30-70)': backtest with 10 years of SPY data
+- [ ] TASK-06225: Strategy 'RSI Range (30-70)': generate performance tearsheet
+- [ ] TASK-06226: Strategy 'RSI Range (30-70)': walk-forward validation test
+- [ ] TASK-06227: Strategy 'RSI Range (30-70)': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06228: Strategy 'RSI Range (30-70)': unit test signal correctness
+- [ ] TASK-06229: Strategy 'Bollinger Band Breakout': implement signal generation logic
+- [ ] TASK-06230: Strategy 'Bollinger Band Breakout': implement entry and exit rules
+- [ ] TASK-06231: Strategy 'Bollinger Band Breakout': add configurable parameters
+- [ ] TASK-06232: Strategy 'Bollinger Band Breakout': add parameter optimization ranges
+- [ ] TASK-06233: Strategy 'Bollinger Band Breakout': implement risk management rules
+- [ ] TASK-06234: Strategy 'Bollinger Band Breakout': backtest with 10 years of SPY data
+- [ ] TASK-06235: Strategy 'Bollinger Band Breakout': generate performance tearsheet
+- [ ] TASK-06236: Strategy 'Bollinger Band Breakout': walk-forward validation test
+- [ ] TASK-06237: Strategy 'Bollinger Band Breakout': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06238: Strategy 'Bollinger Band Breakout': unit test signal correctness
+- [ ] TASK-06239: Strategy 'Bollinger Band Mean Reversion': implement signal generation logic
+- [ ] TASK-06240: Strategy 'Bollinger Band Mean Reversion': implement entry and exit rules
+- [ ] TASK-06241: Strategy 'Bollinger Band Mean Reversion': add configurable parameters
+- [ ] TASK-06242: Strategy 'Bollinger Band Mean Reversion': add parameter optimization ranges
+- [ ] TASK-06243: Strategy 'Bollinger Band Mean Reversion': implement risk management rules
+- [ ] TASK-06244: Strategy 'Bollinger Band Mean Reversion': backtest with 10 years of SPY data
+- [ ] TASK-06245: Strategy 'Bollinger Band Mean Reversion': generate performance tearsheet
+- [ ] TASK-06246: Strategy 'Bollinger Band Mean Reversion': walk-forward validation test
+- [ ] TASK-06247: Strategy 'Bollinger Band Mean Reversion': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06248: Strategy 'Bollinger Band Mean Reversion': unit test signal correctness
+- [ ] TASK-06249: Strategy 'Bollinger Band Squeeze': implement signal generation logic
+- [ ] TASK-06250: Strategy 'Bollinger Band Squeeze': implement entry and exit rules
+- [ ] TASK-06251: Strategy 'Bollinger Band Squeeze': add configurable parameters
+- [ ] TASK-06252: Strategy 'Bollinger Band Squeeze': add parameter optimization ranges
+- [ ] TASK-06253: Strategy 'Bollinger Band Squeeze': implement risk management rules
+- [ ] TASK-06254: Strategy 'Bollinger Band Squeeze': backtest with 10 years of SPY data
+- [ ] TASK-06255: Strategy 'Bollinger Band Squeeze': generate performance tearsheet
+- [ ] TASK-06256: Strategy 'Bollinger Band Squeeze': walk-forward validation test
+- [ ] TASK-06257: Strategy 'Bollinger Band Squeeze': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06258: Strategy 'Bollinger Band Squeeze': unit test signal correctness
+- [ ] TASK-06259: Strategy 'MACD Signal Crossover': implement signal generation logic
+- [ ] TASK-06260: Strategy 'MACD Signal Crossover': implement entry and exit rules
+- [ ] TASK-06261: Strategy 'MACD Signal Crossover': add configurable parameters
+- [ ] TASK-06262: Strategy 'MACD Signal Crossover': add parameter optimization ranges
+- [ ] TASK-06263: Strategy 'MACD Signal Crossover': implement risk management rules
+- [ ] TASK-06264: Strategy 'MACD Signal Crossover': backtest with 10 years of SPY data
+- [ ] TASK-06265: Strategy 'MACD Signal Crossover': generate performance tearsheet
+- [ ] TASK-06266: Strategy 'MACD Signal Crossover': walk-forward validation test
+- [ ] TASK-06267: Strategy 'MACD Signal Crossover': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06268: Strategy 'MACD Signal Crossover': unit test signal correctness
+- [ ] TASK-06269: Strategy 'MACD Histogram Reversal': implement signal generation logic
+- [ ] TASK-06270: Strategy 'MACD Histogram Reversal': implement entry and exit rules
+- [ ] TASK-06271: Strategy 'MACD Histogram Reversal': add configurable parameters
+- [ ] TASK-06272: Strategy 'MACD Histogram Reversal': add parameter optimization ranges
+- [ ] TASK-06273: Strategy 'MACD Histogram Reversal': implement risk management rules
+- [ ] TASK-06274: Strategy 'MACD Histogram Reversal': backtest with 10 years of SPY data
+- [ ] TASK-06275: Strategy 'MACD Histogram Reversal': generate performance tearsheet
+- [ ] TASK-06276: Strategy 'MACD Histogram Reversal': walk-forward validation test
+- [ ] TASK-06277: Strategy 'MACD Histogram Reversal': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06278: Strategy 'MACD Histogram Reversal': unit test signal correctness
+- [ ] TASK-06279: Strategy 'MACD Zero-Line Cross': implement signal generation logic
+- [ ] TASK-06280: Strategy 'MACD Zero-Line Cross': implement entry and exit rules
+- [ ] TASK-06281: Strategy 'MACD Zero-Line Cross': add configurable parameters
+- [ ] TASK-06282: Strategy 'MACD Zero-Line Cross': add parameter optimization ranges
+- [ ] TASK-06283: Strategy 'MACD Zero-Line Cross': implement risk management rules
+- [ ] TASK-06284: Strategy 'MACD Zero-Line Cross': backtest with 10 years of SPY data
+- [ ] TASK-06285: Strategy 'MACD Zero-Line Cross': generate performance tearsheet
+- [ ] TASK-06286: Strategy 'MACD Zero-Line Cross': walk-forward validation test
+- [ ] TASK-06287: Strategy 'MACD Zero-Line Cross': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06288: Strategy 'MACD Zero-Line Cross': unit test signal correctness
+- [ ] TASK-06289: Strategy 'Stochastic Crossover': implement signal generation logic
+- [ ] TASK-06290: Strategy 'Stochastic Crossover': implement entry and exit rules
+- [ ] TASK-06291: Strategy 'Stochastic Crossover': add configurable parameters
+- [ ] TASK-06292: Strategy 'Stochastic Crossover': add parameter optimization ranges
+- [ ] TASK-06293: Strategy 'Stochastic Crossover': implement risk management rules
+- [ ] TASK-06294: Strategy 'Stochastic Crossover': backtest with 10 years of SPY data
+- [ ] TASK-06295: Strategy 'Stochastic Crossover': generate performance tearsheet
+- [ ] TASK-06296: Strategy 'Stochastic Crossover': walk-forward validation test
+- [ ] TASK-06297: Strategy 'Stochastic Crossover': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06298: Strategy 'Stochastic Crossover': unit test signal correctness
+- [ ] TASK-06299: Strategy 'Stochastic Oversold Bounce': implement signal generation logic
+- [ ] TASK-06300: Strategy 'Stochastic Oversold Bounce': implement entry and exit rules
+- [ ] TASK-06301: Strategy 'Stochastic Oversold Bounce': add configurable parameters
+- [ ] TASK-06302: Strategy 'Stochastic Oversold Bounce': add parameter optimization ranges
+- [ ] TASK-06303: Strategy 'Stochastic Oversold Bounce': implement risk management rules
+- [ ] TASK-06304: Strategy 'Stochastic Oversold Bounce': backtest with 10 years of SPY data
+- [ ] TASK-06305: Strategy 'Stochastic Oversold Bounce': generate performance tearsheet
+- [ ] TASK-06306: Strategy 'Stochastic Oversold Bounce': walk-forward validation test
+- [ ] TASK-06307: Strategy 'Stochastic Oversold Bounce': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06308: Strategy 'Stochastic Oversold Bounce': unit test signal correctness
+- [ ] TASK-06309: Strategy 'CCI Breakout': implement signal generation logic
+- [ ] TASK-06310: Strategy 'CCI Breakout': implement entry and exit rules
+- [ ] TASK-06311: Strategy 'CCI Breakout': add configurable parameters
+- [ ] TASK-06312: Strategy 'CCI Breakout': add parameter optimization ranges
+- [ ] TASK-06313: Strategy 'CCI Breakout': implement risk management rules
+- [ ] TASK-06314: Strategy 'CCI Breakout': backtest with 10 years of SPY data
+- [ ] TASK-06315: Strategy 'CCI Breakout': generate performance tearsheet
+- [ ] TASK-06316: Strategy 'CCI Breakout': walk-forward validation test
+- [ ] TASK-06317: Strategy 'CCI Breakout': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06318: Strategy 'CCI Breakout': unit test signal correctness
+- [ ] TASK-06319: Strategy 'CCI Mean Reversion': implement signal generation logic
+- [ ] TASK-06320: Strategy 'CCI Mean Reversion': implement entry and exit rules
+- [ ] TASK-06321: Strategy 'CCI Mean Reversion': add configurable parameters
+- [ ] TASK-06322: Strategy 'CCI Mean Reversion': add parameter optimization ranges
+- [ ] TASK-06323: Strategy 'CCI Mean Reversion': implement risk management rules
+- [ ] TASK-06324: Strategy 'CCI Mean Reversion': backtest with 10 years of SPY data
+- [ ] TASK-06325: Strategy 'CCI Mean Reversion': generate performance tearsheet
+- [ ] TASK-06326: Strategy 'CCI Mean Reversion': walk-forward validation test
+- [ ] TASK-06327: Strategy 'CCI Mean Reversion': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06328: Strategy 'CCI Mean Reversion': unit test signal correctness
+- [ ] TASK-06329: Strategy 'ADX Trend Following': implement signal generation logic
+- [ ] TASK-06330: Strategy 'ADX Trend Following': implement entry and exit rules
+- [ ] TASK-06331: Strategy 'ADX Trend Following': add configurable parameters
+- [ ] TASK-06332: Strategy 'ADX Trend Following': add parameter optimization ranges
+- [ ] TASK-06333: Strategy 'ADX Trend Following': implement risk management rules
+- [ ] TASK-06334: Strategy 'ADX Trend Following': backtest with 10 years of SPY data
+- [ ] TASK-06335: Strategy 'ADX Trend Following': generate performance tearsheet
+- [ ] TASK-06336: Strategy 'ADX Trend Following': walk-forward validation test
+- [ ] TASK-06337: Strategy 'ADX Trend Following': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06338: Strategy 'ADX Trend Following': unit test signal correctness
+- [ ] TASK-06339: Strategy 'DMI Crossover': implement signal generation logic
+- [ ] TASK-06340: Strategy 'DMI Crossover': implement entry and exit rules
+- [ ] TASK-06341: Strategy 'DMI Crossover': add configurable parameters
+- [ ] TASK-06342: Strategy 'DMI Crossover': add parameter optimization ranges
+- [ ] TASK-06343: Strategy 'DMI Crossover': implement risk management rules
+- [ ] TASK-06344: Strategy 'DMI Crossover': backtest with 10 years of SPY data
+- [ ] TASK-06345: Strategy 'DMI Crossover': generate performance tearsheet
+- [ ] TASK-06346: Strategy 'DMI Crossover': walk-forward validation test
+- [ ] TASK-06347: Strategy 'DMI Crossover': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06348: Strategy 'DMI Crossover': unit test signal correctness
+- [ ] TASK-06349: Strategy 'Parabolic SAR Reversal': implement signal generation logic
+- [ ] TASK-06350: Strategy 'Parabolic SAR Reversal': implement entry and exit rules
+- [ ] TASK-06351: Strategy 'Parabolic SAR Reversal': add configurable parameters
+- [ ] TASK-06352: Strategy 'Parabolic SAR Reversal': add parameter optimization ranges
+- [ ] TASK-06353: Strategy 'Parabolic SAR Reversal': implement risk management rules
+- [ ] TASK-06354: Strategy 'Parabolic SAR Reversal': backtest with 10 years of SPY data
+- [ ] TASK-06355: Strategy 'Parabolic SAR Reversal': generate performance tearsheet
+- [ ] TASK-06356: Strategy 'Parabolic SAR Reversal': walk-forward validation test
+- [ ] TASK-06357: Strategy 'Parabolic SAR Reversal': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06358: Strategy 'Parabolic SAR Reversal': unit test signal correctness
+- [ ] TASK-06359: Strategy 'Supertrend Following': implement signal generation logic
+- [ ] TASK-06360: Strategy 'Supertrend Following': implement entry and exit rules
+- [ ] TASK-06361: Strategy 'Supertrend Following': add configurable parameters
+- [ ] TASK-06362: Strategy 'Supertrend Following': add parameter optimization ranges
+- [ ] TASK-06363: Strategy 'Supertrend Following': implement risk management rules
+- [ ] TASK-06364: Strategy 'Supertrend Following': backtest with 10 years of SPY data
+- [ ] TASK-06365: Strategy 'Supertrend Following': generate performance tearsheet
+- [ ] TASK-06366: Strategy 'Supertrend Following': walk-forward validation test
+- [ ] TASK-06367: Strategy 'Supertrend Following': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06368: Strategy 'Supertrend Following': unit test signal correctness
+- [ ] TASK-06369: Strategy 'Ichimoku Cloud Break': implement signal generation logic
+- [ ] TASK-06370: Strategy 'Ichimoku Cloud Break': implement entry and exit rules
+- [ ] TASK-06371: Strategy 'Ichimoku Cloud Break': add configurable parameters
+- [ ] TASK-06372: Strategy 'Ichimoku Cloud Break': add parameter optimization ranges
+- [ ] TASK-06373: Strategy 'Ichimoku Cloud Break': implement risk management rules
+- [ ] TASK-06374: Strategy 'Ichimoku Cloud Break': backtest with 10 years of SPY data
+- [ ] TASK-06375: Strategy 'Ichimoku Cloud Break': generate performance tearsheet
+- [ ] TASK-06376: Strategy 'Ichimoku Cloud Break': walk-forward validation test
+- [ ] TASK-06377: Strategy 'Ichimoku Cloud Break': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06378: Strategy 'Ichimoku Cloud Break': unit test signal correctness
+- [ ] TASK-06379: Strategy 'Ichimoku TK Cross': implement signal generation logic
+- [ ] TASK-06380: Strategy 'Ichimoku TK Cross': implement entry and exit rules
+- [ ] TASK-06381: Strategy 'Ichimoku TK Cross': add configurable parameters
+- [ ] TASK-06382: Strategy 'Ichimoku TK Cross': add parameter optimization ranges
+- [ ] TASK-06383: Strategy 'Ichimoku TK Cross': implement risk management rules
+- [ ] TASK-06384: Strategy 'Ichimoku TK Cross': backtest with 10 years of SPY data
+- [ ] TASK-06385: Strategy 'Ichimoku TK Cross': generate performance tearsheet
+- [ ] TASK-06386: Strategy 'Ichimoku TK Cross': walk-forward validation test
+- [ ] TASK-06387: Strategy 'Ichimoku TK Cross': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06388: Strategy 'Ichimoku TK Cross': unit test signal correctness
+- [ ] TASK-06389: Strategy 'VWAP Reversion': implement signal generation logic
+- [ ] TASK-06390: Strategy 'VWAP Reversion': implement entry and exit rules
+- [ ] TASK-06391: Strategy 'VWAP Reversion': add configurable parameters
+- [ ] TASK-06392: Strategy 'VWAP Reversion': add parameter optimization ranges
+- [ ] TASK-06393: Strategy 'VWAP Reversion': implement risk management rules
+- [ ] TASK-06394: Strategy 'VWAP Reversion': backtest with 10 years of SPY data
+- [ ] TASK-06395: Strategy 'VWAP Reversion': generate performance tearsheet
+- [ ] TASK-06396: Strategy 'VWAP Reversion': walk-forward validation test
+- [ ] TASK-06397: Strategy 'VWAP Reversion': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06398: Strategy 'VWAP Reversion': unit test signal correctness
+- [ ] TASK-06399: Strategy 'Volume Breakout': implement signal generation logic
+- [ ] TASK-06400: Strategy 'Volume Breakout': implement entry and exit rules
+- [ ] TASK-06401: Strategy 'Volume Breakout': add configurable parameters
+- [ ] TASK-06402: Strategy 'Volume Breakout': add parameter optimization ranges
+- [ ] TASK-06403: Strategy 'Volume Breakout': implement risk management rules
+- [ ] TASK-06404: Strategy 'Volume Breakout': backtest with 10 years of SPY data
+- [ ] TASK-06405: Strategy 'Volume Breakout': generate performance tearsheet
+- [ ] TASK-06406: Strategy 'Volume Breakout': walk-forward validation test
+- [ ] TASK-06407: Strategy 'Volume Breakout': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06408: Strategy 'Volume Breakout': unit test signal correctness
+- [ ] TASK-06409: Strategy 'OBV Divergence': implement signal generation logic
+- [ ] TASK-06410: Strategy 'OBV Divergence': implement entry and exit rules
+- [ ] TASK-06411: Strategy 'OBV Divergence': add configurable parameters
+- [ ] TASK-06412: Strategy 'OBV Divergence': add parameter optimization ranges
+- [ ] TASK-06413: Strategy 'OBV Divergence': implement risk management rules
+- [ ] TASK-06414: Strategy 'OBV Divergence': backtest with 10 years of SPY data
+- [ ] TASK-06415: Strategy 'OBV Divergence': generate performance tearsheet
+- [ ] TASK-06416: Strategy 'OBV Divergence': walk-forward validation test
+- [ ] TASK-06417: Strategy 'OBV Divergence': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06418: Strategy 'OBV Divergence': unit test signal correctness
+- [ ] TASK-06419: Strategy 'ATR Channel Breakout': implement signal generation logic
+- [ ] TASK-06420: Strategy 'ATR Channel Breakout': implement entry and exit rules
+- [ ] TASK-06421: Strategy 'ATR Channel Breakout': add configurable parameters
+- [ ] TASK-06422: Strategy 'ATR Channel Breakout': add parameter optimization ranges
+- [ ] TASK-06423: Strategy 'ATR Channel Breakout': implement risk management rules
+- [ ] TASK-06424: Strategy 'ATR Channel Breakout': backtest with 10 years of SPY data
+- [ ] TASK-06425: Strategy 'ATR Channel Breakout': generate performance tearsheet
+- [ ] TASK-06426: Strategy 'ATR Channel Breakout': walk-forward validation test
+- [ ] TASK-06427: Strategy 'ATR Channel Breakout': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06428: Strategy 'ATR Channel Breakout': unit test signal correctness
+- [ ] TASK-06429: Strategy 'Donchian Channel Breakout': implement signal generation logic
+- [ ] TASK-06430: Strategy 'Donchian Channel Breakout': implement entry and exit rules
+- [ ] TASK-06431: Strategy 'Donchian Channel Breakout': add configurable parameters
+- [ ] TASK-06432: Strategy 'Donchian Channel Breakout': add parameter optimization ranges
+- [ ] TASK-06433: Strategy 'Donchian Channel Breakout': implement risk management rules
+- [ ] TASK-06434: Strategy 'Donchian Channel Breakout': backtest with 10 years of SPY data
+- [ ] TASK-06435: Strategy 'Donchian Channel Breakout': generate performance tearsheet
+- [ ] TASK-06436: Strategy 'Donchian Channel Breakout': walk-forward validation test
+- [ ] TASK-06437: Strategy 'Donchian Channel Breakout': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06438: Strategy 'Donchian Channel Breakout': unit test signal correctness
+- [ ] TASK-06439: Strategy 'Keltner Channel Breakout': implement signal generation logic
+- [ ] TASK-06440: Strategy 'Keltner Channel Breakout': implement entry and exit rules
+- [ ] TASK-06441: Strategy 'Keltner Channel Breakout': add configurable parameters
+- [ ] TASK-06442: Strategy 'Keltner Channel Breakout': add parameter optimization ranges
+- [ ] TASK-06443: Strategy 'Keltner Channel Breakout': implement risk management rules
+- [ ] TASK-06444: Strategy 'Keltner Channel Breakout': backtest with 10 years of SPY data
+- [ ] TASK-06445: Strategy 'Keltner Channel Breakout': generate performance tearsheet
+- [ ] TASK-06446: Strategy 'Keltner Channel Breakout': walk-forward validation test
+- [ ] TASK-06447: Strategy 'Keltner Channel Breakout': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06448: Strategy 'Keltner Channel Breakout': unit test signal correctness
+- [ ] TASK-06449: Strategy 'Pivot Point Bounce': implement signal generation logic
+- [ ] TASK-06450: Strategy 'Pivot Point Bounce': implement entry and exit rules
+- [ ] TASK-06451: Strategy 'Pivot Point Bounce': add configurable parameters
+- [ ] TASK-06452: Strategy 'Pivot Point Bounce': add parameter optimization ranges
+- [ ] TASK-06453: Strategy 'Pivot Point Bounce': implement risk management rules
+- [ ] TASK-06454: Strategy 'Pivot Point Bounce': backtest with 10 years of SPY data
+- [ ] TASK-06455: Strategy 'Pivot Point Bounce': generate performance tearsheet
+- [ ] TASK-06456: Strategy 'Pivot Point Bounce': walk-forward validation test
+- [ ] TASK-06457: Strategy 'Pivot Point Bounce': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06458: Strategy 'Pivot Point Bounce': unit test signal correctness
+- [ ] TASK-06459: Strategy 'Fibonacci Retracement Entry': implement signal generation logic
+- [ ] TASK-06460: Strategy 'Fibonacci Retracement Entry': implement entry and exit rules
+- [ ] TASK-06461: Strategy 'Fibonacci Retracement Entry': add configurable parameters
+- [ ] TASK-06462: Strategy 'Fibonacci Retracement Entry': add parameter optimization ranges
+- [ ] TASK-06463: Strategy 'Fibonacci Retracement Entry': implement risk management rules
+- [ ] TASK-06464: Strategy 'Fibonacci Retracement Entry': backtest with 10 years of SPY data
+- [ ] TASK-06465: Strategy 'Fibonacci Retracement Entry': generate performance tearsheet
+- [ ] TASK-06466: Strategy 'Fibonacci Retracement Entry': walk-forward validation test
+- [ ] TASK-06467: Strategy 'Fibonacci Retracement Entry': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06468: Strategy 'Fibonacci Retracement Entry': unit test signal correctness
+- [ ] TASK-06469: Strategy 'Opening Range Breakout': implement signal generation logic
+- [ ] TASK-06470: Strategy 'Opening Range Breakout': implement entry and exit rules
+- [ ] TASK-06471: Strategy 'Opening Range Breakout': add configurable parameters
+- [ ] TASK-06472: Strategy 'Opening Range Breakout': add parameter optimization ranges
+- [ ] TASK-06473: Strategy 'Opening Range Breakout': implement risk management rules
+- [ ] TASK-06474: Strategy 'Opening Range Breakout': backtest with 10 years of SPY data
+- [ ] TASK-06475: Strategy 'Opening Range Breakout': generate performance tearsheet
+- [ ] TASK-06476: Strategy 'Opening Range Breakout': walk-forward validation test
+- [ ] TASK-06477: Strategy 'Opening Range Breakout': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06478: Strategy 'Opening Range Breakout': unit test signal correctness
+- [ ] TASK-06479: Strategy 'Gap and Go': implement signal generation logic
+- [ ] TASK-06480: Strategy 'Gap and Go': implement entry and exit rules
+- [ ] TASK-06481: Strategy 'Gap and Go': add configurable parameters
+- [ ] TASK-06482: Strategy 'Gap and Go': add parameter optimization ranges
+- [ ] TASK-06483: Strategy 'Gap and Go': implement risk management rules
+- [ ] TASK-06484: Strategy 'Gap and Go': backtest with 10 years of SPY data
+- [ ] TASK-06485: Strategy 'Gap and Go': generate performance tearsheet
+- [ ] TASK-06486: Strategy 'Gap and Go': walk-forward validation test
+- [ ] TASK-06487: Strategy 'Gap and Go': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06488: Strategy 'Gap and Go': unit test signal correctness
+- [ ] TASK-06489: Strategy 'Pairs Trading (Z-Score)': implement signal generation logic
+- [ ] TASK-06490: Strategy 'Pairs Trading (Z-Score)': implement entry and exit rules
+- [ ] TASK-06491: Strategy 'Pairs Trading (Z-Score)': add configurable parameters
+- [ ] TASK-06492: Strategy 'Pairs Trading (Z-Score)': add parameter optimization ranges
+- [ ] TASK-06493: Strategy 'Pairs Trading (Z-Score)': implement risk management rules
+- [ ] TASK-06494: Strategy 'Pairs Trading (Z-Score)': backtest with 10 years of SPY data
+- [ ] TASK-06495: Strategy 'Pairs Trading (Z-Score)': generate performance tearsheet
+- [ ] TASK-06496: Strategy 'Pairs Trading (Z-Score)': walk-forward validation test
+- [ ] TASK-06497: Strategy 'Pairs Trading (Z-Score)': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06498: Strategy 'Pairs Trading (Z-Score)': unit test signal correctness
+- [ ] TASK-06499: Strategy 'Mean Reversion (Z-Score)': implement signal generation logic
+- [ ] TASK-06500: Strategy 'Mean Reversion (Z-Score)': implement entry and exit rules
+- [ ] TASK-06501: Strategy 'Mean Reversion (Z-Score)': add configurable parameters
+- [ ] TASK-06502: Strategy 'Mean Reversion (Z-Score)': add parameter optimization ranges
+- [ ] TASK-06503: Strategy 'Mean Reversion (Z-Score)': implement risk management rules
+- [ ] TASK-06504: Strategy 'Mean Reversion (Z-Score)': backtest with 10 years of SPY data
+- [ ] TASK-06505: Strategy 'Mean Reversion (Z-Score)': generate performance tearsheet
+- [ ] TASK-06506: Strategy 'Mean Reversion (Z-Score)': walk-forward validation test
+- [ ] TASK-06507: Strategy 'Mean Reversion (Z-Score)': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06508: Strategy 'Mean Reversion (Z-Score)': unit test signal correctness
+- [ ] TASK-06509: Strategy 'Momentum Factor': implement signal generation logic
+- [ ] TASK-06510: Strategy 'Momentum Factor': implement entry and exit rules
+- [ ] TASK-06511: Strategy 'Momentum Factor': add configurable parameters
+- [ ] TASK-06512: Strategy 'Momentum Factor': add parameter optimization ranges
+- [ ] TASK-06513: Strategy 'Momentum Factor': implement risk management rules
+- [ ] TASK-06514: Strategy 'Momentum Factor': backtest with 10 years of SPY data
+- [ ] TASK-06515: Strategy 'Momentum Factor': generate performance tearsheet
+- [ ] TASK-06516: Strategy 'Momentum Factor': walk-forward validation test
+- [ ] TASK-06517: Strategy 'Momentum Factor': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06518: Strategy 'Momentum Factor': unit test signal correctness
+- [ ] TASK-06519: Strategy 'Value+Momentum Combo': implement signal generation logic
+- [ ] TASK-06520: Strategy 'Value+Momentum Combo': implement entry and exit rules
+- [ ] TASK-06521: Strategy 'Value+Momentum Combo': add configurable parameters
+- [ ] TASK-06522: Strategy 'Value+Momentum Combo': add parameter optimization ranges
+- [ ] TASK-06523: Strategy 'Value+Momentum Combo': implement risk management rules
+- [ ] TASK-06524: Strategy 'Value+Momentum Combo': backtest with 10 years of SPY data
+- [ ] TASK-06525: Strategy 'Value+Momentum Combo': generate performance tearsheet
+- [ ] TASK-06526: Strategy 'Value+Momentum Combo': walk-forward validation test
+- [ ] TASK-06527: Strategy 'Value+Momentum Combo': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06528: Strategy 'Value+Momentum Combo': unit test signal correctness
+- [ ] TASK-06529: Strategy 'Dual Momentum (Absolute + Relative)': implement signal generation logic
+- [ ] TASK-06530: Strategy 'Dual Momentum (Absolute + Relative)': implement entry and exit rules
+- [ ] TASK-06531: Strategy 'Dual Momentum (Absolute + Relative)': add configurable parameters
+- [ ] TASK-06532: Strategy 'Dual Momentum (Absolute + Relative)': add parameter optimization ranges
+- [ ] TASK-06533: Strategy 'Dual Momentum (Absolute + Relative)': implement risk management rules
+- [ ] TASK-06534: Strategy 'Dual Momentum (Absolute + Relative)': backtest with 10 years of SPY data
+- [ ] TASK-06535: Strategy 'Dual Momentum (Absolute + Relative)': generate performance tearsheet
+- [ ] TASK-06536: Strategy 'Dual Momentum (Absolute + Relative)': walk-forward validation test
+- [ ] TASK-06537: Strategy 'Dual Momentum (Absolute + Relative)': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06538: Strategy 'Dual Momentum (Absolute + Relative)': unit test signal correctness
+- [ ] TASK-06539: Strategy 'Sector Rotation': implement signal generation logic
+- [ ] TASK-06540: Strategy 'Sector Rotation': implement entry and exit rules
+- [ ] TASK-06541: Strategy 'Sector Rotation': add configurable parameters
+- [ ] TASK-06542: Strategy 'Sector Rotation': add parameter optimization ranges
+- [ ] TASK-06543: Strategy 'Sector Rotation': implement risk management rules
+- [ ] TASK-06544: Strategy 'Sector Rotation': backtest with 10 years of SPY data
+- [ ] TASK-06545: Strategy 'Sector Rotation': generate performance tearsheet
+- [ ] TASK-06546: Strategy 'Sector Rotation': walk-forward validation test
+- [ ] TASK-06547: Strategy 'Sector Rotation': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06548: Strategy 'Sector Rotation': unit test signal correctness
+- [ ] TASK-06549: Strategy 'Risk Parity Allocation': implement signal generation logic
+- [ ] TASK-06550: Strategy 'Risk Parity Allocation': implement entry and exit rules
+- [ ] TASK-06551: Strategy 'Risk Parity Allocation': add configurable parameters
+- [ ] TASK-06552: Strategy 'Risk Parity Allocation': add parameter optimization ranges
+- [ ] TASK-06553: Strategy 'Risk Parity Allocation': implement risk management rules
+- [ ] TASK-06554: Strategy 'Risk Parity Allocation': backtest with 10 years of SPY data
+- [ ] TASK-06555: Strategy 'Risk Parity Allocation': generate performance tearsheet
+- [ ] TASK-06556: Strategy 'Risk Parity Allocation': walk-forward validation test
+- [ ] TASK-06557: Strategy 'Risk Parity Allocation': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06558: Strategy 'Risk Parity Allocation': unit test signal correctness
+- [ ] TASK-06559: Strategy 'Turtle Trading Rules': implement signal generation logic
+- [ ] TASK-06560: Strategy 'Turtle Trading Rules': implement entry and exit rules
+- [ ] TASK-06561: Strategy 'Turtle Trading Rules': add configurable parameters
+- [ ] TASK-06562: Strategy 'Turtle Trading Rules': add parameter optimization ranges
+- [ ] TASK-06563: Strategy 'Turtle Trading Rules': implement risk management rules
+- [ ] TASK-06564: Strategy 'Turtle Trading Rules': backtest with 10 years of SPY data
+- [ ] TASK-06565: Strategy 'Turtle Trading Rules': generate performance tearsheet
+- [ ] TASK-06566: Strategy 'Turtle Trading Rules': walk-forward validation test
+- [ ] TASK-06567: Strategy 'Turtle Trading Rules': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06568: Strategy 'Turtle Trading Rules': unit test signal correctness
+- [ ] TASK-06569: Strategy 'Larry Williams %R Strategy': implement signal generation logic
+- [ ] TASK-06570: Strategy 'Larry Williams %R Strategy': implement entry and exit rules
+- [ ] TASK-06571: Strategy 'Larry Williams %R Strategy': add configurable parameters
+- [ ] TASK-06572: Strategy 'Larry Williams %R Strategy': add parameter optimization ranges
+- [ ] TASK-06573: Strategy 'Larry Williams %R Strategy': implement risk management rules
+- [ ] TASK-06574: Strategy 'Larry Williams %R Strategy': backtest with 10 years of SPY data
+- [ ] TASK-06575: Strategy 'Larry Williams %R Strategy': generate performance tearsheet
+- [ ] TASK-06576: Strategy 'Larry Williams %R Strategy': walk-forward validation test
+- [ ] TASK-06577: Strategy 'Larry Williams %R Strategy': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06578: Strategy 'Larry Williams %R Strategy': unit test signal correctness
+- [ ] TASK-06579: Strategy 'Williams Fractal Breakout': implement signal generation logic
+- [ ] TASK-06580: Strategy 'Williams Fractal Breakout': implement entry and exit rules
+- [ ] TASK-06581: Strategy 'Williams Fractal Breakout': add configurable parameters
+- [ ] TASK-06582: Strategy 'Williams Fractal Breakout': add parameter optimization ranges
+- [ ] TASK-06583: Strategy 'Williams Fractal Breakout': implement risk management rules
+- [ ] TASK-06584: Strategy 'Williams Fractal Breakout': backtest with 10 years of SPY data
+- [ ] TASK-06585: Strategy 'Williams Fractal Breakout': generate performance tearsheet
+- [ ] TASK-06586: Strategy 'Williams Fractal Breakout': walk-forward validation test
+- [ ] TASK-06587: Strategy 'Williams Fractal Breakout': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06588: Strategy 'Williams Fractal Breakout': unit test signal correctness
+- [ ] TASK-06589: Strategy 'Elder Triple Screen': implement signal generation logic
+- [ ] TASK-06590: Strategy 'Elder Triple Screen': implement entry and exit rules
+- [ ] TASK-06591: Strategy 'Elder Triple Screen': add configurable parameters
+- [ ] TASK-06592: Strategy 'Elder Triple Screen': add parameter optimization ranges
+- [ ] TASK-06593: Strategy 'Elder Triple Screen': implement risk management rules
+- [ ] TASK-06594: Strategy 'Elder Triple Screen': backtest with 10 years of SPY data
+- [ ] TASK-06595: Strategy 'Elder Triple Screen': generate performance tearsheet
+- [ ] TASK-06596: Strategy 'Elder Triple Screen': walk-forward validation test
+- [ ] TASK-06597: Strategy 'Elder Triple Screen': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06598: Strategy 'Elder Triple Screen': unit test signal correctness
+- [ ] TASK-06599: Strategy 'Connors RSI Mean Reversion': implement signal generation logic
+- [ ] TASK-06600: Strategy 'Connors RSI Mean Reversion': implement entry and exit rules
+- [ ] TASK-06601: Strategy 'Connors RSI Mean Reversion': add configurable parameters
+- [ ] TASK-06602: Strategy 'Connors RSI Mean Reversion': add parameter optimization ranges
+- [ ] TASK-06603: Strategy 'Connors RSI Mean Reversion': implement risk management rules
+- [ ] TASK-06604: Strategy 'Connors RSI Mean Reversion': backtest with 10 years of SPY data
+- [ ] TASK-06605: Strategy 'Connors RSI Mean Reversion': generate performance tearsheet
+- [ ] TASK-06606: Strategy 'Connors RSI Mean Reversion': walk-forward validation test
+- [ ] TASK-06607: Strategy 'Connors RSI Mean Reversion': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06608: Strategy 'Connors RSI Mean Reversion': unit test signal correctness
+- [ ] TASK-06609: Strategy 'Short Squeeze Detection': implement signal generation logic
+- [ ] TASK-06610: Strategy 'Short Squeeze Detection': implement entry and exit rules
+- [ ] TASK-06611: Strategy 'Short Squeeze Detection': add configurable parameters
+- [ ] TASK-06612: Strategy 'Short Squeeze Detection': add parameter optimization ranges
+- [ ] TASK-06613: Strategy 'Short Squeeze Detection': implement risk management rules
+- [ ] TASK-06614: Strategy 'Short Squeeze Detection': backtest with 10 years of SPY data
+- [ ] TASK-06615: Strategy 'Short Squeeze Detection': generate performance tearsheet
+- [ ] TASK-06616: Strategy 'Short Squeeze Detection': walk-forward validation test
+- [ ] TASK-06617: Strategy 'Short Squeeze Detection': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06618: Strategy 'Short Squeeze Detection': unit test signal correctness
+- [ ] TASK-06619: Strategy 'Dark Pool Activity Follow': implement signal generation logic
+- [ ] TASK-06620: Strategy 'Dark Pool Activity Follow': implement entry and exit rules
+- [ ] TASK-06621: Strategy 'Dark Pool Activity Follow': add configurable parameters
+- [ ] TASK-06622: Strategy 'Dark Pool Activity Follow': add parameter optimization ranges
+- [ ] TASK-06623: Strategy 'Dark Pool Activity Follow': implement risk management rules
+- [ ] TASK-06624: Strategy 'Dark Pool Activity Follow': backtest with 10 years of SPY data
+- [ ] TASK-06625: Strategy 'Dark Pool Activity Follow': generate performance tearsheet
+- [ ] TASK-06626: Strategy 'Dark Pool Activity Follow': walk-forward validation test
+- [ ] TASK-06627: Strategy 'Dark Pool Activity Follow': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06628: Strategy 'Dark Pool Activity Follow': unit test signal correctness
+- [ ] TASK-06629: Strategy 'Options Flow Sentiment': implement signal generation logic
+- [ ] TASK-06630: Strategy 'Options Flow Sentiment': implement entry and exit rules
+- [ ] TASK-06631: Strategy 'Options Flow Sentiment': add configurable parameters
+- [ ] TASK-06632: Strategy 'Options Flow Sentiment': add parameter optimization ranges
+- [ ] TASK-06633: Strategy 'Options Flow Sentiment': implement risk management rules
+- [ ] TASK-06634: Strategy 'Options Flow Sentiment': backtest with 10 years of SPY data
+- [ ] TASK-06635: Strategy 'Options Flow Sentiment': generate performance tearsheet
+- [ ] TASK-06636: Strategy 'Options Flow Sentiment': walk-forward validation test
+- [ ] TASK-06637: Strategy 'Options Flow Sentiment': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06638: Strategy 'Options Flow Sentiment': unit test signal correctness
+- [ ] TASK-06639: Strategy 'VIX Mean Reversion': implement signal generation logic
+- [ ] TASK-06640: Strategy 'VIX Mean Reversion': implement entry and exit rules
+- [ ] TASK-06641: Strategy 'VIX Mean Reversion': add configurable parameters
+- [ ] TASK-06642: Strategy 'VIX Mean Reversion': add parameter optimization ranges
+- [ ] TASK-06643: Strategy 'VIX Mean Reversion': implement risk management rules
+- [ ] TASK-06644: Strategy 'VIX Mean Reversion': backtest with 10 years of SPY data
+- [ ] TASK-06645: Strategy 'VIX Mean Reversion': generate performance tearsheet
+- [ ] TASK-06646: Strategy 'VIX Mean Reversion': walk-forward validation test
+- [ ] TASK-06647: Strategy 'VIX Mean Reversion': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06648: Strategy 'VIX Mean Reversion': unit test signal correctness
+- [ ] TASK-06649: Strategy 'Calendar Spread Roll': implement signal generation logic
+- [ ] TASK-06650: Strategy 'Calendar Spread Roll': implement entry and exit rules
+- [ ] TASK-06651: Strategy 'Calendar Spread Roll': add configurable parameters
+- [ ] TASK-06652: Strategy 'Calendar Spread Roll': add parameter optimization ranges
+- [ ] TASK-06653: Strategy 'Calendar Spread Roll': implement risk management rules
+- [ ] TASK-06654: Strategy 'Calendar Spread Roll': backtest with 10 years of SPY data
+- [ ] TASK-06655: Strategy 'Calendar Spread Roll': generate performance tearsheet
+- [ ] TASK-06656: Strategy 'Calendar Spread Roll': walk-forward validation test
+- [ ] TASK-06657: Strategy 'Calendar Spread Roll': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06658: Strategy 'Calendar Spread Roll': unit test signal correctness
+- [ ] TASK-06659: Strategy 'Iron Condor Systematic': implement signal generation logic
+- [ ] TASK-06660: Strategy 'Iron Condor Systematic': implement entry and exit rules
+- [ ] TASK-06661: Strategy 'Iron Condor Systematic': add configurable parameters
+- [ ] TASK-06662: Strategy 'Iron Condor Systematic': add parameter optimization ranges
+- [ ] TASK-06663: Strategy 'Iron Condor Systematic': implement risk management rules
+- [ ] TASK-06664: Strategy 'Iron Condor Systematic': backtest with 10 years of SPY data
+- [ ] TASK-06665: Strategy 'Iron Condor Systematic': generate performance tearsheet
+- [ ] TASK-06666: Strategy 'Iron Condor Systematic': walk-forward validation test
+- [ ] TASK-06667: Strategy 'Iron Condor Systematic': Monte Carlo simulation (1000 paths)
+- [ ] TASK-06668: Strategy 'Iron Condor Systematic': unit test signal correctness
+
+
+## TIMEFRAME & CHART TYPE COMBINATIONS
+
+- [ ] TASK-06669: Timeframe 1s: implement bar aggregation from tick/minute data
+- [ ] TASK-06670: Timeframe 1s: add to timeframe picker UI button bar
+- [ ] TASK-06671: Timeframe 1s: backend data endpoint support
+- [ ] TASK-06672: Timeframe 1s: real-time update logic (partial bar)
+- [ ] TASK-06673: Timeframe 5s: implement bar aggregation from tick/minute data
+- [ ] TASK-06674: Timeframe 5s: add to timeframe picker UI button bar
+- [ ] TASK-06675: Timeframe 5s: backend data endpoint support
+- [ ] TASK-06676: Timeframe 5s: real-time update logic (partial bar)
+- [ ] TASK-06677: Timeframe 15s: implement bar aggregation from tick/minute data
+- [ ] TASK-06678: Timeframe 15s: add to timeframe picker UI button bar
+- [ ] TASK-06679: Timeframe 15s: backend data endpoint support
+- [ ] TASK-06680: Timeframe 15s: real-time update logic (partial bar)
+- [ ] TASK-06681: Timeframe 30s: implement bar aggregation from tick/minute data
+- [ ] TASK-06682: Timeframe 30s: add to timeframe picker UI button bar
+- [ ] TASK-06683: Timeframe 30s: backend data endpoint support
+- [ ] TASK-06684: Timeframe 30s: real-time update logic (partial bar)
+- [ ] TASK-06685: Timeframe 1m: implement bar aggregation from tick/minute data
+- [ ] TASK-06686: Timeframe 1m: add to timeframe picker UI button bar
+- [ ] TASK-06687: Timeframe 1m: backend data endpoint support
+- [ ] TASK-06688: Timeframe 1m: real-time update logic (partial bar)
+- [ ] TASK-06689: Timeframe 3m: implement bar aggregation from tick/minute data
+- [ ] TASK-06690: Timeframe 3m: add to timeframe picker UI button bar
+- [ ] TASK-06691: Timeframe 3m: backend data endpoint support
+- [ ] TASK-06692: Timeframe 3m: real-time update logic (partial bar)
+- [ ] TASK-06693: Timeframe 5m: implement bar aggregation from tick/minute data
+- [ ] TASK-06694: Timeframe 5m: add to timeframe picker UI button bar
+- [ ] TASK-06695: Timeframe 5m: backend data endpoint support
+- [ ] TASK-06696: Timeframe 5m: real-time update logic (partial bar)
+- [ ] TASK-06697: Timeframe 10m: implement bar aggregation from tick/minute data
+- [ ] TASK-06698: Timeframe 10m: add to timeframe picker UI button bar
+- [ ] TASK-06699: Timeframe 10m: backend data endpoint support
+- [ ] TASK-06700: Timeframe 10m: real-time update logic (partial bar)
+- [ ] TASK-06701: Timeframe 15m: implement bar aggregation from tick/minute data
+- [ ] TASK-06702: Timeframe 15m: add to timeframe picker UI button bar
+- [ ] TASK-06703: Timeframe 15m: backend data endpoint support
+- [ ] TASK-06704: Timeframe 15m: real-time update logic (partial bar)
+- [ ] TASK-06705: Timeframe 30m: implement bar aggregation from tick/minute data
+- [ ] TASK-06706: Timeframe 30m: add to timeframe picker UI button bar
+- [ ] TASK-06707: Timeframe 30m: backend data endpoint support
+- [ ] TASK-06708: Timeframe 30m: real-time update logic (partial bar)
+- [ ] TASK-06709: Timeframe 1h: implement bar aggregation from tick/minute data
+- [ ] TASK-06710: Timeframe 1h: add to timeframe picker UI button bar
+- [ ] TASK-06711: Timeframe 1h: backend data endpoint support
+- [ ] TASK-06712: Timeframe 1h: real-time update logic (partial bar)
+- [ ] TASK-06713: Timeframe 2h: implement bar aggregation from tick/minute data
+- [ ] TASK-06714: Timeframe 2h: add to timeframe picker UI button bar
+- [ ] TASK-06715: Timeframe 2h: backend data endpoint support
+- [ ] TASK-06716: Timeframe 2h: real-time update logic (partial bar)
+- [ ] TASK-06717: Timeframe 4h: implement bar aggregation from tick/minute data
+- [ ] TASK-06718: Timeframe 4h: add to timeframe picker UI button bar
+- [ ] TASK-06719: Timeframe 4h: backend data endpoint support
+- [ ] TASK-06720: Timeframe 4h: real-time update logic (partial bar)
+- [ ] TASK-06721: Timeframe 6h: implement bar aggregation from tick/minute data
+- [ ] TASK-06722: Timeframe 6h: add to timeframe picker UI button bar
+- [ ] TASK-06723: Timeframe 6h: backend data endpoint support
+- [ ] TASK-06724: Timeframe 6h: real-time update logic (partial bar)
+- [ ] TASK-06725: Timeframe 8h: implement bar aggregation from tick/minute data
+- [ ] TASK-06726: Timeframe 8h: add to timeframe picker UI button bar
+- [ ] TASK-06727: Timeframe 8h: backend data endpoint support
+- [ ] TASK-06728: Timeframe 8h: real-time update logic (partial bar)
+- [ ] TASK-06729: Timeframe 12h: implement bar aggregation from tick/minute data
+- [ ] TASK-06730: Timeframe 12h: add to timeframe picker UI button bar
+- [ ] TASK-06731: Timeframe 12h: backend data endpoint support
+- [ ] TASK-06732: Timeframe 12h: real-time update logic (partial bar)
+- [ ] TASK-06733: Timeframe D: implement bar aggregation from tick/minute data
+- [ ] TASK-06734: Timeframe D: add to timeframe picker UI button bar
+- [ ] TASK-06735: Timeframe D: backend data endpoint support
+- [ ] TASK-06736: Timeframe D: real-time update logic (partial bar)
+- [ ] TASK-06737: Timeframe 2D: implement bar aggregation from tick/minute data
+- [ ] TASK-06738: Timeframe 2D: add to timeframe picker UI button bar
+- [ ] TASK-06739: Timeframe 2D: backend data endpoint support
+- [ ] TASK-06740: Timeframe 2D: real-time update logic (partial bar)
+- [ ] TASK-06741: Timeframe 3D: implement bar aggregation from tick/minute data
+- [ ] TASK-06742: Timeframe 3D: add to timeframe picker UI button bar
+- [ ] TASK-06743: Timeframe 3D: backend data endpoint support
+- [ ] TASK-06744: Timeframe 3D: real-time update logic (partial bar)
+- [ ] TASK-06745: Timeframe W: implement bar aggregation from tick/minute data
+- [ ] TASK-06746: Timeframe W: add to timeframe picker UI button bar
+- [ ] TASK-06747: Timeframe W: backend data endpoint support
+- [ ] TASK-06748: Timeframe W: real-time update logic (partial bar)
+- [ ] TASK-06749: Timeframe 2W: implement bar aggregation from tick/minute data
+- [ ] TASK-06750: Timeframe 2W: add to timeframe picker UI button bar
+- [ ] TASK-06751: Timeframe 2W: backend data endpoint support
+- [ ] TASK-06752: Timeframe 2W: real-time update logic (partial bar)
+- [ ] TASK-06753: Timeframe M: implement bar aggregation from tick/minute data
+- [ ] TASK-06754: Timeframe M: add to timeframe picker UI button bar
+- [ ] TASK-06755: Timeframe M: backend data endpoint support
+- [ ] TASK-06756: Timeframe M: real-time update logic (partial bar)
+- [ ] TASK-06757: Timeframe 3M: implement bar aggregation from tick/minute data
+- [ ] TASK-06758: Timeframe 3M: add to timeframe picker UI button bar
+- [ ] TASK-06759: Timeframe 3M: backend data endpoint support
+- [ ] TASK-06760: Timeframe 3M: real-time update logic (partial bar)
+- [ ] TASK-06761: Timeframe 6M: implement bar aggregation from tick/minute data
+- [ ] TASK-06762: Timeframe 6M: add to timeframe picker UI button bar
+- [ ] TASK-06763: Timeframe 6M: backend data endpoint support
+- [ ] TASK-06764: Timeframe 6M: real-time update logic (partial bar)
+- [ ] TASK-06765: Timeframe Y: implement bar aggregation from tick/minute data
+- [ ] TASK-06766: Timeframe Y: add to timeframe picker UI button bar
+- [ ] TASK-06767: Timeframe Y: backend data endpoint support
+- [ ] TASK-06768: Timeframe Y: real-time update logic (partial bar)
+- [ ] TASK-06769: ChartType Candlestick + 1m: render test with real data
+- [ ] TASK-06770: ChartType Candlestick + 5m: render test with real data
+- [ ] TASK-06771: ChartType Candlestick + 15m: render test with real data
+- [ ] TASK-06772: ChartType Candlestick + 1h: render test with real data
+- [ ] TASK-06773: ChartType Candlestick + 4h: render test with real data
+- [ ] TASK-06774: ChartType Candlestick + D: render test with real data
+- [ ] TASK-06775: ChartType Candlestick + W: render test with real data
+- [ ] TASK-06776: ChartType Heikin-Ashi + 1m: render test with real data
+- [ ] TASK-06777: ChartType Heikin-Ashi + 5m: render test with real data
+- [ ] TASK-06778: ChartType Heikin-Ashi + 15m: render test with real data
+- [ ] TASK-06779: ChartType Heikin-Ashi + 1h: render test with real data
+- [ ] TASK-06780: ChartType Heikin-Ashi + 4h: render test with real data
+- [ ] TASK-06781: ChartType Heikin-Ashi + D: render test with real data
+- [ ] TASK-06782: ChartType Heikin-Ashi + W: render test with real data
+- [ ] TASK-06783: ChartType Line + 1m: render test with real data
+- [ ] TASK-06784: ChartType Line + 5m: render test with real data
+- [ ] TASK-06785: ChartType Line + 15m: render test with real data
+- [ ] TASK-06786: ChartType Line + 1h: render test with real data
+- [ ] TASK-06787: ChartType Line + 4h: render test with real data
+- [ ] TASK-06788: ChartType Line + D: render test with real data
+- [ ] TASK-06789: ChartType Line + W: render test with real data
+- [ ] TASK-06790: ChartType Area + 1m: render test with real data
+- [ ] TASK-06791: ChartType Area + 5m: render test with real data
+- [ ] TASK-06792: ChartType Area + 15m: render test with real data
+- [ ] TASK-06793: ChartType Area + 1h: render test with real data
+- [ ] TASK-06794: ChartType Area + 4h: render test with real data
+- [ ] TASK-06795: ChartType Area + D: render test with real data
+- [ ] TASK-06796: ChartType Area + W: render test with real data
+- [ ] TASK-06797: ChartType Bar + 1m: render test with real data
+- [ ] TASK-06798: ChartType Bar + 5m: render test with real data
+- [ ] TASK-06799: ChartType Bar + 15m: render test with real data
+- [ ] TASK-06800: ChartType Bar + 1h: render test with real data
+- [ ] TASK-06801: ChartType Bar + 4h: render test with real data
+- [ ] TASK-06802: ChartType Bar + D: render test with real data
+- [ ] TASK-06803: ChartType Bar + W: render test with real data
+- [ ] TASK-06804: ChartType Hollow Candle + 1m: render test with real data
+- [ ] TASK-06805: ChartType Hollow Candle + 5m: render test with real data
+- [ ] TASK-06806: ChartType Hollow Candle + 15m: render test with real data
+- [ ] TASK-06807: ChartType Hollow Candle + 1h: render test with real data
+- [ ] TASK-06808: ChartType Hollow Candle + 4h: render test with real data
+- [ ] TASK-06809: ChartType Hollow Candle + D: render test with real data
+- [ ] TASK-06810: ChartType Hollow Candle + W: render test with real data
+- [ ] TASK-06811: ChartType Renko + 1m: render test with real data
+- [ ] TASK-06812: ChartType Renko + 5m: render test with real data
+- [ ] TASK-06813: ChartType Renko + 15m: render test with real data
+- [ ] TASK-06814: ChartType Renko + 1h: render test with real data
+- [ ] TASK-06815: ChartType Renko + 4h: render test with real data
+- [ ] TASK-06816: ChartType Renko + D: render test with real data
+- [ ] TASK-06817: ChartType Renko + W: render test with real data
+- [ ] TASK-06818: ChartType Kagi + 1m: render test with real data
+- [ ] TASK-06819: ChartType Kagi + 5m: render test with real data
+- [ ] TASK-06820: ChartType Kagi + 15m: render test with real data
+- [ ] TASK-06821: ChartType Kagi + 1h: render test with real data
+- [ ] TASK-06822: ChartType Kagi + 4h: render test with real data
+- [ ] TASK-06823: ChartType Kagi + D: render test with real data
+- [ ] TASK-06824: ChartType Kagi + W: render test with real data
+- [ ] TASK-06825: ChartType Point-Figure + 1m: render test with real data
+- [ ] TASK-06826: ChartType Point-Figure + 5m: render test with real data
+- [ ] TASK-06827: ChartType Point-Figure + 15m: render test with real data
+- [ ] TASK-06828: ChartType Point-Figure + 1h: render test with real data
+- [ ] TASK-06829: ChartType Point-Figure + 4h: render test with real data
+- [ ] TASK-06830: ChartType Point-Figure + D: render test with real data
+- [ ] TASK-06831: ChartType Point-Figure + W: render test with real data
+- [ ] TASK-06832: ChartType Range + 1m: render test with real data
+- [ ] TASK-06833: ChartType Range + 5m: render test with real data
+- [ ] TASK-06834: ChartType Range + 15m: render test with real data
+- [ ] TASK-06835: ChartType Range + 1h: render test with real data
+- [ ] TASK-06836: ChartType Range + 4h: render test with real data
+- [ ] TASK-06837: ChartType Range + D: render test with real data
+- [ ] TASK-06838: ChartType Range + W: render test with real data
+- [ ] TASK-06839: ChartType Tick + 1m: render test with real data
+- [ ] TASK-06840: ChartType Tick + 5m: render test with real data
+- [ ] TASK-06841: ChartType Tick + 15m: render test with real data
+- [ ] TASK-06842: ChartType Tick + 1h: render test with real data
+- [ ] TASK-06843: ChartType Tick + 4h: render test with real data
+- [ ] TASK-06844: ChartType Tick + D: render test with real data
+- [ ] TASK-06845: ChartType Tick + W: render test with real data
+
+
+## PER-SYMBOL DATA TASKS (27 SYMBOLS Ã— 5)
+
+- [ ] TASK-06846: Data: fetch and cache AAPL daily bars (10 years)
+- [ ] TASK-06847: Data: fetch and cache AAPL minute bars (30 days)
+- [ ] TASK-06848: Data: fetch AAPL fundamental data (quarterly)
+- [ ] TASK-06849: Data: fetch AAPL options chain data
+- [ ] TASK-06850: Data: validate AAPL data integrity (no gaps/outliers)
+- [ ] TASK-06851: Data: fetch and cache MSFT daily bars (10 years)
+- [ ] TASK-06852: Data: fetch and cache MSFT minute bars (30 days)
+- [ ] TASK-06853: Data: fetch MSFT fundamental data (quarterly)
+- [ ] TASK-06854: Data: fetch MSFT options chain data
+- [ ] TASK-06855: Data: validate MSFT data integrity (no gaps/outliers)
+- [ ] TASK-06856: Data: fetch and cache GOOGL daily bars (10 years)
+- [ ] TASK-06857: Data: fetch and cache GOOGL minute bars (30 days)
+- [ ] TASK-06858: Data: fetch GOOGL fundamental data (quarterly)
+- [ ] TASK-06859: Data: fetch GOOGL options chain data
+- [ ] TASK-06860: Data: validate GOOGL data integrity (no gaps/outliers)
+- [ ] TASK-06861: Data: fetch and cache AMZN daily bars (10 years)
+- [ ] TASK-06862: Data: fetch and cache AMZN minute bars (30 days)
+- [ ] TASK-06863: Data: fetch AMZN fundamental data (quarterly)
+- [ ] TASK-06864: Data: fetch AMZN options chain data
+- [ ] TASK-06865: Data: validate AMZN data integrity (no gaps/outliers)
+- [ ] TASK-06866: Data: fetch and cache TSLA daily bars (10 years)
+- [ ] TASK-06867: Data: fetch and cache TSLA minute bars (30 days)
+- [ ] TASK-06868: Data: fetch TSLA fundamental data (quarterly)
+- [ ] TASK-06869: Data: fetch TSLA options chain data
+- [ ] TASK-06870: Data: validate TSLA data integrity (no gaps/outliers)
+- [ ] TASK-06871: Data: fetch and cache NVDA daily bars (10 years)
+- [ ] TASK-06872: Data: fetch and cache NVDA minute bars (30 days)
+- [ ] TASK-06873: Data: fetch NVDA fundamental data (quarterly)
+- [ ] TASK-06874: Data: fetch NVDA options chain data
+- [ ] TASK-06875: Data: validate NVDA data integrity (no gaps/outliers)
+- [ ] TASK-06876: Data: fetch and cache META daily bars (10 years)
+- [ ] TASK-06877: Data: fetch and cache META minute bars (30 days)
+- [ ] TASK-06878: Data: fetch META fundamental data (quarterly)
+- [ ] TASK-06879: Data: fetch META options chain data
+- [ ] TASK-06880: Data: validate META data integrity (no gaps/outliers)
+- [ ] TASK-06881: Data: fetch and cache JPM daily bars (10 years)
+- [ ] TASK-06882: Data: fetch and cache JPM minute bars (30 days)
+- [ ] TASK-06883: Data: fetch JPM fundamental data (quarterly)
+- [ ] TASK-06884: Data: fetch JPM options chain data
+- [ ] TASK-06885: Data: validate JPM data integrity (no gaps/outliers)
+- [ ] TASK-06886: Data: fetch and cache V daily bars (10 years)
+- [ ] TASK-06887: Data: fetch and cache V minute bars (30 days)
+- [ ] TASK-06888: Data: fetch V fundamental data (quarterly)
+- [ ] TASK-06889: Data: fetch V options chain data
+- [ ] TASK-06890: Data: validate V data integrity (no gaps/outliers)
+- [ ] TASK-06891: Data: fetch and cache JNJ daily bars (10 years)
+- [ ] TASK-06892: Data: fetch and cache JNJ minute bars (30 days)
+- [ ] TASK-06893: Data: fetch JNJ fundamental data (quarterly)
+- [ ] TASK-06894: Data: fetch JNJ options chain data
+- [ ] TASK-06895: Data: validate JNJ data integrity (no gaps/outliers)
+- [ ] TASK-06896: Data: fetch and cache WMT daily bars (10 years)
+- [ ] TASK-06897: Data: fetch and cache WMT minute bars (30 days)
+- [ ] TASK-06898: Data: fetch WMT fundamental data (quarterly)
+- [ ] TASK-06899: Data: fetch WMT options chain data
+- [ ] TASK-06900: Data: validate WMT data integrity (no gaps/outliers)
+- [ ] TASK-06901: Data: fetch and cache PG daily bars (10 years)
+- [ ] TASK-06902: Data: fetch and cache PG minute bars (30 days)
+- [ ] TASK-06903: Data: fetch PG fundamental data (quarterly)
+- [ ] TASK-06904: Data: fetch PG options chain data
+- [ ] TASK-06905: Data: validate PG data integrity (no gaps/outliers)
+- [ ] TASK-06906: Data: fetch and cache UNH daily bars (10 years)
+- [ ] TASK-06907: Data: fetch and cache UNH minute bars (30 days)
+- [ ] TASK-06908: Data: fetch UNH fundamental data (quarterly)
+- [ ] TASK-06909: Data: fetch UNH options chain data
+- [ ] TASK-06910: Data: validate UNH data integrity (no gaps/outliers)
+- [ ] TASK-06911: Data: fetch and cache HD daily bars (10 years)
+- [ ] TASK-06912: Data: fetch and cache HD minute bars (30 days)
+- [ ] TASK-06913: Data: fetch HD fundamental data (quarterly)
+- [ ] TASK-06914: Data: fetch HD options chain data
+- [ ] TASK-06915: Data: validate HD data integrity (no gaps/outliers)
+- [ ] TASK-06916: Data: fetch and cache MA daily bars (10 years)
+- [ ] TASK-06917: Data: fetch and cache MA minute bars (30 days)
+- [ ] TASK-06918: Data: fetch MA fundamental data (quarterly)
+- [ ] TASK-06919: Data: fetch MA options chain data
+- [ ] TASK-06920: Data: validate MA data integrity (no gaps/outliers)
+- [ ] TASK-06921: Data: fetch and cache DIS daily bars (10 years)
+- [ ] TASK-06922: Data: fetch and cache DIS minute bars (30 days)
+- [ ] TASK-06923: Data: fetch DIS fundamental data (quarterly)
+- [ ] TASK-06924: Data: fetch DIS options chain data
+- [ ] TASK-06925: Data: validate DIS data integrity (no gaps/outliers)
+- [ ] TASK-06926: Data: fetch and cache PYPL daily bars (10 years)
+- [ ] TASK-06927: Data: fetch and cache PYPL minute bars (30 days)
+- [ ] TASK-06928: Data: fetch PYPL fundamental data (quarterly)
+- [ ] TASK-06929: Data: fetch PYPL options chain data
+- [ ] TASK-06930: Data: validate PYPL data integrity (no gaps/outliers)
+- [ ] TASK-06931: Data: fetch and cache NFLX daily bars (10 years)
+- [ ] TASK-06932: Data: fetch and cache NFLX minute bars (30 days)
+- [ ] TASK-06933: Data: fetch NFLX fundamental data (quarterly)
+- [ ] TASK-06934: Data: fetch NFLX options chain data
+- [ ] TASK-06935: Data: validate NFLX data integrity (no gaps/outliers)
+- [ ] TASK-06936: Data: fetch and cache ADBE daily bars (10 years)
+- [ ] TASK-06937: Data: fetch and cache ADBE minute bars (30 days)
+- [ ] TASK-06938: Data: fetch ADBE fundamental data (quarterly)
+- [ ] TASK-06939: Data: fetch ADBE options chain data
+- [ ] TASK-06940: Data: validate ADBE data integrity (no gaps/outliers)
+- [ ] TASK-06941: Data: fetch and cache CRM daily bars (10 years)
+- [ ] TASK-06942: Data: fetch and cache CRM minute bars (30 days)
+- [ ] TASK-06943: Data: fetch CRM fundamental data (quarterly)
+- [ ] TASK-06944: Data: fetch CRM options chain data
+- [ ] TASK-06945: Data: validate CRM data integrity (no gaps/outliers)
+- [ ] TASK-06946: Data: fetch and cache INTC daily bars (10 years)
+- [ ] TASK-06947: Data: fetch and cache INTC minute bars (30 days)
+- [ ] TASK-06948: Data: fetch INTC fundamental data (quarterly)
+- [ ] TASK-06949: Data: fetch INTC options chain data
+- [ ] TASK-06950: Data: validate INTC data integrity (no gaps/outliers)
+- [ ] TASK-06951: Data: fetch and cache AMD daily bars (10 years)
+- [ ] TASK-06952: Data: fetch and cache AMD minute bars (30 days)
+- [ ] TASK-06953: Data: fetch AMD fundamental data (quarterly)
+- [ ] TASK-06954: Data: fetch AMD options chain data
+- [ ] TASK-06955: Data: validate AMD data integrity (no gaps/outliers)
+- [ ] TASK-06956: Data: fetch and cache COIN daily bars (10 years)
+- [ ] TASK-06957: Data: fetch and cache COIN minute bars (30 days)
+- [ ] TASK-06958: Data: fetch COIN fundamental data (quarterly)
+- [ ] TASK-06959: Data: fetch COIN options chain data
+- [ ] TASK-06960: Data: validate COIN data integrity (no gaps/outliers)
+- [ ] TASK-06961: Data: fetch and cache ABNB daily bars (10 years)
+- [ ] TASK-06962: Data: fetch and cache ABNB minute bars (30 days)
+- [ ] TASK-06963: Data: fetch ABNB fundamental data (quarterly)
+- [ ] TASK-06964: Data: fetch ABNB options chain data
+- [ ] TASK-06965: Data: validate ABNB data integrity (no gaps/outliers)
+- [ ] TASK-06966: Data: fetch and cache SQ daily bars (10 years)
+- [ ] TASK-06967: Data: fetch and cache SQ minute bars (30 days)
+- [ ] TASK-06968: Data: fetch SQ fundamental data (quarterly)
+- [ ] TASK-06969: Data: fetch SQ options chain data
+- [ ] TASK-06970: Data: validate SQ data integrity (no gaps/outliers)
+- [ ] TASK-06971: Data: fetch and cache SHOP daily bars (10 years)
+- [ ] TASK-06972: Data: fetch and cache SHOP minute bars (30 days)
+- [ ] TASK-06973: Data: fetch SHOP fundamental data (quarterly)
+- [ ] TASK-06974: Data: fetch SHOP options chain data
+- [ ] TASK-06975: Data: validate SHOP data integrity (no gaps/outliers)
+- [ ] TASK-06976: Data: fetch and cache UBER daily bars (10 years)
+- [ ] TASK-06977: Data: fetch and cache UBER minute bars (30 days)
+- [ ] TASK-06978: Data: fetch UBER fundamental data (quarterly)
+- [ ] TASK-06979: Data: fetch UBER options chain data
+- [ ] TASK-06980: Data: validate UBER data integrity (no gaps/outliers)
+
+
+## KEYBOARD SHORTCUTS (50 SHORTCUTS Ã— 3)
+
+- [ ] TASK-06981: Shortcut Ctrl+K: implement Open command palette
+- [ ] TASK-06982: Shortcut Ctrl+K: add to keyboard shortcuts reference panel
+- [ ] TASK-06983: Shortcut Ctrl+K: make customizable in settings
+- [ ] TASK-06984: Shortcut Ctrl+/: implement Toggle sidebar
+- [ ] TASK-06985: Shortcut Ctrl+/: add to keyboard shortcuts reference panel
+- [ ] TASK-06986: Shortcut Ctrl+/: make customizable in settings
+- [ ] TASK-06987: Shortcut Ctrl+1-9: implement Switch to tab N
+- [ ] TASK-06988: Shortcut Ctrl+1-9: add to keyboard shortcuts reference panel
+- [ ] TASK-06989: Shortcut Ctrl+1-9: make customizable in settings
+- [ ] TASK-06990: Shortcut Ctrl+N: implement New watchlist
+- [ ] TASK-06991: Shortcut Ctrl+N: add to keyboard shortcuts reference panel
+- [ ] TASK-06992: Shortcut Ctrl+N: make customizable in settings
+- [ ] TASK-06993: Shortcut Ctrl+S: implement Save current layout
+- [ ] TASK-06994: Shortcut Ctrl+S: add to keyboard shortcuts reference panel
+- [ ] TASK-06995: Shortcut Ctrl+S: make customizable in settings
+- [ ] TASK-06996: Shortcut Ctrl+P: implement Quick symbol search
+- [ ] TASK-06997: Shortcut Ctrl+P: add to keyboard shortcuts reference panel
+- [ ] TASK-06998: Shortcut Ctrl+P: make customizable in settings
+- [ ] TASK-06999: Shortcut Ctrl+B: implement Toggle order ticket panel
+- [ ] TASK-07000: Shortcut Ctrl+B: add to keyboard shortcuts reference panel
+- [ ] TASK-07001: Shortcut Ctrl+B: make customizable in settings
+- [ ] TASK-07002: Shortcut Ctrl+L: implement Lock/unlock drawing tools
+- [ ] TASK-07003: Shortcut Ctrl+L: add to keyboard shortcuts reference panel
+- [ ] TASK-07004: Shortcut Ctrl+L: make customizable in settings
+- [ ] TASK-07005: Shortcut Ctrl+M: implement Toggle market data panel
+- [ ] TASK-07006: Shortcut Ctrl+M: add to keyboard shortcuts reference panel
+- [ ] TASK-07007: Shortcut Ctrl+M: make customizable in settings
+- [ ] TASK-07008: Shortcut Ctrl+T: implement Add symbol to watchlist
+- [ ] TASK-07009: Shortcut Ctrl+T: add to keyboard shortcuts reference panel
+- [ ] TASK-07010: Shortcut Ctrl+T: make customizable in settings
+- [ ] TASK-07011: Shortcut F1: implement Quick buy market order
+- [ ] TASK-07012: Shortcut F1: add to keyboard shortcuts reference panel
+- [ ] TASK-07013: Shortcut F1: make customizable in settings
+- [ ] TASK-07014: Shortcut F2: implement Quick sell market order
+- [ ] TASK-07015: Shortcut F2: add to keyboard shortcuts reference panel
+- [ ] TASK-07016: Shortcut F2: make customizable in settings
+- [ ] TASK-07017: Shortcut F3: implement Toggle level 2 order book
+- [ ] TASK-07018: Shortcut F3: add to keyboard shortcuts reference panel
+- [ ] TASK-07019: Shortcut F3: make customizable in settings
+- [ ] TASK-07020: Shortcut F4: implement Toggle time and sales panel
+- [ ] TASK-07021: Shortcut F4: add to keyboard shortcuts reference panel
+- [ ] TASK-07022: Shortcut F4: make customizable in settings
+- [ ] TASK-07023: Shortcut F5: implement Refresh all data
+- [ ] TASK-07024: Shortcut F5: add to keyboard shortcuts reference panel
+- [ ] TASK-07025: Shortcut F5: make customizable in settings
+- [ ] TASK-07026: Shortcut F6: implement Toggle chart layout mode
+- [ ] TASK-07027: Shortcut F6: add to keyboard shortcuts reference panel
+- [ ] TASK-07028: Shortcut F6: make customizable in settings
+- [ ] TASK-07029: Shortcut F7: implement Toggle indicator panel
+- [ ] TASK-07030: Shortcut F7: add to keyboard shortcuts reference panel
+- [ ] TASK-07031: Shortcut F7: make customizable in settings
+- [ ] TASK-07032: Shortcut F8: implement Toggle alert manager
+- [ ] TASK-07033: Shortcut F8: add to keyboard shortcuts reference panel
+- [ ] TASK-07034: Shortcut F8: make customizable in settings
+- [ ] TASK-07035: Shortcut F9: implement Toggle portfolio view
+- [ ] TASK-07036: Shortcut F9: add to keyboard shortcuts reference panel
+- [ ] TASK-07037: Shortcut F9: make customizable in settings
+- [ ] TASK-07038: Shortcut F10: implement Toggle settings panel
+- [ ] TASK-07039: Shortcut F10: add to keyboard shortcuts reference panel
+- [ ] TASK-07040: Shortcut F10: make customizable in settings
+- [ ] TASK-07041: Shortcut F11: implement Toggle Bloomberg command line
+- [ ] TASK-07042: Shortcut F11: add to keyboard shortcuts reference panel
+- [ ] TASK-07043: Shortcut F11: make customizable in settings
+- [ ] TASK-07044: Shortcut F12: implement Developer tools panel
+- [ ] TASK-07045: Shortcut F12: add to keyboard shortcuts reference panel
+- [ ] TASK-07046: Shortcut F12: make customizable in settings
+- [ ] TASK-07047: Shortcut Escape: implement Cancel current action / close modal
+- [ ] TASK-07048: Shortcut Escape: add to keyboard shortcuts reference panel
+- [ ] TASK-07049: Shortcut Escape: make customizable in settings
+- [ ] TASK-07050: Shortcut Space: implement Fit chart to view / play-pause replay
+- [ ] TASK-07051: Shortcut Space: add to keyboard shortcuts reference panel
+- [ ] TASK-07052: Shortcut Space: make customizable in settings
+- [ ] TASK-07053: Shortcut D: implement Toggle drawing mode
+- [ ] TASK-07054: Shortcut D: add to keyboard shortcuts reference panel
+- [ ] TASK-07055: Shortcut D: make customizable in settings
+- [ ] TASK-07056: Shortcut I: implement Open indicator picker
+- [ ] TASK-07057: Shortcut I: add to keyboard shortcuts reference panel
+- [ ] TASK-07058: Shortcut I: make customizable in settings
+- [ ] TASK-07059: Shortcut A: implement Open alert creation
+- [ ] TASK-07060: Shortcut A: add to keyboard shortcuts reference panel
+- [ ] TASK-07061: Shortcut A: make customizable in settings
+- [ ] TASK-07062: Shortcut T: implement Text annotation tool
+- [ ] TASK-07063: Shortcut T: add to keyboard shortcuts reference panel
+- [ ] TASK-07064: Shortcut T: make customizable in settings
+- [ ] TASK-07065: Shortcut L: implement Trendline drawing tool
+- [ ] TASK-07066: Shortcut L: add to keyboard shortcuts reference panel
+- [ ] TASK-07067: Shortcut L: make customizable in settings
+- [ ] TASK-07068: Shortcut H: implement Horizontal line tool
+- [ ] TASK-07069: Shortcut H: add to keyboard shortcuts reference panel
+- [ ] TASK-07070: Shortcut H: make customizable in settings
+- [ ] TASK-07071: Shortcut V: implement Vertical line tool
+- [ ] TASK-07072: Shortcut V: add to keyboard shortcuts reference panel
+- [ ] TASK-07073: Shortcut V: make customizable in settings
+- [ ] TASK-07074: Shortcut F: implement Fibonacci retracement tool
+- [ ] TASK-07075: Shortcut F: add to keyboard shortcuts reference panel
+- [ ] TASK-07076: Shortcut F: make customizable in settings
+- [ ] TASK-07077: Shortcut R: implement Rectangle drawing tool
+- [ ] TASK-07078: Shortcut R: add to keyboard shortcuts reference panel
+- [ ] TASK-07079: Shortcut R: make customizable in settings
+- [ ] TASK-07080: Shortcut C: implement Circle/ellipse drawing tool
+- [ ] TASK-07081: Shortcut C: add to keyboard shortcuts reference panel
+- [ ] TASK-07082: Shortcut C: make customizable in settings
+- [ ] TASK-07083: Shortcut P: implement Parallel channel tool
+- [ ] TASK-07084: Shortcut P: add to keyboard shortcuts reference panel
+- [ ] TASK-07085: Shortcut P: make customizable in settings
+- [ ] TASK-07086: Shortcut G: implement Gann drawing tools menu
+- [ ] TASK-07087: Shortcut G: add to keyboard shortcuts reference panel
+- [ ] TASK-07088: Shortcut G: make customizable in settings
+- [ ] TASK-07089: Shortcut E: implement Elliott wave annotation
+- [ ] TASK-07090: Shortcut E: add to keyboard shortcuts reference panel
+- [ ] TASK-07091: Shortcut E: make customizable in settings
+- [ ] TASK-07092: Shortcut Delete: implement Remove selected drawing object
+- [ ] TASK-07093: Shortcut Delete: add to keyboard shortcuts reference panel
+- [ ] TASK-07094: Shortcut Delete: make customizable in settings
+- [ ] TASK-07095: Shortcut Ctrl+Z: implement Undo last drawing operation
+- [ ] TASK-07096: Shortcut Ctrl+Z: add to keyboard shortcuts reference panel
+- [ ] TASK-07097: Shortcut Ctrl+Z: make customizable in settings
+- [ ] TASK-07098: Shortcut Ctrl+Y: implement Redo last undo operation
+- [ ] TASK-07099: Shortcut Ctrl+Y: add to keyboard shortcuts reference panel
+- [ ] TASK-07100: Shortcut Ctrl+Y: make customizable in settings
+- [ ] TASK-07101: Shortcut Ctrl+A: implement Select all drawings
+- [ ] TASK-07102: Shortcut Ctrl+A: add to keyboard shortcuts reference panel
+- [ ] TASK-07103: Shortcut Ctrl+A: make customizable in settings
+- [ ] TASK-07104: Shortcut Ctrl+D: implement Duplicate selected drawing
+- [ ] TASK-07105: Shortcut Ctrl+D: add to keyboard shortcuts reference panel
+- [ ] TASK-07106: Shortcut Ctrl+D: make customizable in settings
+- [ ] TASK-07107: Shortcut Alt+S: implement Quick screenshot
+- [ ] TASK-07108: Shortcut Alt+S: add to keyboard shortcuts reference panel
+- [ ] TASK-07109: Shortcut Alt+S: make customizable in settings
+- [ ] TASK-07110: Shortcut Alt+C: implement Copy chart as PNG to clipboard
+- [ ] TASK-07111: Shortcut Alt+C: add to keyboard shortcuts reference panel
+- [ ] TASK-07112: Shortcut Alt+C: make customizable in settings
+- [ ] TASK-07113: Shortcut +/-: implement Zoom in/out on chart
+- [ ] TASK-07114: Shortcut +/-: add to keyboard shortcuts reference panel
+- [ ] TASK-07115: Shortcut +/-: make customizable in settings
+- [ ] TASK-07116: Shortcut Arrow Left/Right: implement Scroll chart forward/back
+- [ ] TASK-07117: Shortcut Arrow Left/Right: add to keyboard shortcuts reference panel
+- [ ] TASK-07118: Shortcut Arrow Left/Right: make customizable in settings
+- [ ] TASK-07119: Shortcut Arrow Up/Down: implement Adjust zoom vertically
+- [ ] TASK-07120: Shortcut Arrow Up/Down: add to keyboard shortcuts reference panel
+- [ ] TASK-07121: Shortcut Arrow Up/Down: make customizable in settings
+- [ ] TASK-07122: Shortcut Home: implement Jump to most recent bar
+- [ ] TASK-07123: Shortcut Home: add to keyboard shortcuts reference panel
+- [ ] TASK-07124: Shortcut Home: make customizable in settings
+- [ ] TASK-07125: Shortcut End: implement Jump to oldest loaded bar
+- [ ] TASK-07126: Shortcut End: add to keyboard shortcuts reference panel
+- [ ] TASK-07127: Shortcut End: make customizable in settings
+
+
+## PER-PAGE TESTING MATRIX (25 PAGES Ã— 10)
+
+- [ ] TASK-07128: Test DashboardUI2: renders without crashing
+- [ ] TASK-07129: Test DashboardUI2: displays loading state correctly
+- [ ] TASK-07130: Test DashboardUI2: handles API error gracefully
+- [ ] TASK-07131: Test DashboardUI2: keyboard navigation works
+- [ ] TASK-07132: Test DashboardUI2: all interactive elements clickable
+- [ ] TASK-07133: Test DashboardUI2: responsive at 1920px width
+- [ ] TASK-07134: Test DashboardUI2: responsive at 1280px width
+- [ ] TASK-07135: Test DashboardUI2: no console errors in browser
+- [ ] TASK-07136: Test DashboardUI2: accessibility audit passes (axe)
+- [ ] TASK-07137: Test DashboardUI2: visual regression snapshot test
+- [ ] TASK-07138: Test TradingUI2: renders without crashing
+- [ ] TASK-07139: Test TradingUI2: displays loading state correctly
+- [ ] TASK-07140: Test TradingUI2: handles API error gracefully
+- [ ] TASK-07141: Test TradingUI2: keyboard navigation works
+- [ ] TASK-07142: Test TradingUI2: all interactive elements clickable
+- [ ] TASK-07143: Test TradingUI2: responsive at 1920px width
+- [ ] TASK-07144: Test TradingUI2: responsive at 1280px width
+- [ ] TASK-07145: Test TradingUI2: no console errors in browser
+- [ ] TASK-07146: Test TradingUI2: accessibility audit passes (axe)
+- [ ] TASK-07147: Test TradingUI2: visual regression snapshot test
+- [ ] TASK-07148: Test PortfolioUI2: renders without crashing
+- [ ] TASK-07149: Test PortfolioUI2: displays loading state correctly
+- [ ] TASK-07150: Test PortfolioUI2: handles API error gracefully
+- [ ] TASK-07151: Test PortfolioUI2: keyboard navigation works
+- [ ] TASK-07152: Test PortfolioUI2: all interactive elements clickable
+- [ ] TASK-07153: Test PortfolioUI2: responsive at 1920px width
+- [ ] TASK-07154: Test PortfolioUI2: responsive at 1280px width
+- [ ] TASK-07155: Test PortfolioUI2: no console errors in browser
+- [ ] TASK-07156: Test PortfolioUI2: accessibility audit passes (axe)
+- [ ] TASK-07157: Test PortfolioUI2: visual regression snapshot test
+- [ ] TASK-07158: Test RiskUI2: renders without crashing
+- [ ] TASK-07159: Test RiskUI2: displays loading state correctly
+- [ ] TASK-07160: Test RiskUI2: handles API error gracefully
+- [ ] TASK-07161: Test RiskUI2: keyboard navigation works
+- [ ] TASK-07162: Test RiskUI2: all interactive elements clickable
+- [ ] TASK-07163: Test RiskUI2: responsive at 1920px width
+- [ ] TASK-07164: Test RiskUI2: responsive at 1280px width
+- [ ] TASK-07165: Test RiskUI2: no console errors in browser
+- [ ] TASK-07166: Test RiskUI2: accessibility audit passes (axe)
+- [ ] TASK-07167: Test RiskUI2: visual regression snapshot test
+- [ ] TASK-07168: Test AlertsUI2: renders without crashing
+- [ ] TASK-07169: Test AlertsUI2: displays loading state correctly
+- [ ] TASK-07170: Test AlertsUI2: handles API error gracefully
+- [ ] TASK-07171: Test AlertsUI2: keyboard navigation works
+- [ ] TASK-07172: Test AlertsUI2: all interactive elements clickable
+- [ ] TASK-07173: Test AlertsUI2: responsive at 1920px width
+- [ ] TASK-07174: Test AlertsUI2: responsive at 1280px width
+- [ ] TASK-07175: Test AlertsUI2: no console errors in browser
+- [ ] TASK-07176: Test AlertsUI2: accessibility audit passes (axe)
+- [ ] TASK-07177: Test AlertsUI2: visual regression snapshot test
+- [ ] TASK-07178: Test OrdersUI2: renders without crashing
+- [ ] TASK-07179: Test OrdersUI2: displays loading state correctly
+- [ ] TASK-07180: Test OrdersUI2: handles API error gracefully
+- [ ] TASK-07181: Test OrdersUI2: keyboard navigation works
+- [ ] TASK-07182: Test OrdersUI2: all interactive elements clickable
+- [ ] TASK-07183: Test OrdersUI2: responsive at 1920px width
+- [ ] TASK-07184: Test OrdersUI2: responsive at 1280px width
+- [ ] TASK-07185: Test OrdersUI2: no console errors in browser
+- [ ] TASK-07186: Test OrdersUI2: accessibility audit passes (axe)
+- [ ] TASK-07187: Test OrdersUI2: visual regression snapshot test
+- [ ] TASK-07188: Test ScreenersUI2: renders without crashing
+- [ ] TASK-07189: Test ScreenersUI2: displays loading state correctly
+- [ ] TASK-07190: Test ScreenersUI2: handles API error gracefully
+- [ ] TASK-07191: Test ScreenersUI2: keyboard navigation works
+- [ ] TASK-07192: Test ScreenersUI2: all interactive elements clickable
+- [ ] TASK-07193: Test ScreenersUI2: responsive at 1920px width
+- [ ] TASK-07194: Test ScreenersUI2: responsive at 1280px width
+- [ ] TASK-07195: Test ScreenersUI2: no console errors in browser
+- [ ] TASK-07196: Test ScreenersUI2: accessibility audit passes (axe)
+- [ ] TASK-07197: Test ScreenersUI2: visual regression snapshot test
+- [ ] TASK-07198: Test ResearchUI2: renders without crashing
+- [ ] TASK-07199: Test ResearchUI2: displays loading state correctly
+- [ ] TASK-07200: Test ResearchUI2: handles API error gracefully
+- [ ] TASK-07201: Test ResearchUI2: keyboard navigation works
+- [ ] TASK-07202: Test ResearchUI2: all interactive elements clickable
+- [ ] TASK-07203: Test ResearchUI2: responsive at 1920px width
+- [ ] TASK-07204: Test ResearchUI2: responsive at 1280px width
+- [ ] TASK-07205: Test ResearchUI2: no console errors in browser
+- [ ] TASK-07206: Test ResearchUI2: accessibility audit passes (axe)
+- [ ] TASK-07207: Test ResearchUI2: visual regression snapshot test
+- [ ] TASK-07208: Test SentimentUI2: renders without crashing
+- [ ] TASK-07209: Test SentimentUI2: displays loading state correctly
+- [ ] TASK-07210: Test SentimentUI2: handles API error gracefully
+- [ ] TASK-07211: Test SentimentUI2: keyboard navigation works
+- [ ] TASK-07212: Test SentimentUI2: all interactive elements clickable
+- [ ] TASK-07213: Test SentimentUI2: responsive at 1920px width
+- [ ] TASK-07214: Test SentimentUI2: responsive at 1280px width
+- [ ] TASK-07215: Test SentimentUI2: no console errors in browser
+- [ ] TASK-07216: Test SentimentUI2: accessibility audit passes (axe)
+- [ ] TASK-07217: Test SentimentUI2: visual regression snapshot test
+- [ ] TASK-07218: Test MonteCarloUI2: renders without crashing
+- [ ] TASK-07219: Test MonteCarloUI2: displays loading state correctly
+- [ ] TASK-07220: Test MonteCarloUI2: handles API error gracefully
+- [ ] TASK-07221: Test MonteCarloUI2: keyboard navigation works
+- [ ] TASK-07222: Test MonteCarloUI2: all interactive elements clickable
+- [ ] TASK-07223: Test MonteCarloUI2: responsive at 1920px width
+- [ ] TASK-07224: Test MonteCarloUI2: responsive at 1280px width
+- [ ] TASK-07225: Test MonteCarloUI2: no console errors in browser
+- [ ] TASK-07226: Test MonteCarloUI2: accessibility audit passes (axe)
+- [ ] TASK-07227: Test MonteCarloUI2: visual regression snapshot test
+- [ ] TASK-07228: Test WalkForwardUI2: renders without crashing
+- [ ] TASK-07229: Test WalkForwardUI2: displays loading state correctly
+- [ ] TASK-07230: Test WalkForwardUI2: handles API error gracefully
+- [ ] TASK-07231: Test WalkForwardUI2: keyboard navigation works
+- [ ] TASK-07232: Test WalkForwardUI2: all interactive elements clickable
+- [ ] TASK-07233: Test WalkForwardUI2: responsive at 1920px width
+- [ ] TASK-07234: Test WalkForwardUI2: responsive at 1280px width
+- [ ] TASK-07235: Test WalkForwardUI2: no console errors in browser
+- [ ] TASK-07236: Test WalkForwardUI2: accessibility audit passes (axe)
+- [ ] TASK-07237: Test WalkForwardUI2: visual regression snapshot test
+- [ ] TASK-07238: Test BacktesterV3UI2: renders without crashing
+- [ ] TASK-07239: Test BacktesterV3UI2: displays loading state correctly
+- [ ] TASK-07240: Test BacktesterV3UI2: handles API error gracefully
+- [ ] TASK-07241: Test BacktesterV3UI2: keyboard navigation works
+- [ ] TASK-07242: Test BacktesterV3UI2: all interactive elements clickable
+- [ ] TASK-07243: Test BacktesterV3UI2: responsive at 1920px width
+- [ ] TASK-07244: Test BacktesterV3UI2: responsive at 1280px width
+- [ ] TASK-07245: Test BacktesterV3UI2: no console errors in browser
+- [ ] TASK-07246: Test BacktesterV3UI2: accessibility audit passes (axe)
+- [ ] TASK-07247: Test BacktesterV3UI2: visual regression snapshot test
+- [ ] TASK-07248: Test OptionsMatrixUI2: renders without crashing
+- [ ] TASK-07249: Test OptionsMatrixUI2: displays loading state correctly
+- [ ] TASK-07250: Test OptionsMatrixUI2: handles API error gracefully
+- [ ] TASK-07251: Test OptionsMatrixUI2: keyboard navigation works
+- [ ] TASK-07252: Test OptionsMatrixUI2: all interactive elements clickable
+- [ ] TASK-07253: Test OptionsMatrixUI2: responsive at 1920px width
+- [ ] TASK-07254: Test OptionsMatrixUI2: responsive at 1280px width
+- [ ] TASK-07255: Test OptionsMatrixUI2: no console errors in browser
+- [ ] TASK-07256: Test OptionsMatrixUI2: accessibility audit passes (axe)
+- [ ] TASK-07257: Test OptionsMatrixUI2: visual regression snapshot test
+- [ ] TASK-07258: Test ExecutionCockpitUI2: renders without crashing
+- [ ] TASK-07259: Test ExecutionCockpitUI2: displays loading state correctly
+- [ ] TASK-07260: Test ExecutionCockpitUI2: handles API error gracefully
+- [ ] TASK-07261: Test ExecutionCockpitUI2: keyboard navigation works
+- [ ] TASK-07262: Test ExecutionCockpitUI2: all interactive elements clickable
+- [ ] TASK-07263: Test ExecutionCockpitUI2: responsive at 1920px width
+- [ ] TASK-07264: Test ExecutionCockpitUI2: responsive at 1280px width
+- [ ] TASK-07265: Test ExecutionCockpitUI2: no console errors in browser
+- [ ] TASK-07266: Test ExecutionCockpitUI2: accessibility audit passes (axe)
+- [ ] TASK-07267: Test ExecutionCockpitUI2: visual regression snapshot test
+- [ ] TASK-07268: Test ControlTowerUI2: renders without crashing
+- [ ] TASK-07269: Test ControlTowerUI2: displays loading state correctly
+- [ ] TASK-07270: Test ControlTowerUI2: handles API error gracefully
+- [ ] TASK-07271: Test ControlTowerUI2: keyboard navigation works
+- [ ] TASK-07272: Test ControlTowerUI2: all interactive elements clickable
+- [ ] TASK-07273: Test ControlTowerUI2: responsive at 1920px width
+- [ ] TASK-07274: Test ControlTowerUI2: responsive at 1280px width
+- [ ] TASK-07275: Test ControlTowerUI2: no console errors in browser
+- [ ] TASK-07276: Test ControlTowerUI2: accessibility audit passes (axe)
+- [ ] TASK-07277: Test ControlTowerUI2: visual regression snapshot test
+- [ ] TASK-07278: Test WorkflowBuilderUI2: renders without crashing
+- [ ] TASK-07279: Test WorkflowBuilderUI2: displays loading state correctly
+- [ ] TASK-07280: Test WorkflowBuilderUI2: handles API error gracefully
+- [ ] TASK-07281: Test WorkflowBuilderUI2: keyboard navigation works
+- [ ] TASK-07282: Test WorkflowBuilderUI2: all interactive elements clickable
+- [ ] TASK-07283: Test WorkflowBuilderUI2: responsive at 1920px width
+- [ ] TASK-07284: Test WorkflowBuilderUI2: responsive at 1280px width
+- [ ] TASK-07285: Test WorkflowBuilderUI2: no console errors in browser
+- [ ] TASK-07286: Test WorkflowBuilderUI2: accessibility audit passes (axe)
+- [ ] TASK-07287: Test WorkflowBuilderUI2: visual regression snapshot test
+- [ ] TASK-07288: Test AutopilotUI2: renders without crashing
+- [ ] TASK-07289: Test AutopilotUI2: displays loading state correctly
+- [ ] TASK-07290: Test AutopilotUI2: handles API error gracefully
+- [ ] TASK-07291: Test AutopilotUI2: keyboard navigation works
+- [ ] TASK-07292: Test AutopilotUI2: all interactive elements clickable
+- [ ] TASK-07293: Test AutopilotUI2: responsive at 1920px width
+- [ ] TASK-07294: Test AutopilotUI2: responsive at 1280px width
+- [ ] TASK-07295: Test AutopilotUI2: no console errors in browser
+- [ ] TASK-07296: Test AutopilotUI2: accessibility audit passes (axe)
+- [ ] TASK-07297: Test AutopilotUI2: visual regression snapshot test
+- [ ] TASK-07298: Test NovaUI2: renders without crashing
+- [ ] TASK-07299: Test NovaUI2: displays loading state correctly
+- [ ] TASK-07300: Test NovaUI2: handles API error gracefully
+- [ ] TASK-07301: Test NovaUI2: keyboard navigation works
+- [ ] TASK-07302: Test NovaUI2: all interactive elements clickable
+- [ ] TASK-07303: Test NovaUI2: responsive at 1920px width
+- [ ] TASK-07304: Test NovaUI2: responsive at 1280px width
+- [ ] TASK-07305: Test NovaUI2: no console errors in browser
+- [ ] TASK-07306: Test NovaUI2: accessibility audit passes (axe)
+- [ ] TASK-07307: Test NovaUI2: visual regression snapshot test
+- [ ] TASK-07308: Test StrategyStudioV3UI2: renders without crashing
+- [ ] TASK-07309: Test StrategyStudioV3UI2: displays loading state correctly
+- [ ] TASK-07310: Test StrategyStudioV3UI2: handles API error gracefully
+- [ ] TASK-07311: Test StrategyStudioV3UI2: keyboard navigation works
+- [ ] TASK-07312: Test StrategyStudioV3UI2: all interactive elements clickable
+- [ ] TASK-07313: Test StrategyStudioV3UI2: responsive at 1920px width
+- [ ] TASK-07314: Test StrategyStudioV3UI2: responsive at 1280px width
+- [ ] TASK-07315: Test StrategyStudioV3UI2: no console errors in browser
+- [ ] TASK-07316: Test StrategyStudioV3UI2: accessibility audit passes (axe)
+- [ ] TASK-07317: Test StrategyStudioV3UI2: visual regression snapshot test
+- [ ] TASK-07318: Test SettingsUI2: renders without crashing
+- [ ] TASK-07319: Test SettingsUI2: displays loading state correctly
+- [ ] TASK-07320: Test SettingsUI2: handles API error gracefully
+- [ ] TASK-07321: Test SettingsUI2: keyboard navigation works
+- [ ] TASK-07322: Test SettingsUI2: all interactive elements clickable
+- [ ] TASK-07323: Test SettingsUI2: responsive at 1920px width
+- [ ] TASK-07324: Test SettingsUI2: responsive at 1280px width
+- [ ] TASK-07325: Test SettingsUI2: no console errors in browser
+- [ ] TASK-07326: Test SettingsUI2: accessibility audit passes (axe)
+- [ ] TASK-07327: Test SettingsUI2: visual regression snapshot test
+- [ ] TASK-07328: Test RunsUI2: renders without crashing
+- [ ] TASK-07329: Test RunsUI2: displays loading state correctly
+- [ ] TASK-07330: Test RunsUI2: handles API error gracefully
+- [ ] TASK-07331: Test RunsUI2: keyboard navigation works
+- [ ] TASK-07332: Test RunsUI2: all interactive elements clickable
+- [ ] TASK-07333: Test RunsUI2: responsive at 1920px width
+- [ ] TASK-07334: Test RunsUI2: responsive at 1280px width
+- [ ] TASK-07335: Test RunsUI2: no console errors in browser
+- [ ] TASK-07336: Test RunsUI2: accessibility audit passes (axe)
+- [ ] TASK-07337: Test RunsUI2: visual regression snapshot test
+- [ ] TASK-07338: Test EconomicCalendarUI2: renders without crashing
+- [ ] TASK-07339: Test EconomicCalendarUI2: displays loading state correctly
+- [ ] TASK-07340: Test EconomicCalendarUI2: handles API error gracefully
+- [ ] TASK-07341: Test EconomicCalendarUI2: keyboard navigation works
+- [ ] TASK-07342: Test EconomicCalendarUI2: all interactive elements clickable
+- [ ] TASK-07343: Test EconomicCalendarUI2: responsive at 1920px width
+- [ ] TASK-07344: Test EconomicCalendarUI2: responsive at 1280px width
+- [ ] TASK-07345: Test EconomicCalendarUI2: no console errors in browser
+- [ ] TASK-07346: Test EconomicCalendarUI2: accessibility audit passes (axe)
+- [ ] TASK-07347: Test EconomicCalendarUI2: visual regression snapshot test
+- [ ] TASK-07348: Test BlotterUI2: renders without crashing
+- [ ] TASK-07349: Test BlotterUI2: displays loading state correctly
+- [ ] TASK-07350: Test BlotterUI2: handles API error gracefully
+- [ ] TASK-07351: Test BlotterUI2: keyboard navigation works
+- [ ] TASK-07352: Test BlotterUI2: all interactive elements clickable
+- [ ] TASK-07353: Test BlotterUI2: responsive at 1920px width
+- [ ] TASK-07354: Test BlotterUI2: responsive at 1280px width
+- [ ] TASK-07355: Test BlotterUI2: no console errors in browser
+- [ ] TASK-07356: Test BlotterUI2: accessibility audit passes (axe)
+- [ ] TASK-07357: Test BlotterUI2: visual regression snapshot test
+- [ ] TASK-07358: Test PerformanceUI2: renders without crashing
+- [ ] TASK-07359: Test PerformanceUI2: displays loading state correctly
+- [ ] TASK-07360: Test PerformanceUI2: handles API error gracefully
+- [ ] TASK-07361: Test PerformanceUI2: keyboard navigation works
+- [ ] TASK-07362: Test PerformanceUI2: all interactive elements clickable
+- [ ] TASK-07363: Test PerformanceUI2: responsive at 1920px width
+- [ ] TASK-07364: Test PerformanceUI2: responsive at 1280px width
+- [ ] TASK-07365: Test PerformanceUI2: no console errors in browser
+- [ ] TASK-07366: Test PerformanceUI2: accessibility audit passes (axe)
+- [ ] TASK-07367: Test PerformanceUI2: visual regression snapshot test
+- [ ] TASK-07368: Test ObservabilityUI2: renders without crashing
+- [ ] TASK-07369: Test ObservabilityUI2: displays loading state correctly
+- [ ] TASK-07370: Test ObservabilityUI2: handles API error gracefully
+- [ ] TASK-07371: Test ObservabilityUI2: keyboard navigation works
+- [ ] TASK-07372: Test ObservabilityUI2: all interactive elements clickable
+- [ ] TASK-07373: Test ObservabilityUI2: responsive at 1920px width
+- [ ] TASK-07374: Test ObservabilityUI2: responsive at 1280px width
+- [ ] TASK-07375: Test ObservabilityUI2: no console errors in browser
+- [ ] TASK-07376: Test ObservabilityUI2: accessibility audit passes (axe)
+- [ ] TASK-07377: Test ObservabilityUI2: visual regression snapshot test
+
+
+## CHART ENGINE â€” OVERLAY SYSTEMS
+
+- [ ] TASK-07378: Overlay: earnings events markers on chart (pin icons)
+- [ ] TASK-07379: Overlay: dividend markers on chart (flag icons)
+- [ ] TASK-07380: Overlay: stock split markers on chart (S icon)
+- [ ] TASK-07381: Overlay: analyst price target lines overlay
+- [ ] TASK-07382: Overlay: support/resistance auto-detection lines
+- [ ] TASK-07383: Overlay: pivot points auto-calculated overlay
+- [ ] TASK-07384: Overlay: gap detection and fill visualization
+- [ ] TASK-07385: Overlay: opening/closing range shading
+- [ ] TASK-07386: Overlay: VWAP deviation bands (+/- 1,2,3 sigma)
+- [ ] TASK-07387: Overlay: volume-weighted moving average lines
+- [ ] TASK-07388: Overlay: previous day H/L/C reference lines
+- [ ] TASK-07389: Overlay: weekly H/L/C reference lines
+- [ ] TASK-07390: Overlay: monthly H/L/C reference lines
+- [ ] TASK-07391: Overlay: premarket/afterhours activity shading
+- [ ] TASK-07392: Overlay: holiday market closure markers
+- [ ] TASK-07393: Overlay: custom horizontal price level with label
+- [ ] TASK-07394: Overlay: trade entry/exit markers from backtest results
+- [ ] TASK-07395: Overlay: position average cost line (portfolio view)
+- [ ] TASK-07396: Overlay: stop loss / take profit lines (active orders)
+- [ ] TASK-07397: Overlay: alert trigger price lines with notification icon
+
+
+## CHART ENGINE â€” MULTI-SYMBOL ANALYSIS
+
+- [ ] TASK-07398: Multi-symbol: overlay up to 5 symbols on one chart
+- [ ] TASK-07399: Multi-symbol: normalize to % change mode for comparison
+- [ ] TASK-07400: Multi-symbol: normalize to index 100 mode
+- [ ] TASK-07401: Multi-symbol: color-coded per symbol legend
+- [ ] TASK-07402: Multi-symbol: individual visibility toggle per overlay
+- [ ] TASK-07403: Multi-symbol: correlation coefficient display in header
+- [ ] TASK-07404: Multi-symbol: spread/ratio chart mode (Symbol1/Symbol2)
+- [ ] TASK-07405: Multi-symbol: beta calculation overlay
+- [ ] TASK-07406: Multi-symbol: relative strength comparison vs benchmark
+- [ ] TASK-07407: Multi-symbol: sync crosshair across all overlaid symbols
+- [ ] TASK-07408: Multi-symbol: individual symbol tooltip on hover
+- [ ] TASK-07409: Multi-symbol: add symbol search dropdown for overlay
+- [ ] TASK-07410: Multi-symbol: remove overlay symbol button
+- [ ] TASK-07411: Multi-symbol: overlay symbol mini quote in legend
+- [ ] TASK-07412: Multi-symbol: volume comparison mode (overlaid volumes)
+
+
+## DATA VISUALIZATION LIBRARY
+
+- [ ] TASK-07413: Build reusable area chart component (D3 or lightweight-charts)
+- [ ] TASK-07414: Build reusable bar chart component (horizontal + vertical)
+- [ ] TASK-07415: Build reusable donut/pie chart component
+- [ ] TASK-07416: Build reusable heatmap component (2D grid with color scale)
+- [ ] TASK-07417: Build reusable treemap component (nested rectangles)
+- [ ] TASK-07418: Build reusable scatter plot component
+- [ ] TASK-07419: Build reusable histogram component
+- [ ] TASK-07420: Build reusable gauge/dial component (0-100 with zones)
+- [ ] TASK-07421: Build reusable sparkline component (inline mini chart)
+- [ ] TASK-07422: Build reusable Sankey diagram component
+- [ ] TASK-07423: Build reusable waterfall chart component
+- [ ] TASK-07424: Build reusable radar/spider chart component
+- [ ] TASK-07425: Build reusable funnel chart component
+- [ ] TASK-07426: Build reusable box plot / candlestick statistical component
+- [ ] TASK-07427: Build reusable bullet chart component
+- [ ] TASK-07428: All charts: Bloomberg amber color palette integration
+- [ ] TASK-07429: All charts: dark theme compatibility
+- [ ] TASK-07430: All charts: responsive sizing (ResizeObserver)
+- [ ] TASK-07431: All charts: tooltip on hover with data values
+- [ ] TASK-07432: All charts: export as PNG functionality
+- [ ] TASK-07433: All charts: export underlying data as CSV
+- [ ] TASK-07434: All charts: animation on data load
+- [ ] TASK-07435: All charts: legend component with toggle visibility
+- [ ] TASK-07436: All charts: axis label formatting (auto K/M/B/T)
+- [ ] TASK-07437: All charts: gridlines styling (dashed subtle gray)
+
+
+## BLOOMBERG TERMINAL FUNCTIONS (100+)
+
+- [ ] TASK-07438: Implement Bloomberg DES (Description) function display
+- [ ] TASK-07439: Implement Bloomberg GP (Graph Price) function display
+- [ ] TASK-07440: Implement Bloomberg FA (Financial Analysis) function display
+- [ ] TASK-07441: Implement Bloomberg ERN (Earnings) function display
+- [ ] TASK-07442: Implement Bloomberg AN (Analyst Recommendations) display
+- [ ] TASK-07443: Implement Bloomberg RV (Relative Value) function display
+- [ ] TASK-07444: Implement Bloomberg DVD (Dividends) function display
+- [ ] TASK-07445: Implement Bloomberg OMON (Options Monitor) function display
+- [ ] TASK-07446: Implement Bloomberg OV (Option Valuation) function display
+- [ ] TASK-07447: Implement Bloomberg OVME (Option Valuation Model Editor)
+- [ ] TASK-07448: Implement Bloomberg GIP (Graph Intraday Price)
+- [ ] TASK-07449: Implement Bloomberg HDS (Holders/Shareholders) display
+- [ ] TASK-07450: Implement Bloomberg CACS (Corporate Actions)
+- [ ] TASK-07451: Implement Bloomberg CN (Company News) display
+- [ ] TASK-07452: Implement Bloomberg CIX (Corporate Index Memberships)
+- [ ] TASK-07453: Implement Bloomberg SI (Short Interest) display
+- [ ] TASK-07454: Implement Bloomberg CQ (Market Quotes) display
+- [ ] TASK-07455: Implement Bloomberg BQ (Block Quotes) display
+- [ ] TASK-07456: Implement Bloomberg MEMB (Index Members) display
+- [ ] TASK-07457: Implement Bloomberg GE (Government Bond Explorer)
+- [ ] TASK-07458: Implement Bloomberg YAS (Yield Analysis) display
+- [ ] TASK-07459: Implement Bloomberg FXIP (FX Information Pricing)
+- [ ] TASK-07460: Implement Bloomberg ECST (Economic Statistics)
+- [ ] TASK-07461: Implement Bloomberg ECO (Economic Calendar)
+- [ ] TASK-07462: Implement Bloomberg WECO (World Economic Calendar)
+- [ ] TASK-07463: Implement Bloomberg ECFC (Forecast) function display
+- [ ] TASK-07464: Implement Bloomberg PORT (Portfolio Analytics)
+- [ ] TASK-07465: Implement Bloomberg MARS (Risk Management)
+- [ ] TASK-07466: Implement Bloomberg PMEN (Portfolio Menu)
+- [ ] TASK-07467: Implement Bloomberg PRTU (Portfolio Upload)
+- [ ] TASK-07468: Implement Bloomberg DRSK (Derivatives Risk)
+- [ ] TASK-07469: Implement Bloomberg SSRC (Stock Screener)
+- [ ] TASK-07470: Implement Bloomberg EQS (Equity Screening)
+- [ ] TASK-07471: Implement Bloomberg TOP (Top News) display
+- [ ] TASK-07472: Implement Bloomberg NI (News Intelligence) display
+- [ ] TASK-07473: Implement Bloomberg BRC (BRICS Research)
+- [ ] TASK-07474: Implement Bloomberg BI (Bloomberg Intelligence)
+- [ ] TASK-07475: Implement Bloomberg COMP (Comparison) function
+- [ ] TASK-07476: Implement Bloomberg SECF (Security Finder)
+- [ ] TASK-07477: Implement Bloomberg FHM (Fundamental Heat Map)
+- [ ] TASK-07478: Implement Bloomberg WEI (World Equity Indices)
+- [ ] TASK-07479: Implement Bloomberg IMAP (Interactive Maps)
+- [ ] TASK-07480: Implement Bloomberg GMAP (Geo Map) display
+- [ ] TASK-07481: Implement Bloomberg XLTP (Excel Template)
+- [ ] TASK-07482: Implement Bloomberg MOST (Most Active Securities)
+- [ ] TASK-07483: Implement Bloomberg MMAP (Market Map) sector heat map
+- [ ] TASK-07484: Implement Bloomberg CSTM (Custom Studies/Strategies)
+- [ ] TASK-07485: Implement Bloomberg TRA (Trade Summary) display
+- [ ] TASK-07486: Implement Bloomberg AQR (Advanced Quote Report)
+- [ ] TASK-07487: Implement Bloomberg VWAP (VWAP Analytics) display
+- [ ] TASK-07488: Implement Bloomberg BLP (Bloomberg Launchpad) mode
+
+
+## ZUSTAND STATE MANAGEMENT
+
+- [ ] TASK-07489: Create marketDataStore: quotes, bars, orderbook, trades
+- [ ] TASK-07490: Create portfolioStore: positions, P&L, allocations
+- [ ] TASK-07491: Create ordersStore: open orders, order history, fills
+- [ ] TASK-07492: Create alertStore: active alerts, triggered history
+- [ ] TASK-07493: Create watchlistStore: multiple lists with symbols
+- [ ] TASK-07494: Create settingsStore: user preferences, theme, hotkeys
+- [ ] TASK-07495: Create chartStore: active symbol, timeframe, indicators, drawings
+- [ ] TASK-07496: Create screenerStore: filters, results, presets
+- [ ] TASK-07497: Create riskStore: VaR, stress tests, limits, exposures
+- [ ] TASK-07498: Create newsStore: articles, sentiment scores, bookmarks
+- [ ] TASK-07499: Create backtestStore: config, results, trades, metrics
+- [ ] TASK-07500: Create optionsStore: chain data, Greeks, strategies, IV surface
+- [ ] TASK-07501: Create macroStore: economic calendar, FRED data, commods, FX
+- [ ] TASK-07502: Create connectionStore: WebSocket status, API health, latency
+- [ ] TASK-07503: Store: implement persist middleware for localStorage
+- [ ] TASK-07504: Store: implement devtools middleware for debugging
+- [ ] TASK-07505: Store: implement immer middleware for immutable updates
+- [ ] TASK-07506: Store: implement subscribeWithSelector for fine-grained updates
+- [ ] TASK-07507: Store: cross-store selectors (derived data)
+- [ ] TASK-07508: Store: optimistic update patterns for order submission
+- [ ] TASK-07509: Store: batch update support for high-frequency data
+- [ ] TASK-07510: Store: saga/effect pattern for complex async flows
+- [ ] TASK-07511: Store: data normalization (entities by ID)
+- [ ] TASK-07512: Store: stale data detection and refetch triggers
+- [ ] TASK-07513: Store: connection-aware data fetching (retry on reconnect)
+
+
+## WEBSOCKET INFRASTRUCTURE
+
+- [ ] TASK-07514: Implement WebSocket connection manager (singleton)
+- [ ] TASK-07515: WS: auto-reconnect with exponential backoff (1s, 2s, 4s, 8s, max 30s)
+- [ ] TASK-07516: WS: heartbeat/ping-pong keepalive (every 15s)
+- [ ] TASK-07517: WS: message queue during reconnect (replay on reconnect)
+- [ ] TASK-07518: WS: subscription management (subscribe/unsubscribe channels)
+- [ ] TASK-07519: WS: channel multiplexing (single connection, multiple streams)
+- [ ] TASK-07520: WS: message decompression (gzip/deflate)
+- [ ] TASK-07521: WS: message rate limiting (throttle high-frequency updates)
+- [ ] TASK-07522: WS: connection status indicator in UI (green/amber/red dot)
+- [ ] TASK-07523: WS: graceful close on page navigation
+- [ ] TASK-07524: WS: automatic resub on reconnect
+- [ ] TASK-07525: WS: error handling with user notification
+- [ ] TASK-07526: WS: binary message support for market data
+- [ ] TASK-07527: WS: snapshot + incremental update pattern
+- [ ] TASK-07528: WS: sequence number gap detection
+- [ ] TASK-07529: Backend WS: implement subscription handler
+- [ ] TASK-07530: Backend WS: implement channel routing
+- [ ] TASK-07531: Backend WS: implement broadcast to all subscribers
+- [ ] TASK-07532: Backend WS: implement per-symbol subscription
+- [ ] TASK-07533: Backend WS: implement rate limiting per client
+- [ ] TASK-07534: Backend WS: implement authentication handshake
+- [ ] TASK-07535: Backend WS: implement heartbeat monitor
+- [ ] TASK-07536: Backend WS: implement graceful disconnect handler
+- [ ] TASK-07537: Backend WS: implement message serialization (msgpack/JSON)
+- [ ] TASK-07538: Backend WS: implement connection pool management
+
+
+## RESPONSIVE LAYOUT & WINDOW MANAGEMENT
+
+- [ ] TASK-07539: Implement panelized window system (resizable/draggable panels)
+- [ ] TASK-07540: Panel system: drag panel to reposition in grid
+- [ ] TASK-07541: Panel system: resize panel via drag handle
+- [ ] TASK-07542: Panel system: minimize panel to title bar
+- [ ] TASK-07543: Panel system: maximize panel to full workspace
+- [ ] TASK-07544: Panel system: close panel with animation
+- [ ] TASK-07545: Panel system: add panel from menu
+- [ ] TASK-07546: Panel system: save layout to named preset
+- [ ] TASK-07547: Panel system: load layout from preset list
+- [ ] TASK-07548: Panel system: default layout presets (Trading, Research, Risk)
+- [ ] TASK-07549: Panel system: auto-save layout on change
+- [ ] TASK-07550: Panel system: restore last session layout on load
+- [ ] TASK-07551: Panel system: tab groups within panels
+- [ ] TASK-07552: Panel system: tear-off panel to floating window
+- [ ] TASK-07553: Panel system: dock floating window back to grid
+- [ ] TASK-07554: Responsive: 1920Ã—1080 full HD layout
+- [ ] TASK-07555: Responsive: 2560Ã—1440 QHD layout (use extra space)
+- [ ] TASK-07556: Responsive: 3840Ã—2160 4K layout (ultra-dense mode)
+- [ ] TASK-07557: Responsive: 1366Ã—768 laptop layout (compact mode)
+- [ ] TASK-07558: Responsive: handle browser zoom 80%-150%
+
+
+
+## OPTIONS STRATEGY P&L (42 STRATEGIES Ã— 8)
+
+- [ ] TASK-07559: Options Strategy 'Long Call': implement payoff calculation engine
+- [ ] TASK-07560: Options Strategy 'Long Call': interactive P&L diagram rendering
+- [ ] TASK-07561: Options Strategy 'Long Call': breakeven point(s) computation
+- [ ] TASK-07562: Options Strategy 'Long Call': max profit/max loss labels
+- [ ] TASK-07563: Options Strategy 'Long Call': probability of profit (PoP) calculation
+- [ ] TASK-07564: Options Strategy 'Long Call': theta decay simulation (animate)
+- [ ] TASK-07565: Options Strategy 'Long Call': Greeks aggregation for combined position
+- [ ] TASK-07566: Options Strategy 'Long Call': suggested strikes auto-selector
+- [ ] TASK-07567: Options Strategy 'Long Put': implement payoff calculation engine
+- [ ] TASK-07568: Options Strategy 'Long Put': interactive P&L diagram rendering
+- [ ] TASK-07569: Options Strategy 'Long Put': breakeven point(s) computation
+- [ ] TASK-07570: Options Strategy 'Long Put': max profit/max loss labels
+- [ ] TASK-07571: Options Strategy 'Long Put': probability of profit (PoP) calculation
+- [ ] TASK-07572: Options Strategy 'Long Put': theta decay simulation (animate)
+- [ ] TASK-07573: Options Strategy 'Long Put': Greeks aggregation for combined position
+- [ ] TASK-07574: Options Strategy 'Long Put': suggested strikes auto-selector
+- [ ] TASK-07575: Options Strategy 'Short Call': implement payoff calculation engine
+- [ ] TASK-07576: Options Strategy 'Short Call': interactive P&L diagram rendering
+- [ ] TASK-07577: Options Strategy 'Short Call': breakeven point(s) computation
+- [ ] TASK-07578: Options Strategy 'Short Call': max profit/max loss labels
+- [ ] TASK-07579: Options Strategy 'Short Call': probability of profit (PoP) calculation
+- [ ] TASK-07580: Options Strategy 'Short Call': theta decay simulation (animate)
+- [ ] TASK-07581: Options Strategy 'Short Call': Greeks aggregation for combined position
+- [ ] TASK-07582: Options Strategy 'Short Call': suggested strikes auto-selector
+- [ ] TASK-07583: Options Strategy 'Short Put': implement payoff calculation engine
+- [ ] TASK-07584: Options Strategy 'Short Put': interactive P&L diagram rendering
+- [ ] TASK-07585: Options Strategy 'Short Put': breakeven point(s) computation
+- [ ] TASK-07586: Options Strategy 'Short Put': max profit/max loss labels
+- [ ] TASK-07587: Options Strategy 'Short Put': probability of profit (PoP) calculation
+- [ ] TASK-07588: Options Strategy 'Short Put': theta decay simulation (animate)
+- [ ] TASK-07589: Options Strategy 'Short Put': Greeks aggregation for combined position
+- [ ] TASK-07590: Options Strategy 'Short Put': suggested strikes auto-selector
+- [ ] TASK-07591: Options Strategy 'Covered Call': implement payoff calculation engine
+- [ ] TASK-07592: Options Strategy 'Covered Call': interactive P&L diagram rendering
+- [ ] TASK-07593: Options Strategy 'Covered Call': breakeven point(s) computation
+- [ ] TASK-07594: Options Strategy 'Covered Call': max profit/max loss labels
+- [ ] TASK-07595: Options Strategy 'Covered Call': probability of profit (PoP) calculation
+- [ ] TASK-07596: Options Strategy 'Covered Call': theta decay simulation (animate)
+- [ ] TASK-07597: Options Strategy 'Covered Call': Greeks aggregation for combined position
+- [ ] TASK-07598: Options Strategy 'Covered Call': suggested strikes auto-selector
+- [ ] TASK-07599: Options Strategy 'Cash-Secured Put': implement payoff calculation engine
+- [ ] TASK-07600: Options Strategy 'Cash-Secured Put': interactive P&L diagram rendering
+- [ ] TASK-07601: Options Strategy 'Cash-Secured Put': breakeven point(s) computation
+- [ ] TASK-07602: Options Strategy 'Cash-Secured Put': max profit/max loss labels
+- [ ] TASK-07603: Options Strategy 'Cash-Secured Put': probability of profit (PoP) calculation
+- [ ] TASK-07604: Options Strategy 'Cash-Secured Put': theta decay simulation (animate)
+- [ ] TASK-07605: Options Strategy 'Cash-Secured Put': Greeks aggregation for combined position
+- [ ] TASK-07606: Options Strategy 'Cash-Secured Put': suggested strikes auto-selector
+- [ ] TASK-07607: Options Strategy 'Protective Put': implement payoff calculation engine
+- [ ] TASK-07608: Options Strategy 'Protective Put': interactive P&L diagram rendering
+- [ ] TASK-07609: Options Strategy 'Protective Put': breakeven point(s) computation
+- [ ] TASK-07610: Options Strategy 'Protective Put': max profit/max loss labels
+- [ ] TASK-07611: Options Strategy 'Protective Put': probability of profit (PoP) calculation
+- [ ] TASK-07612: Options Strategy 'Protective Put': theta decay simulation (animate)
+- [ ] TASK-07613: Options Strategy 'Protective Put': Greeks aggregation for combined position
+- [ ] TASK-07614: Options Strategy 'Protective Put': suggested strikes auto-selector
+- [ ] TASK-07615: Options Strategy 'Collar': implement payoff calculation engine
+- [ ] TASK-07616: Options Strategy 'Collar': interactive P&L diagram rendering
+- [ ] TASK-07617: Options Strategy 'Collar': breakeven point(s) computation
+- [ ] TASK-07618: Options Strategy 'Collar': max profit/max loss labels
+- [ ] TASK-07619: Options Strategy 'Collar': probability of profit (PoP) calculation
+- [ ] TASK-07620: Options Strategy 'Collar': theta decay simulation (animate)
+- [ ] TASK-07621: Options Strategy 'Collar': Greeks aggregation for combined position
+- [ ] TASK-07622: Options Strategy 'Collar': suggested strikes auto-selector
+- [ ] TASK-07623: Options Strategy 'Bull Call Spread': implement payoff calculation engine
+- [ ] TASK-07624: Options Strategy 'Bull Call Spread': interactive P&L diagram rendering
+- [ ] TASK-07625: Options Strategy 'Bull Call Spread': breakeven point(s) computation
+- [ ] TASK-07626: Options Strategy 'Bull Call Spread': max profit/max loss labels
+- [ ] TASK-07627: Options Strategy 'Bull Call Spread': probability of profit (PoP) calculation
+- [ ] TASK-07628: Options Strategy 'Bull Call Spread': theta decay simulation (animate)
+- [ ] TASK-07629: Options Strategy 'Bull Call Spread': Greeks aggregation for combined position
+- [ ] TASK-07630: Options Strategy 'Bull Call Spread': suggested strikes auto-selector
+- [ ] TASK-07631: Options Strategy 'Bear Call Spread': implement payoff calculation engine
+- [ ] TASK-07632: Options Strategy 'Bear Call Spread': interactive P&L diagram rendering
+- [ ] TASK-07633: Options Strategy 'Bear Call Spread': breakeven point(s) computation
+- [ ] TASK-07634: Options Strategy 'Bear Call Spread': max profit/max loss labels
+- [ ] TASK-07635: Options Strategy 'Bear Call Spread': probability of profit (PoP) calculation
+- [ ] TASK-07636: Options Strategy 'Bear Call Spread': theta decay simulation (animate)
+- [ ] TASK-07637: Options Strategy 'Bear Call Spread': Greeks aggregation for combined position
+- [ ] TASK-07638: Options Strategy 'Bear Call Spread': suggested strikes auto-selector
+- [ ] TASK-07639: Options Strategy 'Bull Put Spread': implement payoff calculation engine
+- [ ] TASK-07640: Options Strategy 'Bull Put Spread': interactive P&L diagram rendering
+- [ ] TASK-07641: Options Strategy 'Bull Put Spread': breakeven point(s) computation
+- [ ] TASK-07642: Options Strategy 'Bull Put Spread': max profit/max loss labels
+- [ ] TASK-07643: Options Strategy 'Bull Put Spread': probability of profit (PoP) calculation
+- [ ] TASK-07644: Options Strategy 'Bull Put Spread': theta decay simulation (animate)
+- [ ] TASK-07645: Options Strategy 'Bull Put Spread': Greeks aggregation for combined position
+- [ ] TASK-07646: Options Strategy 'Bull Put Spread': suggested strikes auto-selector
+- [ ] TASK-07647: Options Strategy 'Bear Put Spread': implement payoff calculation engine
+- [ ] TASK-07648: Options Strategy 'Bear Put Spread': interactive P&L diagram rendering
+- [ ] TASK-07649: Options Strategy 'Bear Put Spread': breakeven point(s) computation
+- [ ] TASK-07650: Options Strategy 'Bear Put Spread': max profit/max loss labels
+- [ ] TASK-07651: Options Strategy 'Bear Put Spread': probability of profit (PoP) calculation
+- [ ] TASK-07652: Options Strategy 'Bear Put Spread': theta decay simulation (animate)
+- [ ] TASK-07653: Options Strategy 'Bear Put Spread': Greeks aggregation for combined position
+- [ ] TASK-07654: Options Strategy 'Bear Put Spread': suggested strikes auto-selector
+- [ ] TASK-07655: Options Strategy 'Long Straddle': implement payoff calculation engine
+- [ ] TASK-07656: Options Strategy 'Long Straddle': interactive P&L diagram rendering
+- [ ] TASK-07657: Options Strategy 'Long Straddle': breakeven point(s) computation
+- [ ] TASK-07658: Options Strategy 'Long Straddle': max profit/max loss labels
+- [ ] TASK-07659: Options Strategy 'Long Straddle': probability of profit (PoP) calculation
+- [ ] TASK-07660: Options Strategy 'Long Straddle': theta decay simulation (animate)
+- [ ] TASK-07661: Options Strategy 'Long Straddle': Greeks aggregation for combined position
+- [ ] TASK-07662: Options Strategy 'Long Straddle': suggested strikes auto-selector
+- [ ] TASK-07663: Options Strategy 'Short Straddle': implement payoff calculation engine
+- [ ] TASK-07664: Options Strategy 'Short Straddle': interactive P&L diagram rendering
+- [ ] TASK-07665: Options Strategy 'Short Straddle': breakeven point(s) computation
+- [ ] TASK-07666: Options Strategy 'Short Straddle': max profit/max loss labels
+- [ ] TASK-07667: Options Strategy 'Short Straddle': probability of profit (PoP) calculation
+- [ ] TASK-07668: Options Strategy 'Short Straddle': theta decay simulation (animate)
+- [ ] TASK-07669: Options Strategy 'Short Straddle': Greeks aggregation for combined position
+- [ ] TASK-07670: Options Strategy 'Short Straddle': suggested strikes auto-selector
+- [ ] TASK-07671: Options Strategy 'Long Strangle': implement payoff calculation engine
+- [ ] TASK-07672: Options Strategy 'Long Strangle': interactive P&L diagram rendering
+- [ ] TASK-07673: Options Strategy 'Long Strangle': breakeven point(s) computation
+- [ ] TASK-07674: Options Strategy 'Long Strangle': max profit/max loss labels
+- [ ] TASK-07675: Options Strategy 'Long Strangle': probability of profit (PoP) calculation
+- [ ] TASK-07676: Options Strategy 'Long Strangle': theta decay simulation (animate)
+- [ ] TASK-07677: Options Strategy 'Long Strangle': Greeks aggregation for combined position
+- [ ] TASK-07678: Options Strategy 'Long Strangle': suggested strikes auto-selector
+- [ ] TASK-07679: Options Strategy 'Short Strangle': implement payoff calculation engine
+- [ ] TASK-07680: Options Strategy 'Short Strangle': interactive P&L diagram rendering
+- [ ] TASK-07681: Options Strategy 'Short Strangle': breakeven point(s) computation
+- [ ] TASK-07682: Options Strategy 'Short Strangle': max profit/max loss labels
+- [ ] TASK-07683: Options Strategy 'Short Strangle': probability of profit (PoP) calculation
+- [ ] TASK-07684: Options Strategy 'Short Strangle': theta decay simulation (animate)
+- [ ] TASK-07685: Options Strategy 'Short Strangle': Greeks aggregation for combined position
+- [ ] TASK-07686: Options Strategy 'Short Strangle': suggested strikes auto-selector
+- [ ] TASK-07687: Options Strategy 'Iron Condor': implement payoff calculation engine
+- [ ] TASK-07688: Options Strategy 'Iron Condor': interactive P&L diagram rendering
+- [ ] TASK-07689: Options Strategy 'Iron Condor': breakeven point(s) computation
+- [ ] TASK-07690: Options Strategy 'Iron Condor': max profit/max loss labels
+- [ ] TASK-07691: Options Strategy 'Iron Condor': probability of profit (PoP) calculation
+- [ ] TASK-07692: Options Strategy 'Iron Condor': theta decay simulation (animate)
+- [ ] TASK-07693: Options Strategy 'Iron Condor': Greeks aggregation for combined position
+- [ ] TASK-07694: Options Strategy 'Iron Condor': suggested strikes auto-selector
+- [ ] TASK-07695: Options Strategy 'Iron Butterfly': implement payoff calculation engine
+- [ ] TASK-07696: Options Strategy 'Iron Butterfly': interactive P&L diagram rendering
+- [ ] TASK-07697: Options Strategy 'Iron Butterfly': breakeven point(s) computation
+- [ ] TASK-07698: Options Strategy 'Iron Butterfly': max profit/max loss labels
+- [ ] TASK-07699: Options Strategy 'Iron Butterfly': probability of profit (PoP) calculation
+- [ ] TASK-07700: Options Strategy 'Iron Butterfly': theta decay simulation (animate)
+- [ ] TASK-07701: Options Strategy 'Iron Butterfly': Greeks aggregation for combined position
+- [ ] TASK-07702: Options Strategy 'Iron Butterfly': suggested strikes auto-selector
+- [ ] TASK-07703: Options Strategy 'Broken Wing Butterfly': implement payoff calculation engine
+- [ ] TASK-07704: Options Strategy 'Broken Wing Butterfly': interactive P&L diagram rendering
+- [ ] TASK-07705: Options Strategy 'Broken Wing Butterfly': breakeven point(s) computation
+- [ ] TASK-07706: Options Strategy 'Broken Wing Butterfly': max profit/max loss labels
+- [ ] TASK-07707: Options Strategy 'Broken Wing Butterfly': probability of profit (PoP) calculation
+- [ ] TASK-07708: Options Strategy 'Broken Wing Butterfly': theta decay simulation (animate)
+- [ ] TASK-07709: Options Strategy 'Broken Wing Butterfly': Greeks aggregation for combined position
+- [ ] TASK-07710: Options Strategy 'Broken Wing Butterfly': suggested strikes auto-selector
+- [ ] TASK-07711: Options Strategy 'Calendar Spread (Call)': implement payoff calculation engine
+- [ ] TASK-07712: Options Strategy 'Calendar Spread (Call)': interactive P&L diagram rendering
+- [ ] TASK-07713: Options Strategy 'Calendar Spread (Call)': breakeven point(s) computation
+- [ ] TASK-07714: Options Strategy 'Calendar Spread (Call)': max profit/max loss labels
+- [ ] TASK-07715: Options Strategy 'Calendar Spread (Call)': probability of profit (PoP) calculation
+- [ ] TASK-07716: Options Strategy 'Calendar Spread (Call)': theta decay simulation (animate)
+- [ ] TASK-07717: Options Strategy 'Calendar Spread (Call)': Greeks aggregation for combined position
+- [ ] TASK-07718: Options Strategy 'Calendar Spread (Call)': suggested strikes auto-selector
+- [ ] TASK-07719: Options Strategy 'Calendar Spread (Put)': implement payoff calculation engine
+- [ ] TASK-07720: Options Strategy 'Calendar Spread (Put)': interactive P&L diagram rendering
+- [ ] TASK-07721: Options Strategy 'Calendar Spread (Put)': breakeven point(s) computation
+- [ ] TASK-07722: Options Strategy 'Calendar Spread (Put)': max profit/max loss labels
+- [ ] TASK-07723: Options Strategy 'Calendar Spread (Put)': probability of profit (PoP) calculation
+- [ ] TASK-07724: Options Strategy 'Calendar Spread (Put)': theta decay simulation (animate)
+- [ ] TASK-07725: Options Strategy 'Calendar Spread (Put)': Greeks aggregation for combined position
+- [ ] TASK-07726: Options Strategy 'Calendar Spread (Put)': suggested strikes auto-selector
+- [ ] TASK-07727: Options Strategy 'Diagonal Spread (Call)': implement payoff calculation engine
+- [ ] TASK-07728: Options Strategy 'Diagonal Spread (Call)': interactive P&L diagram rendering
+- [ ] TASK-07729: Options Strategy 'Diagonal Spread (Call)': breakeven point(s) computation
+- [ ] TASK-07730: Options Strategy 'Diagonal Spread (Call)': max profit/max loss labels
+- [ ] TASK-07731: Options Strategy 'Diagonal Spread (Call)': probability of profit (PoP) calculation
+- [ ] TASK-07732: Options Strategy 'Diagonal Spread (Call)': theta decay simulation (animate)
+- [ ] TASK-07733: Options Strategy 'Diagonal Spread (Call)': Greeks aggregation for combined position
+- [ ] TASK-07734: Options Strategy 'Diagonal Spread (Call)': suggested strikes auto-selector
+- [ ] TASK-07735: Options Strategy 'Diagonal Spread (Put)': implement payoff calculation engine
+- [ ] TASK-07736: Options Strategy 'Diagonal Spread (Put)': interactive P&L diagram rendering
+- [ ] TASK-07737: Options Strategy 'Diagonal Spread (Put)': breakeven point(s) computation
+- [ ] TASK-07738: Options Strategy 'Diagonal Spread (Put)': max profit/max loss labels
+- [ ] TASK-07739: Options Strategy 'Diagonal Spread (Put)': probability of profit (PoP) calculation
+- [ ] TASK-07740: Options Strategy 'Diagonal Spread (Put)': theta decay simulation (animate)
+- [ ] TASK-07741: Options Strategy 'Diagonal Spread (Put)': Greeks aggregation for combined position
+- [ ] TASK-07742: Options Strategy 'Diagonal Spread (Put)': suggested strikes auto-selector
+- [ ] TASK-07743: Options Strategy 'Ratio Call Spread': implement payoff calculation engine
+- [ ] TASK-07744: Options Strategy 'Ratio Call Spread': interactive P&L diagram rendering
+- [ ] TASK-07745: Options Strategy 'Ratio Call Spread': breakeven point(s) computation
+- [ ] TASK-07746: Options Strategy 'Ratio Call Spread': max profit/max loss labels
+- [ ] TASK-07747: Options Strategy 'Ratio Call Spread': probability of profit (PoP) calculation
+- [ ] TASK-07748: Options Strategy 'Ratio Call Spread': theta decay simulation (animate)
+- [ ] TASK-07749: Options Strategy 'Ratio Call Spread': Greeks aggregation for combined position
+- [ ] TASK-07750: Options Strategy 'Ratio Call Spread': suggested strikes auto-selector
+- [ ] TASK-07751: Options Strategy 'Ratio Put Spread': implement payoff calculation engine
+- [ ] TASK-07752: Options Strategy 'Ratio Put Spread': interactive P&L diagram rendering
+- [ ] TASK-07753: Options Strategy 'Ratio Put Spread': breakeven point(s) computation
+- [ ] TASK-07754: Options Strategy 'Ratio Put Spread': max profit/max loss labels
+- [ ] TASK-07755: Options Strategy 'Ratio Put Spread': probability of profit (PoP) calculation
+- [ ] TASK-07756: Options Strategy 'Ratio Put Spread': theta decay simulation (animate)
+- [ ] TASK-07757: Options Strategy 'Ratio Put Spread': Greeks aggregation for combined position
+- [ ] TASK-07758: Options Strategy 'Ratio Put Spread': suggested strikes auto-selector
+- [ ] TASK-07759: Options Strategy 'Ratio Back Spread': implement payoff calculation engine
+- [ ] TASK-07760: Options Strategy 'Ratio Back Spread': interactive P&L diagram rendering
+- [ ] TASK-07761: Options Strategy 'Ratio Back Spread': breakeven point(s) computation
+- [ ] TASK-07762: Options Strategy 'Ratio Back Spread': max profit/max loss labels
+- [ ] TASK-07763: Options Strategy 'Ratio Back Spread': probability of profit (PoP) calculation
+- [ ] TASK-07764: Options Strategy 'Ratio Back Spread': theta decay simulation (animate)
+- [ ] TASK-07765: Options Strategy 'Ratio Back Spread': Greeks aggregation for combined position
+- [ ] TASK-07766: Options Strategy 'Ratio Back Spread': suggested strikes auto-selector
+- [ ] TASK-07767: Options Strategy 'Synthetic Long': implement payoff calculation engine
+- [ ] TASK-07768: Options Strategy 'Synthetic Long': interactive P&L diagram rendering
+- [ ] TASK-07769: Options Strategy 'Synthetic Long': breakeven point(s) computation
+- [ ] TASK-07770: Options Strategy 'Synthetic Long': max profit/max loss labels
+- [ ] TASK-07771: Options Strategy 'Synthetic Long': probability of profit (PoP) calculation
+- [ ] TASK-07772: Options Strategy 'Synthetic Long': theta decay simulation (animate)
+- [ ] TASK-07773: Options Strategy 'Synthetic Long': Greeks aggregation for combined position
+- [ ] TASK-07774: Options Strategy 'Synthetic Long': suggested strikes auto-selector
+- [ ] TASK-07775: Options Strategy 'Synthetic Short': implement payoff calculation engine
+- [ ] TASK-07776: Options Strategy 'Synthetic Short': interactive P&L diagram rendering
+- [ ] TASK-07777: Options Strategy 'Synthetic Short': breakeven point(s) computation
+- [ ] TASK-07778: Options Strategy 'Synthetic Short': max profit/max loss labels
+- [ ] TASK-07779: Options Strategy 'Synthetic Short': probability of profit (PoP) calculation
+- [ ] TASK-07780: Options Strategy 'Synthetic Short': theta decay simulation (animate)
+- [ ] TASK-07781: Options Strategy 'Synthetic Short': Greeks aggregation for combined position
+- [ ] TASK-07782: Options Strategy 'Synthetic Short': suggested strikes auto-selector
+- [ ] TASK-07783: Options Strategy 'Conversion': implement payoff calculation engine
+- [ ] TASK-07784: Options Strategy 'Conversion': interactive P&L diagram rendering
+- [ ] TASK-07785: Options Strategy 'Conversion': breakeven point(s) computation
+- [ ] TASK-07786: Options Strategy 'Conversion': max profit/max loss labels
+- [ ] TASK-07787: Options Strategy 'Conversion': probability of profit (PoP) calculation
+- [ ] TASK-07788: Options Strategy 'Conversion': theta decay simulation (animate)
+- [ ] TASK-07789: Options Strategy 'Conversion': Greeks aggregation for combined position
+- [ ] TASK-07790: Options Strategy 'Conversion': suggested strikes auto-selector
+- [ ] TASK-07791: Options Strategy 'Reversal': implement payoff calculation engine
+- [ ] TASK-07792: Options Strategy 'Reversal': interactive P&L diagram rendering
+- [ ] TASK-07793: Options Strategy 'Reversal': breakeven point(s) computation
+- [ ] TASK-07794: Options Strategy 'Reversal': max profit/max loss labels
+- [ ] TASK-07795: Options Strategy 'Reversal': probability of profit (PoP) calculation
+- [ ] TASK-07796: Options Strategy 'Reversal': theta decay simulation (animate)
+- [ ] TASK-07797: Options Strategy 'Reversal': Greeks aggregation for combined position
+- [ ] TASK-07798: Options Strategy 'Reversal': suggested strikes auto-selector
+- [ ] TASK-07799: Options Strategy 'Box Spread': implement payoff calculation engine
+- [ ] TASK-07800: Options Strategy 'Box Spread': interactive P&L diagram rendering
+- [ ] TASK-07801: Options Strategy 'Box Spread': breakeven point(s) computation
+- [ ] TASK-07802: Options Strategy 'Box Spread': max profit/max loss labels
+- [ ] TASK-07803: Options Strategy 'Box Spread': probability of profit (PoP) calculation
+- [ ] TASK-07804: Options Strategy 'Box Spread': theta decay simulation (animate)
+- [ ] TASK-07805: Options Strategy 'Box Spread': Greeks aggregation for combined position
+- [ ] TASK-07806: Options Strategy 'Box Spread': suggested strikes auto-selector
+- [ ] TASK-07807: Options Strategy 'Jade Lizard': implement payoff calculation engine
+- [ ] TASK-07808: Options Strategy 'Jade Lizard': interactive P&L diagram rendering
+- [ ] TASK-07809: Options Strategy 'Jade Lizard': breakeven point(s) computation
+- [ ] TASK-07810: Options Strategy 'Jade Lizard': max profit/max loss labels
+- [ ] TASK-07811: Options Strategy 'Jade Lizard': probability of profit (PoP) calculation
+- [ ] TASK-07812: Options Strategy 'Jade Lizard': theta decay simulation (animate)
+- [ ] TASK-07813: Options Strategy 'Jade Lizard': Greeks aggregation for combined position
+- [ ] TASK-07814: Options Strategy 'Jade Lizard': suggested strikes auto-selector
+- [ ] TASK-07815: Options Strategy 'Twisted Sister': implement payoff calculation engine
+- [ ] TASK-07816: Options Strategy 'Twisted Sister': interactive P&L diagram rendering
+- [ ] TASK-07817: Options Strategy 'Twisted Sister': breakeven point(s) computation
+- [ ] TASK-07818: Options Strategy 'Twisted Sister': max profit/max loss labels
+- [ ] TASK-07819: Options Strategy 'Twisted Sister': probability of profit (PoP) calculation
+- [ ] TASK-07820: Options Strategy 'Twisted Sister': theta decay simulation (animate)
+- [ ] TASK-07821: Options Strategy 'Twisted Sister': Greeks aggregation for combined position
+- [ ] TASK-07822: Options Strategy 'Twisted Sister': suggested strikes auto-selector
+- [ ] TASK-07823: Options Strategy 'Christmas Tree Call': implement payoff calculation engine
+- [ ] TASK-07824: Options Strategy 'Christmas Tree Call': interactive P&L diagram rendering
+- [ ] TASK-07825: Options Strategy 'Christmas Tree Call': breakeven point(s) computation
+- [ ] TASK-07826: Options Strategy 'Christmas Tree Call': max profit/max loss labels
+- [ ] TASK-07827: Options Strategy 'Christmas Tree Call': probability of profit (PoP) calculation
+- [ ] TASK-07828: Options Strategy 'Christmas Tree Call': theta decay simulation (animate)
+- [ ] TASK-07829: Options Strategy 'Christmas Tree Call': Greeks aggregation for combined position
+- [ ] TASK-07830: Options Strategy 'Christmas Tree Call': suggested strikes auto-selector
+- [ ] TASK-07831: Options Strategy 'Christmas Tree Put': implement payoff calculation engine
+- [ ] TASK-07832: Options Strategy 'Christmas Tree Put': interactive P&L diagram rendering
+- [ ] TASK-07833: Options Strategy 'Christmas Tree Put': breakeven point(s) computation
+- [ ] TASK-07834: Options Strategy 'Christmas Tree Put': max profit/max loss labels
+- [ ] TASK-07835: Options Strategy 'Christmas Tree Put': probability of profit (PoP) calculation
+- [ ] TASK-07836: Options Strategy 'Christmas Tree Put': theta decay simulation (animate)
+- [ ] TASK-07837: Options Strategy 'Christmas Tree Put': Greeks aggregation for combined position
+- [ ] TASK-07838: Options Strategy 'Christmas Tree Put': suggested strikes auto-selector
+- [ ] TASK-07839: Options Strategy 'Condor (Call)': implement payoff calculation engine
+- [ ] TASK-07840: Options Strategy 'Condor (Call)': interactive P&L diagram rendering
+- [ ] TASK-07841: Options Strategy 'Condor (Call)': breakeven point(s) computation
+- [ ] TASK-07842: Options Strategy 'Condor (Call)': max profit/max loss labels
+- [ ] TASK-07843: Options Strategy 'Condor (Call)': probability of profit (PoP) calculation
+- [ ] TASK-07844: Options Strategy 'Condor (Call)': theta decay simulation (animate)
+- [ ] TASK-07845: Options Strategy 'Condor (Call)': Greeks aggregation for combined position
+- [ ] TASK-07846: Options Strategy 'Condor (Call)': suggested strikes auto-selector
+- [ ] TASK-07847: Options Strategy 'Condor (Put)': implement payoff calculation engine
+- [ ] TASK-07848: Options Strategy 'Condor (Put)': interactive P&L diagram rendering
+- [ ] TASK-07849: Options Strategy 'Condor (Put)': breakeven point(s) computation
+- [ ] TASK-07850: Options Strategy 'Condor (Put)': max profit/max loss labels
+- [ ] TASK-07851: Options Strategy 'Condor (Put)': probability of profit (PoP) calculation
+- [ ] TASK-07852: Options Strategy 'Condor (Put)': theta decay simulation (animate)
+- [ ] TASK-07853: Options Strategy 'Condor (Put)': Greeks aggregation for combined position
+- [ ] TASK-07854: Options Strategy 'Condor (Put)': suggested strikes auto-selector
+- [ ] TASK-07855: Options Strategy 'Skip Strike Butterfly': implement payoff calculation engine
+- [ ] TASK-07856: Options Strategy 'Skip Strike Butterfly': interactive P&L diagram rendering
+- [ ] TASK-07857: Options Strategy 'Skip Strike Butterfly': breakeven point(s) computation
+- [ ] TASK-07858: Options Strategy 'Skip Strike Butterfly': max profit/max loss labels
+- [ ] TASK-07859: Options Strategy 'Skip Strike Butterfly': probability of profit (PoP) calculation
+- [ ] TASK-07860: Options Strategy 'Skip Strike Butterfly': theta decay simulation (animate)
+- [ ] TASK-07861: Options Strategy 'Skip Strike Butterfly': Greeks aggregation for combined position
+- [ ] TASK-07862: Options Strategy 'Skip Strike Butterfly': suggested strikes auto-selector
+- [ ] TASK-07863: Options Strategy 'Double Calendar': implement payoff calculation engine
+- [ ] TASK-07864: Options Strategy 'Double Calendar': interactive P&L diagram rendering
+- [ ] TASK-07865: Options Strategy 'Double Calendar': breakeven point(s) computation
+- [ ] TASK-07866: Options Strategy 'Double Calendar': max profit/max loss labels
+- [ ] TASK-07867: Options Strategy 'Double Calendar': probability of profit (PoP) calculation
+- [ ] TASK-07868: Options Strategy 'Double Calendar': theta decay simulation (animate)
+- [ ] TASK-07869: Options Strategy 'Double Calendar': Greeks aggregation for combined position
+- [ ] TASK-07870: Options Strategy 'Double Calendar': suggested strikes auto-selector
+- [ ] TASK-07871: Options Strategy 'Double Diagonal': implement payoff calculation engine
+- [ ] TASK-07872: Options Strategy 'Double Diagonal': interactive P&L diagram rendering
+- [ ] TASK-07873: Options Strategy 'Double Diagonal': breakeven point(s) computation
+- [ ] TASK-07874: Options Strategy 'Double Diagonal': max profit/max loss labels
+- [ ] TASK-07875: Options Strategy 'Double Diagonal': probability of profit (PoP) calculation
+- [ ] TASK-07876: Options Strategy 'Double Diagonal': theta decay simulation (animate)
+- [ ] TASK-07877: Options Strategy 'Double Diagonal': Greeks aggregation for combined position
+- [ ] TASK-07878: Options Strategy 'Double Diagonal': suggested strikes auto-selector
+- [ ] TASK-07879: Options Strategy 'Risk Reversal': implement payoff calculation engine
+- [ ] TASK-07880: Options Strategy 'Risk Reversal': interactive P&L diagram rendering
+- [ ] TASK-07881: Options Strategy 'Risk Reversal': breakeven point(s) computation
+- [ ] TASK-07882: Options Strategy 'Risk Reversal': max profit/max loss labels
+- [ ] TASK-07883: Options Strategy 'Risk Reversal': probability of profit (PoP) calculation
+- [ ] TASK-07884: Options Strategy 'Risk Reversal': theta decay simulation (animate)
+- [ ] TASK-07885: Options Strategy 'Risk Reversal': Greeks aggregation for combined position
+- [ ] TASK-07886: Options Strategy 'Risk Reversal': suggested strikes auto-selector
+- [ ] TASK-07887: Options Strategy 'Gut Straddle': implement payoff calculation engine
+- [ ] TASK-07888: Options Strategy 'Gut Straddle': interactive P&L diagram rendering
+- [ ] TASK-07889: Options Strategy 'Gut Straddle': breakeven point(s) computation
+- [ ] TASK-07890: Options Strategy 'Gut Straddle': max profit/max loss labels
+- [ ] TASK-07891: Options Strategy 'Gut Straddle': probability of profit (PoP) calculation
+- [ ] TASK-07892: Options Strategy 'Gut Straddle': theta decay simulation (animate)
+- [ ] TASK-07893: Options Strategy 'Gut Straddle': Greeks aggregation for combined position
+- [ ] TASK-07894: Options Strategy 'Gut Straddle': suggested strikes auto-selector
+- [ ] TASK-07895: Options Strategy 'Gut Strangle': implement payoff calculation engine
+- [ ] TASK-07896: Options Strategy 'Gut Strangle': interactive P&L diagram rendering
+- [ ] TASK-07897: Options Strategy 'Gut Strangle': breakeven point(s) computation
+- [ ] TASK-07898: Options Strategy 'Gut Strangle': max profit/max loss labels
+- [ ] TASK-07899: Options Strategy 'Gut Strangle': probability of profit (PoP) calculation
+- [ ] TASK-07900: Options Strategy 'Gut Strangle': theta decay simulation (animate)
+- [ ] TASK-07901: Options Strategy 'Gut Strangle': Greeks aggregation for combined position
+- [ ] TASK-07902: Options Strategy 'Gut Strangle': suggested strikes auto-selector
+
+
+## FINANCIAL RATIOS (50 RATIOS Ã— 4)
+
+- [ ] TASK-07903: Ratio engine: calculate P/E Trailing from financial data
+- [ ] TASK-07904: Frontend: display P/E Trailing in fundamental data panel
+- [ ] TASK-07905: Screener: add P/E Trailing as filterable metric
+- [ ] TASK-07906: Test: verify P/E Trailing calculation with known values
+- [ ] TASK-07907: Ratio engine: calculate P/E Forward from financial data
+- [ ] TASK-07908: Frontend: display P/E Forward in fundamental data panel
+- [ ] TASK-07909: Screener: add P/E Forward as filterable metric
+- [ ] TASK-07910: Test: verify P/E Forward calculation with known values
+- [ ] TASK-07911: Ratio engine: calculate PEG Ratio from financial data
+- [ ] TASK-07912: Frontend: display PEG Ratio in fundamental data panel
+- [ ] TASK-07913: Screener: add PEG Ratio as filterable metric
+- [ ] TASK-07914: Test: verify PEG Ratio calculation with known values
+- [ ] TASK-07915: Ratio engine: calculate P/S Ratio from financial data
+- [ ] TASK-07916: Frontend: display P/S Ratio in fundamental data panel
+- [ ] TASK-07917: Screener: add P/S Ratio as filterable metric
+- [ ] TASK-07918: Test: verify P/S Ratio calculation with known values
+- [ ] TASK-07919: Ratio engine: calculate P/B Ratio from financial data
+- [ ] TASK-07920: Frontend: display P/B Ratio in fundamental data panel
+- [ ] TASK-07921: Screener: add P/B Ratio as filterable metric
+- [ ] TASK-07922: Test: verify P/B Ratio calculation with known values
+- [ ] TASK-07923: Ratio engine: calculate P/CF Ratio from financial data
+- [ ] TASK-07924: Frontend: display P/CF Ratio in fundamental data panel
+- [ ] TASK-07925: Screener: add P/CF Ratio as filterable metric
+- [ ] TASK-07926: Test: verify P/CF Ratio calculation with known values
+- [ ] TASK-07927: Ratio engine: calculate P/FCF Ratio from financial data
+- [ ] TASK-07928: Frontend: display P/FCF Ratio in fundamental data panel
+- [ ] TASK-07929: Screener: add P/FCF Ratio as filterable metric
+- [ ] TASK-07930: Test: verify P/FCF Ratio calculation with known values
+- [ ] TASK-07931: Ratio engine: calculate EV/Revenue from financial data
+- [ ] TASK-07932: Frontend: display EV/Revenue in fundamental data panel
+- [ ] TASK-07933: Screener: add EV/Revenue as filterable metric
+- [ ] TASK-07934: Test: verify EV/Revenue calculation with known values
+- [ ] TASK-07935: Ratio engine: calculate EV/EBITDA from financial data
+- [ ] TASK-07936: Frontend: display EV/EBITDA in fundamental data panel
+- [ ] TASK-07937: Screener: add EV/EBITDA as filterable metric
+- [ ] TASK-07938: Test: verify EV/EBITDA calculation with known values
+- [ ] TASK-07939: Ratio engine: calculate EV/EBIT from financial data
+- [ ] TASK-07940: Frontend: display EV/EBIT in fundamental data panel
+- [ ] TASK-07941: Screener: add EV/EBIT as filterable metric
+- [ ] TASK-07942: Test: verify EV/EBIT calculation with known values
+- [ ] TASK-07943: Ratio engine: calculate EV/FCF from financial data
+- [ ] TASK-07944: Frontend: display EV/FCF in fundamental data panel
+- [ ] TASK-07945: Screener: add EV/FCF as filterable metric
+- [ ] TASK-07946: Test: verify EV/FCF calculation with known values
+- [ ] TASK-07947: Ratio engine: calculate Debt/Equity from financial data
+- [ ] TASK-07948: Frontend: display Debt/Equity in fundamental data panel
+- [ ] TASK-07949: Screener: add Debt/Equity as filterable metric
+- [ ] TASK-07950: Test: verify Debt/Equity calculation with known values
+- [ ] TASK-07951: Ratio engine: calculate Debt/EBITDA from financial data
+- [ ] TASK-07952: Frontend: display Debt/EBITDA in fundamental data panel
+- [ ] TASK-07953: Screener: add Debt/EBITDA as filterable metric
+- [ ] TASK-07954: Test: verify Debt/EBITDA calculation with known values
+- [ ] TASK-07955: Ratio engine: calculate Debt/Assets from financial data
+- [ ] TASK-07956: Frontend: display Debt/Assets in fundamental data panel
+- [ ] TASK-07957: Screener: add Debt/Assets as filterable metric
+- [ ] TASK-07958: Test: verify Debt/Assets calculation with known values
+- [ ] TASK-07959: Ratio engine: calculate Current Ratio from financial data
+- [ ] TASK-07960: Frontend: display Current Ratio in fundamental data panel
+- [ ] TASK-07961: Screener: add Current Ratio as filterable metric
+- [ ] TASK-07962: Test: verify Current Ratio calculation with known values
+- [ ] TASK-07963: Ratio engine: calculate Quick Ratio from financial data
+- [ ] TASK-07964: Frontend: display Quick Ratio in fundamental data panel
+- [ ] TASK-07965: Screener: add Quick Ratio as filterable metric
+- [ ] TASK-07966: Test: verify Quick Ratio calculation with known values
+- [ ] TASK-07967: Ratio engine: calculate Cash Ratio from financial data
+- [ ] TASK-07968: Frontend: display Cash Ratio in fundamental data panel
+- [ ] TASK-07969: Screener: add Cash Ratio as filterable metric
+- [ ] TASK-07970: Test: verify Cash Ratio calculation with known values
+- [ ] TASK-07971: Ratio engine: calculate Gross Margin from financial data
+- [ ] TASK-07972: Frontend: display Gross Margin in fundamental data panel
+- [ ] TASK-07973: Screener: add Gross Margin as filterable metric
+- [ ] TASK-07974: Test: verify Gross Margin calculation with known values
+- [ ] TASK-07975: Ratio engine: calculate Operating Margin from financial data
+- [ ] TASK-07976: Frontend: display Operating Margin in fundamental data panel
+- [ ] TASK-07977: Screener: add Operating Margin as filterable metric
+- [ ] TASK-07978: Test: verify Operating Margin calculation with known values
+- [ ] TASK-07979: Ratio engine: calculate Net Margin from financial data
+- [ ] TASK-07980: Frontend: display Net Margin in fundamental data panel
+- [ ] TASK-07981: Screener: add Net Margin as filterable metric
+- [ ] TASK-07982: Test: verify Net Margin calculation with known values
+- [ ] TASK-07983: Ratio engine: calculate EBITDA Margin from financial data
+- [ ] TASK-07984: Frontend: display EBITDA Margin in fundamental data panel
+- [ ] TASK-07985: Screener: add EBITDA Margin as filterable metric
+- [ ] TASK-07986: Test: verify EBITDA Margin calculation with known values
+- [ ] TASK-07987: Ratio engine: calculate FCF Margin from financial data
+- [ ] TASK-07988: Frontend: display FCF Margin in fundamental data panel
+- [ ] TASK-07989: Screener: add FCF Margin as filterable metric
+- [ ] TASK-07990: Test: verify FCF Margin calculation with known values
+- [ ] TASK-07991: Ratio engine: calculate ROE from financial data
+- [ ] TASK-07992: Frontend: display ROE in fundamental data panel
+- [ ] TASK-07993: Screener: add ROE as filterable metric
+- [ ] TASK-07994: Test: verify ROE calculation with known values
+- [ ] TASK-07995: Ratio engine: calculate ROA from financial data
+- [ ] TASK-07996: Frontend: display ROA in fundamental data panel
+- [ ] TASK-07997: Screener: add ROA as filterable metric
+- [ ] TASK-07998: Test: verify ROA calculation with known values
+- [ ] TASK-07999: Ratio engine: calculate ROIC from financial data
+- [ ] TASK-08000: Frontend: display ROIC in fundamental data panel
+- [ ] TASK-08001: Screener: add ROIC as filterable metric
+- [ ] TASK-08002: Test: verify ROIC calculation with known values
+- [ ] TASK-08003: Ratio engine: calculate ROC from financial data
+- [ ] TASK-08004: Frontend: display ROC in fundamental data panel
+- [ ] TASK-08005: Screener: add ROC as filterable metric
+- [ ] TASK-08006: Test: verify ROC calculation with known values
+- [ ] TASK-08007: Ratio engine: calculate Asset Turnover from financial data
+- [ ] TASK-08008: Frontend: display Asset Turnover in fundamental data panel
+- [ ] TASK-08009: Screener: add Asset Turnover as filterable metric
+- [ ] TASK-08010: Test: verify Asset Turnover calculation with known values
+- [ ] TASK-08011: Ratio engine: calculate Inventory Turnover from financial data
+- [ ] TASK-08012: Frontend: display Inventory Turnover in fundamental data panel
+- [ ] TASK-08013: Screener: add Inventory Turnover as filterable metric
+- [ ] TASK-08014: Test: verify Inventory Turnover calculation with known values
+- [ ] TASK-08015: Ratio engine: calculate Receivable Turnover from financial data
+- [ ] TASK-08016: Frontend: display Receivable Turnover in fundamental data panel
+- [ ] TASK-08017: Screener: add Receivable Turnover as filterable metric
+- [ ] TASK-08018: Test: verify Receivable Turnover calculation with known values
+- [ ] TASK-08019: Ratio engine: calculate Interest Coverage from financial data
+- [ ] TASK-08020: Frontend: display Interest Coverage in fundamental data panel
+- [ ] TASK-08021: Screener: add Interest Coverage as filterable metric
+- [ ] TASK-08022: Test: verify Interest Coverage calculation with known values
+- [ ] TASK-08023: Ratio engine: calculate DSCR from financial data
+- [ ] TASK-08024: Frontend: display DSCR in fundamental data panel
+- [ ] TASK-08025: Screener: add DSCR as filterable metric
+- [ ] TASK-08026: Test: verify DSCR calculation with known values
+- [ ] TASK-08027: Ratio engine: calculate Fixed Charge Coverage from financial data
+- [ ] TASK-08028: Frontend: display Fixed Charge Coverage in fundamental data panel
+- [ ] TASK-08029: Screener: add Fixed Charge Coverage as filterable metric
+- [ ] TASK-08030: Test: verify Fixed Charge Coverage calculation with known values
+- [ ] TASK-08031: Ratio engine: calculate Dividend Yield from financial data
+- [ ] TASK-08032: Frontend: display Dividend Yield in fundamental data panel
+- [ ] TASK-08033: Screener: add Dividend Yield as filterable metric
+- [ ] TASK-08034: Test: verify Dividend Yield calculation with known values
+- [ ] TASK-08035: Ratio engine: calculate Dividend Payout Ratio from financial data
+- [ ] TASK-08036: Frontend: display Dividend Payout Ratio in fundamental data panel
+- [ ] TASK-08037: Screener: add Dividend Payout Ratio as filterable metric
+- [ ] TASK-08038: Test: verify Dividend Payout Ratio calculation with known values
+- [ ] TASK-08039: Ratio engine: calculate Buyback Yield from financial data
+- [ ] TASK-08040: Frontend: display Buyback Yield in fundamental data panel
+- [ ] TASK-08041: Screener: add Buyback Yield as filterable metric
+- [ ] TASK-08042: Test: verify Buyback Yield calculation with known values
+- [ ] TASK-08043: Ratio engine: calculate Shareholder Yield from financial data
+- [ ] TASK-08044: Frontend: display Shareholder Yield in fundamental data panel
+- [ ] TASK-08045: Screener: add Shareholder Yield as filterable metric
+- [ ] TASK-08046: Test: verify Shareholder Yield calculation with known values
+- [ ] TASK-08047: Ratio engine: calculate Earnings Yield from financial data
+- [ ] TASK-08048: Frontend: display Earnings Yield in fundamental data panel
+- [ ] TASK-08049: Screener: add Earnings Yield as filterable metric
+- [ ] TASK-08050: Test: verify Earnings Yield calculation with known values
+- [ ] TASK-08051: Ratio engine: calculate FCF Yield from financial data
+- [ ] TASK-08052: Frontend: display FCF Yield in fundamental data panel
+- [ ] TASK-08053: Screener: add FCF Yield as filterable metric
+- [ ] TASK-08054: Test: verify FCF Yield calculation with known values
+- [ ] TASK-08055: Ratio engine: calculate Revenue Growth YoY from financial data
+- [ ] TASK-08056: Frontend: display Revenue Growth YoY in fundamental data panel
+- [ ] TASK-08057: Screener: add Revenue Growth YoY as filterable metric
+- [ ] TASK-08058: Test: verify Revenue Growth YoY calculation with known values
+- [ ] TASK-08059: Ratio engine: calculate EPS Growth YoY from financial data
+- [ ] TASK-08060: Frontend: display EPS Growth YoY in fundamental data panel
+- [ ] TASK-08061: Screener: add EPS Growth YoY as filterable metric
+- [ ] TASK-08062: Test: verify EPS Growth YoY calculation with known values
+- [ ] TASK-08063: Ratio engine: calculate EBITDA Growth YoY from financial data
+- [ ] TASK-08064: Frontend: display EBITDA Growth YoY in fundamental data panel
+- [ ] TASK-08065: Screener: add EBITDA Growth YoY as filterable metric
+- [ ] TASK-08066: Test: verify EBITDA Growth YoY calculation with known values
+- [ ] TASK-08067: Ratio engine: calculate Book Value Growth YoY from financial data
+- [ ] TASK-08068: Frontend: display Book Value Growth YoY in fundamental data panel
+- [ ] TASK-08069: Screener: add Book Value Growth YoY as filterable metric
+- [ ] TASK-08070: Test: verify Book Value Growth YoY calculation with known values
+- [ ] TASK-08071: Ratio engine: calculate FCF Growth YoY from financial data
+- [ ] TASK-08072: Frontend: display FCF Growth YoY in fundamental data panel
+- [ ] TASK-08073: Screener: add FCF Growth YoY as filterable metric
+- [ ] TASK-08074: Test: verify FCF Growth YoY calculation with known values
+- [ ] TASK-08075: Ratio engine: calculate Altman Z-Score from financial data
+- [ ] TASK-08076: Frontend: display Altman Z-Score in fundamental data panel
+- [ ] TASK-08077: Screener: add Altman Z-Score as filterable metric
+- [ ] TASK-08078: Test: verify Altman Z-Score calculation with known values
+- [ ] TASK-08079: Ratio engine: calculate Piotroski F-Score from financial data
+- [ ] TASK-08080: Frontend: display Piotroski F-Score in fundamental data panel
+- [ ] TASK-08081: Screener: add Piotroski F-Score as filterable metric
+- [ ] TASK-08082: Test: verify Piotroski F-Score calculation with known values
+- [ ] TASK-08083: Ratio engine: calculate Beneish M-Score from financial data
+- [ ] TASK-08084: Frontend: display Beneish M-Score in fundamental data panel
+- [ ] TASK-08085: Screener: add Beneish M-Score as filterable metric
+- [ ] TASK-08086: Test: verify Beneish M-Score calculation with known values
+- [ ] TASK-08087: Ratio engine: calculate Graham Number from financial data
+- [ ] TASK-08088: Frontend: display Graham Number in fundamental data panel
+- [ ] TASK-08089: Screener: add Graham Number as filterable metric
+- [ ] TASK-08090: Test: verify Graham Number calculation with known values
+- [ ] TASK-08091: Ratio engine: calculate Lynch Fair Value from financial data
+- [ ] TASK-08092: Frontend: display Lynch Fair Value in fundamental data panel
+- [ ] TASK-08093: Screener: add Lynch Fair Value as filterable metric
+- [ ] TASK-08094: Test: verify Lynch Fair Value calculation with known values
+- [ ] TASK-08095: Ratio engine: calculate DCF Intrinsic Value from financial data
+- [ ] TASK-08096: Frontend: display DCF Intrinsic Value in fundamental data panel
+- [ ] TASK-08097: Screener: add DCF Intrinsic Value as filterable metric
+- [ ] TASK-08098: Test: verify DCF Intrinsic Value calculation with known values
+
+
+## PER-SECTOR ANALYSIS (11 SECTORS Ã— 10)
+
+- [ ] TASK-08099: Sector Technology: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08100: Sector Technology: constituent list with key metrics table
+- [ ] TASK-08101: Sector Technology: relative strength vs S&P 500 chart
+- [ ] TASK-08102: Sector Technology: breadth indicators (% above 50-day MA)
+- [ ] TASK-08103: Sector Technology: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08104: Sector Technology: top 5 gainers/losers today
+- [ ] TASK-08105: Sector Technology: average P/E multiple comparison
+- [ ] TASK-08106: Sector Technology: earnings estimate revisions chart
+- [ ] TASK-08107: Sector Technology: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08108: Sector Technology: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08109: Sector Healthcare: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08110: Sector Healthcare: constituent list with key metrics table
+- [ ] TASK-08111: Sector Healthcare: relative strength vs S&P 500 chart
+- [ ] TASK-08112: Sector Healthcare: breadth indicators (% above 50-day MA)
+- [ ] TASK-08113: Sector Healthcare: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08114: Sector Healthcare: top 5 gainers/losers today
+- [ ] TASK-08115: Sector Healthcare: average P/E multiple comparison
+- [ ] TASK-08116: Sector Healthcare: earnings estimate revisions chart
+- [ ] TASK-08117: Sector Healthcare: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08118: Sector Healthcare: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08119: Sector Financials: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08120: Sector Financials: constituent list with key metrics table
+- [ ] TASK-08121: Sector Financials: relative strength vs S&P 500 chart
+- [ ] TASK-08122: Sector Financials: breadth indicators (% above 50-day MA)
+- [ ] TASK-08123: Sector Financials: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08124: Sector Financials: top 5 gainers/losers today
+- [ ] TASK-08125: Sector Financials: average P/E multiple comparison
+- [ ] TASK-08126: Sector Financials: earnings estimate revisions chart
+- [ ] TASK-08127: Sector Financials: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08128: Sector Financials: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08129: Sector Consumer Discretionary: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08130: Sector Consumer Discretionary: constituent list with key metrics table
+- [ ] TASK-08131: Sector Consumer Discretionary: relative strength vs S&P 500 chart
+- [ ] TASK-08132: Sector Consumer Discretionary: breadth indicators (% above 50-day MA)
+- [ ] TASK-08133: Sector Consumer Discretionary: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08134: Sector Consumer Discretionary: top 5 gainers/losers today
+- [ ] TASK-08135: Sector Consumer Discretionary: average P/E multiple comparison
+- [ ] TASK-08136: Sector Consumer Discretionary: earnings estimate revisions chart
+- [ ] TASK-08137: Sector Consumer Discretionary: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08138: Sector Consumer Discretionary: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08139: Sector Consumer Staples: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08140: Sector Consumer Staples: constituent list with key metrics table
+- [ ] TASK-08141: Sector Consumer Staples: relative strength vs S&P 500 chart
+- [ ] TASK-08142: Sector Consumer Staples: breadth indicators (% above 50-day MA)
+- [ ] TASK-08143: Sector Consumer Staples: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08144: Sector Consumer Staples: top 5 gainers/losers today
+- [ ] TASK-08145: Sector Consumer Staples: average P/E multiple comparison
+- [ ] TASK-08146: Sector Consumer Staples: earnings estimate revisions chart
+- [ ] TASK-08147: Sector Consumer Staples: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08148: Sector Consumer Staples: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08149: Sector Energy: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08150: Sector Energy: constituent list with key metrics table
+- [ ] TASK-08151: Sector Energy: relative strength vs S&P 500 chart
+- [ ] TASK-08152: Sector Energy: breadth indicators (% above 50-day MA)
+- [ ] TASK-08153: Sector Energy: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08154: Sector Energy: top 5 gainers/losers today
+- [ ] TASK-08155: Sector Energy: average P/E multiple comparison
+- [ ] TASK-08156: Sector Energy: earnings estimate revisions chart
+- [ ] TASK-08157: Sector Energy: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08158: Sector Energy: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08159: Sector Industrials: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08160: Sector Industrials: constituent list with key metrics table
+- [ ] TASK-08161: Sector Industrials: relative strength vs S&P 500 chart
+- [ ] TASK-08162: Sector Industrials: breadth indicators (% above 50-day MA)
+- [ ] TASK-08163: Sector Industrials: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08164: Sector Industrials: top 5 gainers/losers today
+- [ ] TASK-08165: Sector Industrials: average P/E multiple comparison
+- [ ] TASK-08166: Sector Industrials: earnings estimate revisions chart
+- [ ] TASK-08167: Sector Industrials: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08168: Sector Industrials: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08169: Sector Materials: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08170: Sector Materials: constituent list with key metrics table
+- [ ] TASK-08171: Sector Materials: relative strength vs S&P 500 chart
+- [ ] TASK-08172: Sector Materials: breadth indicators (% above 50-day MA)
+- [ ] TASK-08173: Sector Materials: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08174: Sector Materials: top 5 gainers/losers today
+- [ ] TASK-08175: Sector Materials: average P/E multiple comparison
+- [ ] TASK-08176: Sector Materials: earnings estimate revisions chart
+- [ ] TASK-08177: Sector Materials: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08178: Sector Materials: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08179: Sector Real Estate: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08180: Sector Real Estate: constituent list with key metrics table
+- [ ] TASK-08181: Sector Real Estate: relative strength vs S&P 500 chart
+- [ ] TASK-08182: Sector Real Estate: breadth indicators (% above 50-day MA)
+- [ ] TASK-08183: Sector Real Estate: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08184: Sector Real Estate: top 5 gainers/losers today
+- [ ] TASK-08185: Sector Real Estate: average P/E multiple comparison
+- [ ] TASK-08186: Sector Real Estate: earnings estimate revisions chart
+- [ ] TASK-08187: Sector Real Estate: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08188: Sector Real Estate: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08189: Sector Utilities: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08190: Sector Utilities: constituent list with key metrics table
+- [ ] TASK-08191: Sector Utilities: relative strength vs S&P 500 chart
+- [ ] TASK-08192: Sector Utilities: breadth indicators (% above 50-day MA)
+- [ ] TASK-08193: Sector Utilities: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08194: Sector Utilities: top 5 gainers/losers today
+- [ ] TASK-08195: Sector Utilities: average P/E multiple comparison
+- [ ] TASK-08196: Sector Utilities: earnings estimate revisions chart
+- [ ] TASK-08197: Sector Utilities: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08198: Sector Utilities: flow analysis (ETF inflows/outflows)
+- [ ] TASK-08199: Sector Communication Services: performance chart (1d, 1w, 1m, YTD, 1Y)
+- [ ] TASK-08200: Sector Communication Services: constituent list with key metrics table
+- [ ] TASK-08201: Sector Communication Services: relative strength vs S&P 500 chart
+- [ ] TASK-08202: Sector Communication Services: breadth indicators (% above 50-day MA)
+- [ ] TASK-08203: Sector Communication Services: ETF proxy performance (XLK, XLF, etc)
+- [ ] TASK-08204: Sector Communication Services: top 5 gainers/losers today
+- [ ] TASK-08205: Sector Communication Services: average P/E multiple comparison
+- [ ] TASK-08206: Sector Communication Services: earnings estimate revisions chart
+- [ ] TASK-08207: Sector Communication Services: rotation model phase (improving/leading/weakening/lagging)
+- [ ] TASK-08208: Sector Communication Services: flow analysis (ETF inflows/outflows)
+
+
+## CANDLESTICK PATTERNS (40 PATTERNS Ã— 6)
+
+- [ ] TASK-08209: Pattern 'Doji': implement detection algorithm
+- [ ] TASK-08210: Pattern 'Doji': mark on chart with icon overlay
+- [ ] TASK-08211: Pattern 'Doji': tooltip with pattern description
+- [ ] TASK-08212: Pattern 'Doji': add to screener filter
+- [ ] TASK-08213: Pattern 'Doji': backtest historical accuracy
+- [ ] TASK-08214: Test: 'Doji' detection unit test with known bars
+- [ ] TASK-08215: Pattern 'Hammer': implement detection algorithm
+- [ ] TASK-08216: Pattern 'Hammer': mark on chart with icon overlay
+- [ ] TASK-08217: Pattern 'Hammer': tooltip with pattern description
+- [ ] TASK-08218: Pattern 'Hammer': add to screener filter
+- [ ] TASK-08219: Pattern 'Hammer': backtest historical accuracy
+- [ ] TASK-08220: Test: 'Hammer' detection unit test with known bars
+- [ ] TASK-08221: Pattern 'Inverted Hammer': implement detection algorithm
+- [ ] TASK-08222: Pattern 'Inverted Hammer': mark on chart with icon overlay
+- [ ] TASK-08223: Pattern 'Inverted Hammer': tooltip with pattern description
+- [ ] TASK-08224: Pattern 'Inverted Hammer': add to screener filter
+- [ ] TASK-08225: Pattern 'Inverted Hammer': backtest historical accuracy
+- [ ] TASK-08226: Test: 'Inverted Hammer' detection unit test with known bars
+- [ ] TASK-08227: Pattern 'Shooting Star': implement detection algorithm
+- [ ] TASK-08228: Pattern 'Shooting Star': mark on chart with icon overlay
+- [ ] TASK-08229: Pattern 'Shooting Star': tooltip with pattern description
+- [ ] TASK-08230: Pattern 'Shooting Star': add to screener filter
+- [ ] TASK-08231: Pattern 'Shooting Star': backtest historical accuracy
+- [ ] TASK-08232: Test: 'Shooting Star' detection unit test with known bars
+- [ ] TASK-08233: Pattern 'Hanging Man': implement detection algorithm
+- [ ] TASK-08234: Pattern 'Hanging Man': mark on chart with icon overlay
+- [ ] TASK-08235: Pattern 'Hanging Man': tooltip with pattern description
+- [ ] TASK-08236: Pattern 'Hanging Man': add to screener filter
+- [ ] TASK-08237: Pattern 'Hanging Man': backtest historical accuracy
+- [ ] TASK-08238: Test: 'Hanging Man' detection unit test with known bars
+- [ ] TASK-08239: Pattern 'Engulfing Bullish': implement detection algorithm
+- [ ] TASK-08240: Pattern 'Engulfing Bullish': mark on chart with icon overlay
+- [ ] TASK-08241: Pattern 'Engulfing Bullish': tooltip with pattern description
+- [ ] TASK-08242: Pattern 'Engulfing Bullish': add to screener filter
+- [ ] TASK-08243: Pattern 'Engulfing Bullish': backtest historical accuracy
+- [ ] TASK-08244: Test: 'Engulfing Bullish' detection unit test with known bars
+- [ ] TASK-08245: Pattern 'Engulfing Bearish': implement detection algorithm
+- [ ] TASK-08246: Pattern 'Engulfing Bearish': mark on chart with icon overlay
+- [ ] TASK-08247: Pattern 'Engulfing Bearish': tooltip with pattern description
+- [ ] TASK-08248: Pattern 'Engulfing Bearish': add to screener filter
+- [ ] TASK-08249: Pattern 'Engulfing Bearish': backtest historical accuracy
+- [ ] TASK-08250: Test: 'Engulfing Bearish' detection unit test with known bars
+- [ ] TASK-08251: Pattern 'Morning Star': implement detection algorithm
+- [ ] TASK-08252: Pattern 'Morning Star': mark on chart with icon overlay
+- [ ] TASK-08253: Pattern 'Morning Star': tooltip with pattern description
+- [ ] TASK-08254: Pattern 'Morning Star': add to screener filter
+- [ ] TASK-08255: Pattern 'Morning Star': backtest historical accuracy
+- [ ] TASK-08256: Test: 'Morning Star' detection unit test with known bars
+- [ ] TASK-08257: Pattern 'Evening Star': implement detection algorithm
+- [ ] TASK-08258: Pattern 'Evening Star': mark on chart with icon overlay
+- [ ] TASK-08259: Pattern 'Evening Star': tooltip with pattern description
+- [ ] TASK-08260: Pattern 'Evening Star': add to screener filter
+- [ ] TASK-08261: Pattern 'Evening Star': backtest historical accuracy
+- [ ] TASK-08262: Test: 'Evening Star' detection unit test with known bars
+- [ ] TASK-08263: Pattern 'Three White Soldiers': implement detection algorithm
+- [ ] TASK-08264: Pattern 'Three White Soldiers': mark on chart with icon overlay
+- [ ] TASK-08265: Pattern 'Three White Soldiers': tooltip with pattern description
+- [ ] TASK-08266: Pattern 'Three White Soldiers': add to screener filter
+- [ ] TASK-08267: Pattern 'Three White Soldiers': backtest historical accuracy
+- [ ] TASK-08268: Test: 'Three White Soldiers' detection unit test with known bars
+- [ ] TASK-08269: Pattern 'Three Black Crows': implement detection algorithm
+- [ ] TASK-08270: Pattern 'Three Black Crows': mark on chart with icon overlay
+- [ ] TASK-08271: Pattern 'Three Black Crows': tooltip with pattern description
+- [ ] TASK-08272: Pattern 'Three Black Crows': add to screener filter
+- [ ] TASK-08273: Pattern 'Three Black Crows': backtest historical accuracy
+- [ ] TASK-08274: Test: 'Three Black Crows' detection unit test with known bars
+- [ ] TASK-08275: Pattern 'Harami Bullish': implement detection algorithm
+- [ ] TASK-08276: Pattern 'Harami Bullish': mark on chart with icon overlay
+- [ ] TASK-08277: Pattern 'Harami Bullish': tooltip with pattern description
+- [ ] TASK-08278: Pattern 'Harami Bullish': add to screener filter
+- [ ] TASK-08279: Pattern 'Harami Bullish': backtest historical accuracy
+- [ ] TASK-08280: Test: 'Harami Bullish' detection unit test with known bars
+- [ ] TASK-08281: Pattern 'Harami Bearish': implement detection algorithm
+- [ ] TASK-08282: Pattern 'Harami Bearish': mark on chart with icon overlay
+- [ ] TASK-08283: Pattern 'Harami Bearish': tooltip with pattern description
+- [ ] TASK-08284: Pattern 'Harami Bearish': add to screener filter
+- [ ] TASK-08285: Pattern 'Harami Bearish': backtest historical accuracy
+- [ ] TASK-08286: Test: 'Harami Bearish' detection unit test with known bars
+- [ ] TASK-08287: Pattern 'Piercing Line': implement detection algorithm
+- [ ] TASK-08288: Pattern 'Piercing Line': mark on chart with icon overlay
+- [ ] TASK-08289: Pattern 'Piercing Line': tooltip with pattern description
+- [ ] TASK-08290: Pattern 'Piercing Line': add to screener filter
+- [ ] TASK-08291: Pattern 'Piercing Line': backtest historical accuracy
+- [ ] TASK-08292: Test: 'Piercing Line' detection unit test with known bars
+- [ ] TASK-08293: Pattern 'Dark Cloud Cover': implement detection algorithm
+- [ ] TASK-08294: Pattern 'Dark Cloud Cover': mark on chart with icon overlay
+- [ ] TASK-08295: Pattern 'Dark Cloud Cover': tooltip with pattern description
+- [ ] TASK-08296: Pattern 'Dark Cloud Cover': add to screener filter
+- [ ] TASK-08297: Pattern 'Dark Cloud Cover': backtest historical accuracy
+- [ ] TASK-08298: Test: 'Dark Cloud Cover' detection unit test with known bars
+- [ ] TASK-08299: Pattern 'Tweezer Top': implement detection algorithm
+- [ ] TASK-08300: Pattern 'Tweezer Top': mark on chart with icon overlay
+- [ ] TASK-08301: Pattern 'Tweezer Top': tooltip with pattern description
+- [ ] TASK-08302: Pattern 'Tweezer Top': add to screener filter
+- [ ] TASK-08303: Pattern 'Tweezer Top': backtest historical accuracy
+- [ ] TASK-08304: Test: 'Tweezer Top' detection unit test with known bars
+- [ ] TASK-08305: Pattern 'Tweezer Bottom': implement detection algorithm
+- [ ] TASK-08306: Pattern 'Tweezer Bottom': mark on chart with icon overlay
+- [ ] TASK-08307: Pattern 'Tweezer Bottom': tooltip with pattern description
+- [ ] TASK-08308: Pattern 'Tweezer Bottom': add to screener filter
+- [ ] TASK-08309: Pattern 'Tweezer Bottom': backtest historical accuracy
+- [ ] TASK-08310: Test: 'Tweezer Bottom' detection unit test with known bars
+- [ ] TASK-08311: Pattern 'Spinning Top': implement detection algorithm
+- [ ] TASK-08312: Pattern 'Spinning Top': mark on chart with icon overlay
+- [ ] TASK-08313: Pattern 'Spinning Top': tooltip with pattern description
+- [ ] TASK-08314: Pattern 'Spinning Top': add to screener filter
+- [ ] TASK-08315: Pattern 'Spinning Top': backtest historical accuracy
+- [ ] TASK-08316: Test: 'Spinning Top' detection unit test with known bars
+- [ ] TASK-08317: Pattern 'Marubozu Bullish': implement detection algorithm
+- [ ] TASK-08318: Pattern 'Marubozu Bullish': mark on chart with icon overlay
+- [ ] TASK-08319: Pattern 'Marubozu Bullish': tooltip with pattern description
+- [ ] TASK-08320: Pattern 'Marubozu Bullish': add to screener filter
+- [ ] TASK-08321: Pattern 'Marubozu Bullish': backtest historical accuracy
+- [ ] TASK-08322: Test: 'Marubozu Bullish' detection unit test with known bars
+- [ ] TASK-08323: Pattern 'Marubozu Bearish': implement detection algorithm
+- [ ] TASK-08324: Pattern 'Marubozu Bearish': mark on chart with icon overlay
+- [ ] TASK-08325: Pattern 'Marubozu Bearish': tooltip with pattern description
+- [ ] TASK-08326: Pattern 'Marubozu Bearish': add to screener filter
+- [ ] TASK-08327: Pattern 'Marubozu Bearish': backtest historical accuracy
+- [ ] TASK-08328: Test: 'Marubozu Bearish' detection unit test with known bars
+- [ ] TASK-08329: Pattern 'Three Inside Up': implement detection algorithm
+- [ ] TASK-08330: Pattern 'Three Inside Up': mark on chart with icon overlay
+- [ ] TASK-08331: Pattern 'Three Inside Up': tooltip with pattern description
+- [ ] TASK-08332: Pattern 'Three Inside Up': add to screener filter
+- [ ] TASK-08333: Pattern 'Three Inside Up': backtest historical accuracy
+- [ ] TASK-08334: Test: 'Three Inside Up' detection unit test with known bars
+- [ ] TASK-08335: Pattern 'Three Inside Down': implement detection algorithm
+- [ ] TASK-08336: Pattern 'Three Inside Down': mark on chart with icon overlay
+- [ ] TASK-08337: Pattern 'Three Inside Down': tooltip with pattern description
+- [ ] TASK-08338: Pattern 'Three Inside Down': add to screener filter
+- [ ] TASK-08339: Pattern 'Three Inside Down': backtest historical accuracy
+- [ ] TASK-08340: Test: 'Three Inside Down' detection unit test with known bars
+- [ ] TASK-08341: Pattern 'Three Outside Up': implement detection algorithm
+- [ ] TASK-08342: Pattern 'Three Outside Up': mark on chart with icon overlay
+- [ ] TASK-08343: Pattern 'Three Outside Up': tooltip with pattern description
+- [ ] TASK-08344: Pattern 'Three Outside Up': add to screener filter
+- [ ] TASK-08345: Pattern 'Three Outside Up': backtest historical accuracy
+- [ ] TASK-08346: Test: 'Three Outside Up' detection unit test with known bars
+- [ ] TASK-08347: Pattern 'Three Outside Down': implement detection algorithm
+- [ ] TASK-08348: Pattern 'Three Outside Down': mark on chart with icon overlay
+- [ ] TASK-08349: Pattern 'Three Outside Down': tooltip with pattern description
+- [ ] TASK-08350: Pattern 'Three Outside Down': add to screener filter
+- [ ] TASK-08351: Pattern 'Three Outside Down': backtest historical accuracy
+- [ ] TASK-08352: Test: 'Three Outside Down' detection unit test with known bars
+- [ ] TASK-08353: Pattern 'Rising Three Methods': implement detection algorithm
+- [ ] TASK-08354: Pattern 'Rising Three Methods': mark on chart with icon overlay
+- [ ] TASK-08355: Pattern 'Rising Three Methods': tooltip with pattern description
+- [ ] TASK-08356: Pattern 'Rising Three Methods': add to screener filter
+- [ ] TASK-08357: Pattern 'Rising Three Methods': backtest historical accuracy
+- [ ] TASK-08358: Test: 'Rising Three Methods' detection unit test with known bars
+- [ ] TASK-08359: Pattern 'Falling Three Methods': implement detection algorithm
+- [ ] TASK-08360: Pattern 'Falling Three Methods': mark on chart with icon overlay
+- [ ] TASK-08361: Pattern 'Falling Three Methods': tooltip with pattern description
+- [ ] TASK-08362: Pattern 'Falling Three Methods': add to screener filter
+- [ ] TASK-08363: Pattern 'Falling Three Methods': backtest historical accuracy
+- [ ] TASK-08364: Test: 'Falling Three Methods' detection unit test with known bars
+- [ ] TASK-08365: Pattern 'Abandoned Baby Bullish': implement detection algorithm
+- [ ] TASK-08366: Pattern 'Abandoned Baby Bullish': mark on chart with icon overlay
+- [ ] TASK-08367: Pattern 'Abandoned Baby Bullish': tooltip with pattern description
+- [ ] TASK-08368: Pattern 'Abandoned Baby Bullish': add to screener filter
+- [ ] TASK-08369: Pattern 'Abandoned Baby Bullish': backtest historical accuracy
+- [ ] TASK-08370: Test: 'Abandoned Baby Bullish' detection unit test with known bars
+- [ ] TASK-08371: Pattern 'Abandoned Baby Bearish': implement detection algorithm
+- [ ] TASK-08372: Pattern 'Abandoned Baby Bearish': mark on chart with icon overlay
+- [ ] TASK-08373: Pattern 'Abandoned Baby Bearish': tooltip with pattern description
+- [ ] TASK-08374: Pattern 'Abandoned Baby Bearish': add to screener filter
+- [ ] TASK-08375: Pattern 'Abandoned Baby Bearish': backtest historical accuracy
+- [ ] TASK-08376: Test: 'Abandoned Baby Bearish' detection unit test with known bars
+- [ ] TASK-08377: Pattern 'Dragonfly Doji': implement detection algorithm
+- [ ] TASK-08378: Pattern 'Dragonfly Doji': mark on chart with icon overlay
+- [ ] TASK-08379: Pattern 'Dragonfly Doji': tooltip with pattern description
+- [ ] TASK-08380: Pattern 'Dragonfly Doji': add to screener filter
+- [ ] TASK-08381: Pattern 'Dragonfly Doji': backtest historical accuracy
+- [ ] TASK-08382: Test: 'Dragonfly Doji' detection unit test with known bars
+- [ ] TASK-08383: Pattern 'Gravestone Doji': implement detection algorithm
+- [ ] TASK-08384: Pattern 'Gravestone Doji': mark on chart with icon overlay
+- [ ] TASK-08385: Pattern 'Gravestone Doji': tooltip with pattern description
+- [ ] TASK-08386: Pattern 'Gravestone Doji': add to screener filter
+- [ ] TASK-08387: Pattern 'Gravestone Doji': backtest historical accuracy
+- [ ] TASK-08388: Test: 'Gravestone Doji' detection unit test with known bars
+- [ ] TASK-08389: Pattern 'Long-Legged Doji': implement detection algorithm
+- [ ] TASK-08390: Pattern 'Long-Legged Doji': mark on chart with icon overlay
+- [ ] TASK-08391: Pattern 'Long-Legged Doji': tooltip with pattern description
+- [ ] TASK-08392: Pattern 'Long-Legged Doji': add to screener filter
+- [ ] TASK-08393: Pattern 'Long-Legged Doji': backtest historical accuracy
+- [ ] TASK-08394: Test: 'Long-Legged Doji' detection unit test with known bars
+- [ ] TASK-08395: Pattern 'Rickshaw Man': implement detection algorithm
+- [ ] TASK-08396: Pattern 'Rickshaw Man': mark on chart with icon overlay
+- [ ] TASK-08397: Pattern 'Rickshaw Man': tooltip with pattern description
+- [ ] TASK-08398: Pattern 'Rickshaw Man': add to screener filter
+- [ ] TASK-08399: Pattern 'Rickshaw Man': backtest historical accuracy
+- [ ] TASK-08400: Test: 'Rickshaw Man' detection unit test with known bars
+- [ ] TASK-08401: Pattern 'Belt Hold Bullish': implement detection algorithm
+- [ ] TASK-08402: Pattern 'Belt Hold Bullish': mark on chart with icon overlay
+- [ ] TASK-08403: Pattern 'Belt Hold Bullish': tooltip with pattern description
+- [ ] TASK-08404: Pattern 'Belt Hold Bullish': add to screener filter
+- [ ] TASK-08405: Pattern 'Belt Hold Bullish': backtest historical accuracy
+- [ ] TASK-08406: Test: 'Belt Hold Bullish' detection unit test with known bars
+- [ ] TASK-08407: Pattern 'Belt Hold Bearish': implement detection algorithm
+- [ ] TASK-08408: Pattern 'Belt Hold Bearish': mark on chart with icon overlay
+- [ ] TASK-08409: Pattern 'Belt Hold Bearish': tooltip with pattern description
+- [ ] TASK-08410: Pattern 'Belt Hold Bearish': add to screener filter
+- [ ] TASK-08411: Pattern 'Belt Hold Bearish': backtest historical accuracy
+- [ ] TASK-08412: Test: 'Belt Hold Bearish' detection unit test with known bars
+- [ ] TASK-08413: Pattern 'Kicker Bullish': implement detection algorithm
+- [ ] TASK-08414: Pattern 'Kicker Bullish': mark on chart with icon overlay
+- [ ] TASK-08415: Pattern 'Kicker Bullish': tooltip with pattern description
+- [ ] TASK-08416: Pattern 'Kicker Bullish': add to screener filter
+- [ ] TASK-08417: Pattern 'Kicker Bullish': backtest historical accuracy
+- [ ] TASK-08418: Test: 'Kicker Bullish' detection unit test with known bars
+- [ ] TASK-08419: Pattern 'Kicker Bearish': implement detection algorithm
+- [ ] TASK-08420: Pattern 'Kicker Bearish': mark on chart with icon overlay
+- [ ] TASK-08421: Pattern 'Kicker Bearish': tooltip with pattern description
+- [ ] TASK-08422: Pattern 'Kicker Bearish': add to screener filter
+- [ ] TASK-08423: Pattern 'Kicker Bearish': backtest historical accuracy
+- [ ] TASK-08424: Test: 'Kicker Bearish' detection unit test with known bars
+- [ ] TASK-08425: Pattern 'Ladder Bottom': implement detection algorithm
+- [ ] TASK-08426: Pattern 'Ladder Bottom': mark on chart with icon overlay
+- [ ] TASK-08427: Pattern 'Ladder Bottom': tooltip with pattern description
+- [ ] TASK-08428: Pattern 'Ladder Bottom': add to screener filter
+- [ ] TASK-08429: Pattern 'Ladder Bottom': backtest historical accuracy
+- [ ] TASK-08430: Test: 'Ladder Bottom' detection unit test with known bars
+- [ ] TASK-08431: Pattern 'Ladder Top': implement detection algorithm
+- [ ] TASK-08432: Pattern 'Ladder Top': mark on chart with icon overlay
+- [ ] TASK-08433: Pattern 'Ladder Top': tooltip with pattern description
+- [ ] TASK-08434: Pattern 'Ladder Top': add to screener filter
+- [ ] TASK-08435: Pattern 'Ladder Top': backtest historical accuracy
+- [ ] TASK-08436: Test: 'Ladder Top' detection unit test with known bars
+- [ ] TASK-08437: Pattern 'Mat Hold': implement detection algorithm
+- [ ] TASK-08438: Pattern 'Mat Hold': mark on chart with icon overlay
+- [ ] TASK-08439: Pattern 'Mat Hold': tooltip with pattern description
+- [ ] TASK-08440: Pattern 'Mat Hold': add to screener filter
+- [ ] TASK-08441: Pattern 'Mat Hold': backtest historical accuracy
+- [ ] TASK-08442: Test: 'Mat Hold' detection unit test with known bars
+- [ ] TASK-08443: Pattern 'Advance Block': implement detection algorithm
+- [ ] TASK-08444: Pattern 'Advance Block': mark on chart with icon overlay
+- [ ] TASK-08445: Pattern 'Advance Block': tooltip with pattern description
+- [ ] TASK-08446: Pattern 'Advance Block': add to screener filter
+- [ ] TASK-08447: Pattern 'Advance Block': backtest historical accuracy
+- [ ] TASK-08448: Test: 'Advance Block' detection unit test with known bars
+
+
+## GLOBAL MARKET INDICES (22 Ã— 5)
+
+- [ ] TASK-08449: Index S&P 500 (SPX): real-time price display widget
+- [ ] TASK-08450: Index S&P 500 (SPX): mini sparkline chart (intraday)
+- [ ] TASK-08451: Index S&P 500 (SPX): change amount and % change display
+- [ ] TASK-08452: Index S&P 500 (SPX): level bar (% off all-time high)
+- [ ] TASK-08453: Index S&P 500 (SPX): click to open full chart
+- [ ] TASK-08454: Index NASDAQ 100 (NDX): real-time price display widget
+- [ ] TASK-08455: Index NASDAQ 100 (NDX): mini sparkline chart (intraday)
+- [ ] TASK-08456: Index NASDAQ 100 (NDX): change amount and % change display
+- [ ] TASK-08457: Index NASDAQ 100 (NDX): level bar (% off all-time high)
+- [ ] TASK-08458: Index NASDAQ 100 (NDX): click to open full chart
+- [ ] TASK-08459: Index Dow Jones (DJIA): real-time price display widget
+- [ ] TASK-08460: Index Dow Jones (DJIA): mini sparkline chart (intraday)
+- [ ] TASK-08461: Index Dow Jones (DJIA): change amount and % change display
+- [ ] TASK-08462: Index Dow Jones (DJIA): level bar (% off all-time high)
+- [ ] TASK-08463: Index Dow Jones (DJIA): click to open full chart
+- [ ] TASK-08464: Index Russell 2000 (RUT): real-time price display widget
+- [ ] TASK-08465: Index Russell 2000 (RUT): mini sparkline chart (intraday)
+- [ ] TASK-08466: Index Russell 2000 (RUT): change amount and % change display
+- [ ] TASK-08467: Index Russell 2000 (RUT): level bar (% off all-time high)
+- [ ] TASK-08468: Index Russell 2000 (RUT): click to open full chart
+- [ ] TASK-08469: Index NYSE Composite: real-time price display widget
+- [ ] TASK-08470: Index NYSE Composite: mini sparkline chart (intraday)
+- [ ] TASK-08471: Index NYSE Composite: change amount and % change display
+- [ ] TASK-08472: Index NYSE Composite: level bar (% off all-time high)
+- [ ] TASK-08473: Index NYSE Composite: click to open full chart
+- [ ] TASK-08474: Index S&P MidCap 400: real-time price display widget
+- [ ] TASK-08475: Index S&P MidCap 400: mini sparkline chart (intraday)
+- [ ] TASK-08476: Index S&P MidCap 400: change amount and % change display
+- [ ] TASK-08477: Index S&P MidCap 400: level bar (% off all-time high)
+- [ ] TASK-08478: Index S&P MidCap 400: click to open full chart
+- [ ] TASK-08479: Index STOXX 600: real-time price display widget
+- [ ] TASK-08480: Index STOXX 600: mini sparkline chart (intraday)
+- [ ] TASK-08481: Index STOXX 600: change amount and % change display
+- [ ] TASK-08482: Index STOXX 600: level bar (% off all-time high)
+- [ ] TASK-08483: Index STOXX 600: click to open full chart
+- [ ] TASK-08484: Index DAX 40: real-time price display widget
+- [ ] TASK-08485: Index DAX 40: mini sparkline chart (intraday)
+- [ ] TASK-08486: Index DAX 40: change amount and % change display
+- [ ] TASK-08487: Index DAX 40: level bar (% off all-time high)
+- [ ] TASK-08488: Index DAX 40: click to open full chart
+- [ ] TASK-08489: Index FTSE 100: real-time price display widget
+- [ ] TASK-08490: Index FTSE 100: mini sparkline chart (intraday)
+- [ ] TASK-08491: Index FTSE 100: change amount and % change display
+- [ ] TASK-08492: Index FTSE 100: level bar (% off all-time high)
+- [ ] TASK-08493: Index FTSE 100: click to open full chart
+- [ ] TASK-08494: Index CAC 40: real-time price display widget
+- [ ] TASK-08495: Index CAC 40: mini sparkline chart (intraday)
+- [ ] TASK-08496: Index CAC 40: change amount and % change display
+- [ ] TASK-08497: Index CAC 40: level bar (% off all-time high)
+- [ ] TASK-08498: Index CAC 40: click to open full chart
+- [ ] TASK-08499: Index IBEX 35: real-time price display widget
+- [ ] TASK-08500: Index IBEX 35: mini sparkline chart (intraday)
+- [ ] TASK-08501: Index IBEX 35: change amount and % change display
+- [ ] TASK-08502: Index IBEX 35: level bar (% off all-time high)
+- [ ] TASK-08503: Index IBEX 35: click to open full chart
+- [ ] TASK-08504: Index Nikkei 225: real-time price display widget
+- [ ] TASK-08505: Index Nikkei 225: mini sparkline chart (intraday)
+- [ ] TASK-08506: Index Nikkei 225: change amount and % change display
+- [ ] TASK-08507: Index Nikkei 225: level bar (% off all-time high)
+- [ ] TASK-08508: Index Nikkei 225: click to open full chart
+- [ ] TASK-08509: Index Hang Seng: real-time price display widget
+- [ ] TASK-08510: Index Hang Seng: mini sparkline chart (intraday)
+- [ ] TASK-08511: Index Hang Seng: change amount and % change display
+- [ ] TASK-08512: Index Hang Seng: level bar (% off all-time high)
+- [ ] TASK-08513: Index Hang Seng: click to open full chart
+- [ ] TASK-08514: Index Shanghai Composite: real-time price display widget
+- [ ] TASK-08515: Index Shanghai Composite: mini sparkline chart (intraday)
+- [ ] TASK-08516: Index Shanghai Composite: change amount and % change display
+- [ ] TASK-08517: Index Shanghai Composite: level bar (% off all-time high)
+- [ ] TASK-08518: Index Shanghai Composite: click to open full chart
+- [ ] TASK-08519: Index KOSPI: real-time price display widget
+- [ ] TASK-08520: Index KOSPI: mini sparkline chart (intraday)
+- [ ] TASK-08521: Index KOSPI: change amount and % change display
+- [ ] TASK-08522: Index KOSPI: level bar (% off all-time high)
+- [ ] TASK-08523: Index KOSPI: click to open full chart
+- [ ] TASK-08524: Index ASX 200: real-time price display widget
+- [ ] TASK-08525: Index ASX 200: mini sparkline chart (intraday)
+- [ ] TASK-08526: Index ASX 200: change amount and % change display
+- [ ] TASK-08527: Index ASX 200: level bar (% off all-time high)
+- [ ] TASK-08528: Index ASX 200: click to open full chart
+- [ ] TASK-08529: Index BSE Sensex: real-time price display widget
+- [ ] TASK-08530: Index BSE Sensex: mini sparkline chart (intraday)
+- [ ] TASK-08531: Index BSE Sensex: change amount and % change display
+- [ ] TASK-08532: Index BSE Sensex: level bar (% off all-time high)
+- [ ] TASK-08533: Index BSE Sensex: click to open full chart
+- [ ] TASK-08534: Index Nifty 50: real-time price display widget
+- [ ] TASK-08535: Index Nifty 50: mini sparkline chart (intraday)
+- [ ] TASK-08536: Index Nifty 50: change amount and % change display
+- [ ] TASK-08537: Index Nifty 50: level bar (% off all-time high)
+- [ ] TASK-08538: Index Nifty 50: click to open full chart
+- [ ] TASK-08539: Index Taiwan TAIEX: real-time price display widget
+- [ ] TASK-08540: Index Taiwan TAIEX: mini sparkline chart (intraday)
+- [ ] TASK-08541: Index Taiwan TAIEX: change amount and % change display
+- [ ] TASK-08542: Index Taiwan TAIEX: level bar (% off all-time high)
+- [ ] TASK-08543: Index Taiwan TAIEX: click to open full chart
+- [ ] TASK-08544: Index VIX: real-time price display widget
+- [ ] TASK-08545: Index VIX: mini sparkline chart (intraday)
+- [ ] TASK-08546: Index VIX: change amount and % change display
+- [ ] TASK-08547: Index VIX: level bar (% off all-time high)
+- [ ] TASK-08548: Index VIX: click to open full chart
+- [ ] TASK-08549: Index MOVE Index: real-time price display widget
+- [ ] TASK-08550: Index MOVE Index: mini sparkline chart (intraday)
+- [ ] TASK-08551: Index MOVE Index: change amount and % change display
+- [ ] TASK-08552: Index MOVE Index: level bar (% off all-time high)
+- [ ] TASK-08553: Index MOVE Index: click to open full chart
+- [ ] TASK-08554: Index US Dollar Index (DXY): real-time price display widget
+- [ ] TASK-08555: Index US Dollar Index (DXY): mini sparkline chart (intraday)
+- [ ] TASK-08556: Index US Dollar Index (DXY): change amount and % change display
+- [ ] TASK-08557: Index US Dollar Index (DXY): level bar (% off all-time high)
+- [ ] TASK-08558: Index US Dollar Index (DXY): click to open full chart
+
+
+## TREASURY YIELDS (10 TENORS Ã— 5)
+
+- [ ] TASK-08559: Treasury 3M: real-time yield display
+- [ ] TASK-08560: Treasury 3M: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08561: Treasury 3M: change and basis point change display
+- [ ] TASK-08562: Treasury 3M: DV01 sensitivity calculation
+- [ ] TASK-08563: Treasury 3M: auction schedule and results display
+- [ ] TASK-08564: Treasury 6M: real-time yield display
+- [ ] TASK-08565: Treasury 6M: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08566: Treasury 6M: change and basis point change display
+- [ ] TASK-08567: Treasury 6M: DV01 sensitivity calculation
+- [ ] TASK-08568: Treasury 6M: auction schedule and results display
+- [ ] TASK-08569: Treasury 1Y: real-time yield display
+- [ ] TASK-08570: Treasury 1Y: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08571: Treasury 1Y: change and basis point change display
+- [ ] TASK-08572: Treasury 1Y: DV01 sensitivity calculation
+- [ ] TASK-08573: Treasury 1Y: auction schedule and results display
+- [ ] TASK-08574: Treasury 2Y: real-time yield display
+- [ ] TASK-08575: Treasury 2Y: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08576: Treasury 2Y: change and basis point change display
+- [ ] TASK-08577: Treasury 2Y: DV01 sensitivity calculation
+- [ ] TASK-08578: Treasury 2Y: auction schedule and results display
+- [ ] TASK-08579: Treasury 3Y: real-time yield display
+- [ ] TASK-08580: Treasury 3Y: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08581: Treasury 3Y: change and basis point change display
+- [ ] TASK-08582: Treasury 3Y: DV01 sensitivity calculation
+- [ ] TASK-08583: Treasury 3Y: auction schedule and results display
+- [ ] TASK-08584: Treasury 5Y: real-time yield display
+- [ ] TASK-08585: Treasury 5Y: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08586: Treasury 5Y: change and basis point change display
+- [ ] TASK-08587: Treasury 5Y: DV01 sensitivity calculation
+- [ ] TASK-08588: Treasury 5Y: auction schedule and results display
+- [ ] TASK-08589: Treasury 7Y: real-time yield display
+- [ ] TASK-08590: Treasury 7Y: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08591: Treasury 7Y: change and basis point change display
+- [ ] TASK-08592: Treasury 7Y: DV01 sensitivity calculation
+- [ ] TASK-08593: Treasury 7Y: auction schedule and results display
+- [ ] TASK-08594: Treasury 10Y: real-time yield display
+- [ ] TASK-08595: Treasury 10Y: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08596: Treasury 10Y: change and basis point change display
+- [ ] TASK-08597: Treasury 10Y: DV01 sensitivity calculation
+- [ ] TASK-08598: Treasury 10Y: auction schedule and results display
+- [ ] TASK-08599: Treasury 20Y: real-time yield display
+- [ ] TASK-08600: Treasury 20Y: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08601: Treasury 20Y: change and basis point change display
+- [ ] TASK-08602: Treasury 20Y: DV01 sensitivity calculation
+- [ ] TASK-08603: Treasury 20Y: auction schedule and results display
+- [ ] TASK-08604: Treasury 30Y: real-time yield display
+- [ ] TASK-08605: Treasury 30Y: yield chart (1d, 1m, 1y, 5y history)
+- [ ] TASK-08606: Treasury 30Y: change and basis point change display
+- [ ] TASK-08607: Treasury 30Y: DV01 sensitivity calculation
+- [ ] TASK-08608: Treasury 30Y: auction schedule and results display
+
+
+## COMMODITIES MONITOR (21 Ã— 5)
+
+- [ ] TASK-08609: Commodity WTI Crude Oil (CL): real-time price display
+- [ ] TASK-08610: Commodity WTI Crude Oil (CL): mini chart widget
+- [ ] TASK-08611: Commodity WTI Crude Oil (CL): change amount and % display
+- [ ] TASK-08612: Commodity WTI Crude Oil (CL): futures curve (front month + deferred)
+- [ ] TASK-08613: Commodity WTI Crude Oil (CL): seasonality chart (5-year avg overlay)
+- [ ] TASK-08614: Commodity Brent Crude (BZ): real-time price display
+- [ ] TASK-08615: Commodity Brent Crude (BZ): mini chart widget
+- [ ] TASK-08616: Commodity Brent Crude (BZ): change amount and % display
+- [ ] TASK-08617: Commodity Brent Crude (BZ): futures curve (front month + deferred)
+- [ ] TASK-08618: Commodity Brent Crude (BZ): seasonality chart (5-year avg overlay)
+- [ ] TASK-08619: Commodity Natural Gas (NG): real-time price display
+- [ ] TASK-08620: Commodity Natural Gas (NG): mini chart widget
+- [ ] TASK-08621: Commodity Natural Gas (NG): change amount and % display
+- [ ] TASK-08622: Commodity Natural Gas (NG): futures curve (front month + deferred)
+- [ ] TASK-08623: Commodity Natural Gas (NG): seasonality chart (5-year avg overlay)
+- [ ] TASK-08624: Commodity Heating Oil (HO): real-time price display
+- [ ] TASK-08625: Commodity Heating Oil (HO): mini chart widget
+- [ ] TASK-08626: Commodity Heating Oil (HO): change amount and % display
+- [ ] TASK-08627: Commodity Heating Oil (HO): futures curve (front month + deferred)
+- [ ] TASK-08628: Commodity Heating Oil (HO): seasonality chart (5-year avg overlay)
+- [ ] TASK-08629: Commodity RBOB Gasoline (RB): real-time price display
+- [ ] TASK-08630: Commodity RBOB Gasoline (RB): mini chart widget
+- [ ] TASK-08631: Commodity RBOB Gasoline (RB): change amount and % display
+- [ ] TASK-08632: Commodity RBOB Gasoline (RB): futures curve (front month + deferred)
+- [ ] TASK-08633: Commodity RBOB Gasoline (RB): seasonality chart (5-year avg overlay)
+- [ ] TASK-08634: Commodity Gold (GC): real-time price display
+- [ ] TASK-08635: Commodity Gold (GC): mini chart widget
+- [ ] TASK-08636: Commodity Gold (GC): change amount and % display
+- [ ] TASK-08637: Commodity Gold (GC): futures curve (front month + deferred)
+- [ ] TASK-08638: Commodity Gold (GC): seasonality chart (5-year avg overlay)
+- [ ] TASK-08639: Commodity Silver (SI): real-time price display
+- [ ] TASK-08640: Commodity Silver (SI): mini chart widget
+- [ ] TASK-08641: Commodity Silver (SI): change amount and % display
+- [ ] TASK-08642: Commodity Silver (SI): futures curve (front month + deferred)
+- [ ] TASK-08643: Commodity Silver (SI): seasonality chart (5-year avg overlay)
+- [ ] TASK-08644: Commodity Platinum (PL): real-time price display
+- [ ] TASK-08645: Commodity Platinum (PL): mini chart widget
+- [ ] TASK-08646: Commodity Platinum (PL): change amount and % display
+- [ ] TASK-08647: Commodity Platinum (PL): futures curve (front month + deferred)
+- [ ] TASK-08648: Commodity Platinum (PL): seasonality chart (5-year avg overlay)
+- [ ] TASK-08649: Commodity Palladium (PA): real-time price display
+- [ ] TASK-08650: Commodity Palladium (PA): mini chart widget
+- [ ] TASK-08651: Commodity Palladium (PA): change amount and % display
+- [ ] TASK-08652: Commodity Palladium (PA): futures curve (front month + deferred)
+- [ ] TASK-08653: Commodity Palladium (PA): seasonality chart (5-year avg overlay)
+- [ ] TASK-08654: Commodity Copper (HG): real-time price display
+- [ ] TASK-08655: Commodity Copper (HG): mini chart widget
+- [ ] TASK-08656: Commodity Copper (HG): change amount and % display
+- [ ] TASK-08657: Commodity Copper (HG): futures curve (front month + deferred)
+- [ ] TASK-08658: Commodity Copper (HG): seasonality chart (5-year avg overlay)
+- [ ] TASK-08659: Commodity Corn (ZC): real-time price display
+- [ ] TASK-08660: Commodity Corn (ZC): mini chart widget
+- [ ] TASK-08661: Commodity Corn (ZC): change amount and % display
+- [ ] TASK-08662: Commodity Corn (ZC): futures curve (front month + deferred)
+- [ ] TASK-08663: Commodity Corn (ZC): seasonality chart (5-year avg overlay)
+- [ ] TASK-08664: Commodity Soybeans (ZS): real-time price display
+- [ ] TASK-08665: Commodity Soybeans (ZS): mini chart widget
+- [ ] TASK-08666: Commodity Soybeans (ZS): change amount and % display
+- [ ] TASK-08667: Commodity Soybeans (ZS): futures curve (front month + deferred)
+- [ ] TASK-08668: Commodity Soybeans (ZS): seasonality chart (5-year avg overlay)
+- [ ] TASK-08669: Commodity Wheat (ZW): real-time price display
+- [ ] TASK-08670: Commodity Wheat (ZW): mini chart widget
+- [ ] TASK-08671: Commodity Wheat (ZW): change amount and % display
+- [ ] TASK-08672: Commodity Wheat (ZW): futures curve (front month + deferred)
+- [ ] TASK-08673: Commodity Wheat (ZW): seasonality chart (5-year avg overlay)
+- [ ] TASK-08674: Commodity Oats (ZO): real-time price display
+- [ ] TASK-08675: Commodity Oats (ZO): mini chart widget
+- [ ] TASK-08676: Commodity Oats (ZO): change amount and % display
+- [ ] TASK-08677: Commodity Oats (ZO): futures curve (front month + deferred)
+- [ ] TASK-08678: Commodity Oats (ZO): seasonality chart (5-year avg overlay)
+- [ ] TASK-08679: Commodity Sugar (SB): real-time price display
+- [ ] TASK-08680: Commodity Sugar (SB): mini chart widget
+- [ ] TASK-08681: Commodity Sugar (SB): change amount and % display
+- [ ] TASK-08682: Commodity Sugar (SB): futures curve (front month + deferred)
+- [ ] TASK-08683: Commodity Sugar (SB): seasonality chart (5-year avg overlay)
+- [ ] TASK-08684: Commodity Coffee (KC): real-time price display
+- [ ] TASK-08685: Commodity Coffee (KC): mini chart widget
+- [ ] TASK-08686: Commodity Coffee (KC): change amount and % display
+- [ ] TASK-08687: Commodity Coffee (KC): futures curve (front month + deferred)
+- [ ] TASK-08688: Commodity Coffee (KC): seasonality chart (5-year avg overlay)
+- [ ] TASK-08689: Commodity Cocoa (CC): real-time price display
+- [ ] TASK-08690: Commodity Cocoa (CC): mini chart widget
+- [ ] TASK-08691: Commodity Cocoa (CC): change amount and % display
+- [ ] TASK-08692: Commodity Cocoa (CC): futures curve (front month + deferred)
+- [ ] TASK-08693: Commodity Cocoa (CC): seasonality chart (5-year avg overlay)
+- [ ] TASK-08694: Commodity Cotton (CT): real-time price display
+- [ ] TASK-08695: Commodity Cotton (CT): mini chart widget
+- [ ] TASK-08696: Commodity Cotton (CT): change amount and % display
+- [ ] TASK-08697: Commodity Cotton (CT): futures curve (front month + deferred)
+- [ ] TASK-08698: Commodity Cotton (CT): seasonality chart (5-year avg overlay)
+- [ ] TASK-08699: Commodity Live Cattle (LE): real-time price display
+- [ ] TASK-08700: Commodity Live Cattle (LE): mini chart widget
+- [ ] TASK-08701: Commodity Live Cattle (LE): change amount and % display
+- [ ] TASK-08702: Commodity Live Cattle (LE): futures curve (front month + deferred)
+- [ ] TASK-08703: Commodity Live Cattle (LE): seasonality chart (5-year avg overlay)
+- [ ] TASK-08704: Commodity Lean Hogs (HE): real-time price display
+- [ ] TASK-08705: Commodity Lean Hogs (HE): mini chart widget
+- [ ] TASK-08706: Commodity Lean Hogs (HE): change amount and % display
+- [ ] TASK-08707: Commodity Lean Hogs (HE): futures curve (front month + deferred)
+- [ ] TASK-08708: Commodity Lean Hogs (HE): seasonality chart (5-year avg overlay)
+- [ ] TASK-08709: Commodity Lumber (LBS): real-time price display
+- [ ] TASK-08710: Commodity Lumber (LBS): mini chart widget
+- [ ] TASK-08711: Commodity Lumber (LBS): change amount and % display
+- [ ] TASK-08712: Commodity Lumber (LBS): futures curve (front month + deferred)
+- [ ] TASK-08713: Commodity Lumber (LBS): seasonality chart (5-year avg overlay)
+
+
+## FX CURRENCY PAIRS (31 Ã— 4)
+
+- [ ] TASK-08714: FX EUR/USD: real-time bid/ask display
+- [ ] TASK-08715: FX EUR/USD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08716: FX EUR/USD: spread display (in pips)
+- [ ] TASK-08717: FX EUR/USD: daily range bar visualization
+- [ ] TASK-08718: FX GBP/USD: real-time bid/ask display
+- [ ] TASK-08719: FX GBP/USD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08720: FX GBP/USD: spread display (in pips)
+- [ ] TASK-08721: FX GBP/USD: daily range bar visualization
+- [ ] TASK-08722: FX USD/JPY: real-time bid/ask display
+- [ ] TASK-08723: FX USD/JPY: mini chart (1d, 1w, 1m)
+- [ ] TASK-08724: FX USD/JPY: spread display (in pips)
+- [ ] TASK-08725: FX USD/JPY: daily range bar visualization
+- [ ] TASK-08726: FX USD/CHF: real-time bid/ask display
+- [ ] TASK-08727: FX USD/CHF: mini chart (1d, 1w, 1m)
+- [ ] TASK-08728: FX USD/CHF: spread display (in pips)
+- [ ] TASK-08729: FX USD/CHF: daily range bar visualization
+- [ ] TASK-08730: FX AUD/USD: real-time bid/ask display
+- [ ] TASK-08731: FX AUD/USD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08732: FX AUD/USD: spread display (in pips)
+- [ ] TASK-08733: FX AUD/USD: daily range bar visualization
+- [ ] TASK-08734: FX NZD/USD: real-time bid/ask display
+- [ ] TASK-08735: FX NZD/USD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08736: FX NZD/USD: spread display (in pips)
+- [ ] TASK-08737: FX NZD/USD: daily range bar visualization
+- [ ] TASK-08738: FX USD/CAD: real-time bid/ask display
+- [ ] TASK-08739: FX USD/CAD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08740: FX USD/CAD: spread display (in pips)
+- [ ] TASK-08741: FX USD/CAD: daily range bar visualization
+- [ ] TASK-08742: FX EUR/GBP: real-time bid/ask display
+- [ ] TASK-08743: FX EUR/GBP: mini chart (1d, 1w, 1m)
+- [ ] TASK-08744: FX EUR/GBP: spread display (in pips)
+- [ ] TASK-08745: FX EUR/GBP: daily range bar visualization
+- [ ] TASK-08746: FX EUR/JPY: real-time bid/ask display
+- [ ] TASK-08747: FX EUR/JPY: mini chart (1d, 1w, 1m)
+- [ ] TASK-08748: FX EUR/JPY: spread display (in pips)
+- [ ] TASK-08749: FX EUR/JPY: daily range bar visualization
+- [ ] TASK-08750: FX GBP/JPY: real-time bid/ask display
+- [ ] TASK-08751: FX GBP/JPY: mini chart (1d, 1w, 1m)
+- [ ] TASK-08752: FX GBP/JPY: spread display (in pips)
+- [ ] TASK-08753: FX GBP/JPY: daily range bar visualization
+- [ ] TASK-08754: FX AUD/JPY: real-time bid/ask display
+- [ ] TASK-08755: FX AUD/JPY: mini chart (1d, 1w, 1m)
+- [ ] TASK-08756: FX AUD/JPY: spread display (in pips)
+- [ ] TASK-08757: FX AUD/JPY: daily range bar visualization
+- [ ] TASK-08758: FX NZD/JPY: real-time bid/ask display
+- [ ] TASK-08759: FX NZD/JPY: mini chart (1d, 1w, 1m)
+- [ ] TASK-08760: FX NZD/JPY: spread display (in pips)
+- [ ] TASK-08761: FX NZD/JPY: daily range bar visualization
+- [ ] TASK-08762: FX CHF/JPY: real-time bid/ask display
+- [ ] TASK-08763: FX CHF/JPY: mini chart (1d, 1w, 1m)
+- [ ] TASK-08764: FX CHF/JPY: spread display (in pips)
+- [ ] TASK-08765: FX CHF/JPY: daily range bar visualization
+- [ ] TASK-08766: FX EUR/AUD: real-time bid/ask display
+- [ ] TASK-08767: FX EUR/AUD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08768: FX EUR/AUD: spread display (in pips)
+- [ ] TASK-08769: FX EUR/AUD: daily range bar visualization
+- [ ] TASK-08770: FX EUR/NZD: real-time bid/ask display
+- [ ] TASK-08771: FX EUR/NZD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08772: FX EUR/NZD: spread display (in pips)
+- [ ] TASK-08773: FX EUR/NZD: daily range bar visualization
+- [ ] TASK-08774: FX GBP/AUD: real-time bid/ask display
+- [ ] TASK-08775: FX GBP/AUD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08776: FX GBP/AUD: spread display (in pips)
+- [ ] TASK-08777: FX GBP/AUD: daily range bar visualization
+- [ ] TASK-08778: FX GBP/NZD: real-time bid/ask display
+- [ ] TASK-08779: FX GBP/NZD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08780: FX GBP/NZD: spread display (in pips)
+- [ ] TASK-08781: FX GBP/NZD: daily range bar visualization
+- [ ] TASK-08782: FX AUD/NZD: real-time bid/ask display
+- [ ] TASK-08783: FX AUD/NZD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08784: FX AUD/NZD: spread display (in pips)
+- [ ] TASK-08785: FX AUD/NZD: daily range bar visualization
+- [ ] TASK-08786: FX AUD/CAD: real-time bid/ask display
+- [ ] TASK-08787: FX AUD/CAD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08788: FX AUD/CAD: spread display (in pips)
+- [ ] TASK-08789: FX AUD/CAD: daily range bar visualization
+- [ ] TASK-08790: FX EUR/CHF: real-time bid/ask display
+- [ ] TASK-08791: FX EUR/CHF: mini chart (1d, 1w, 1m)
+- [ ] TASK-08792: FX EUR/CHF: spread display (in pips)
+- [ ] TASK-08793: FX EUR/CHF: daily range bar visualization
+- [ ] TASK-08794: FX GBP/CHF: real-time bid/ask display
+- [ ] TASK-08795: FX GBP/CHF: mini chart (1d, 1w, 1m)
+- [ ] TASK-08796: FX GBP/CHF: spread display (in pips)
+- [ ] TASK-08797: FX GBP/CHF: daily range bar visualization
+- [ ] TASK-08798: FX USD/BRL: real-time bid/ask display
+- [ ] TASK-08799: FX USD/BRL: mini chart (1d, 1w, 1m)
+- [ ] TASK-08800: FX USD/BRL: spread display (in pips)
+- [ ] TASK-08801: FX USD/BRL: daily range bar visualization
+- [ ] TASK-08802: FX USD/MXN: real-time bid/ask display
+- [ ] TASK-08803: FX USD/MXN: mini chart (1d, 1w, 1m)
+- [ ] TASK-08804: FX USD/MXN: spread display (in pips)
+- [ ] TASK-08805: FX USD/MXN: daily range bar visualization
+- [ ] TASK-08806: FX USD/TRY: real-time bid/ask display
+- [ ] TASK-08807: FX USD/TRY: mini chart (1d, 1w, 1m)
+- [ ] TASK-08808: FX USD/TRY: spread display (in pips)
+- [ ] TASK-08809: FX USD/TRY: daily range bar visualization
+- [ ] TASK-08810: FX USD/ZAR: real-time bid/ask display
+- [ ] TASK-08811: FX USD/ZAR: mini chart (1d, 1w, 1m)
+- [ ] TASK-08812: FX USD/ZAR: spread display (in pips)
+- [ ] TASK-08813: FX USD/ZAR: daily range bar visualization
+- [ ] TASK-08814: FX USD/RUB: real-time bid/ask display
+- [ ] TASK-08815: FX USD/RUB: mini chart (1d, 1w, 1m)
+- [ ] TASK-08816: FX USD/RUB: spread display (in pips)
+- [ ] TASK-08817: FX USD/RUB: daily range bar visualization
+- [ ] TASK-08818: FX USD/INR: real-time bid/ask display
+- [ ] TASK-08819: FX USD/INR: mini chart (1d, 1w, 1m)
+- [ ] TASK-08820: FX USD/INR: spread display (in pips)
+- [ ] TASK-08821: FX USD/INR: daily range bar visualization
+- [ ] TASK-08822: FX USD/CNY: real-time bid/ask display
+- [ ] TASK-08823: FX USD/CNY: mini chart (1d, 1w, 1m)
+- [ ] TASK-08824: FX USD/CNY: spread display (in pips)
+- [ ] TASK-08825: FX USD/CNY: daily range bar visualization
+- [ ] TASK-08826: FX USD/KRW: real-time bid/ask display
+- [ ] TASK-08827: FX USD/KRW: mini chart (1d, 1w, 1m)
+- [ ] TASK-08828: FX USD/KRW: spread display (in pips)
+- [ ] TASK-08829: FX USD/KRW: daily range bar visualization
+- [ ] TASK-08830: FX USD/SGD: real-time bid/ask display
+- [ ] TASK-08831: FX USD/SGD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08832: FX USD/SGD: spread display (in pips)
+- [ ] TASK-08833: FX USD/SGD: daily range bar visualization
+- [ ] TASK-08834: FX USD/HKD: real-time bid/ask display
+- [ ] TASK-08835: FX USD/HKD: mini chart (1d, 1w, 1m)
+- [ ] TASK-08836: FX USD/HKD: spread display (in pips)
+- [ ] TASK-08837: FX USD/HKD: daily range bar visualization
+
+
+## ERROR HANDLING & EDGE CASES
+
+- [ ] TASK-08838: Handle API timeout (>5s) with retry and user notification
+- [ ] TASK-08839: Handle API 429 (rate limited) with backoff and queue
+- [ ] TASK-08840: Handle API 500 with error boundary and recovery option
+- [ ] TASK-08841: Handle API 401 with re-authentication redirect
+- [ ] TASK-08842: Handle API 403 with permission denied message
+- [ ] TASK-08843: Handle WebSocket disconnect with auto-reconnect indicator
+- [ ] TASK-08844: Handle WebSocket message parse error gracefully
+- [ ] TASK-08845: Handle empty data response (show 'no data available')
+- [ ] TASK-08846: Handle NaN/Infinity in chart data (skip/interpolate)
+- [ ] TASK-08847: Handle negative prices in display (guard against)
+- [ ] TASK-08848: Handle very large numbers in display (scientific notation)
+- [ ] TASK-08849: Handle very small numbers (<0.01) in display (proper precision)
+- [ ] TASK-08850: Handle timezone conversion for all timestamp displays
+- [ ] TASK-08851: Handle DST transitions for intraday chart bars
+- [ ] TASK-08852: Handle market holidays (no data periods)
+- [ ] TASK-08853: Handle pre/post market data availability differences
+- [ ] TASK-08854: Handle stock split events in historical data
+- [ ] TASK-08855: Handle delisted symbols gracefully
+- [ ] TASK-08856: Handle symbol change events (ticker changes)
+- [ ] TASK-08857: Handle concurrent API requests (deduplication)
+- [ ] TASK-08858: Handle browser tab sleep/resume (reconnect on wake)
+- [ ] TASK-08859: Handle memory leak prevention (cleanup on unmount)
+- [ ] TASK-08860: Handle localStorage quota exceeded gracefully
+- [ ] TASK-08861: Handle clipboard API permission denial
+- [ ] TASK-08862: Handle download API for file exports
+
+
+## LOCALIZATION & NUMBER FORMATTING
+
+- [ ] TASK-08863: Number format: display prices in USD with proper symbol/decimals
+- [ ] TASK-08864: Number format: display volume in USD with K/M/B abbreviations
+- [ ] TASK-08865: Number format: display prices in EUR with proper symbol/decimals
+- [ ] TASK-08866: Number format: display volume in EUR with K/M/B abbreviations
+- [ ] TASK-08867: Number format: display prices in GBP with proper symbol/decimals
+- [ ] TASK-08868: Number format: display volume in GBP with K/M/B abbreviations
+- [ ] TASK-08869: Number format: display prices in JPY with proper symbol/decimals
+- [ ] TASK-08870: Number format: display volume in JPY with K/M/B abbreviations
+- [ ] TASK-08871: Number format: display prices in CHF with proper symbol/decimals
+- [ ] TASK-08872: Number format: display volume in CHF with K/M/B abbreviations
+- [ ] TASK-08873: Number format: display prices in CAD with proper symbol/decimals
+- [ ] TASK-08874: Number format: display volume in CAD with K/M/B abbreviations
+- [ ] TASK-08875: Number format: display prices in AUD with proper symbol/decimals
+- [ ] TASK-08876: Number format: display volume in AUD with K/M/B abbreviations
+- [ ] TASK-08877: Number format: display prices in NZD with proper symbol/decimals
+- [ ] TASK-08878: Number format: display volume in NZD with K/M/B abbreviations
+- [ ] TASK-08879: Number format: display prices in CNY with proper symbol/decimals
+- [ ] TASK-08880: Number format: display volume in CNY with K/M/B abbreviations
+- [ ] TASK-08881: Number format: display prices in INR with proper symbol/decimals
+- [ ] TASK-08882: Number format: display volume in INR with K/M/B abbreviations
+- [ ] TASK-08883: Timezone America/New_York: all timestamps converted correctly
+- [ ] TASK-08884: Timezone America/New_York: chart x-axis labels in local time
+- [ ] TASK-08885: Timezone America/New_York: trading hours overlay adjusted
+- [ ] TASK-08886: Timezone America/Chicago: all timestamps converted correctly
+- [ ] TASK-08887: Timezone America/Chicago: chart x-axis labels in local time
+- [ ] TASK-08888: Timezone America/Chicago: trading hours overlay adjusted
+- [ ] TASK-08889: Timezone America/Los_Angeles: all timestamps converted correctly
+- [ ] TASK-08890: Timezone America/Los_Angeles: chart x-axis labels in local time
+- [ ] TASK-08891: Timezone America/Los_Angeles: trading hours overlay adjusted
+- [ ] TASK-08892: Timezone Europe/London: all timestamps converted correctly
+- [ ] TASK-08893: Timezone Europe/London: chart x-axis labels in local time
+- [ ] TASK-08894: Timezone Europe/London: trading hours overlay adjusted
+- [ ] TASK-08895: Timezone Europe/Frankfurt: all timestamps converted correctly
+- [ ] TASK-08896: Timezone Europe/Frankfurt: chart x-axis labels in local time
+- [ ] TASK-08897: Timezone Europe/Frankfurt: trading hours overlay adjusted
+- [ ] TASK-08898: Timezone Europe/Zurich: all timestamps converted correctly
+- [ ] TASK-08899: Timezone Europe/Zurich: chart x-axis labels in local time
+- [ ] TASK-08900: Timezone Europe/Zurich: trading hours overlay adjusted
+- [ ] TASK-08901: Timezone Asia/Tokyo: all timestamps converted correctly
+- [ ] TASK-08902: Timezone Asia/Tokyo: chart x-axis labels in local time
+- [ ] TASK-08903: Timezone Asia/Tokyo: trading hours overlay adjusted
+- [ ] TASK-08904: Timezone Asia/Hong_Kong: all timestamps converted correctly
+- [ ] TASK-08905: Timezone Asia/Hong_Kong: chart x-axis labels in local time
+- [ ] TASK-08906: Timezone Asia/Hong_Kong: trading hours overlay adjusted
+- [ ] TASK-08907: Timezone Asia/Shanghai: all timestamps converted correctly
+- [ ] TASK-08908: Timezone Asia/Shanghai: chart x-axis labels in local time
+- [ ] TASK-08909: Timezone Asia/Shanghai: trading hours overlay adjusted
+- [ ] TASK-08910: Timezone Asia/Singapore: all timestamps converted correctly
+- [ ] TASK-08911: Timezone Asia/Singapore: chart x-axis labels in local time
+- [ ] TASK-08912: Timezone Asia/Singapore: trading hours overlay adjusted
+- [ ] TASK-08913: Timezone Asia/Mumbai: all timestamps converted correctly
+- [ ] TASK-08914: Timezone Asia/Mumbai: chart x-axis labels in local time
+- [ ] TASK-08915: Timezone Asia/Mumbai: trading hours overlay adjusted
+- [ ] TASK-08916: Timezone Australia/Sydney: all timestamps converted correctly
+- [ ] TASK-08917: Timezone Australia/Sydney: chart x-axis labels in local time
+- [ ] TASK-08918: Timezone Australia/Sydney: trading hours overlay adjusted
+
+
+## PERFORMANCE BENCHMARKS & PROFILING
+
+- [ ] TASK-08919: Benchmark: chart renders 10,000 bars in < 200ms
+- [ ] TASK-08920: Benchmark: chart renders 100,000 bars in < 1s
+- [ ] TASK-08921: Benchmark: indicator calculation (SMA 200) on 10k bars in < 50ms
+- [ ] TASK-08922: Benchmark: order book update in < 16ms (60fps)
+- [ ] TASK-08923: Benchmark: time & sales tape scroll in < 16ms
+- [ ] TASK-08924: Benchmark: watchlist with 100 symbols updates in < 100ms
+- [ ] TASK-08925: Benchmark: screener filters 10k stocks in < 500ms
+- [ ] TASK-08926: Benchmark: backtest 10 years daily data in < 3s
+- [ ] TASK-08927: Benchmark: Monte Carlo 10,000 paths in < 5s
+- [ ] TASK-08928: Benchmark: options chain 500 strikes render in < 200ms
+- [ ] TASK-08929: Benchmark: portfolio metrics recalculate in < 100ms
+- [ ] TASK-08930: Benchmark: initial page load < 2s (first contentful paint)
+- [ ] TASK-08931: Benchmark: bundle size < 2MB gzipped
+- [ ] TASK-08932: Benchmark: memory usage < 200MB with 5 charts open
+- [ ] TASK-08933: Benchmark: WebSocket message processing < 1ms per message
+- [ ] TASK-08934: Profile: identify and fix React re-render hotspots
+- [ ] TASK-08935: Profile: identify and fix slow useEffect dependencies
+- [ ] TASK-08936: Profile: identify and fix unnecessary state updates
+- [ ] TASK-08937: Profile: identify and fix memory leaks (detached DOM)
+- [ ] TASK-08938: Profile: Lighthouse performance score > 80
+
+
+## CRYPTO ASSETS (20 COINS Ã— 5)
+
+- [ ] TASK-08939: Crypto BTC: real-time price from exchange API
+- [ ] TASK-08940: Crypto BTC: 24h volume and market cap display
+- [ ] TASK-08941: Crypto BTC: funding rate (perpetual futures)
+- [ ] TASK-08942: Crypto BTC: open interest chart
+- [ ] TASK-08943: Crypto BTC: liquidation data feed
+- [ ] TASK-08944: Crypto ETH: real-time price from exchange API
+- [ ] TASK-08945: Crypto ETH: 24h volume and market cap display
+- [ ] TASK-08946: Crypto ETH: funding rate (perpetual futures)
+- [ ] TASK-08947: Crypto ETH: open interest chart
+- [ ] TASK-08948: Crypto ETH: liquidation data feed
+- [ ] TASK-08949: Crypto BNB: real-time price from exchange API
+- [ ] TASK-08950: Crypto BNB: 24h volume and market cap display
+- [ ] TASK-08951: Crypto BNB: funding rate (perpetual futures)
+- [ ] TASK-08952: Crypto BNB: open interest chart
+- [ ] TASK-08953: Crypto BNB: liquidation data feed
+- [ ] TASK-08954: Crypto SOL: real-time price from exchange API
+- [ ] TASK-08955: Crypto SOL: 24h volume and market cap display
+- [ ] TASK-08956: Crypto SOL: funding rate (perpetual futures)
+- [ ] TASK-08957: Crypto SOL: open interest chart
+- [ ] TASK-08958: Crypto SOL: liquidation data feed
+- [ ] TASK-08959: Crypto XRP: real-time price from exchange API
+- [ ] TASK-08960: Crypto XRP: 24h volume and market cap display
+- [ ] TASK-08961: Crypto XRP: funding rate (perpetual futures)
+- [ ] TASK-08962: Crypto XRP: open interest chart
+- [ ] TASK-08963: Crypto XRP: liquidation data feed
+- [ ] TASK-08964: Crypto ADA: real-time price from exchange API
+- [ ] TASK-08965: Crypto ADA: 24h volume and market cap display
+- [ ] TASK-08966: Crypto ADA: funding rate (perpetual futures)
+- [ ] TASK-08967: Crypto ADA: open interest chart
+- [ ] TASK-08968: Crypto ADA: liquidation data feed
+- [ ] TASK-08969: Crypto DOGE: real-time price from exchange API
+- [ ] TASK-08970: Crypto DOGE: 24h volume and market cap display
+- [ ] TASK-08971: Crypto DOGE: funding rate (perpetual futures)
+- [ ] TASK-08972: Crypto DOGE: open interest chart
+- [ ] TASK-08973: Crypto DOGE: liquidation data feed
+- [ ] TASK-08974: Crypto AVAX: real-time price from exchange API
+- [ ] TASK-08975: Crypto AVAX: 24h volume and market cap display
+- [ ] TASK-08976: Crypto AVAX: funding rate (perpetual futures)
+- [ ] TASK-08977: Crypto AVAX: open interest chart
+- [ ] TASK-08978: Crypto AVAX: liquidation data feed
+- [ ] TASK-08979: Crypto DOT: real-time price from exchange API
+- [ ] TASK-08980: Crypto DOT: 24h volume and market cap display
+- [ ] TASK-08981: Crypto DOT: funding rate (perpetual futures)
+- [ ] TASK-08982: Crypto DOT: open interest chart
+- [ ] TASK-08983: Crypto DOT: liquidation data feed
+- [ ] TASK-08984: Crypto MATIC: real-time price from exchange API
+- [ ] TASK-08985: Crypto MATIC: 24h volume and market cap display
+- [ ] TASK-08986: Crypto MATIC: funding rate (perpetual futures)
+- [ ] TASK-08987: Crypto MATIC: open interest chart
+- [ ] TASK-08988: Crypto MATIC: liquidation data feed
+- [ ] TASK-08989: Crypto LINK: real-time price from exchange API
+- [ ] TASK-08990: Crypto LINK: 24h volume and market cap display
+- [ ] TASK-08991: Crypto LINK: funding rate (perpetual futures)
+- [ ] TASK-08992: Crypto LINK: open interest chart
+- [ ] TASK-08993: Crypto LINK: liquidation data feed
+- [ ] TASK-08994: Crypto UNI: real-time price from exchange API
+- [ ] TASK-08995: Crypto UNI: 24h volume and market cap display
+- [ ] TASK-08996: Crypto UNI: funding rate (perpetual futures)
+- [ ] TASK-08997: Crypto UNI: open interest chart
+- [ ] TASK-08998: Crypto UNI: liquidation data feed
+- [ ] TASK-08999: Crypto ATOM: real-time price from exchange API
+- [ ] TASK-09000: Crypto ATOM: 24h volume and market cap display
+- [ ] TASK-09001: Crypto ATOM: funding rate (perpetual futures)
+- [ ] TASK-09002: Crypto ATOM: open interest chart
+- [ ] TASK-09003: Crypto ATOM: liquidation data feed
+- [ ] TASK-09004: Crypto LTC: real-time price from exchange API
+- [ ] TASK-09005: Crypto LTC: 24h volume and market cap display
+- [ ] TASK-09006: Crypto LTC: funding rate (perpetual futures)
+- [ ] TASK-09007: Crypto LTC: open interest chart
+- [ ] TASK-09008: Crypto LTC: liquidation data feed
+- [ ] TASK-09009: Crypto FIL: real-time price from exchange API
+- [ ] TASK-09010: Crypto FIL: 24h volume and market cap display
+- [ ] TASK-09011: Crypto FIL: funding rate (perpetual futures)
+- [ ] TASK-09012: Crypto FIL: open interest chart
+- [ ] TASK-09013: Crypto FIL: liquidation data feed
+- [ ] TASK-09014: Crypto APT: real-time price from exchange API
+- [ ] TASK-09015: Crypto APT: 24h volume and market cap display
+- [ ] TASK-09016: Crypto APT: funding rate (perpetual futures)
+- [ ] TASK-09017: Crypto APT: open interest chart
+- [ ] TASK-09018: Crypto APT: liquidation data feed
+- [ ] TASK-09019: Crypto ARB: real-time price from exchange API
+- [ ] TASK-09020: Crypto ARB: 24h volume and market cap display
+- [ ] TASK-09021: Crypto ARB: funding rate (perpetual futures)
+- [ ] TASK-09022: Crypto ARB: open interest chart
+- [ ] TASK-09023: Crypto ARB: liquidation data feed
+- [ ] TASK-09024: Crypto OP: real-time price from exchange API
+- [ ] TASK-09025: Crypto OP: 24h volume and market cap display
+- [ ] TASK-09026: Crypto OP: funding rate (perpetual futures)
+- [ ] TASK-09027: Crypto OP: open interest chart
+- [ ] TASK-09028: Crypto OP: liquidation data feed
+- [ ] TASK-09029: Crypto SUI: real-time price from exchange API
+- [ ] TASK-09030: Crypto SUI: 24h volume and market cap display
+- [ ] TASK-09031: Crypto SUI: funding rate (perpetual futures)
+- [ ] TASK-09032: Crypto SUI: open interest chart
+- [ ] TASK-09033: Crypto SUI: liquidation data feed
+- [ ] TASK-09034: Crypto INJ: real-time price from exchange API
+- [ ] TASK-09035: Crypto INJ: 24h volume and market cap display
+- [ ] TASK-09036: Crypto INJ: funding rate (perpetual futures)
+- [ ] TASK-09037: Crypto INJ: open interest chart
+- [ ] TASK-09038: Crypto INJ: liquidation data feed
+
+
+## DATA SOURCE CONNECTORS
+
+- [ ] TASK-09039: Connector: Alpaca Markets REST API authentication setup
+- [ ] TASK-09040: Connector: Alpaca Markets WebSocket streaming setup
+- [ ] TASK-09041: Connector: yfinance Python library integration wrapper
+- [ ] TASK-09042: Connector: Alpha Vantage REST API integration wrapper
+- [ ] TASK-09043: Connector: FRED (Federal Reserve) API integration wrapper
+- [ ] TASK-09044: Connector: Polygon.io REST API integration wrapper
+- [ ] TASK-09045: Connector: Polygon.io WebSocket streaming setup
+- [ ] TASK-09046: Connector: IEX Cloud REST API integration wrapper
+- [ ] TASK-09047: Connector: Finnhub REST + WebSocket integration
+- [ ] TASK-09048: Connector: Twelve Data API integration wrapper
+- [ ] TASK-09049: Connector: Quandl/Nasdaq Data Link API wrapper
+- [ ] TASK-09050: Connector: SEC EDGAR API integration (filings)
+- [ ] TASK-09051: Connector: News API integration (newsapi.org)
+- [ ] TASK-09052: Connector: Twitter/X API v2 integration (sentiment)
+- [ ] TASK-09053: Connector: Reddit API integration (wallstreetbets)
+- [ ] TASK-09054: Connector: Interactive Brokers TWS API connector
+- [ ] TASK-09055: Connector: Coinbase/Binance crypto data connector
+- [ ] TASK-09056: Connector: CME Group market data connector
+- [ ] TASK-09057: Connector: CBOE options data connector
+- [ ] TASK-09058: Connector: implement data provider abstraction layer
+- [ ] TASK-09059: Connector: implement fallback chain (source1 -> source2 -> cache)
+- [ ] TASK-09060: Connector: implement rate limit tracking per provider
+- [ ] TASK-09061: Connector: implement API key rotation support
+- [ ] TASK-09062: Connector: implement request retry with circuit breaker
+- [ ] TASK-09063: Connector: implement response caching with TTL per endpoint
+
+
+## DOCUMENTATION (20 DOCS Ã— 3)
+
+- [ ] TASK-09064: Documentation: write Getting Started Guide
+- [ ] TASK-09065: Documentation: add code examples to Getting Started Guide
+- [ ] TASK-09066: Documentation: add screenshots/diagrams to Getting Started Guide
+- [ ] TASK-09067: Documentation: write Installation & Setup
+- [ ] TASK-09068: Documentation: add code examples to Installation & Setup
+- [ ] TASK-09069: Documentation: add screenshots/diagrams to Installation & Setup
+- [ ] TASK-09070: Documentation: write Architecture Overview
+- [ ] TASK-09071: Documentation: add code examples to Architecture Overview
+- [ ] TASK-09072: Documentation: add screenshots/diagrams to Architecture Overview
+- [ ] TASK-09073: Documentation: write Frontend Component Library
+- [ ] TASK-09074: Documentation: add code examples to Frontend Component Library
+- [ ] TASK-09075: Documentation: add screenshots/diagrams to Frontend Component Library
+- [ ] TASK-09076: Documentation: write Backend API Reference
+- [ ] TASK-09077: Documentation: add code examples to Backend API Reference
+- [ ] TASK-09078: Documentation: add screenshots/diagrams to Backend API Reference
+- [ ] TASK-09079: Documentation: write WebSocket API Reference
+- [ ] TASK-09080: Documentation: add code examples to WebSocket API Reference
+- [ ] TASK-09081: Documentation: add screenshots/diagrams to WebSocket API Reference
+- [ ] TASK-09082: Documentation: write Chart Engine Documentation
+- [ ] TASK-09083: Documentation: add code examples to Chart Engine Documentation
+- [ ] TASK-09084: Documentation: add screenshots/diagrams to Chart Engine Documentation
+- [ ] TASK-09085: Documentation: write Indicator Library Reference
+- [ ] TASK-09086: Documentation: add code examples to Indicator Library Reference
+- [ ] TASK-09087: Documentation: add screenshots/diagrams to Indicator Library Reference
+- [ ] TASK-09088: Documentation: write Drawing Tools Reference
+- [ ] TASK-09089: Documentation: add code examples to Drawing Tools Reference
+- [ ] TASK-09090: Documentation: add screenshots/diagrams to Drawing Tools Reference
+- [ ] TASK-09091: Documentation: write Backtest Engine Documentation
+- [ ] TASK-09092: Documentation: add code examples to Backtest Engine Documentation
+- [ ] TASK-09093: Documentation: add screenshots/diagrams to Backtest Engine Documentation
+- [ ] TASK-09094: Documentation: write Options Pricing Documentation
+- [ ] TASK-09095: Documentation: add code examples to Options Pricing Documentation
+- [ ] TASK-09096: Documentation: add screenshots/diagrams to Options Pricing Documentation
+- [ ] TASK-09097: Documentation: write Risk Engine Documentation
+- [ ] TASK-09098: Documentation: add code examples to Risk Engine Documentation
+- [ ] TASK-09099: Documentation: add screenshots/diagrams to Risk Engine Documentation
+- [ ] TASK-09100: Documentation: write Portfolio Analytics Documentation
+- [ ] TASK-09101: Documentation: add code examples to Portfolio Analytics Documentation
+- [ ] TASK-09102: Documentation: add screenshots/diagrams to Portfolio Analytics Documentation
+- [ ] TASK-09103: Documentation: write Data Provider Integration Guide
+- [ ] TASK-09104: Documentation: add code examples to Data Provider Integration Guide
+- [ ] TASK-09105: Documentation: add screenshots/diagrams to Data Provider Integration Guide
+- [ ] TASK-09106: Documentation: write Keyboard Shortcuts Reference
+- [ ] TASK-09107: Documentation: add code examples to Keyboard Shortcuts Reference
+- [ ] TASK-09108: Documentation: add screenshots/diagrams to Keyboard Shortcuts Reference
+- [ ] TASK-09109: Documentation: write Theming & Customization Guide
+- [ ] TASK-09110: Documentation: add code examples to Theming & Customization Guide
+- [ ] TASK-09111: Documentation: add screenshots/diagrams to Theming & Customization Guide
+- [ ] TASK-09112: Documentation: write Bloomberg Function Equivalents Map
+- [ ] TASK-09113: Documentation: add code examples to Bloomberg Function Equivalents Map
+- [ ] TASK-09114: Documentation: add screenshots/diagrams to Bloomberg Function Equivalents Map
+- [ ] TASK-09115: Documentation: write TradingView Feature Parity Map
+- [ ] TASK-09116: Documentation: add code examples to TradingView Feature Parity Map
+- [ ] TASK-09117: Documentation: add screenshots/diagrams to TradingView Feature Parity Map
+- [ ] TASK-09118: Documentation: write Performance Tuning Guide
+- [ ] TASK-09119: Documentation: add code examples to Performance Tuning Guide
+- [ ] TASK-09120: Documentation: add screenshots/diagrams to Performance Tuning Guide
+- [ ] TASK-09121: Documentation: write Deployment Guide
+- [ ] TASK-09122: Documentation: add code examples to Deployment Guide
+- [ ] TASK-09123: Documentation: add screenshots/diagrams to Deployment Guide
+
+
+
+## PER-PAGE REAL DATA INTEGRATION (30 Ã— 8)
+
+- [ ] TASK-09124: DashboardUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09125: DashboardUI2: add real-time WebSocket data streaming
+- [ ] TASK-09126: DashboardUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09127: DashboardUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09128: DashboardUI2: add data source attribution label
+- [ ] TASK-09129: DashboardUI2: implement proper error handling for API failures
+- [ ] TASK-09130: DashboardUI2: add retry logic with exponential backoff
+- [ ] TASK-09131: DashboardUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09132: TradingUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09133: TradingUI2: add real-time WebSocket data streaming
+- [ ] TASK-09134: TradingUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09135: TradingUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09136: TradingUI2: add data source attribution label
+- [ ] TASK-09137: TradingUI2: implement proper error handling for API failures
+- [ ] TASK-09138: TradingUI2: add retry logic with exponential backoff
+- [ ] TASK-09139: TradingUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09140: PortfolioUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09141: PortfolioUI2: add real-time WebSocket data streaming
+- [ ] TASK-09142: PortfolioUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09143: PortfolioUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09144: PortfolioUI2: add data source attribution label
+- [ ] TASK-09145: PortfolioUI2: implement proper error handling for API failures
+- [ ] TASK-09146: PortfolioUI2: add retry logic with exponential backoff
+- [ ] TASK-09147: PortfolioUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09148: RiskUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09149: RiskUI2: add real-time WebSocket data streaming
+- [ ] TASK-09150: RiskUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09151: RiskUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09152: RiskUI2: add data source attribution label
+- [ ] TASK-09153: RiskUI2: implement proper error handling for API failures
+- [ ] TASK-09154: RiskUI2: add retry logic with exponential backoff
+- [ ] TASK-09155: RiskUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09156: AlertsUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09157: AlertsUI2: add real-time WebSocket data streaming
+- [ ] TASK-09158: AlertsUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09159: AlertsUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09160: AlertsUI2: add data source attribution label
+- [ ] TASK-09161: AlertsUI2: implement proper error handling for API failures
+- [ ] TASK-09162: AlertsUI2: add retry logic with exponential backoff
+- [ ] TASK-09163: AlertsUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09164: OrdersUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09165: OrdersUI2: add real-time WebSocket data streaming
+- [ ] TASK-09166: OrdersUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09167: OrdersUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09168: OrdersUI2: add data source attribution label
+- [ ] TASK-09169: OrdersUI2: implement proper error handling for API failures
+- [ ] TASK-09170: OrdersUI2: add retry logic with exponential backoff
+- [ ] TASK-09171: OrdersUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09172: ScreenersUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09173: ScreenersUI2: add real-time WebSocket data streaming
+- [ ] TASK-09174: ScreenersUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09175: ScreenersUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09176: ScreenersUI2: add data source attribution label
+- [ ] TASK-09177: ScreenersUI2: implement proper error handling for API failures
+- [ ] TASK-09178: ScreenersUI2: add retry logic with exponential backoff
+- [ ] TASK-09179: ScreenersUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09180: ResearchUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09181: ResearchUI2: add real-time WebSocket data streaming
+- [ ] TASK-09182: ResearchUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09183: ResearchUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09184: ResearchUI2: add data source attribution label
+- [ ] TASK-09185: ResearchUI2: implement proper error handling for API failures
+- [ ] TASK-09186: ResearchUI2: add retry logic with exponential backoff
+- [ ] TASK-09187: ResearchUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09188: SentimentUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09189: SentimentUI2: add real-time WebSocket data streaming
+- [ ] TASK-09190: SentimentUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09191: SentimentUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09192: SentimentUI2: add data source attribution label
+- [ ] TASK-09193: SentimentUI2: implement proper error handling for API failures
+- [ ] TASK-09194: SentimentUI2: add retry logic with exponential backoff
+- [ ] TASK-09195: SentimentUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09196: MonteCarloUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09197: MonteCarloUI2: add real-time WebSocket data streaming
+- [ ] TASK-09198: MonteCarloUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09199: MonteCarloUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09200: MonteCarloUI2: add data source attribution label
+- [ ] TASK-09201: MonteCarloUI2: implement proper error handling for API failures
+- [ ] TASK-09202: MonteCarloUI2: add retry logic with exponential backoff
+- [ ] TASK-09203: MonteCarloUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09204: WalkForwardUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09205: WalkForwardUI2: add real-time WebSocket data streaming
+- [ ] TASK-09206: WalkForwardUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09207: WalkForwardUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09208: WalkForwardUI2: add data source attribution label
+- [ ] TASK-09209: WalkForwardUI2: implement proper error handling for API failures
+- [ ] TASK-09210: WalkForwardUI2: add retry logic with exponential backoff
+- [ ] TASK-09211: WalkForwardUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09212: BacktesterV3UI2: replace all mock/demo data with real API calls
+- [ ] TASK-09213: BacktesterV3UI2: add real-time WebSocket data streaming
+- [ ] TASK-09214: BacktesterV3UI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09215: BacktesterV3UI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09216: BacktesterV3UI2: add data source attribution label
+- [ ] TASK-09217: BacktesterV3UI2: implement proper error handling for API failures
+- [ ] TASK-09218: BacktesterV3UI2: add retry logic with exponential backoff
+- [ ] TASK-09219: BacktesterV3UI2: add loading progress indicator for slow fetches
+- [ ] TASK-09220: OptionsMatrixUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09221: OptionsMatrixUI2: add real-time WebSocket data streaming
+- [ ] TASK-09222: OptionsMatrixUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09223: OptionsMatrixUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09224: OptionsMatrixUI2: add data source attribution label
+- [ ] TASK-09225: OptionsMatrixUI2: implement proper error handling for API failures
+- [ ] TASK-09226: OptionsMatrixUI2: add retry logic with exponential backoff
+- [ ] TASK-09227: OptionsMatrixUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09228: ExecutionCockpitUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09229: ExecutionCockpitUI2: add real-time WebSocket data streaming
+- [ ] TASK-09230: ExecutionCockpitUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09231: ExecutionCockpitUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09232: ExecutionCockpitUI2: add data source attribution label
+- [ ] TASK-09233: ExecutionCockpitUI2: implement proper error handling for API failures
+- [ ] TASK-09234: ExecutionCockpitUI2: add retry logic with exponential backoff
+- [ ] TASK-09235: ExecutionCockpitUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09236: ControlTowerUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09237: ControlTowerUI2: add real-time WebSocket data streaming
+- [ ] TASK-09238: ControlTowerUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09239: ControlTowerUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09240: ControlTowerUI2: add data source attribution label
+- [ ] TASK-09241: ControlTowerUI2: implement proper error handling for API failures
+- [ ] TASK-09242: ControlTowerUI2: add retry logic with exponential backoff
+- [ ] TASK-09243: ControlTowerUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09244: WorkflowBuilderUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09245: WorkflowBuilderUI2: add real-time WebSocket data streaming
+- [ ] TASK-09246: WorkflowBuilderUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09247: WorkflowBuilderUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09248: WorkflowBuilderUI2: add data source attribution label
+- [ ] TASK-09249: WorkflowBuilderUI2: implement proper error handling for API failures
+- [ ] TASK-09250: WorkflowBuilderUI2: add retry logic with exponential backoff
+- [ ] TASK-09251: WorkflowBuilderUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09252: AutopilotUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09253: AutopilotUI2: add real-time WebSocket data streaming
+- [ ] TASK-09254: AutopilotUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09255: AutopilotUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09256: AutopilotUI2: add data source attribution label
+- [ ] TASK-09257: AutopilotUI2: implement proper error handling for API failures
+- [ ] TASK-09258: AutopilotUI2: add retry logic with exponential backoff
+- [ ] TASK-09259: AutopilotUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09260: NovaUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09261: NovaUI2: add real-time WebSocket data streaming
+- [ ] TASK-09262: NovaUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09263: NovaUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09264: NovaUI2: add data source attribution label
+- [ ] TASK-09265: NovaUI2: implement proper error handling for API failures
+- [ ] TASK-09266: NovaUI2: add retry logic with exponential backoff
+- [ ] TASK-09267: NovaUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09268: SettingsUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09269: SettingsUI2: add real-time WebSocket data streaming
+- [ ] TASK-09270: SettingsUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09271: SettingsUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09272: SettingsUI2: add data source attribution label
+- [ ] TASK-09273: SettingsUI2: implement proper error handling for API failures
+- [ ] TASK-09274: SettingsUI2: add retry logic with exponential backoff
+- [ ] TASK-09275: SettingsUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09276: RunsUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09277: RunsUI2: add real-time WebSocket data streaming
+- [ ] TASK-09278: RunsUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09279: RunsUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09280: RunsUI2: add data source attribution label
+- [ ] TASK-09281: RunsUI2: implement proper error handling for API failures
+- [ ] TASK-09282: RunsUI2: add retry logic with exponential backoff
+- [ ] TASK-09283: RunsUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09284: EconomicCalendarUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09285: EconomicCalendarUI2: add real-time WebSocket data streaming
+- [ ] TASK-09286: EconomicCalendarUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09287: EconomicCalendarUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09288: EconomicCalendarUI2: add data source attribution label
+- [ ] TASK-09289: EconomicCalendarUI2: implement proper error handling for API failures
+- [ ] TASK-09290: EconomicCalendarUI2: add retry logic with exponential backoff
+- [ ] TASK-09291: EconomicCalendarUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09292: BlotterUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09293: BlotterUI2: add real-time WebSocket data streaming
+- [ ] TASK-09294: BlotterUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09295: BlotterUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09296: BlotterUI2: add data source attribution label
+- [ ] TASK-09297: BlotterUI2: implement proper error handling for API failures
+- [ ] TASK-09298: BlotterUI2: add retry logic with exponential backoff
+- [ ] TASK-09299: BlotterUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09300: PerformanceUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09301: PerformanceUI2: add real-time WebSocket data streaming
+- [ ] TASK-09302: PerformanceUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09303: PerformanceUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09304: PerformanceUI2: add data source attribution label
+- [ ] TASK-09305: PerformanceUI2: implement proper error handling for API failures
+- [ ] TASK-09306: PerformanceUI2: add retry logic with exponential backoff
+- [ ] TASK-09307: PerformanceUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09308: ObservabilityUI2: replace all mock/demo data with real API calls
+- [ ] TASK-09309: ObservabilityUI2: add real-time WebSocket data streaming
+- [ ] TASK-09310: ObservabilityUI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09311: ObservabilityUI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09312: ObservabilityUI2: add data source attribution label
+- [ ] TASK-09313: ObservabilityUI2: implement proper error handling for API failures
+- [ ] TASK-09314: ObservabilityUI2: add retry logic with exponential backoff
+- [ ] TASK-09315: ObservabilityUI2: add loading progress indicator for slow fetches
+- [ ] TASK-09316: StrategyStudioV3UI2: replace all mock/demo data with real API calls
+- [ ] TASK-09317: StrategyStudioV3UI2: add real-time WebSocket data streaming
+- [ ] TASK-09318: StrategyStudioV3UI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09319: StrategyStudioV3UI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09320: StrategyStudioV3UI2: add data source attribution label
+- [ ] TASK-09321: StrategyStudioV3UI2: implement proper error handling for API failures
+- [ ] TASK-09322: StrategyStudioV3UI2: add retry logic with exponential backoff
+- [ ] TASK-09323: StrategyStudioV3UI2: add loading progress indicator for slow fetches
+- [ ] TASK-09324: PortfolioV2UI2: replace all mock/demo data with real API calls
+- [ ] TASK-09325: PortfolioV2UI2: add real-time WebSocket data streaming
+- [ ] TASK-09326: PortfolioV2UI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09327: PortfolioV2UI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09328: PortfolioV2UI2: add data source attribution label
+- [ ] TASK-09329: PortfolioV2UI2: implement proper error handling for API failures
+- [ ] TASK-09330: PortfolioV2UI2: add retry logic with exponential backoff
+- [ ] TASK-09331: PortfolioV2UI2: add loading progress indicator for slow fetches
+- [ ] TASK-09332: SentimentV2UI2: replace all mock/demo data with real API calls
+- [ ] TASK-09333: SentimentV2UI2: add real-time WebSocket data streaming
+- [ ] TASK-09334: SentimentV2UI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09335: SentimentV2UI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09336: SentimentV2UI2: add data source attribution label
+- [ ] TASK-09337: SentimentV2UI2: implement proper error handling for API failures
+- [ ] TASK-09338: SentimentV2UI2: add retry logic with exponential backoff
+- [ ] TASK-09339: SentimentV2UI2: add loading progress indicator for slow fetches
+- [ ] TASK-09340: MonteCarloV2UI2: replace all mock/demo data with real API calls
+- [ ] TASK-09341: MonteCarloV2UI2: add real-time WebSocket data streaming
+- [ ] TASK-09342: MonteCarloV2UI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09343: MonteCarloV2UI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09344: MonteCarloV2UI2: add data source attribution label
+- [ ] TASK-09345: MonteCarloV2UI2: implement proper error handling for API failures
+- [ ] TASK-09346: MonteCarloV2UI2: add retry logic with exponential backoff
+- [ ] TASK-09347: MonteCarloV2UI2: add loading progress indicator for slow fetches
+- [ ] TASK-09348: WalkForwardV2UI2: replace all mock/demo data with real API calls
+- [ ] TASK-09349: WalkForwardV2UI2: add real-time WebSocket data streaming
+- [ ] TASK-09350: WalkForwardV2UI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09351: WalkForwardV2UI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09352: WalkForwardV2UI2: add data source attribution label
+- [ ] TASK-09353: WalkForwardV2UI2: implement proper error handling for API failures
+- [ ] TASK-09354: WalkForwardV2UI2: add retry logic with exponential backoff
+- [ ] TASK-09355: WalkForwardV2UI2: add loading progress indicator for slow fetches
+- [ ] TASK-09356: BacktestV4UI2: replace all mock/demo data with real API calls
+- [ ] TASK-09357: BacktestV4UI2: add real-time WebSocket data streaming
+- [ ] TASK-09358: BacktestV4UI2: add data refresh button and auto-refresh interval
+- [ ] TASK-09359: BacktestV4UI2: add data staleness indicator (last updated timestamp)
+- [ ] TASK-09360: BacktestV4UI2: add data source attribution label
+- [ ] TASK-09361: BacktestV4UI2: implement proper error handling for API failures
+- [ ] TASK-09362: BacktestV4UI2: add retry logic with exponential backoff
+- [ ] TASK-09363: BacktestV4UI2: add loading progress indicator for slow fetches
+
+
+## TOOLTIPS & HELP SYSTEM (40 Ã— 2)
+
+- [ ] TASK-09364: Tooltip: add educational tooltip for 'P/E Ratio' with formula/explanation
+- [ ] TASK-09365: Help: add 'P/E Ratio' to glossary/help panel
+- [ ] TASK-09366: Tooltip: add educational tooltip for 'EPS' with formula/explanation
+- [ ] TASK-09367: Help: add 'EPS' to glossary/help panel
+- [ ] TASK-09368: Tooltip: add educational tooltip for 'Market Cap' with formula/explanation
+- [ ] TASK-09369: Help: add 'Market Cap' to glossary/help panel
+- [ ] TASK-09370: Tooltip: add educational tooltip for 'Beta' with formula/explanation
+- [ ] TASK-09371: Help: add 'Beta' to glossary/help panel
+- [ ] TASK-09372: Tooltip: add educational tooltip for 'Dividend Yield' with formula/explanation
+- [ ] TASK-09373: Help: add 'Dividend Yield' to glossary/help panel
+- [ ] TASK-09374: Tooltip: add educational tooltip for 'RSI' with formula/explanation
+- [ ] TASK-09375: Help: add 'RSI' to glossary/help panel
+- [ ] TASK-09376: Tooltip: add educational tooltip for 'MACD' with formula/explanation
+- [ ] TASK-09377: Help: add 'MACD' to glossary/help panel
+- [ ] TASK-09378: Tooltip: add educational tooltip for 'Bollinger Bands' with formula/explanation
+- [ ] TASK-09379: Help: add 'Bollinger Bands' to glossary/help panel
+- [ ] TASK-09380: Tooltip: add educational tooltip for 'ATR' with formula/explanation
+- [ ] TASK-09381: Help: add 'ATR' to glossary/help panel
+- [ ] TASK-09382: Tooltip: add educational tooltip for 'VWAP' with formula/explanation
+- [ ] TASK-09383: Help: add 'VWAP' to glossary/help panel
+- [ ] TASK-09384: Tooltip: add educational tooltip for 'Sharpe Ratio' with formula/explanation
+- [ ] TASK-09385: Help: add 'Sharpe Ratio' to glossary/help panel
+- [ ] TASK-09386: Tooltip: add educational tooltip for 'Sortino Ratio' with formula/explanation
+- [ ] TASK-09387: Help: add 'Sortino Ratio' to glossary/help panel
+- [ ] TASK-09388: Tooltip: add educational tooltip for 'Max Drawdown' with formula/explanation
+- [ ] TASK-09389: Help: add 'Max Drawdown' to glossary/help panel
+- [ ] TASK-09390: Tooltip: add educational tooltip for 'VaR' with formula/explanation
+- [ ] TASK-09391: Help: add 'VaR' to glossary/help panel
+- [ ] TASK-09392: Tooltip: add educational tooltip for 'Expected Shortfall' with formula/explanation
+- [ ] TASK-09393: Help: add 'Expected Shortfall' to glossary/help panel
+- [ ] TASK-09394: Tooltip: add educational tooltip for 'Alpha' with formula/explanation
+- [ ] TASK-09395: Help: add 'Alpha' to glossary/help panel
+- [ ] TASK-09396: Tooltip: add educational tooltip for 'Information Ratio' with formula/explanation
+- [ ] TASK-09397: Help: add 'Information Ratio' to glossary/help panel
+- [ ] TASK-09398: Tooltip: add educational tooltip for 'Implied Volatility' with formula/explanation
+- [ ] TASK-09399: Help: add 'Implied Volatility' to glossary/help panel
+- [ ] TASK-09400: Tooltip: add educational tooltip for 'Delta' with formula/explanation
+- [ ] TASK-09401: Help: add 'Delta' to glossary/help panel
+- [ ] TASK-09402: Tooltip: add educational tooltip for 'Gamma' with formula/explanation
+- [ ] TASK-09403: Help: add 'Gamma' to glossary/help panel
+- [ ] TASK-09404: Tooltip: add educational tooltip for 'Theta' with formula/explanation
+- [ ] TASK-09405: Help: add 'Theta' to glossary/help panel
+- [ ] TASK-09406: Tooltip: add educational tooltip for 'Vega' with formula/explanation
+- [ ] TASK-09407: Help: add 'Vega' to glossary/help panel
+- [ ] TASK-09408: Tooltip: add educational tooltip for 'Rho' with formula/explanation
+- [ ] TASK-09409: Help: add 'Rho' to glossary/help panel
+- [ ] TASK-09410: Tooltip: add educational tooltip for 'Open Interest' with formula/explanation
+- [ ] TASK-09411: Help: add 'Open Interest' to glossary/help panel
+- [ ] TASK-09412: Tooltip: add educational tooltip for 'Put/Call Ratio' with formula/explanation
+- [ ] TASK-09413: Help: add 'Put/Call Ratio' to glossary/help panel
+- [ ] TASK-09414: Tooltip: add educational tooltip for 'GEX' with formula/explanation
+- [ ] TASK-09415: Help: add 'GEX' to glossary/help panel
+- [ ] TASK-09416: Tooltip: add educational tooltip for 'Yield to Maturity' with formula/explanation
+- [ ] TASK-09417: Help: add 'Yield to Maturity' to glossary/help panel
+- [ ] TASK-09418: Tooltip: add educational tooltip for 'Duration' with formula/explanation
+- [ ] TASK-09419: Help: add 'Duration' to glossary/help panel
+- [ ] TASK-09420: Tooltip: add educational tooltip for 'Convexity' with formula/explanation
+- [ ] TASK-09421: Help: add 'Convexity' to glossary/help panel
+- [ ] TASK-09422: Tooltip: add educational tooltip for 'DV01' with formula/explanation
+- [ ] TASK-09423: Help: add 'DV01' to glossary/help panel
+- [ ] TASK-09424: Tooltip: add educational tooltip for 'FRED GDP' with formula/explanation
+- [ ] TASK-09425: Help: add 'FRED GDP' to glossary/help panel
+- [ ] TASK-09426: Tooltip: add educational tooltip for 'CPI' with formula/explanation
+- [ ] TASK-09427: Help: add 'CPI' to glossary/help panel
+- [ ] TASK-09428: Tooltip: add educational tooltip for 'NFP' with formula/explanation
+- [ ] TASK-09429: Help: add 'NFP' to glossary/help panel
+- [ ] TASK-09430: Tooltip: add educational tooltip for 'PMI' with formula/explanation
+- [ ] TASK-09431: Help: add 'PMI' to glossary/help panel
+- [ ] TASK-09432: Tooltip: add educational tooltip for 'Consumer Confidence' with formula/explanation
+- [ ] TASK-09433: Help: add 'Consumer Confidence' to glossary/help panel
+- [ ] TASK-09434: Tooltip: add educational tooltip for 'Support Level' with formula/explanation
+- [ ] TASK-09435: Help: add 'Support Level' to glossary/help panel
+- [ ] TASK-09436: Tooltip: add educational tooltip for 'Resistance Level' with formula/explanation
+- [ ] TASK-09437: Help: add 'Resistance Level' to glossary/help panel
+- [ ] TASK-09438: Tooltip: add educational tooltip for 'Fibonacci Retracement' with formula/explanation
+- [ ] TASK-09439: Help: add 'Fibonacci Retracement' to glossary/help panel
+- [ ] TASK-09440: Tooltip: add educational tooltip for 'Volume Profile' with formula/explanation
+- [ ] TASK-09441: Help: add 'Volume Profile' to glossary/help panel
+- [ ] TASK-09442: Tooltip: add educational tooltip for 'Market Breadth' with formula/explanation
+- [ ] TASK-09443: Help: add 'Market Breadth' to glossary/help panel
+- [ ] TASK-09444: Tooltip: add educational tooltip for 'Advance/Decline' with formula/explanation
+- [ ] TASK-09445: Help: add 'Advance/Decline' to glossary/help panel
+
+
+## ALERT CONDITIONS (40 Ã— 3)
+
+- [ ] TASK-09446: Alert condition: implement 'Price crosses above SMA(20)' trigger evaluation
+- [ ] TASK-09447: Alert condition: add 'Price crosses above SMA(20)' to alert builder UI dropdown
+- [ ] TASK-09448: Test: 'Price crosses above SMA(20)' trigger evaluation unit test
+- [ ] TASK-09449: Alert condition: implement 'Price crosses below SMA(20)' trigger evaluation
+- [ ] TASK-09450: Alert condition: add 'Price crosses below SMA(20)' to alert builder UI dropdown
+- [ ] TASK-09451: Test: 'Price crosses below SMA(20)' trigger evaluation unit test
+- [ ] TASK-09452: Alert condition: implement 'Price crosses above SMA(50)' trigger evaluation
+- [ ] TASK-09453: Alert condition: add 'Price crosses above SMA(50)' to alert builder UI dropdown
+- [ ] TASK-09454: Test: 'Price crosses above SMA(50)' trigger evaluation unit test
+- [ ] TASK-09455: Alert condition: implement 'Price crosses below SMA(50)' trigger evaluation
+- [ ] TASK-09456: Alert condition: add 'Price crosses below SMA(50)' to alert builder UI dropdown
+- [ ] TASK-09457: Test: 'Price crosses below SMA(50)' trigger evaluation unit test
+- [ ] TASK-09458: Alert condition: implement 'Price crosses above SMA(200)' trigger evaluation
+- [ ] TASK-09459: Alert condition: add 'Price crosses above SMA(200)' to alert builder UI dropdown
+- [ ] TASK-09460: Test: 'Price crosses above SMA(200)' trigger evaluation unit test
+- [ ] TASK-09461: Alert condition: implement 'Price crosses below SMA(200)' trigger evaluation
+- [ ] TASK-09462: Alert condition: add 'Price crosses below SMA(200)' to alert builder UI dropdown
+- [ ] TASK-09463: Test: 'Price crosses below SMA(200)' trigger evaluation unit test
+- [ ] TASK-09464: Alert condition: implement 'RSI(14) enters overbought (>70)' trigger evaluation
+- [ ] TASK-09465: Alert condition: add 'RSI(14) enters overbought (>70)' to alert builder UI dropdown
+- [ ] TASK-09466: Test: 'RSI(14) enters overbought (>70)' trigger evaluation unit test
+- [ ] TASK-09467: Alert condition: implement 'RSI(14) enters oversold (<30)' trigger evaluation
+- [ ] TASK-09468: Alert condition: add 'RSI(14) enters oversold (<30)' to alert builder UI dropdown
+- [ ] TASK-09469: Test: 'RSI(14) enters oversold (<30)' trigger evaluation unit test
+- [ ] TASK-09470: Alert condition: implement 'RSI(14) exits overbought (<70)' trigger evaluation
+- [ ] TASK-09471: Alert condition: add 'RSI(14) exits overbought (<70)' to alert builder UI dropdown
+- [ ] TASK-09472: Test: 'RSI(14) exits overbought (<70)' trigger evaluation unit test
+- [ ] TASK-09473: Alert condition: implement 'RSI(14) exits oversold (>30)' trigger evaluation
+- [ ] TASK-09474: Alert condition: add 'RSI(14) exits oversold (>30)' to alert builder UI dropdown
+- [ ] TASK-09475: Test: 'RSI(14) exits oversold (>30)' trigger evaluation unit test
+- [ ] TASK-09476: Alert condition: implement 'MACD signal line crossover (bullish)' trigger evaluation
+- [ ] TASK-09477: Alert condition: add 'MACD signal line crossover (bullish)' to alert builder UI dropdown
+- [ ] TASK-09478: Test: 'MACD signal line crossover (bullish)' trigger evaluation unit test
+- [ ] TASK-09479: Alert condition: implement 'MACD signal line crossover (bearish)' trigger evaluation
+- [ ] TASK-09480: Alert condition: add 'MACD signal line crossover (bearish)' to alert builder UI dropdown
+- [ ] TASK-09481: Test: 'MACD signal line crossover (bearish)' trigger evaluation unit test
+- [ ] TASK-09482: Alert condition: implement 'MACD histogram turns positive' trigger evaluation
+- [ ] TASK-09483: Alert condition: add 'MACD histogram turns positive' to alert builder UI dropdown
+- [ ] TASK-09484: Test: 'MACD histogram turns positive' trigger evaluation unit test
+- [ ] TASK-09485: Alert condition: implement 'MACD histogram turns negative' trigger evaluation
+- [ ] TASK-09486: Alert condition: add 'MACD histogram turns negative' to alert builder UI dropdown
+- [ ] TASK-09487: Test: 'MACD histogram turns negative' trigger evaluation unit test
+- [ ] TASK-09488: Alert condition: implement 'Bollinger Band upper breach' trigger evaluation
+- [ ] TASK-09489: Alert condition: add 'Bollinger Band upper breach' to alert builder UI dropdown
+- [ ] TASK-09490: Test: 'Bollinger Band upper breach' trigger evaluation unit test
+- [ ] TASK-09491: Alert condition: implement 'Bollinger Band lower breach' trigger evaluation
+- [ ] TASK-09492: Alert condition: add 'Bollinger Band lower breach' to alert builder UI dropdown
+- [ ] TASK-09493: Test: 'Bollinger Band lower breach' trigger evaluation unit test
+- [ ] TASK-09494: Alert condition: implement 'Volume > 2x 20-day average' trigger evaluation
+- [ ] TASK-09495: Alert condition: add 'Volume > 2x 20-day average' to alert builder UI dropdown
+- [ ] TASK-09496: Test: 'Volume > 2x 20-day average' trigger evaluation unit test
+- [ ] TASK-09497: Alert condition: implement 'Volume > 3x 20-day average' trigger evaluation
+- [ ] TASK-09498: Alert condition: add 'Volume > 3x 20-day average' to alert builder UI dropdown
+- [ ] TASK-09499: Test: 'Volume > 3x 20-day average' trigger evaluation unit test
+- [ ] TASK-09500: Alert condition: implement 'New 52-week high' trigger evaluation
+- [ ] TASK-09501: Alert condition: add 'New 52-week high' to alert builder UI dropdown
+- [ ] TASK-09502: Test: 'New 52-week high' trigger evaluation unit test
+- [ ] TASK-09503: Alert condition: implement 'New 52-week low' trigger evaluation
+- [ ] TASK-09504: Alert condition: add 'New 52-week low' to alert builder UI dropdown
+- [ ] TASK-09505: Test: 'New 52-week low' trigger evaluation unit test
+- [ ] TASK-09506: Alert condition: implement 'Gap up > 3%' trigger evaluation
+- [ ] TASK-09507: Alert condition: add 'Gap up > 3%' to alert builder UI dropdown
+- [ ] TASK-09508: Test: 'Gap up > 3%' trigger evaluation unit test
+- [ ] TASK-09509: Alert condition: implement 'Gap down > 3%' trigger evaluation
+- [ ] TASK-09510: Alert condition: add 'Gap down > 3%' to alert builder UI dropdown
+- [ ] TASK-09511: Test: 'Gap down > 3%' trigger evaluation unit test
+- [ ] TASK-09512: Alert condition: implement 'ATR expansion (>1.5x average)' trigger evaluation
+- [ ] TASK-09513: Alert condition: add 'ATR expansion (>1.5x average)' to alert builder UI dropdown
+- [ ] TASK-09514: Test: 'ATR expansion (>1.5x average)' trigger evaluation unit test
+- [ ] TASK-09515: Alert condition: implement 'ATR contraction (<0.5x average)' trigger evaluation
+- [ ] TASK-09516: Alert condition: add 'ATR contraction (<0.5x average)' to alert builder UI dropdown
+- [ ] TASK-09517: Test: 'ATR contraction (<0.5x average)' trigger evaluation unit test
+- [ ] TASK-09518: Alert condition: implement 'Stochastic %K crosses above %D' trigger evaluation
+- [ ] TASK-09519: Alert condition: add 'Stochastic %K crosses above %D' to alert builder UI dropdown
+- [ ] TASK-09520: Test: 'Stochastic %K crosses above %D' trigger evaluation unit test
+- [ ] TASK-09521: Alert condition: implement 'Stochastic %K crosses below %D' trigger evaluation
+- [ ] TASK-09522: Alert condition: add 'Stochastic %K crosses below %D' to alert builder UI dropdown
+- [ ] TASK-09523: Test: 'Stochastic %K crosses below %D' trigger evaluation unit test
+- [ ] TASK-09524: Alert condition: implement 'ADX(14) > 25 (strong trend)' trigger evaluation
+- [ ] TASK-09525: Alert condition: add 'ADX(14) > 25 (strong trend)' to alert builder UI dropdown
+- [ ] TASK-09526: Test: 'ADX(14) > 25 (strong trend)' trigger evaluation unit test
+- [ ] TASK-09527: Alert condition: implement 'ADX(14) < 20 (weak trend)' trigger evaluation
+- [ ] TASK-09528: Alert condition: add 'ADX(14) < 20 (weak trend)' to alert builder UI dropdown
+- [ ] TASK-09529: Test: 'ADX(14) < 20 (weak trend)' trigger evaluation unit test
+- [ ] TASK-09530: Alert condition: implement 'Price enters Ichimoku cloud' trigger evaluation
+- [ ] TASK-09531: Alert condition: add 'Price enters Ichimoku cloud' to alert builder UI dropdown
+- [ ] TASK-09532: Test: 'Price enters Ichimoku cloud' trigger evaluation unit test
+- [ ] TASK-09533: Alert condition: implement 'Price exits Ichimoku cloud' trigger evaluation
+- [ ] TASK-09534: Alert condition: add 'Price exits Ichimoku cloud' to alert builder UI dropdown
+- [ ] TASK-09535: Test: 'Price exits Ichimoku cloud' trigger evaluation unit test
+- [ ] TASK-09536: Alert condition: implement 'Supertrend flip (buy to sell)' trigger evaluation
+- [ ] TASK-09537: Alert condition: add 'Supertrend flip (buy to sell)' to alert builder UI dropdown
+- [ ] TASK-09538: Test: 'Supertrend flip (buy to sell)' trigger evaluation unit test
+- [ ] TASK-09539: Alert condition: implement 'Supertrend flip (sell to buy)' trigger evaluation
+- [ ] TASK-09540: Alert condition: add 'Supertrend flip (sell to buy)' to alert builder UI dropdown
+- [ ] TASK-09541: Test: 'Supertrend flip (sell to buy)' trigger evaluation unit test
+- [ ] TASK-09542: Alert condition: implement 'Williams %R enters oversold (<-80)' trigger evaluation
+- [ ] TASK-09543: Alert condition: add 'Williams %R enters oversold (<-80)' to alert builder UI dropdown
+- [ ] TASK-09544: Test: 'Williams %R enters oversold (<-80)' trigger evaluation unit test
+- [ ] TASK-09545: Alert condition: implement 'Williams %R enters overbought (>-20)' trigger evaluation
+- [ ] TASK-09546: Alert condition: add 'Williams %R enters overbought (>-20)' to alert builder UI dropdown
+- [ ] TASK-09547: Test: 'Williams %R enters overbought (>-20)' trigger evaluation unit test
+- [ ] TASK-09548: Alert condition: implement 'CCI(20) > 100 (overbought)' trigger evaluation
+- [ ] TASK-09549: Alert condition: add 'CCI(20) > 100 (overbought)' to alert builder UI dropdown
+- [ ] TASK-09550: Test: 'CCI(20) > 100 (overbought)' trigger evaluation unit test
+- [ ] TASK-09551: Alert condition: implement 'CCI(20) < -100 (oversold)' trigger evaluation
+- [ ] TASK-09552: Alert condition: add 'CCI(20) < -100 (oversold)' to alert builder UI dropdown
+- [ ] TASK-09553: Test: 'CCI(20) < -100 (oversold)' trigger evaluation unit test
+- [ ] TASK-09554: Alert condition: implement 'OBV divergence from price (bullish)' trigger evaluation
+- [ ] TASK-09555: Alert condition: add 'OBV divergence from price (bullish)' to alert builder UI dropdown
+- [ ] TASK-09556: Test: 'OBV divergence from price (bullish)' trigger evaluation unit test
+- [ ] TASK-09557: Alert condition: implement 'OBV divergence from price (bearish)' trigger evaluation
+- [ ] TASK-09558: Alert condition: add 'OBV divergence from price (bearish)' to alert builder UI dropdown
+- [ ] TASK-09559: Test: 'OBV divergence from price (bearish)' trigger evaluation unit test
+- [ ] TASK-09560: Alert condition: implement 'Squeeze indicator fires (momentum release)' trigger evaluation
+- [ ] TASK-09561: Alert condition: add 'Squeeze indicator fires (momentum release)' to alert builder UI dropdown
+- [ ] TASK-09562: Test: 'Squeeze indicator fires (momentum release)' trigger evaluation unit test
+- [ ] TASK-09563: Alert condition: implement 'Parabolic SAR reversal (buy to sell)' trigger evaluation
+- [ ] TASK-09564: Alert condition: add 'Parabolic SAR reversal (buy to sell)' to alert builder UI dropdown
+- [ ] TASK-09565: Test: 'Parabolic SAR reversal (buy to sell)' trigger evaluation unit test
+
+
+## CHART THEMES (12 Ã— 8)
+
+- [ ] TASK-09566: Theme 'Bloomberg Classic (amber on black)': define color palette CSS variables
+- [ ] TASK-09567: Theme 'Bloomberg Classic (amber on black)': chart background and grid colors
+- [ ] TASK-09568: Theme 'Bloomberg Classic (amber on black)': candle up/down colors
+- [ ] TASK-09569: Theme 'Bloomberg Classic (amber on black)': indicator line colors
+- [ ] TASK-09570: Theme 'Bloomberg Classic (amber on black)': crosshair and tooltip colors
+- [ ] TASK-09571: Theme 'Bloomberg Classic (amber on black)': panel/sidebar background colors
+- [ ] TASK-09572: Theme 'Bloomberg Classic (amber on black)': text primary/secondary colors
+- [ ] TASK-09573: Theme 'Bloomberg Classic (amber on black)': button and interactive element colors
+- [ ] TASK-09574: Theme 'Bloomberg Dark Blue (navy + amber)': define color palette CSS variables
+- [ ] TASK-09575: Theme 'Bloomberg Dark Blue (navy + amber)': chart background and grid colors
+- [ ] TASK-09576: Theme 'Bloomberg Dark Blue (navy + amber)': candle up/down colors
+- [ ] TASK-09577: Theme 'Bloomberg Dark Blue (navy + amber)': indicator line colors
+- [ ] TASK-09578: Theme 'Bloomberg Dark Blue (navy + amber)': crosshair and tooltip colors
+- [ ] TASK-09579: Theme 'Bloomberg Dark Blue (navy + amber)': panel/sidebar background colors
+- [ ] TASK-09580: Theme 'Bloomberg Dark Blue (navy + amber)': text primary/secondary colors
+- [ ] TASK-09581: Theme 'Bloomberg Dark Blue (navy + amber)': button and interactive element colors
+- [ ] TASK-09582: Theme 'TradingView Dark': define color palette CSS variables
+- [ ] TASK-09583: Theme 'TradingView Dark': chart background and grid colors
+- [ ] TASK-09584: Theme 'TradingView Dark': candle up/down colors
+- [ ] TASK-09585: Theme 'TradingView Dark': indicator line colors
+- [ ] TASK-09586: Theme 'TradingView Dark': crosshair and tooltip colors
+- [ ] TASK-09587: Theme 'TradingView Dark': panel/sidebar background colors
+- [ ] TASK-09588: Theme 'TradingView Dark': text primary/secondary colors
+- [ ] TASK-09589: Theme 'TradingView Dark': button and interactive element colors
+- [ ] TASK-09590: Theme 'TradingView Light': define color palette CSS variables
+- [ ] TASK-09591: Theme 'TradingView Light': chart background and grid colors
+- [ ] TASK-09592: Theme 'TradingView Light': candle up/down colors
+- [ ] TASK-09593: Theme 'TradingView Light': indicator line colors
+- [ ] TASK-09594: Theme 'TradingView Light': crosshair and tooltip colors
+- [ ] TASK-09595: Theme 'TradingView Light': panel/sidebar background colors
+- [ ] TASK-09596: Theme 'TradingView Light': text primary/secondary colors
+- [ ] TASK-09597: Theme 'TradingView Light': button and interactive element colors
+- [ ] TASK-09598: Theme 'Night Vision (green on black)': define color palette CSS variables
+- [ ] TASK-09599: Theme 'Night Vision (green on black)': chart background and grid colors
+- [ ] TASK-09600: Theme 'Night Vision (green on black)': candle up/down colors
+- [ ] TASK-09601: Theme 'Night Vision (green on black)': indicator line colors
+- [ ] TASK-09602: Theme 'Night Vision (green on black)': crosshair and tooltip colors
+- [ ] TASK-09603: Theme 'Night Vision (green on black)': panel/sidebar background colors
+- [ ] TASK-09604: Theme 'Night Vision (green on black)': text primary/secondary colors
+- [ ] TASK-09605: Theme 'Night Vision (green on black)': button and interactive element colors
+- [ ] TASK-09606: Theme 'Solarized Dark': define color palette CSS variables
+- [ ] TASK-09607: Theme 'Solarized Dark': chart background and grid colors
+- [ ] TASK-09608: Theme 'Solarized Dark': candle up/down colors
+- [ ] TASK-09609: Theme 'Solarized Dark': indicator line colors
+- [ ] TASK-09610: Theme 'Solarized Dark': crosshair and tooltip colors
+- [ ] TASK-09611: Theme 'Solarized Dark': panel/sidebar background colors
+- [ ] TASK-09612: Theme 'Solarized Dark': text primary/secondary colors
+- [ ] TASK-09613: Theme 'Solarized Dark': button and interactive element colors
+- [ ] TASK-09614: Theme 'Solarized Light': define color palette CSS variables
+- [ ] TASK-09615: Theme 'Solarized Light': chart background and grid colors
+- [ ] TASK-09616: Theme 'Solarized Light': candle up/down colors
+- [ ] TASK-09617: Theme 'Solarized Light': indicator line colors
+- [ ] TASK-09618: Theme 'Solarized Light': crosshair and tooltip colors
+- [ ] TASK-09619: Theme 'Solarized Light': panel/sidebar background colors
+- [ ] TASK-09620: Theme 'Solarized Light': text primary/secondary colors
+- [ ] TASK-09621: Theme 'Solarized Light': button and interactive element colors
+- [ ] TASK-09622: Theme 'Monokai (dev favorite)': define color palette CSS variables
+- [ ] TASK-09623: Theme 'Monokai (dev favorite)': chart background and grid colors
+- [ ] TASK-09624: Theme 'Monokai (dev favorite)': candle up/down colors
+- [ ] TASK-09625: Theme 'Monokai (dev favorite)': indicator line colors
+- [ ] TASK-09626: Theme 'Monokai (dev favorite)': crosshair and tooltip colors
+- [ ] TASK-09627: Theme 'Monokai (dev favorite)': panel/sidebar background colors
+- [ ] TASK-09628: Theme 'Monokai (dev favorite)': text primary/secondary colors
+- [ ] TASK-09629: Theme 'Monokai (dev favorite)': button and interactive element colors
+- [ ] TASK-09630: Theme 'Dracula (purple accent)': define color palette CSS variables
+- [ ] TASK-09631: Theme 'Dracula (purple accent)': chart background and grid colors
+- [ ] TASK-09632: Theme 'Dracula (purple accent)': candle up/down colors
+- [ ] TASK-09633: Theme 'Dracula (purple accent)': indicator line colors
+- [ ] TASK-09634: Theme 'Dracula (purple accent)': crosshair and tooltip colors
+- [ ] TASK-09635: Theme 'Dracula (purple accent)': panel/sidebar background colors
+- [ ] TASK-09636: Theme 'Dracula (purple accent)': text primary/secondary colors
+- [ ] TASK-09637: Theme 'Dracula (purple accent)': button and interactive element colors
+- [ ] TASK-09638: Theme 'Nord (blue-gray palette)': define color palette CSS variables
+- [ ] TASK-09639: Theme 'Nord (blue-gray palette)': chart background and grid colors
+- [ ] TASK-09640: Theme 'Nord (blue-gray palette)': candle up/down colors
+- [ ] TASK-09641: Theme 'Nord (blue-gray palette)': indicator line colors
+- [ ] TASK-09642: Theme 'Nord (blue-gray palette)': crosshair and tooltip colors
+- [ ] TASK-09643: Theme 'Nord (blue-gray palette)': panel/sidebar background colors
+- [ ] TASK-09644: Theme 'Nord (blue-gray palette)': text primary/secondary colors
+- [ ] TASK-09645: Theme 'Nord (blue-gray palette)': button and interactive element colors
+- [ ] TASK-09646: Theme 'High Contrast Light': define color palette CSS variables
+- [ ] TASK-09647: Theme 'High Contrast Light': chart background and grid colors
+- [ ] TASK-09648: Theme 'High Contrast Light': candle up/down colors
+- [ ] TASK-09649: Theme 'High Contrast Light': indicator line colors
+- [ ] TASK-09650: Theme 'High Contrast Light': crosshair and tooltip colors
+- [ ] TASK-09651: Theme 'High Contrast Light': panel/sidebar background colors
+- [ ] TASK-09652: Theme 'High Contrast Light': text primary/secondary colors
+- [ ] TASK-09653: Theme 'High Contrast Light': button and interactive element colors
+- [ ] TASK-09654: Theme 'High Contrast Dark': define color palette CSS variables
+- [ ] TASK-09655: Theme 'High Contrast Dark': chart background and grid colors
+- [ ] TASK-09656: Theme 'High Contrast Dark': candle up/down colors
+- [ ] TASK-09657: Theme 'High Contrast Dark': indicator line colors
+- [ ] TASK-09658: Theme 'High Contrast Dark': crosshair and tooltip colors
+- [ ] TASK-09659: Theme 'High Contrast Dark': panel/sidebar background colors
+- [ ] TASK-09660: Theme 'High Contrast Dark': text primary/secondary colors
+- [ ] TASK-09661: Theme 'High Contrast Dark': button and interactive element colors
+
+
+## ANIMATIONS & TRANSITIONS
+
+- [ ] TASK-09662: Animation: page transition (fade/slide between routes)
+- [ ] TASK-09663: Animation: panel open/close (slide + fade)
+- [ ] TASK-09664: Animation: modal enter/exit (scale + fade)
+- [ ] TASK-09665: Animation: toast notification slide-in from top-right
+- [ ] TASK-09666: Animation: price flash (green uptick / red downtick) on update
+- [ ] TASK-09667: Animation: order book row highlight pulse on change
+- [ ] TASK-09668: Animation: time & sales row entry (slide from top)
+- [ ] TASK-09669: Animation: chart type switch crossfade
+- [ ] TASK-09670: Animation: indicator add/remove smooth transition
+- [ ] TASK-09671: Animation: toolbar expand/collapse smooth height
+- [ ] TASK-09672: Animation: tab switch content crossfade
+- [ ] TASK-09673: Animation: dropdown menu appear (scale + opacity)
+- [ ] TASK-09674: Animation: tooltip appear (fade + y-offset)
+- [ ] TASK-09675: Animation: loading skeleton shimmer effect
+- [ ] TASK-09676: Animation: progress bar fill animation
+- [ ] TASK-09677: Animation: gauge dial smooth rotation
+- [ ] TASK-09678: Animation: pie/donut chart draw-in on load
+- [ ] TASK-09679: Animation: bar chart grow-up on load
+- [ ] TASK-09680: Animation: line chart draw-in from left to right
+- [ ] TASK-09681: Animation: number counter tick-up/down animation
+- [ ] TASK-09682: Animation: sparkline draw animation
+- [ ] TASK-09683: Animation: heatmap cell color transition
+- [ ] TASK-09684: Animation: treemap resize transition
+- [ ] TASK-09685: Animation: scatter plot point appear animation
+- [ ] TASK-09686: Animation: sidebar collapse/expand smooth width transition
+
+
+## EXPORT & IMPORT & SHARING
+
+- [ ] TASK-09687: Export: chart as PNG (full resolution)
+- [ ] TASK-09688: Export: chart as SVG vector format
+- [ ] TASK-09689: Export: chart data as CSV
+- [ ] TASK-09690: Export: watchlist as CSV
+- [ ] TASK-09691: Export: screener results as CSV
+- [ ] TASK-09692: Export: portfolio holdings as CSV
+- [ ] TASK-09693: Export: trade history as CSV
+- [ ] TASK-09694: Export: backtest report as PDF (HTML->PDF)
+- [ ] TASK-09695: Export: backtest trades as CSV
+- [ ] TASK-09696: Export: options chain as CSV
+- [ ] TASK-09697: Export: risk report as PDF
+- [ ] TASK-09698: Export: performance report as PDF
+- [ ] TASK-09699: Export: economic calendar as ICS
+- [ ] TASK-09700: Export: alert list as CSV
+- [ ] TASK-09701: Export: all settings as JSON backup
+- [ ] TASK-09702: Import: settings from JSON restore
+- [ ] TASK-09703: Import: watchlist from CSV
+- [ ] TASK-09704: Import: trades from broker CSV (various formats)
+- [ ] TASK-09705: Import: portfolio from CSV
+- [ ] TASK-09706: Import: strategy from JSON file
+- [ ] TASK-09707: Share: chart layout as shareable URL
+- [ ] TASK-09708: Share: screener preset as shareable URL
+- [ ] TASK-09709: Share: strategy config as shareable URL
+- [ ] TASK-09710: Print: formatted print stylesheet for reports
+- [ ] TASK-09711: Print: chart print mode (white background option)
+
+
+
+## DATABASE & PERSISTENCE
+
+- [ ] TASK-09712: DB: SQLite schema for user_settings table
+- [ ] TASK-09713: DB: SQLite schema for watchlists table
+- [ ] TASK-09714: DB: SQLite schema for alerts table
+- [ ] TASK-09715: DB: SQLite schema for saved_layouts table
+- [ ] TASK-09716: DB: SQLite schema for chart_drawings table
+- [ ] TASK-09717: DB: SQLite schema for backtest_results table
+- [ ] TASK-09718: DB: SQLite schema for trade_history table
+- [ ] TASK-09719: DB: SQLite schema for portfolio_positions table
+- [ ] TASK-09720: DB: SQLite schema for cached_market_data table
+- [ ] TASK-09721: DB: SQLite schema for indicator_presets table
+- [ ] TASK-09722: DB: SQLite schema for strategy_configs table
+- [ ] TASK-09723: DB: SQLite schema for audit_log table
+- [ ] TASK-09724: DB: SQLite schema for notification_history table
+- [ ] TASK-09725: DB: SQLite schema for api_keys table (encrypted)
+- [ ] TASK-09726: DB: SQLite schema for user_preferences table
+- [ ] TASK-09727: DB: implement migrations system for schema updates
+- [ ] TASK-09728: DB: implement connection pool for concurrent access
+- [ ] TASK-09729: DB: implement backup/restore utility
+- [ ] TASK-09730: DB: implement data retention policy (TTL for cache)
+- [ ] TASK-09731: DB: implement query performance monitoring
+
+
+## SECURITY HARDENING
+
+- [ ] TASK-09732: Security: implement API key encryption at rest (AES-256)
+- [ ] TASK-09733: Security: implement JWT token generation and validation
+- [ ] TASK-09734: Security: implement password hashing (bcrypt/argon2)
+- [ ] TASK-09735: Security: implement CSRF protection middleware
+- [ ] TASK-09736: Security: implement XSS sanitization for all inputs
+- [ ] TASK-09737: Security: implement SQL injection prevention (parameterized queries)
+- [ ] TASK-09738: Security: implement rate limiting per IP/API key
+- [ ] TASK-09739: Security: implement request size limits
+- [ ] TASK-09740: Security: implement HTTPS enforcement redirect
+- [ ] TASK-09741: Security: implement Content Security Policy headers
+- [ ] TASK-09742: Security: implement HSTS header configuration
+- [ ] TASK-09743: Security: implement API key rotation mechanism
+- [ ] TASK-09744: Security: implement audit logging for sensitive operations
+- [ ] TASK-09745: Security: implement session timeout and expiry
+- [ ] TASK-09746: Security: implement input validation whitelist approach
+- [ ] TASK-09747: Security: implement file upload security scanning
+- [ ] TASK-09748: Security: implement secrets detection pre-commit hook
+- [ ] TASK-09749: Security: implement dependency vulnerability scanning
+- [ ] TASK-09750: Security: implement CORS strict origin validation
+- [ ] TASK-09751: Security: implement WebSocket authentication token
+
+
+## MACHINE LEARNING INTEGRATION
+
+- [ ] TASK-09752: ML: implement linear regression price prediction model
+- [ ] TASK-09753: ML: implement random forest classification (buy/sell signal)
+- [ ] TASK-09754: ML: implement gradient boosting (XGBoost) signal model
+- [ ] TASK-09755: ML: implement LSTM price sequence prediction
+- [ ] TASK-09756: ML: implement sentiment analysis pipeline (NLP)
+- [ ] TASK-09757: ML: implement anomaly detection (isolation forest)
+- [ ] TASK-09758: ML: implement clustering (k-means) for market regimes
+- [ ] TASK-09759: ML: implement feature engineering pipeline
+- [ ] TASK-09760: ML: implement walk-forward model validation
+- [ ] TASK-09761: ML: implement model performance tracking dashboard
+- [ ] TASK-09762: ML: implement feature importance visualization
+- [ ] TASK-09763: ML: implement prediction confidence interval display
+- [ ] TASK-09764: ML: implement model comparison table
+- [ ] TASK-09765: ML: implement hyperparameter optimization (grid search)
+- [ ] TASK-09766: ML: implement ensemble model combination framework
+- [ ] TASK-09767: ML: implement real-time prediction streaming
+- [ ] TASK-09768: ML: implement model drift detection
+- [ ] TASK-09769: ML: implement A/B testing framework for models
+- [ ] TASK-09770: ML: implement explainability dashboard (SHAP values)
+- [ ] TASK-09771: ML: implement backtesting with ML signals integration
+
+
+## MARKET MICROSTRUCTURE
+
+- [ ] TASK-09772: Implement bid-ask bounce detection algorithm
+- [ ] TASK-09773: Implement trade classification (Lee-Ready algorithm)
+- [ ] TASK-09774: Implement Kyle lambda (price impact coefficient)
+- [ ] TASK-09775: Implement Amihud illiquidity measure
+- [ ] TASK-09776: Implement Roll effective spread estimate
+- [ ] TASK-09777: Implement realized volatility (Parkinson, Rogers-Satchell, Yang-Zhang)
+- [ ] TASK-09778: Implement volume clock (event time sampling)
+- [ ] TASK-09779: Implement order flow toxicity (VPIN)
+- [ ] TASK-09780: Implement quote stuffing detection
+- [ ] TASK-09781: Implement spoofing pattern detection
+- [ ] TASK-09782: Implement market maker edge calculation
+- [ ] TASK-09783: Implement effective spread decomposition
+- [ ] TASK-09784: Implement adverse selection cost metric
+- [ ] TASK-09785: Implement information share (Hasbrouck)
+- [ ] TASK-09786: Implement order book resilience metric
+- [ ] TASK-09787: Implement trade aggressiveness indicator
+- [ ] TASK-09788: Implement midpoint crossing detection
+- [ ] TASK-09789: Implement hidden order detection heuristic
+- [ ] TASK-09790: Implement smart order router scoring model
+- [ ] TASK-09791: Implement venue analysis (exchange quality comparison)
+- [ ] TASK-09792: Implement dark pool participation rate tracking
+- [ ] TASK-09793: Implement intraday volatility pattern (U-shape)
+- [ ] TASK-09794: Implement auction imbalance indicator
+- [ ] TASK-09795: Implement opening/closing cross prediction
+- [ ] TASK-09796: Implement market maker inventory model
+
+
+## FRONTEND POLISH & UX
+
+- [ ] TASK-09797: Polish: sidebar icon tooltips with keyboard shortcut label
+- [ ] TASK-09798: Polish: active route highlight in sidebar navigation
+- [ ] TASK-09799: Polish: breadcrumb navigation for nested pages
+- [ ] TASK-09800: Polish: global search results instant preview pane
+- [ ] TASK-09801: Polish: command palette recent commands section
+- [ ] TASK-09802: Polish: command palette fuzzy matching algorithm
+- [ ] TASK-09803: Polish: notification center with unread count badge
+- [ ] TASK-09804: Polish: notification center clear all button
+- [ ] TASK-09805: Polish: notification center filter by type dropdown
+- [ ] TASK-09806: Polish: system tray status indicator (connected/degraded/down)
+- [ ] TASK-09807: Polish: footer bar with connection status and latency
+- [ ] TASK-09808: Polish: footer bar with data provider status
+- [ ] TASK-09809: Polish: footer bar with last data update timestamp
+- [ ] TASK-09810: Polish: footer bar with active alerts count
+- [ ] TASK-09811: Polish: footer bar with open orders count
+- [ ] TASK-09812: Polish: tab close confirmation for unsaved changes
+- [ ] TASK-09813: Polish: drag-and-drop tab reordering
+- [ ] TASK-09814: Polish: tab overflow dropdown for many open tabs
+- [ ] TASK-09815: Polish: context menu items with keyboard shortcut labels
+- [ ] TASK-09816: Polish: all modals have backdrop blur effect
+- [ ] TASK-09817: Polish: all popovers close on outside click
+- [ ] TASK-09818: Polish: all dropdowns have search/filter input
+- [ ] TASK-09819: Polish: all tables have frozen first column option
+- [ ] TASK-09820: Polish: all tables have column resize by drag
+- [ ] TASK-09821: Polish: all tables have row selection with checkbox
+
+
+## CI/CD & DEVOPS
+
+- [ ] TASK-09822: CI: configure GitHub Actions workflow for frontend tests
+- [ ] TASK-09823: CI: configure GitHub Actions workflow for backend tests
+- [ ] TASK-09824: CI: configure ESLint with strict rules
+- [ ] TASK-09825: CI: configure Prettier code formatting
+- [ ] TASK-09826: CI: configure TypeScript strict mode check
+- [ ] TASK-09827: CI: configure Python linting (ruff/flake8)
+- [ ] TASK-09828: CI: configure Python type checking (mypy)
+- [ ] TASK-09829: CI: configure test coverage threshold (80%+)
+- [ ] TASK-09830: CI: configure bundle size budget check
+- [ ] TASK-09831: CI: configure lighthouse CI performance check
+- [ ] TASK-09832: CD: Docker build for frontend (multi-stage)
+- [ ] TASK-09833: CD: Docker build for backend (slim Python image)
+- [ ] TASK-09834: CD: docker-compose for full stack local development
+- [ ] TASK-09835: CD: environment variable configuration management
+- [ ] TASK-09836: CD: health check endpoint for deployment verification
+- [ ] TASK-09837: DevOps: implement structured logging (JSON format)
+- [ ] TASK-09838: DevOps: implement request tracing (correlation IDs)
+- [ ] TASK-09839: DevOps: implement error alerting (critical errors)
+- [ ] TASK-09840: DevOps: implement performance metrics collection
+- [ ] TASK-09841: DevOps: implement auto-restart on crash (process manager)
+
+
+## STATISTICAL ANALYSIS ENGINE
+
+- [ ] TASK-09842: Implement returns distribution analysis (skewness, kurtosis)
+- [ ] TASK-09843: Implement Jarque-Bera normality test
+- [ ] TASK-09844: Implement Augmented Dickey-Fuller stationarity test
+- [ ] TASK-09845: Implement Granger causality test between series
+- [ ] TASK-09846: Implement cointegration test (Engle-Granger method)
+- [ ] TASK-09847: Implement cointegration test (Johansen method)
+- [ ] TASK-09848: Implement GARCH(1,1) volatility model
+- [ ] TASK-09849: Implement EGARCH model (asymmetric volatility)
+- [ ] TASK-09850: Implement GJR-GARCH model
+- [ ] TASK-09851: Implement exponentially weighted variance (EWMA)
+- [ ] TASK-09852: Implement Hurst exponent calculation (R/S method)
+- [ ] TASK-09853: Implement regime detection (Hidden Markov Model)
+- [ ] TASK-09854: Implement copula-based dependency modeling
+- [ ] TASK-09855: Implement tail risk metrics (Hill estimator)
+- [ ] TASK-09856: Implement kernel density estimation for return distribution
+- [ ] TASK-09857: Implement bootstrap confidence intervals for Sharpe
+- [ ] TASK-09858: Implement rolling beta estimation (OLS regression)
+- [ ] TASK-09859: Implement Fama-French 3-factor model decomposition
+- [ ] TASK-09860: Implement Fama-French 5-factor model decomposition
+- [ ] TASK-09861: Implement Carhart 4-factor model decomposition
+- [ ] TASK-09862: Implement factor exposure estimation via regression
+- [ ] TASK-09863: Implement principal component analysis on returns
+- [ ] TASK-09864: Implement correlation clustering (hierarchical)
+- [ ] TASK-09865: Implement minimum spanning tree of correlation matrix
+- [ ] TASK-09866: Implement Ledoit-Wolf shrinkage covariance estimator
+
+
+
+## API TESTING MATRIX
+
+- [ ] TASK-09867: API test /api/v4/quotes returns 200 for correct/incorrect input
+- [ ] TASK-09868: API test /api/v4/quotes returns 400 for correct/incorrect input
+- [ ] TASK-09869: API test /api/v4/quotes returns 401 for correct/incorrect input
+- [ ] TASK-09870: API test /api/v4/quotes returns 404 for correct/incorrect input
+- [ ] TASK-09871: API test /api/v4/quotes returns 429 for correct/incorrect input
+- [ ] TASK-09872: API test /api/v4/quotes returns 500 for correct/incorrect input
+- [ ] TASK-09873: API test /api/v4/bars returns 200 for correct/incorrect input
+- [ ] TASK-09874: API test /api/v4/bars returns 400 for correct/incorrect input
+- [ ] TASK-09875: API test /api/v4/bars returns 401 for correct/incorrect input
+- [ ] TASK-09876: API test /api/v4/bars returns 404 for correct/incorrect input
+- [ ] TASK-09877: API test /api/v4/bars returns 429 for correct/incorrect input
+- [ ] TASK-09878: API test /api/v4/bars returns 500 for correct/incorrect input
+- [ ] TASK-09879: API test /api/v4/options returns 200 for correct/incorrect input
+- [ ] TASK-09880: API test /api/v4/options returns 400 for correct/incorrect input
+- [ ] TASK-09881: API test /api/v4/options returns 401 for correct/incorrect input
+- [ ] TASK-09882: API test /api/v4/options returns 404 for correct/incorrect input
+- [ ] TASK-09883: API test /api/v4/options returns 429 for correct/incorrect input
+- [ ] TASK-09884: API test /api/v4/options returns 500 for correct/incorrect input
+- [ ] TASK-09885: API test /api/v4/screener returns 200 for correct/incorrect input
+- [ ] TASK-09886: API test /api/v4/screener returns 400 for correct/incorrect input
+- [ ] TASK-09887: API test /api/v4/screener returns 401 for correct/incorrect input
+- [ ] TASK-09888: API test /api/v4/screener returns 404 for correct/incorrect input
+- [ ] TASK-09889: API test /api/v4/screener returns 429 for correct/incorrect input
+- [ ] TASK-09890: API test /api/v4/screener returns 500 for correct/incorrect input
+- [ ] TASK-09891: API test /api/v4/alerts returns 200 for correct/incorrect input
+- [ ] TASK-09892: API test /api/v4/alerts returns 400 for correct/incorrect input
+- [ ] TASK-09893: API test /api/v4/alerts returns 401 for correct/incorrect input
+- [ ] TASK-09894: API test /api/v4/alerts returns 404 for correct/incorrect input
+- [ ] TASK-09895: API test /api/v4/alerts returns 429 for correct/incorrect input
+- [ ] TASK-09896: API test /api/v4/alerts returns 500 for correct/incorrect input
+- [ ] TASK-09897: API test /api/v4/watchlists returns 200 for correct/incorrect input
+- [ ] TASK-09898: API test /api/v4/watchlists returns 400 for correct/incorrect input
+- [ ] TASK-09899: API test /api/v4/watchlists returns 401 for correct/incorrect input
+- [ ] TASK-09900: API test /api/v4/watchlists returns 404 for correct/incorrect input
+- [ ] TASK-09901: API test /api/v4/watchlists returns 429 for correct/incorrect input
+- [ ] TASK-09902: API test /api/v4/watchlists returns 500 for correct/incorrect input
+- [ ] TASK-09903: API test /api/v4/portfolio returns 200 for correct/incorrect input
+- [ ] TASK-09904: API test /api/v4/portfolio returns 400 for correct/incorrect input
+- [ ] TASK-09905: API test /api/v4/portfolio returns 401 for correct/incorrect input
+- [ ] TASK-09906: API test /api/v4/portfolio returns 404 for correct/incorrect input
+- [ ] TASK-09907: API test /api/v4/portfolio returns 429 for correct/incorrect input
+- [ ] TASK-09908: API test /api/v4/portfolio returns 500 for correct/incorrect input
+- [ ] TASK-09909: API test /api/v4/risk returns 200 for correct/incorrect input
+- [ ] TASK-09910: API test /api/v4/risk returns 400 for correct/incorrect input
+- [ ] TASK-09911: API test /api/v4/risk returns 401 for correct/incorrect input
+- [ ] TASK-09912: API test /api/v4/risk returns 404 for correct/incorrect input
+- [ ] TASK-09913: API test /api/v4/risk returns 429 for correct/incorrect input
+- [ ] TASK-09914: API test /api/v4/risk returns 500 for correct/incorrect input
+- [ ] TASK-09915: API test /api/v4/backtest returns 200 for correct/incorrect input
+- [ ] TASK-09916: API test /api/v4/backtest returns 400 for correct/incorrect input
+- [ ] TASK-09917: API test /api/v4/backtest returns 401 for correct/incorrect input
+- [ ] TASK-09918: API test /api/v4/backtest returns 404 for correct/incorrect input
+- [ ] TASK-09919: API test /api/v4/backtest returns 429 for correct/incorrect input
+- [ ] TASK-09920: API test /api/v4/backtest returns 500 for correct/incorrect input
+- [ ] TASK-09921: API test /api/v4/orders returns 200 for correct/incorrect input
+- [ ] TASK-09922: API test /api/v4/orders returns 400 for correct/incorrect input
+- [ ] TASK-09923: API test /api/v4/orders returns 401 for correct/incorrect input
+- [ ] TASK-09924: API test /api/v4/orders returns 404 for correct/incorrect input
+- [ ] TASK-09925: API test /api/v4/orders returns 429 for correct/incorrect input
+- [ ] TASK-09926: API test /api/v4/orders returns 500 for correct/incorrect input
+- [ ] TASK-09927: API test /api/v4/positions returns 200 for correct/incorrect input
+- [ ] TASK-09928: API test /api/v4/positions returns 400 for correct/incorrect input
+- [ ] TASK-09929: API test /api/v4/positions returns 401 for correct/incorrect input
+- [ ] TASK-09930: API test /api/v4/positions returns 404 for correct/incorrect input
+- [ ] TASK-09931: API test /api/v4/positions returns 429 for correct/incorrect input
+- [ ] TASK-09932: API test /api/v4/positions returns 500 for correct/incorrect input
+- [ ] TASK-09933: API test /api/v4/news returns 200 for correct/incorrect input
+- [ ] TASK-09934: API test /api/v4/news returns 400 for correct/incorrect input
+- [ ] TASK-09935: API test /api/v4/news returns 401 for correct/incorrect input
+- [ ] TASK-09936: API test /api/v4/news returns 404 for correct/incorrect input
+- [ ] TASK-09937: API test /api/v4/news returns 429 for correct/incorrect input
+- [ ] TASK-09938: API test /api/v4/news returns 500 for correct/incorrect input
+- [ ] TASK-09939: API test /api/v4/fundamentals returns 200 for correct/incorrect input
+- [ ] TASK-09940: API test /api/v4/fundamentals returns 400 for correct/incorrect input
+- [ ] TASK-09941: API test /api/v4/fundamentals returns 401 for correct/incorrect input
+- [ ] TASK-09942: API test /api/v4/fundamentals returns 404 for correct/incorrect input
+- [ ] TASK-09943: API test /api/v4/fundamentals returns 429 for correct/incorrect input
+- [ ] TASK-09944: API test /api/v4/fundamentals returns 500 for correct/incorrect input
+- [ ] TASK-09945: API test /api/v4/earnings returns 200 for correct/incorrect input
+- [ ] TASK-09946: API test /api/v4/earnings returns 400 for correct/incorrect input
+- [ ] TASK-09947: API test /api/v4/earnings returns 401 for correct/incorrect input
+- [ ] TASK-09948: API test /api/v4/earnings returns 404 for correct/incorrect input
+- [ ] TASK-09949: API test /api/v4/earnings returns 429 for correct/incorrect input
+- [ ] TASK-09950: API test /api/v4/earnings returns 500 for correct/incorrect input
+- [ ] TASK-09951: API test /api/v4/analyst returns 200 for correct/incorrect input
+- [ ] TASK-09952: API test /api/v4/analyst returns 400 for correct/incorrect input
+- [ ] TASK-09953: API test /api/v4/analyst returns 401 for correct/incorrect input
+- [ ] TASK-09954: API test /api/v4/analyst returns 404 for correct/incorrect input
+- [ ] TASK-09955: API test /api/v4/analyst returns 429 for correct/incorrect input
+- [ ] TASK-09956: API test /api/v4/analyst returns 500 for correct/incorrect input
+- [ ] TASK-09957: API test /api/v4/fxrates returns 200 for correct/incorrect input
+- [ ] TASK-09958: API test /api/v4/fxrates returns 400 for correct/incorrect input
+- [ ] TASK-09959: API test /api/v4/fxrates returns 401 for correct/incorrect input
+- [ ] TASK-09960: API test /api/v4/fxrates returns 404 for correct/incorrect input
+- [ ] TASK-09961: API test /api/v4/fxrates returns 429 for correct/incorrect input
+- [ ] TASK-09962: API test /api/v4/fxrates returns 500 for correct/incorrect input
+- [ ] TASK-09963: API test /api/v4/yieldcurve returns 200 for correct/incorrect input
+- [ ] TASK-09964: API test /api/v4/yieldcurve returns 400 for correct/incorrect input
+- [ ] TASK-09965: API test /api/v4/yieldcurve returns 401 for correct/incorrect input
+- [ ] TASK-09966: API test /api/v4/yieldcurve returns 404 for correct/incorrect input
+- [ ] TASK-09967: API test /api/v4/yieldcurve returns 429 for correct/incorrect input
+- [ ] TASK-09968: API test /api/v4/yieldcurve returns 500 for correct/incorrect input
+- [ ] TASK-09969: API test /api/v4/commodities returns 200 for correct/incorrect input
+- [ ] TASK-09970: API test /api/v4/commodities returns 400 for correct/incorrect input
+- [ ] TASK-09971: API test /api/v4/commodities returns 401 for correct/incorrect input
+- [ ] TASK-09972: API test /api/v4/commodities returns 404 for correct/incorrect input
+- [ ] TASK-09973: API test /api/v4/commodities returns 429 for correct/incorrect input
+- [ ] TASK-09974: API test /api/v4/commodities returns 500 for correct/incorrect input
+- [ ] TASK-09975: API test /api/v4/economic-calendar returns 200 for correct/incorrect input
+- [ ] TASK-09976: API test /api/v4/economic-calendar returns 400 for correct/incorrect input
+- [ ] TASK-09977: API test /api/v4/economic-calendar returns 401 for correct/incorrect input
+- [ ] TASK-09978: API test /api/v4/economic-calendar returns 404 for correct/incorrect input
+- [ ] TASK-09979: API test /api/v4/economic-calendar returns 429 for correct/incorrect input
+- [ ] TASK-09980: API test /api/v4/economic-calendar returns 500 for correct/incorrect input
+- [ ] TASK-09981: API test /api/v4/indicators returns 200 for correct/incorrect input
+- [ ] TASK-09982: API test /api/v4/indicators returns 400 for correct/incorrect input
+- [ ] TASK-09983: API test /api/v4/indicators returns 401 for correct/incorrect input
+- [ ] TASK-09984: API test /api/v4/indicators returns 404 for correct/incorrect input
+- [ ] TASK-09985: API test /api/v4/indicators returns 429 for correct/incorrect input
+- [ ] TASK-09986: API test /api/v4/indicators returns 500 for correct/incorrect input
+
+
+## ADDITIONAL FRONTEND COMPONENT TESTS
+
+- [ ] TASK-09987: Component test OrderBook renders with empty data
+- [ ] TASK-09988: Component test OrderBook renders with large dataset (1000+ items)
+- [ ] TASK-09989: Component test OrderBook handles rapid data updates (100/sec)
+- [ ] TASK-09990: Component test OrderBook displays correctly at 1280px width
+- [ ] TASK-09991: Component test OrderBook displays correctly at 1920px width
+- [ ] TASK-09992: Component test OrderBook passes accessibility audit
+- [ ] TASK-09993: Component test OrderBook matches visual regression snapshot
+- [ ] TASK-09994: Component test OrderBook handles click events correctly
+- [ ] TASK-09995: Component test TimeSales renders with empty data
+- [ ] TASK-09996: Component test TimeSales renders with large dataset (1000+ items)
+- [ ] TASK-09997: Component test TimeSales handles rapid data updates (100/sec)
+- [ ] TASK-09998: Component test TimeSales displays correctly at 1280px width
+- [ ] TASK-09999: Component test TimeSales displays correctly at 1920px width
+- [ ] TASK-10000: Component test TimeSales passes accessibility audit
+- [ ] TASK-10001: Component test TimeSales matches visual regression snapshot
+- [ ] TASK-10002: Component test TimeSales handles click events correctly
+- [ ] TASK-10003: Component test QuoteBar renders with empty data
+- [ ] TASK-10004: Component test QuoteBar renders with large dataset (1000+ items)
+- [ ] TASK-10005: Component test QuoteBar handles rapid data updates (100/sec)
+- [ ] TASK-10006: Component test QuoteBar displays correctly at 1280px width
+- [ ] TASK-10007: Component test QuoteBar displays correctly at 1920px width
+- [ ] TASK-10008: Component test QuoteBar passes accessibility audit
+- [ ] TASK-10009: Component test QuoteBar matches visual regression snapshot
+- [ ] TASK-10010: Component test QuoteBar handles click events correctly
+- [ ] TASK-10011: Component test WatchlistTable renders with empty data
+- [ ] TASK-10012: Component test WatchlistTable renders with large dataset (1000+ items)
+- [ ] TASK-10013: Component test WatchlistTable handles rapid data updates (100/sec)
+- [ ] TASK-10014: Component test WatchlistTable displays correctly at 1280px width
+- [ ] TASK-10015: Component test WatchlistTable displays correctly at 1920px width
+- [ ] TASK-10016: Component test WatchlistTable passes accessibility audit
+- [ ] TASK-10017: Component test WatchlistTable matches visual regression snapshot
+- [ ] TASK-10018: Component test WatchlistTable handles click events correctly
+- [ ] TASK-10019: Component test AlertList renders with empty data
+- [ ] TASK-10020: Component test AlertList renders with large dataset (1000+ items)
+- [ ] TASK-10021: Component test AlertList handles rapid data updates (100/sec)
+- [ ] TASK-10022: Component test AlertList displays correctly at 1280px width
+- [ ] TASK-10023: Component test AlertList displays correctly at 1920px width
+- [ ] TASK-10024: Component test AlertList passes accessibility audit
+- [ ] TASK-10025: Component test AlertList matches visual regression snapshot
+- [ ] TASK-10026: Component test AlertList handles click events correctly
+- [ ] TASK-10027: Component test PositionTable renders with empty data
+- [ ] TASK-10028: Component test PositionTable renders with large dataset (1000+ items)
+- [ ] TASK-10029: Component test PositionTable handles rapid data updates (100/sec)
+- [ ] TASK-10030: Component test PositionTable displays correctly at 1280px width
+- [ ] TASK-10031: Component test PositionTable displays correctly at 1920px width
+- [ ] TASK-10032: Component test PositionTable passes accessibility audit
+- [ ] TASK-10033: Component test PositionTable matches visual regression snapshot
+- [ ] TASK-10034: Component test PositionTable handles click events correctly
+- [ ] TASK-10035: Component test TradeLog renders with empty data
+- [ ] TASK-10036: Component test TradeLog renders with large dataset (1000+ items)
+- [ ] TASK-10037: Component test TradeLog handles rapid data updates (100/sec)
+- [ ] TASK-10038: Component test TradeLog displays correctly at 1280px width
+- [ ] TASK-10039: Component test TradeLog displays correctly at 1920px width
+- [ ] TASK-10040: Component test TradeLog passes accessibility audit
+- [ ] TASK-10041: Component test TradeLog matches visual regression snapshot
+- [ ] TASK-10042: Component test TradeLog handles click events correctly
+- [ ] TASK-10043: Component test NewsCard renders with empty data
+- [ ] TASK-10044: Component test NewsCard renders with large dataset (1000+ items)
+- [ ] TASK-10045: Component test NewsCard handles rapid data updates (100/sec)
+- [ ] TASK-10046: Component test NewsCard displays correctly at 1280px width
+- [ ] TASK-10047: Component test NewsCard displays correctly at 1920px width
+- [ ] TASK-10048: Component test NewsCard passes accessibility audit
+- [ ] TASK-10049: Component test NewsCard matches visual regression snapshot
+- [ ] TASK-10050: Component test NewsCard handles click events correctly
+- [ ] TASK-10051: Component test SentimentGauge renders with empty data
+- [ ] TASK-10052: Component test SentimentGauge renders with large dataset (1000+ items)
+- [ ] TASK-10053: Component test SentimentGauge handles rapid data updates (100/sec)
+- [ ] TASK-10054: Component test SentimentGauge displays correctly at 1280px width
+- [ ] TASK-10055: Component test SentimentGauge displays correctly at 1920px width
+- [ ] TASK-10056: Component test SentimentGauge passes accessibility audit
+- [ ] TASK-10057: Component test SentimentGauge matches visual regression snapshot
+- [ ] TASK-10058: Component test SentimentGauge handles click events correctly
+- [ ] TASK-10059: Component test HeatMap renders with empty data
+- [ ] TASK-10060: Component test HeatMap renders with large dataset (1000+ items)
+- [ ] TASK-10061: Component test HeatMap handles rapid data updates (100/sec)
+- [ ] TASK-10062: Component test HeatMap displays correctly at 1280px width
+- [ ] TASK-10063: Component test HeatMap displays correctly at 1920px width
+- [ ] TASK-10064: Component test HeatMap passes accessibility audit
+- [ ] TASK-10065: Component test HeatMap matches visual regression snapshot
+- [ ] TASK-10066: Component test HeatMap handles click events correctly
+- [ ] TASK-10067: Component test TreeMap renders with empty data
+- [ ] TASK-10068: Component test TreeMap renders with large dataset (1000+ items)
+- [ ] TASK-10069: Component test TreeMap handles rapid data updates (100/sec)
+- [ ] TASK-10070: Component test TreeMap displays correctly at 1280px width
+- [ ] TASK-10071: Component test TreeMap displays correctly at 1920px width
+- [ ] TASK-10072: Component test TreeMap passes accessibility audit
+- [ ] TASK-10073: Component test TreeMap matches visual regression snapshot
+- [ ] TASK-10074: Component test TreeMap handles click events correctly
+- [ ] TASK-10075: Component test DonutChart renders with empty data
+- [ ] TASK-10076: Component test DonutChart renders with large dataset (1000+ items)
+- [ ] TASK-10077: Component test DonutChart handles rapid data updates (100/sec)
+- [ ] TASK-10078: Component test DonutChart displays correctly at 1280px width
+- [ ] TASK-10079: Component test DonutChart displays correctly at 1920px width
+- [ ] TASK-10080: Component test DonutChart passes accessibility audit
+- [ ] TASK-10081: Component test DonutChart matches visual regression snapshot
+- [ ] TASK-10082: Component test DonutChart handles click events correctly
+- [ ] TASK-10083: Component test GaugeWidget renders with empty data
+- [ ] TASK-10084: Component test GaugeWidget renders with large dataset (1000+ items)
+- [ ] TASK-10085: Component test GaugeWidget handles rapid data updates (100/sec)
+- [ ] TASK-10086: Component test GaugeWidget displays correctly at 1280px width
+- [ ] TASK-10087: Component test GaugeWidget displays correctly at 1920px width
+- [ ] TASK-10088: Component test GaugeWidget passes accessibility audit
+- [ ] TASK-10089: Component test GaugeWidget matches visual regression snapshot
+- [ ] TASK-10090: Component test GaugeWidget handles click events correctly
+- [ ] TASK-10091: Component test SparkLine renders with empty data
+- [ ] TASK-10092: Component test SparkLine renders with large dataset (1000+ items)
+- [ ] TASK-10093: Component test SparkLine handles rapid data updates (100/sec)
+- [ ] TASK-10094: Component test SparkLine displays correctly at 1280px width
+- [ ] TASK-10095: Component test SparkLine displays correctly at 1920px width
+- [ ] TASK-10096: Component test SparkLine passes accessibility audit
+- [ ] TASK-10097: Component test SparkLine matches visual regression snapshot
+- [ ] TASK-10098: Component test SparkLine handles click events correctly
+- [ ] TASK-10099: Component test MiniChart renders with empty data
+- [ ] TASK-10100: Component test MiniChart renders with large dataset (1000+ items)
+- [ ] TASK-10101: Component test MiniChart handles rapid data updates (100/sec)
+- [ ] TASK-10102: Component test MiniChart displays correctly at 1280px width
+- [ ] TASK-10103: Component test MiniChart displays correctly at 1920px width
+- [ ] TASK-10104: Component test MiniChart passes accessibility audit
+- [ ] TASK-10105: Component test MiniChart matches visual regression snapshot
+- [ ] TASK-10106: Component test MiniChart handles click events correctly
+- [ ] TASK-10107: Component test Modal renders with empty data
+- [ ] TASK-10108: Component test Modal renders with large dataset (1000+ items)
+- [ ] TASK-10109: Component test Modal handles rapid data updates (100/sec)
+- [ ] TASK-10110: Component test Modal displays correctly at 1280px width
+- [ ] TASK-10111: Component test Modal displays correctly at 1920px width
+- [ ] TASK-10112: Component test Modal passes accessibility audit
+- [ ] TASK-10113: Component test Modal matches visual regression snapshot
+- [ ] TASK-10114: Component test Modal handles click events correctly
+- [ ] TASK-10115: Component test Tooltip renders with empty data
+- [ ] TASK-10116: Component test Tooltip renders with large dataset (1000+ items)
+- [ ] TASK-10117: Component test Tooltip handles rapid data updates (100/sec)
+- [ ] TASK-10118: Component test Tooltip displays correctly at 1280px width
+- [ ] TASK-10119: Component test Tooltip displays correctly at 1920px width
+- [ ] TASK-10120: Component test Tooltip passes accessibility audit
+- [ ] TASK-10121: Component test Tooltip matches visual regression snapshot
+- [ ] TASK-10122: Component test Tooltip handles click events correctly
+- [ ] TASK-10123: Component test CommandPalette renders with empty data
+- [ ] TASK-10124: Component test CommandPalette renders with large dataset (1000+ items)
+- [ ] TASK-10125: Component test CommandPalette handles rapid data updates (100/sec)
+- [ ] TASK-10126: Component test CommandPalette displays correctly at 1280px width
+- [ ] TASK-10127: Component test CommandPalette displays correctly at 1920px width
+- [ ] TASK-10128: Component test CommandPalette passes accessibility audit
+- [ ] TASK-10129: Component test CommandPalette matches visual regression snapshot
+- [ ] TASK-10130: Component test CommandPalette handles click events correctly
+- [ ] TASK-10131: Component test StatusBar renders with empty data
+- [ ] TASK-10132: Component test StatusBar renders with large dataset (1000+ items)
+- [ ] TASK-10133: Component test StatusBar handles rapid data updates (100/sec)
+- [ ] TASK-10134: Component test StatusBar displays correctly at 1280px width
+- [ ] TASK-10135: Component test StatusBar displays correctly at 1920px width
+- [ ] TASK-10136: Component test StatusBar passes accessibility audit
+- [ ] TASK-10137: Component test StatusBar matches visual regression snapshot
+- [ ] TASK-10138: Component test StatusBar handles click events correctly
+- [ ] TASK-10139: Component test Sidebar renders with empty data
+- [ ] TASK-10140: Component test Sidebar renders with large dataset (1000+ items)
+- [ ] TASK-10141: Component test Sidebar handles rapid data updates (100/sec)
+- [ ] TASK-10142: Component test Sidebar displays correctly at 1280px width
+- [ ] TASK-10143: Component test Sidebar displays correctly at 1920px width
+- [ ] TASK-10144: Component test Sidebar passes accessibility audit
+- [ ] TASK-10145: Component test Sidebar matches visual regression snapshot
+- [ ] TASK-10146: Component test Sidebar handles click events correctly
+
+
+---
+## TOTAL TASKS: 10146

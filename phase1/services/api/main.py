@@ -646,6 +646,214 @@ def create_app() -> FastAPI:
         import logging as _logging
         _logging.getLogger(__name__).warning(f"v4 engine routes not loaded: {_v4_err}")
 
+    # ── v5 Advanced TA Engine: Candlestick, Volume Profile, Fibonacci, Order Flow ──
+    try:
+        from .routes import ta_indicators_v5
+        app.include_router(ta_indicators_v5.router, tags=["ta-indicators-v5"])
+    except Exception as _v5_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"v5 TA routes not loaded: {_v5_err}")
+
+    # ── Chart Annotations Engine: drawings, Fibonacci, Pitchfork, Gann, groups, undo/redo ──
+    try:
+        from .routes import chart_annotations
+        app.include_router(chart_annotations.router, tags=["chart-annotations"])
+    except Exception as _ann_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Chart annotations routes not loaded: {_ann_err}")
+
+    # ── Market Data v2: tick processing, bar aggregation, book analysis, breadth, VWAP ──
+    try:
+        from .routes import market_data_v2
+        app.include_router(market_data_v2.router, tags=["market-data-v2"])
+    except Exception as _md2_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Market data v2 routes not loaded: {_md2_err}")
+
+    # ── Portfolio Analytics: performance metrics, optimization, attribution, risk budgeting ──
+    try:
+        from .routes import portfolio_analytics
+        app.include_router(portfolio_analytics.router, tags=["portfolio-analytics"])
+    except Exception as _pa_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Portfolio analytics routes not loaded: {_pa_err}")
+
+    # ── Risk Management: sizing, exposure, margin, Greeks, scenarios, compliance ──
+    try:
+        from .routes import risk_management
+        app.include_router(risk_management.router, tags=["risk-management"])
+    except Exception as _rm_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Risk management routes not loaded: {_rm_err}")
+
+    # ── Options Pricing: BS, binomial, MC, IV, vol surface, chains, strategies, exotics ──
+    try:
+        from .routes import options_pricing
+        app.include_router(options_pricing.router, tags=["options-pricing"])
+    except Exception as _op_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Options pricing routes not loaded: {_op_err}")
+
+    # ── Scanner: predefined scans, composite, custom filters ──
+    try:
+        from .routes import scanner
+        app.include_router(scanner.router, tags=["scanner"])
+    except Exception as _sc_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Scanner routes not loaded: {_sc_err}")
+
+    # ── Alert System v2: price/volume/indicator/portfolio/news alerts, scheduling ──
+    try:
+        from .routes import alert_system
+        app.include_router(alert_system.router, tags=["alert-system-v2"])
+    except Exception as _as_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Alert system v2 routes not loaded: {_as_err}")
+
+    # ── Watchlists: CRUD, quotes, sort, filter, analytics, heatmaps ──
+    try:
+        from .routes import watchlists
+        app.include_router(watchlists.router, tags=["watchlists"])
+    except Exception as _wl_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Watchlists routes not loaded: {_wl_err}")
+
+    # ── News & Sentiment: ingestion, analysis, aggregation, impact ──
+    try:
+        from .routes import news_sentiment
+        app.include_router(news_sentiment.router, tags=["news-sentiment"])
+    except Exception as _ns_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"News sentiment routes not loaded: {_ns_err}")
+
+    # ── Order Management: orders, fills, positions, analytics ──
+    try:
+        from .routes import order_management
+        app.include_router(order_management.router, tags=["order-management"])
+    except Exception as _om_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Order management routes not loaded: {_om_err}")
+
+    # ── Execution: algos, simulation, cost analysis ──
+    try:
+        from .routes import execution
+        app.include_router(execution.router, tags=["execution"])
+    except Exception as _ex_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Execution routes not loaded: {_ex_err}")
+
+    # ── Backtesting v2: strategies, walk-forward, Monte Carlo, multi-strategy ──
+    try:
+        from .routes import backtesting_v2_routes
+        app.include_router(backtesting_v2_routes.router, tags=["backtesting-v2"])
+    except Exception as _bt2_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Backtesting v2 routes not loaded: {_bt2_err}")
+
+    # ── Charting Calculations: Heikin Ashi, Renko, Kagi, VWAP, Pivots, Ichimoku ──
+    try:
+        from .routes import charting_calculations
+        app.include_router(charting_calculations.router, tags=["charting-calculations"])
+    except Exception as _cc_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Charting calculations routes not loaded: {_cc_err}")
+
+    # ── Correlation Analysis: matrix, rolling, PCA, beta, lead-lag, regime ──
+    try:
+        from .routes import correlation_analysis
+        app.include_router(correlation_analysis.router, tags=["correlation-analysis"])
+    except Exception as _ca_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Correlation analysis routes not loaded: {_ca_err}")
+
+    # ── Economic Calendar: surprise, impact, earnings, seasonal, events ──
+    try:
+        from .routes import economic_calendar_v2
+        app.include_router(economic_calendar_v2.router, tags=["economic-calendar-v2"])
+    except Exception as _ec_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Economic calendar v2 routes not loaded: {_ec_err}")
+
+    # ── Market Replay: sessions, aggregation, orderbook, trade sim ──
+    try:
+        from .routes import market_replay
+        app.include_router(market_replay.router, tags=["market-replay"])
+    except Exception as _mr_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Market replay routes not loaded: {_mr_err}")
+
+    # ── Pattern Recognition: candlestick, chart, S/R, trend lines ──
+    try:
+        from .routes import pattern_recognition
+        app.include_router(pattern_recognition.router, tags=["pattern-recognition"])
+    except Exception as _pr_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Pattern recognition routes not loaded: {_pr_err}")
+
+    # ── Multi-Asset Analysis: cross-asset, carry trade, yield curve, macro ──
+    try:
+        from .routes import multi_asset_analysis
+        app.include_router(multi_asset_analysis.router, tags=["multi-asset-analysis"])
+    except Exception as _maa_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Multi-asset analysis routes not loaded: {_maa_err}")
+
+    # ── Heat Map: sector treemaps, correlation, performance, volume, breadth ──
+    try:
+        from .routes import heat_map
+        app.include_router(heat_map.router, tags=["heat-map"])
+    except Exception as _hm_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Heat map routes not loaded: {_hm_err}")
+
+    # ── Volatility Surface: BS pricing, IV, hist vol, surface, Greeks, regime ──
+    try:
+        from .routes import volatility_surface
+        app.include_router(volatility_surface.router, tags=["volatility-surface"])
+    except Exception as _vs_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Volatility surface routes not loaded: {_vs_err}")
+
+    # ── Position Sizing: Kelly, percent risk, ATR, optimal-f, portfolio heat ──
+    try:
+        from .routes import position_sizing
+        app.include_router(position_sizing.router, tags=["position-sizing"])
+    except Exception as _ps_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Position sizing routes not loaded: {_ps_err}")
+
+    # ── Trade Journal: logging, performance, streaks, R-multiples, discipline ──
+    try:
+        from .routes import trade_journal
+        app.include_router(trade_journal.router, tags=["trade-journal"])
+    except Exception as _tj_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Trade journal routes not loaded: {_tj_err}")
+
+    # ── Market Breadth: A/D, McClellan, TRIN, Hindenburg, thrust, rotation ──
+    try:
+        from .routes import market_breadth
+        app.include_router(market_breadth.router, tags=["market-breadth"])
+    except Exception as _mb_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Market breadth routes not loaded: {_mb_err}")
+
+    # ── Statistical Arbitrage: pairs screening, cointegration, signals, backtest ──
+    try:
+        from .routes import statistical_arb
+        app.include_router(statistical_arb.router, tags=["statistical-arb"])
+    except Exception as _sa_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Statistical arb routes not loaded: {_sa_err}")
+
+    # ── Regime Detection: market/vol/trend/momentum regimes, breaks, strategy ──
+    try:
+        from .routes import regime_detection
+        app.include_router(regime_detection.router, tags=["regime-detection"])
+    except Exception as _rd_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"Regime detection routes not loaded: {_rd_err}")
+
     # ── Nuclear Compatibility endpoints (backtest aliases, indicators, etc.) ──
     from .routes.nuclear_compat import router as nuclear_compat_router
     app.include_router(nuclear_compat_router, tags=["nuclear-compat"])

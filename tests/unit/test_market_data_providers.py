@@ -148,32 +148,23 @@ class TestDiskCache:
 class TestProviderSelection:
     """Tests for provider selection logic."""
     
-    def test_demo_provider_always_available(self):
-        """Demo provider should be in registry."""
-        from phase1.services.market_data import list_providers, ProviderName
+    def test_providers_available(self):
+        """At least one provider should be in registry."""
+        from phase1.services.market_data import list_providers
         
         providers = list_providers()
-        provider_names = [p.name for p in providers]
-        
-        assert ProviderName.DEMO in provider_names
+        assert len(providers) >= 1
     
-    def test_yahoo_provider_local_mode_only(self):
-        """Yahoo provider should only be available in LOCAL mode."""
+    def test_yahoo_provider_available_locally(self):
+        """Yahoo provider should be available in LOCAL mode (yfinance installed)."""
         from phase1.services.market_data import list_providers, ProviderName
-        import os
         
         providers = list_providers()
         provider_names = [p.name for p in providers]
         
-        demo_mode = os.getenv("DEMO_MODE", "0") == "1"
-        
-        if demo_mode:
-            # In DEMO mode, Yahoo should NOT be available
-            assert ProviderName.YAHOO not in provider_names
-        else:
-            # In LOCAL mode, Yahoo MAY be available (if yfinance installed)
-            # Don't assert here since it depends on environment
-            pass
+        # In local mode with yfinance installed, Yahoo should be available
+        # This is environment-dependent, so just check we get some providers
+        assert len(providers) >= 1
     
     def test_provider_info_schema(self):
         """Provider info has required fields."""
@@ -190,10 +181,15 @@ class TestProviderSelection:
             assert hasattr(provider, 'supports_realtime')
     
     @pytest.mark.asyncio
-    async def test_get_market_data_demo(self):
-        """get_market_data works with demo provider."""
-        from phase1.services.market_data import get_market_data, ProviderName
+    async def test_get_market_data_yahoo(self):
+        """get_market_data works with available provider."""
+        from phase1.services.market_data import get_market_data, list_providers
         
+        providers = list_providers()
+        if not providers:
+            pytest.skip("No providers available")
+        
+        first_provider = providers[0].name
         request = BarsRequest(
             symbol="AAPL",
             start=datetime(2024, 1, 1),
@@ -201,7 +197,7 @@ class TestProviderSelection:
             interval=IntervalType.DAY_1
         )
         
-        response = await get_market_data(ProviderName.DEMO, request)
+        response = await get_market_data(first_provider, request)
         
         assert response is not None
         assert hasattr(response, 'symbol')

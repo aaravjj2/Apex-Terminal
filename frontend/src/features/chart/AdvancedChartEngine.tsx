@@ -23,6 +23,9 @@ import {
   CandlestickSeries, HistogramSeries, LineSeries, AreaSeries, BarSeries,
 } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, MouseEventParams, DeepPartial, ChartOptions } from 'lightweight-charts';
+import { IndicatorPicker, type ActiveIndicator } from './IndicatorPicker';
+import { INDICATORS, getIndicatorById, type IndicatorDef } from './IndicatorRegistry';
+import { DrawingToolbar, type DrawingToolType } from './DrawingToolbar';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,14 +33,8 @@ export type ChartType = 'candlestick' | 'heikin_ashi' | 'line' | 'area' | 'bar';
 export type Timeframe  = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1D' | '1W' | '1M';
 export type ThemeMode  = 'bloomberg' | 'dark' | 'light';
 
-export interface IndicatorConfig {
-  id:     string;
-  name:   string;
-  pane:   'main' | 'sub';  // overlay on price or separate sub-pane
-  params: Record<string, unknown>;
-  color?: string;
-  visible?: boolean;
-}
+// Legacy type — kept for backwards compat
+export type IndicatorConfig = ActiveIndicator;
 
 export interface AdvancedChartEngineProps {
   symbol:     string;
@@ -86,19 +83,7 @@ const CHART_TYPES: { label: string; value: ChartType; icon: string }[] = [
   { label: 'Bar',         value: 'bar',           icon: '⎸' },
 ];
 
-const PRESET_INDICATORS: IndicatorConfig[] = [
-  { id: 'sma_20',   name: 'SMA 20',   pane: 'main', params: { period: 20  }, color: '#f9a825' },
-  { id: 'sma_50',   name: 'SMA 50',   pane: 'main', params: { period: 50  }, color: '#42a5f5' },
-  { id: 'sma_200',  name: 'SMA 200',  pane: 'main', params: { period: 200 }, color: '#ef5350' },
-  { id: 'ema_20',   name: 'EMA 20',   pane: 'main', params: { period: 20  }, color: '#26a69a' },
-  { id: 'bb_20',    name: 'BB (20,2)', pane: 'main', params: { period: 20, std_dev: 2 }, color: '#7e57c2' },
-  { id: 'vwap',     name: 'VWAP',     pane: 'main', params: {},              color: '#ff7043' },
-  { id: 'rsi_14',   name: 'RSI (14)', pane: 'sub',  params: { period: 14  }, color: '#66bb6a' },
-  { id: 'macd',     name: 'MACD',     pane: 'sub',  params: { fast: 12, slow: 26, signal: 9 }, color: '#29b6f6' },
-  { id: 'volume',   name: 'Volume',   pane: 'sub',  params: {},              color: '#78909c' },
-  { id: 'stoch_14', name: 'Stoch (14,3,3)', pane: 'sub', params: { k_period: 14, d_period: 3, smooth: 3 }, color: '#ec407a' },
-  { id: 'atr_14',   name: 'ATR (14)', pane: 'sub',  params: { period: 14  }, color: '#ab47bc' },
-];
+// Indicator catalog now lives in IndicatorRegistry.ts — see INDICATORS import
 
 // ── Color Themes ──────────────────────────────────────────────────────────────
 
@@ -248,15 +233,16 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
     const [loading,    setLoading]    = useState(false);
     const [error,      setError]      = useState<string | null>(null);
     const [bars,       setBars]       = useState<OHLCVBar[]>([]);
-    const [activeIndicators, setActiveIndicators] = useState<IndicatorConfig[]>([
-      { ...PRESET_INDICATORS[0], visible: true },   // SMA 20
-      { ...PRESET_INDICATORS[6], visible: true },   // RSI
-      { ...PRESET_INDICATORS[8], visible: true },   // Volume
+    const [activeIndicators, setActiveIndicators] = useState<ActiveIndicator[]>([
+      { definitionId: 'sma', instanceId: 'sma_20', params: { period: 20 }, color: '#f9a825', visible: true },
+      { definitionId: 'rsi', instanceId: 'rsi_14', params: { period: 14 }, color: '#66bb6a', visible: true },
     ]);
     const [hoverBar,   setHoverBar]   = useState<OHLCVBar | null>(null);
-    const [indicatorMenuOpen, setIndicatorMenuOpen] = useState(false);
+    const [indicatorPickerOpen, setIndicatorPickerOpen] = useState(false);
     const [symbolInput, setSymbolInput] = useState(initialSymbol);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; price: number } | null>(null);
+    const [drawingTool, setDrawingTool] = useState<DrawingToolType>('cursor');
+    const [showDrawingToolbar, setShowDrawingToolbar] = useState(true);
 
     // ─── refs ─────────────────────────────────────────────────────
     const mainContainerRef  = useRef<HTMLDivElement>(null);
@@ -483,52 +469,166 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
         series.clear();
       });
 
-      for (const ind of activeIndicators) {
-        if (!ind.visible) continue;
+      const ohlcvPayload = rawBars.map(b => ({
+        date: new Date(b.time * 1000).toISOString().split('T')[0],
+        open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume,
+      }));
 
-        const indicatorKeyName = ind.id.replace(/_\d+$/, '').toUpperCase();
-        const paramName = indicatorKeyName.includes('SMA') ? 'SMA'
-          : indicatorKeyName.includes('EMA') ? 'EMA'
-          : indicatorKeyName.includes('BB')  ? 'BBANDS'
-          : indicatorKeyName.includes('RSI') ? 'RSI'
-          : indicatorKeyName.includes('MACD') ? 'MACD'
-          : indicatorKeyName.includes('VWAP') ? 'VWAP'
-          : indicatorKeyName.includes('VOLUME') ? null
-          : indicatorKeyName.includes('STOCH') ? 'STOCHASTIC'
-          : indicatorKeyName.includes('ATR')   ? 'ATR'
-          : ind.name.split(' ')[0].toUpperCase();
+      for (const ai of activeIndicators) {
+        if (!ai.visible) continue;
+        const def = getIndicatorById(ai.definitionId);
+        if (!def) continue;
 
-        if (paramName === null) continue;  // volume handled by main series
+        // Resolve indicator name for v4 compute endpoint
+        const paramName = def.api === 'v4' ? def.endpoint : null;
 
-        const data = await fetchIndicatorData(rawBars, ind.id, paramName, ind.params);
+        let data: unknown = null;
+
+        if (def.api === 'v4' && paramName) {
+          data = await fetchIndicatorData(rawBars, ai.instanceId, paramName, ai.params);
+        } else if (def.api === 'v5') {
+          // Call v5 endpoint directly
+          try {
+            const res = await fetch(def.endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ohlcv: ohlcvPayload, ...ai.params }),
+            });
+            if (res.ok) data = await res.json();
+          } catch { /* skip */ }
+        }
+
         if (!data) continue;
 
-        if (ind.pane === 'main') {
-          // Single-line indicator on main price chart
+        if (def.pane === 'main') {
+          // ── Overlay indicators on main chart ──────────────
           if (Array.isArray(data)) {
             const lineSeries = chart.addSeries(LineSeries, {
-              color:      ind.color ?? '#f9a825',
-              lineWidth:  1,
+              color: ai.color ?? def.color ?? '#f9a825',
+              lineWidth: 1,
               crosshairMarkerVisible: false,
             });
             lineSeries.setData(data
               .map((v: number, i: number) => ({ time: rawBars[i]?.time as number, value: v }))
               .filter((d: { time: number; value: number }) => d.time != null && !isNaN(d.value))
             );
-            indicatorSeriesRef.current.set(ind.id, lineSeries);
-          } else if (data.upper && data.middle && data.lower) {
-            // Bollinger Bands — 3 lines
-            [['upper', '#7e57c2aa'], ['middle', '#7e57c2'], ['lower', '#7e57c2aa']].forEach(([key, col]) => {
-              const s = chart.addSeries(LineSeries, { color: col, lineWidth: 1, crosshairMarkerVisible: false });
-              s.setData((data[key] as number[])
+            indicatorSeriesRef.current.set(ai.instanceId, lineSeries);
+          } else if (typeof data === 'object' && data !== null) {
+            const d = data as Record<string, unknown>;
+            // Multi-line overlays (BB, Ichimoku, Keltner, etc.)
+            const lineKeys = Object.keys(d).filter(k => Array.isArray(d[k]));
+            const lineColors: Record<string, string> = {
+              upper: ai.color + 'aa',
+              middle: ai.color ?? def.color,
+              lower: ai.color + 'aa',
+              tenkan: '#2962ff',
+              kijun: '#ef5350',
+              senkou_a: '#26a69a66',
+              senkou_b: '#ef535066',
+              chikou: '#7e57c2',
+              supertrend: ai.color ?? def.color,
+              sar: ai.color ?? def.color,
+            };
+
+            lineKeys.forEach(key => {
+              const arr = d[key] as number[];
+              const s = chart.addSeries(LineSeries, {
+                color: lineColors[key] ?? ai.color ?? def.color ?? '#888',
+                lineWidth: 1,
+                crosshairMarkerVisible: false,
+              });
+              s.setData(arr
                 .map((v: number, i: number) => ({ time: rawBars[i]?.time as number, value: v }))
-                .filter((d: { time: number; value: number }) => d.time != null && !isNaN(d.value))
+                .filter((pt: { time: number; value: number }) => pt.time != null && !isNaN(pt.value))
               );
-              indicatorSeriesRef.current.set(`${ind.id}_${key}`, s);
+              indicatorSeriesRef.current.set(`${ai.instanceId}_${key}`, s);
             });
+
+            // Handle support/resistance levels as horizontal price lines
+            if (d.support && Array.isArray(d.support)) {
+              (d.support as number[]).forEach(price => {
+                if (mainSeriesRef.current) {
+                  mainSeriesRef.current.createPriceLine({
+                    price, color: '#26a69a66', lineWidth: 1, lineStyle: LineStyle.Dashed,
+                    axisLabelVisible: true, title: 'S',
+                  });
+                }
+              });
+            }
+            if (d.resistance && Array.isArray(d.resistance)) {
+              (d.resistance as number[]).forEach(price => {
+                if (mainSeriesRef.current) {
+                  mainSeriesRef.current.createPriceLine({
+                    price, color: '#ef535066', lineWidth: 1, lineStyle: LineStyle.Dashed,
+                    axisLabelVisible: true, title: 'R',
+                  });
+                }
+              });
+            }
           }
         } else {
-          // Sub-pane indicator — handled through SubPane callbacks
+          // ── Sub-pane oscillator indicators ─────────────────
+          // Use dedicated price scale on main chart for sub-pane effect
+          const scaleId = `sub_${ai.instanceId}`;
+
+          if (Array.isArray(data)) {
+            const s = chart.addSeries(LineSeries, {
+              color: ai.color ?? def.color ?? '#66bb6a',
+              lineWidth: 1,
+              priceScaleId: scaleId,
+              crosshairMarkerVisible: false,
+              lastValueVisible: true,
+            });
+            chart.priceScale(scaleId).applyOptions({
+              scaleMargins: { top: 0.82, bottom: 0.03 },
+              autoScale: true,
+            });
+            s.setData(data
+              .map((v: number, i: number) => ({ time: rawBars[i]?.time as number, value: v }))
+              .filter((pt: { time: number; value: number }) => pt.time != null && !isNaN(pt.value))
+            );
+            indicatorSeriesRef.current.set(ai.instanceId, s);
+          } else if (typeof data === 'object' && data !== null) {
+            const d = data as Record<string, unknown>;
+            const lineKeys = Object.keys(d).filter(k => Array.isArray(d[k]));
+            const colorVariants = [ai.color ?? def.color, '#4dd0e1', '#ff8a65', '#ba68c8'];
+
+            lineKeys.forEach((key, idx) => {
+              const arr = d[key] as number[];
+              if (key === 'histogram') {
+                const hs = chart.addSeries(HistogramSeries, {
+                  priceScaleId: scaleId,
+                  priceFormat: { type: 'price' },
+                });
+                chart.priceScale(scaleId).applyOptions({
+                  scaleMargins: { top: 0.82, bottom: 0.03 },
+                  autoScale: true,
+                });
+                hs.setData(arr.map((v: number, i: number) => ({
+                  time: rawBars[i]?.time as number,
+                  value: v,
+                  color: v >= 0 ? '#26a69a88' : '#ef535088',
+                })).filter(pt => pt.time != null && !isNaN(pt.value)));
+                indicatorSeriesRef.current.set(`${ai.instanceId}_${key}`, hs as unknown as ISeriesApi<'Line'>);
+              } else {
+                const s = chart.addSeries(LineSeries, {
+                  color: colorVariants[idx % colorVariants.length] ?? '#888',
+                  lineWidth: key === 'signal' || key === 'd' ? 1 : 2,
+                  priceScaleId: scaleId,
+                  crosshairMarkerVisible: false,
+                });
+                chart.priceScale(scaleId).applyOptions({
+                  scaleMargins: { top: 0.82, bottom: 0.03 },
+                  autoScale: true,
+                });
+                s.setData(arr
+                  .map((v: number, i: number) => ({ time: rawBars[i]?.time as number, value: v }))
+                  .filter((pt: { time: number; value: number }) => pt.time != null && !isNaN(pt.value))
+                );
+                indicatorSeriesRef.current.set(`${ai.instanceId}_${key}`, s);
+              }
+            });
+          }
         }
       }
     }, [activeIndicators, fetchIndicatorData]);
@@ -598,6 +698,34 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
     const borderColor = currentTheme === 'bloomberg' ? '#1e1e1e'
       : currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb';
     const subtleColor = currentTheme === 'bloomberg' ? '#444' : '#555';
+
+    // ─── Indicator Picker handlers ─────────────────────────────
+    const handleToggleIndicator = useCallback((def: IndicatorDef) => {
+      setActiveIndicators(prev => {
+        const existing = prev.find(a => a.definitionId === def.id);
+        if (existing) {
+          return prev.map(a => a.definitionId === def.id ? { ...a, visible: !a.visible } : a);
+        }
+        const instanceId = `${def.id}_${Date.now()}`;
+        const defaultParams: Record<string, unknown> = {};
+        if (def.params) {
+          def.params.forEach(p => { defaultParams[p.name] = p.default; });
+        }
+        return [...prev, { definitionId: def.id, instanceId, params: defaultParams, color: def.color, visible: true }];
+      });
+    }, []);
+
+    const handleRemoveIndicator = useCallback((instanceId: string) => {
+      setActiveIndicators(prev => prev.filter(a => a.instanceId !== instanceId));
+    }, []);
+
+    const handleParamChange = useCallback((instanceId: string, paramName: string, value: unknown) => {
+      setActiveIndicators(prev =>
+        prev.map(a => a.instanceId === instanceId ? { ...a, params: { ...a.params, [paramName]: value } } : a)
+      );
+    }, []);
+
+    const activeIndicatorCount = activeIndicators.filter(a => a.visible).length;
 
     return (
       <div
@@ -677,13 +805,32 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
 
           {/* Indicators button */}
           <button
-            onClick={() => setIndicatorMenuOpen(v => !v)}
+            onClick={() => setIndicatorPickerOpen(v => !v)}
             style={{
               padding: '3px 8px', fontSize: 11, borderRadius: 3, cursor: 'pointer', border: 'none',
-              background: indicatorMenuOpen ? (currentTheme === 'bloomberg' ? '#2a1800' : '#1e222d') : 'transparent',
-              color: textColor, fontFamily: 'inherit',
+              background: indicatorPickerOpen ? (currentTheme === 'bloomberg' ? '#2a1800' : '#1e222d') : 'transparent',
+              color: textColor, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
             }}
-          >Indicators ▾</button>
+          >
+            Indicators
+            {activeIndicatorCount > 0 && (
+              <span style={{ background: currentTheme === 'bloomberg' ? '#f5a623' : '#2962ff', color: '#000', fontSize: 9, borderRadius: 8, padding: '0 5px', fontWeight: 700 }}>
+                {activeIndicatorCount}
+              </span>
+            )}
+            ▾
+          </button>
+
+          {/* Drawing tools toggle */}
+          <button
+            onClick={() => setShowDrawingToolbar(v => !v)}
+            title="Drawing tools"
+            style={{
+              padding: '3px 6px', fontSize: 11, borderRadius: 3, cursor: 'pointer', border: 'none',
+              background: showDrawingToolbar ? (currentTheme === 'bloomberg' ? '#2a1800' : '#1e222d') : 'transparent',
+              color: showDrawingToolbar ? textColor : subtleColor, fontFamily: 'inherit',
+            }}
+          >✎</button>
 
           {/* Theme toggle */}
           <button
@@ -703,49 +850,16 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
           >⤢</button>
         </div>
 
-        {/* ── INDICATOR DROPDOWN ─────────────────────────────────── */}
-        {indicatorMenuOpen && (
-          <div style={{
-            position: 'absolute', top: 44, right: 8, zIndex: 100,
-            background: currentTheme === 'bloomberg' ? '#1a0a00' : '#1e222d',
-            border: `1px solid ${borderColor}`, borderRadius: 6,
-            padding: '8px 0', minWidth: 220, boxShadow: '0 8px 24px #0009',
-          }}>
-            <div style={{ padding: '2px 12px 6px', fontSize: 10, color: subtleColor, fontWeight: 700, letterSpacing: 1 }}>
-              INDICATORS
-            </div>
-            {PRESET_INDICATORS.map(ind => {
-              const isActive = activeIndicators.some(a => a.id === ind.id && a.visible);
-              return (
-                <div
-                  key={ind.id}
-                  onClick={() => {
-                    setActiveIndicators(prev => {
-                      const exists = prev.find(a => a.id === ind.id);
-                      if (exists) {
-                        return prev.map(a => a.id === ind.id ? { ...a, visible: !a.visible } : a);
-                      }
-                      return [...prev, { ...ind, visible: true }];
-                    });
-                  }}
-                  style={{
-                    padding: '6px 12px', cursor: 'pointer', fontSize: 12,
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    color: isActive ? textColor : subtleColor,
-                    background: isActive ? (currentTheme === 'bloomberg' ? '#2a1a0022' : '#ffffff11') : 'transparent',
-                  }}
-                >
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: ind.color ?? '#888', flexShrink: 0 }} />
-                  <span style={{ flex: 1 }}>{ind.name}</span>
-                  <span style={{ fontSize: 10, color: ind.pane === 'main' ? '#888' : '#666' }}>
-                    {ind.pane === 'main' ? 'overlay' : 'pane'}
-                  </span>
-                  {isActive && <span style={{ fontSize: 10, color: '#26a69a' }}>✓</span>}
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* ── INDICATOR PICKER (full-featured modal) ─────────────── */}
+        <IndicatorPicker
+          isOpen={indicatorPickerOpen}
+          onClose={() => setIndicatorPickerOpen(false)}
+          activeIndicators={activeIndicators}
+          onToggle={handleToggleIndicator}
+          onRemove={handleRemoveIndicator}
+          onParamChange={handleParamChange}
+          theme={currentTheme}
+        />
 
         {/* ── ERROR / LOADING ────────────────────────────────────── */}
         {loading && (
@@ -759,8 +873,20 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
           </div>
         )}
 
-        {/* ── MAIN CHART PANE ────────────────────────────────────── */}
-        <div ref={mainContainerRef} style={{ width: '100%', flex: 1, minHeight: height }} />
+        {/* ── CHART AREA WITH OPTIONAL DRAWING TOOLBAR ──────────── */}
+        <div style={{ display: 'flex', flex: 1, minHeight: height }}>
+          {/* Drawing toolbar (left sidebar) */}
+          {showDrawingToolbar && (
+            <DrawingToolbar
+              selectedTool={drawingTool}
+              onSelectTool={setDrawingTool}
+              theme={currentTheme}
+            />
+          )}
+
+          {/* Main chart pane */}
+          <div ref={mainContainerRef} style={{ flex: 1, minHeight: height }} />
+        </div>
 
         {/* ── CONTEXT MENU ───────────────────────────────────────── */}
         {contextMenu && (
@@ -793,14 +919,27 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
         )}
 
         {/* ── STATUS BAR ─────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 12, padding: '2px 10px', borderTop: `1px solid ${borderColor}`, fontSize: 10, color: subtleColor }}>
-          <span>{symbol} · {timeframe}</span>
+        <div style={{ display: 'flex', gap: 12, padding: '2px 10px', borderTop: `1px solid ${borderColor}`, fontSize: 10, color: subtleColor, overflow: 'hidden' }}>
+          <span style={{ fontWeight: 600 }}>{symbol} · {timeframe}</span>
           <span>{bars.length} bars</span>
           {bars.length > 0 && <span>
             {new Date(bars[0].time * 1000).toLocaleDateString()} – {new Date(bars[bars.length - 1].time * 1000).toLocaleDateString()}
           </span>}
+          {/* Active indicators chips */}
+          {activeIndicators.filter(a => a.visible).map(a => {
+            const def = getIndicatorById(a.definitionId);
+            return def ? (
+              <span key={a.instanceId} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: a.color ?? def.color ?? '#888' }} />
+                {def.shortName}
+              </span>
+            ) : null;
+          })}
           <span style={{ flex: 1 }} />
-          <span>SPACE: fit  ·  Right-click: menu</span>
+          {drawingTool !== 'cursor' && (
+            <span style={{ color: currentTheme === 'bloomberg' ? '#f5a623' : '#2962ff' }}>✎ {drawingTool}</span>
+          )}
+          <span>SPACE: fit  ·  ✎: draw  ·  Right-click: menu</span>
         </div>
       </div>
     );

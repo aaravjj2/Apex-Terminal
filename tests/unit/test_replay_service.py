@@ -131,7 +131,7 @@ def test_clear_replays():
 
 def test_replay_blocks_provider_fetch(mocker):
     """When replay exists, provider CSV file should NOT be accessed."""
-    from phase1.services.market_data.providers import DemoProvider
+    from phase1.services.market_data.providers.demo_provider import DemoProvider
     from phase1.services.market_data.providers.types import BarsRequest
     from datetime import datetime
     import asyncio

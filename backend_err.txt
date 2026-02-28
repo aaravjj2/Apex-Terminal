@@ -14,3 +14,4 @@ C:\Tradingview\Tradingview recreation\.venv\Lib\site-packages\yfinance\scrapers\
   dt_now = pd.Timestamp.utcnow()
 C:\Tradingview\Tradingview recreation\.venv\Lib\site-packages\yfinance\scrapers\history.py:173: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
   dt_now = pd.Timestamp.utcnow()
+FLATTEN TRIGGERED: Current time 14:15:06.812699 >= cutoff 14:15:00

@@ -1,6 +1,6 @@
 # Apex Terminal
 
-> **Elasticsearch Vector Search Hackathon Entry** — Apex Terminal uses Elasticsearch as its **primary data store** with **dense_vector fields** (64-dim cosine) across 9 indices, **kNN similarity search**, **hybrid BM25+kNN with Reciprocal Rank Fusion (RRF)**, and **ELSER semantic search** (text_expansion with learned sparse encoding). 24 indices store 400+ documents covering backtests, strategies, autopilot cycles, events, tickets, and controls. **Novel application**: vector search for financial strategy pattern recognition — traders find similar backtests and strategies by their 64-dimensional performance fingerprint, not just text. Complete search stack: BM25, kNN, Hybrid RRF, and ELSER. 1600+ automated tests pass.
+> **Elasticsearch Vector Search Hackathon Entry** — Apex Terminal uses Elasticsearch as its **primary data store** with **dense_vector fields** (64-dim cosine) across 9 indices, **kNN similarity search**, **hybrid BM25+kNN with Reciprocal Rank Fusion (RRF)**, and **ELSER semantic search** (text_expansion with learned sparse encoding). 24 indices store 400+ documents covering backtests, strategies, autopilot cycles, events, tickets, and controls. **Novel application**: vector search for financial strategy pattern recognition — traders find similar backtests and strategies by their 64-dimensional performance fingerprint, not just text. Complete search stack: BM25, kNN, Hybrid RRF, and ELSER. 2143+ automated tests pass.
 
 <div align="center">
 
@@ -127,13 +127,15 @@ Built for quantitative researchers and algorithmic traders, it provides:
 ### 📊 Advanced Charting Engine
 
 - **TradingView-style Interface** - Professional candlestick charts with multi-pane support
-- **35 Technical Indicators** across 5 categories:
-  - **Trend**: SMA, EMA, VWAP, Ichimoku Cloud, Supertrend, Parabolic SAR, ADX, Aroon
-  - **Momentum**: RSI, MACD, Stochastic, Stochastic RSI, CCI, ROC, Williams %R, TRIX, Momentum
-  - **Volatility**: Bollinger Bands, ATR, Keltner Channels, Donchian Channels, BB Width, Historical Volatility
-  - **Volume**: OBV, MFI, CMF, ADL, VWMA, Volume Profile, Volume Bars
-  - **Profile**: VRVP, Anchored VWAP, VWAP Bands, POC, VAH/VAL
-- **30+ Drawing Tools** - Lines, Fibonacci tools, pitchforks, shapes, annotations, and pattern recognition
+- **60+ Technical Indicators** across 6 categories:
+  - **Trend**: SMA, EMA, WMA, DEMA, TEMA, VWAP, Ichimoku Cloud, Supertrend, Parabolic SAR, ADX, Aroon
+  - **Momentum**: RSI, MACD, Stochastic, Stochastic RSI, CCI, ROC, Williams %R, TRIX, Momentum, CMO
+  - **Volatility**: Bollinger Bands, ATR, Keltner Channels, Donchian Channels, BB Width, Historical Vol (4 methods), Vol Surface
+  - **Volume**: OBV, MFI, CMF, ADL, VWMA, Volume Profile, Volume Bars, Force Index
+  - **Profile**: VRVP, Anchored VWAP, VWAP Bands, POC, VAH/VAL, Market Profile/TPO
+  - **Charting**: Heikin Ashi, Renko, Kagi, Point & Figure, Line Break, Range Bars, Pivot Points (5 types)
+- **35+ Drawing Tools** - Lines, Fibonacci suite (retracement/extension/fan/arcs/time zones), Andrews'/Schiff Pitchfork, Gann fan/box/square, pattern overlays
+- **Auto Pattern Recognition** - 35 candlestick patterns, double top/bottom, H&S, triangles, auto S/R, trend lines, ABCD harmonics
 - **Real-time Updates** - Live bar formation and confirmation via WebSocket
 - **Multi-timeframe Support** - 1m, 5m, 15m, 1H, 4H, 1D, 1W views
 
@@ -207,7 +209,7 @@ Built for quantitative researchers and algorithmic traders, it provides:
 - **Elasticsearch** - Primary data store with dense_vector fields (kNN, hybrid BM25+kNN, RRF)
 - **WebSockets** - Real-time bidirectional communication
 - **Pandas/NumPy** - Data processing
-- **Pytest** - Comprehensive testing (1600+ tests)
+- **Pytest** - Comprehensive testing (2143+ tests)
 
 ### System Architecture
 
@@ -225,8 +227,10 @@ Built for quantitative researchers and algorithmic traders, it provides:
 │  Port: 8000                                                 │
 │  • Data Ingestion Service                                   │
 │  • Bar Engine (OHLCV aggregation)                           │
-│  • Strategy Engine                                          │
-│  • Portfolio Manager                                        │
+│  • Strategy + Backtesting Engine (8 strategies, Monte Carlo)│
+│  • Portfolio Manager + Risk Engine (VaR, CVaR, stress test) │
+│  • 27 Computation Engines (TA, Options, Patterns, Sizing…)  │
+│  • 350+ API Endpoints (REST + WebSocket)                    │
 │  • Elasticsearch (primary data store, 24 indices)           │
 │  • dense_vector kNN + hybrid BM25+kNN search                │
 └─────────────────────────────────────────────────────────────┘
@@ -257,6 +261,28 @@ Built for quantitative researchers and algorithmic traders, it provides:
 | **phase1/services/ingestion** | Real-time market data ingestion | `FinnhubClient`, `AlpacaClient`, `StreamManager` |
 | **phase1/services/bar_engine** | Aggregates ticks into OHLCV bars | `BarAggregator`, `TimeframeManager`, `ohlcv_buffer` |
 | **phase1/services/strategy** | System for running trading algorithms | `StrategyEngine`, `VectorBT` integration, `SignalGenerator` |
+| **phase1/services/ta_engine** | Technical Analysis (5 modules) | `ta_engine.py` (1349 LOC), `ta_engine_advanced.py`, `ta_engine_volume_profile.py`, `ta_engine_fibonacci.py`, `ta_engine_order_flow.py` |
+| **phase1/services/chart_annotations_engine** | Annotations & Drawing Tools | 35+ drawing tools, Fibonacci suite, Gann, Andrews' Pitchfork, undo/redo |
+| **phase1/services/market_data_engine** | Market Data Processing | Multi-provider, OHLCV, timeframe conversion, market hours |
+| **phase1/services/portfolio_analytics_engine** | Portfolio Analytics | Returns analysis, risk metrics, attribution, drawdown decomposition |
+| **phase1/services/risk_management_engine** | Risk Management | VaR (3 methods), CVaR, stress testing, margin, Greeks, scenario analysis |
+| **phase1/services/options_pricing_engine** | Options Pricing | Black-Scholes, binomial, Monte Carlo, Greeks, IV surface, strategies |
+| **phase1/services/scanner_engine** | Market Scanner | 20+ scan types, technical/fundamental/custom filters, composite scoring |
+| **phase1/services/alert_engine** | Price & Indicator Alerts | Multi-condition alerts, cooldowns, severity levels, notification routing |
+| **phase1/services/watchlist_engine** | Watchlist Management | Portfolios, real-time sync, sorting, filtering, performance tracking |
+| **phase1/services/news_sentiment_engine** | News & Sentiment Analysis | NLP scoring, keyword extraction, sentiment aggregation, impact assessment |
+| **phase1/services/order_management_engine** | Order Management System | Order lifecycle, OCO/bracket, GTC/GTD, partial fills, amendments |
+| **phase1/services/execution_engine** | Trade Execution | Smart routing, TWAP/VWAP algos, slippage model, fill simulation |
+| **phase1/services/backtesting_engine** | Strategy Backtesting | 8 strategies, walk-forward, Monte Carlo, multi-strategy, benchmark comparison |
+| **phase1/services/charting_calculations_engine** | Advanced Charting | Heikin Ashi, Renko, Kagi, P&F, Line Break, Range Bars, VWAP, Market/Volume Profile |
+| **phase1/services/correlation_analysis_engine** | Correlation Analysis | Correlation matrix, PCA, beta, lead-lag, regime detection, portfolio optimization |
+| **phase1/services/economic_calendar_engine** | Economic Calendar | Surprise calculator, event impact, earnings analysis, seasonal patterns |
+| **phase1/services/market_replay_engine** | Market Replay | Tick replay, bar aggregation, order book sim, multi-timeframe, trade simulation |
+| **phase1/services/pattern_recognition_engine** | Auto Pattern Recognition | 35 candlestick patterns, chart patterns, S/R detection, harmonics (ABCD) |
+| **phase1/services/multi_asset_analysis_engine** | Multi-Asset Analytics | Cross-asset correlation, carry trades, yield curves, macro factors, allocation |
+| **phase1/services/heat_map_engine** | Heat Map Visualization | Sector, correlation, performance, volume, breadth, calendar heat maps |
+| **phase1/services/volatility_surface_engine** | Volatility Surface | Black-Scholes, IV solver, historical vol (4 methods), Greeks surface, vol regime |
+| **phase1/services/position_sizing_engine** | Position Sizing | Kelly, optimal-f, percent-risk, volatility, anti-martingale, portfolio heat, scaling |
 | **n8n** | Workflow automation for Ops & Alerts | `workflows/alert_pipeline.json`, `docker-compose.yml` |
 | **browser_extension** | Browser automation helpers | `manifest.json`, `content_scripts/scraper.js` |
 | **cboe_pipeline** | Specialized Options Data Pipeline | `src/pipeline.py`, `analysis/volatility.py` |
@@ -469,14 +495,16 @@ npx playwright test tests/e2e/evidence-capture.spec.ts --reporter=list
 
 ## 📊 Project Statistics
 
-- **50,000+ lines of code**
-- **35 Technical Indicators**
-- **30+ Drawing Tools**
-- **14 Dashboard Tiles**
-- **5 Data Providers**
-- **3 Built-in Strategies**
-- **654 Automated Tests** (22 pytest + 112 Vitest + 520 Playwright E2E)
-- **8 Major Service Modules**
+- **597,000+ lines of code** (350K Python + 247K Frontend)
+- **60+ Technical Indicators** across 6 categories (trend, momentum, volatility, volume, profile, charting)
+- **35+ Drawing Tools** (Fibonacci suite, Gann, Andrews' Pitchfork, pattern overlays)
+- **35 Auto-Detected Candlestick Patterns** + chart patterns, S/R, ABCD harmonics
+- **14 Dashboard Tiles** (Bloomberg-style configurable workspace)
+- **5 Data Providers** (Finnhub, Alpaca, Yahoo Finance, Mock CSV, Custom)
+- **8 Built-in Strategies** (SMA crossover, RSI, MACD, Bollinger, VWAP, Momentum, MeanRev, Breakout)
+- **2143+ Automated Tests** (pytest unit + Vitest + Playwright E2E) — 0 failures
+- **27 Backend Engine Modules** (TA, charting, portfolio, risk, options, backtesting, pattern recognition, etc.)
+- **350+ API Endpoints** across v1-v4 routes
 - **15 Navigable Views** (Dashboard, Chart, Options, Backtests, Autopilot, ...)
 
 ---
@@ -727,10 +755,11 @@ Tradingview recreation/
 
 ### Key Technologies
 
-- **Frontend**: React, TypeScript, Vite, Lightweight Charts, Tailwind CSS
-- **Backend**: FastAPI, SQLAlchemy, WebSockets, Pandas, NumPy
-- **Data**: Finnhub, Alpaca, Yahoo Finance
-- **Testing**: Pytest, Playwright, Vitest
+- **Frontend**: React 19.2, TypeScript 5.9, Vite, Lightweight Charts, Tailwind CSS, Zustand, Chart.js, Recharts
+- **Backend**: FastAPI, SQLAlchemy 2.0, WebSockets, Pandas, NumPy, SciPy, Pydantic
+- **Data**: Finnhub (WebSocket + REST), Alpaca, Yahoo Finance, Elasticsearch (kNN, BM25, RRF)
+- **Computation**: 27 pure-computation engines (TA, backtesting, options, risk, pattern recognition, position sizing, etc.)
+- **Testing**: Pytest (2143+ tests), Playwright (E2E), Vitest (unit)
 
 ---
 

@@ -1,0 +1,72 @@
+🔧 Batch fixing selector policy violations...
+
+✅ Fixed comprehensive_tour.spec.ts:
+  ✓ Options Chain tab (first): 1 replacement(s)
+
+✅ Fixed forecast.spec.ts:
+  ✓ Sees tab: 1 replacement(s)
+
+✅ Fixed helpers.ts:
+  ✓ waitForText helper removal: 1 replacement(s)
+
+✅ Fixed industrial-uiux-analytics-reporting.spec.ts:
+  ✓ Metric card CSS class: 1 replacement(s)
+
+✅ Fixed interactions.spec.ts:
+  ✓ Chart container CSS class: 1 replacement(s)
+
+✅ Fixed packaging-v1-9.spec.ts:
+  ✓ Load Demo button: 1 replacement(s)
+
+✅ Fixed premium-charts-v1-9.spec.ts:
+  ✓ Load Demo button: 1 replacement(s)
+  ✓ Recharts CSS class: 3 replacement(s)
+
+✅ Fixed snapshots.spec.ts:
+  ✓ Chart container CSS class (extended): 1 replacement(s)
+
+✅ Fixed stability-coverage-v1-3.spec.ts:
+  ✓ Load Demo button: 4 replacement(s)
+
+✅ Fixed strategy-lab-backtest-v2.spec.ts:
+  ✓ Strategy Lab tab (first): 1 replacement(s)
+  ✓ Strategy Lab tab: 1 replacement(s)
+  ✓ Backtest nav (first): 1 replacement(s)
+  ✓ Backtest nav: 1 replacement(s)
+  ✓ Risk Desk tab (first): 1 replacement(s)
+  ✓ Risk Desk tab: 1 replacement(s)
+  ✓ Analytics tab (first): 1 replacement(s)
+
+✅ Fixed tts.spec.ts:
+  ✓ VOICE OFF: 2 replacement(s)
+  ✓ VOICE ON: 1 replacement(s)
+
+✅ Fixed ui-e2e-reconcile-v1-2.spec.ts:
+  ✓ Load Demo button: 5 replacement(s)
+  ✓ Options Chain tab: 2 replacement(s)
+
+✅ Fixed unified-runs-v1-5.spec.ts:
+  ✓ Load Demo button: 2 replacement(s)
+
+✅ Fixed v1-terminal.spec.ts:
+  ✓ P&L color CSS classes: 1 replacement(s)
+
+✅ Fixed visual-regression-v1-11.spec.ts:
+  ✓ Load Demo button: 3 replacement(s)
+
+✅ Fixed visual-regression-v1-4.spec.ts:
+  ✓ Load Demo button: 2 replacement(s)
+
+✅ Fixed visual-regression-v1-6.spec.ts:
+  ✓ Load Demo button: 4 replacement(s)
+
+✅ Fixed visual-regression-v1-8.spec.ts:
+  ✓ Load Demo button: 1 replacement(s)
+
+✅ Fixed websocket-status.spec.ts:
+  ✓ Alerts tab click: 1 replacement(s)
+  ✓ WS status badge CSS class: 1 replacement(s)
+
+
+🎉 Fixed 19 files with 29 total changes
+✨ Run selector-policy-gate.js to verify

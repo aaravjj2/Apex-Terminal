@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradingView Recreation - Market Workstation Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Dark mode as default */
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-color: #334155;
+            --code-bg: #1e293b;
+            --code-border: #475569;
+            --pre-bg: #0a0e27;
+            --pre-text: #e2e8f0;
+            --link-color: #818cf8;
+            --link-hover: #6366f1;
+            --accent-primary: #818cf8;
+        }
+        
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-primary: #ffffff;
+                --bg-secondary: #f8fafc;
+                --bg-tertiary: #f1f5f9;
+                --text-primary: #0a0e27;
+                --text-secondary: #4a5568;
+                --text-tertiary: #718096;
+                --border-color: #e2e8f0;
+                --code-bg: #f8fafc;
+                --code-border: #e2e8f0;
+                --pre-bg: #1a202c;
+                --pre-text: #e2e8f0;
+                --link-color: #6366f1;
+                --link-hover: #4f46e5;
+                --accent-primary: #6366f1;
+            }
+        }
+        
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.75;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            font-size: 17px;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: -0.01em;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+        /* Headings */
+        h1 {
+            font-family: 'Space Grotesk', 'Poppins', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 0 0 24px 0;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        h2 {
+            font-family: 'Space Grotesk', 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.25;
+            margin: 56px 0 28px 0;
+            color: var(--text-primary);
+            padding-bottom: 16px;
+            border-bottom: 3px solid var(--accent-primary);
+            letter-spacing: -0.02em;
+        }
+        
+        h3 {
+            font-family: 'Space Grotesk', 'Poppins', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 600;
+            line-height: 1.35;
+            margin: 40px 0 20px 0;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+        
+        h4 {
+            font-family: 'Space Grotesk', 'Poppins', sans-serif;
+            font-size: 1.375rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 32px 0 16px 0;
+            color: var(--accent-primary);
+            letter-spacing: -0.005em;
+        }
+        
+        h5, h6 {
+            font-family: 'Space Grotesk', 'Poppins', sans-serif;
+            font-weight: 600;
+            margin: 24px 0 12px 0;
+            color: var(--text-primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 20px 0;
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            font-weight: 400;
+            line-height: 1.8;
+        }
+        
+        /* Links */
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        
+        a:hover {
+            color: var(--link-hover);
+            text-decoration: underline;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 20px 0;
+            padding-left: 28px;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 12px 0;
+            line-height: 1.75;
+            font-size: 1.0625rem;
+        }
+        
+        ul ul, ol ol, ul ol, ol ul {
+            margin: 8px 0;
+        }
+        
+        /* Code */
+        code {
+            font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 0.95em;
+            background: linear-gradient(135deg, var(--code-bg) 0%, var(--bg-secondary) 100%);
+            border: 1.5px solid var(--code-border);
+            border-radius: 6px;
+            padding: 3px 8px;
+            color: var(--accent-secondary);
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+        
+        pre {
+            font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+            background: linear-gradient(135deg, var(--pre-bg) 0%, #1a202c 100%);
+            color: var(--pre-text);
+            border-radius: 12px;
+            padding: 24px;
+            overflow-x: auto;
+            margin: 28px 0;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        pre code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: inherit;
+            font-weight: 400;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            font-weight: 600;
+            padding: 16px 20px;
+            text-align: left;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-primary);
+            font-family: 'Space Grotesk', 'Poppins', sans-serif;
+            font-size: 1rem;
+        }
+        
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 5px solid var(--accent-primary);
+            padding: 20px 24px;
+            margin: 28px 0;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-radius: 0 12px 12px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 1.125rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        blockquote p {
+            margin: 0;
+        }
+        
+        /* Horizontal rules */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border-color);
+            margin: 48px 0;
+        }
+        
+        /* Center alignment for headers */
+        div[align="center"] {
+            text-align: center;
+            margin: 32px 0;
+        }
+        
+        /* Images */
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        
+        /* Badges (shields.io style) */
+        img[src*="shields.io"],
+        img[src*="badge"],
+        img[alt="Python"],
+        img[alt="TypeScript"],
+        img[alt="React"],
+        img[alt="FastAPI"] {
+            display: inline-block !important;
+            margin: 4px 6px !important;
+            vertical-align: middle !important;
+            height: auto !important;
+            max-height: 28px !important;
+            width: auto !important;
+            border: none !important;
+            border-radius: 4px;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        /* Links containing badges */
+        a[href*="python.org"],
+        a[href*="typescriptlang.org"],
+        a[href*="react.dev"],
+        a[href*="fastapi.tiangolo.com"] {
+            display: inline-block !important;
+            margin: 0 4px !important;
+            text-decoration: none !important;
+            border: none !important;
+        }
+        
+        a[href*="python.org"]:hover,
+        a[href*="typescriptlang.org"]:hover,
+        a[href*="react.dev"]:hover,
+        a[href*="fastapi.tiangolo.com"]:hover {
+            text-decoration: none !important;
+            opacity: 0.9;
+        }
+        
+        /* Center-aligned content with badges */
+        div[align="center"] {
+            line-height: 2;
+        }
+        
+        div[align="center"] p {
+            margin: 12px 0;
+        }
+        
+        /* Feature lists with icons */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin: 32px 0;
+        }
+        
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card h4 {
+            margin-top: 0;
+            color: var(--accent-primary);
+        }
+        
+        /* Code blocks in lists */
+        li code {
+            font-size: 0.85em;
+        }
+        
+        /* Syntax highlighting adjustments */
+        .hljs {
+            background: var(--pre-bg) !important;
+            color: var(--pre-text) !important;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px 16px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            h2 {
+                font-size: 1.75rem;
+            }
+            
+            table {
+                font-size: 0.9rem;
+            }
+            
+            th, td {
+                padding: 8px 12px;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="tradingview-recreation">TradingView Recreation</h1>
+<div align="center">
+
+**A Production-Grade Market Workstation Platform**
+
+*Combining TradingView-style charting with Bloomberg-terminal analytics*
+
+**Built with the tools and technologies:**
+
+<img src="https://img.shields.io/badge/JSON-000000.svg?style=flat-square&logo=JSON&logoColor=white" alt="JSON">
+<img src="https://img.shields.io/badge/npm-CB3837.svg?style=flat-square&logo=npm&logoColor=white" alt="npm">
+<img src="https://img.shields.io/badge/Autoprefixer-DD3735.svg?style=flat-square&logo=Autoprefixer&logoColor=white" alt="Autoprefixer">
+<img src="https://img.shields.io/badge/SQLAlchemy-D71F00.svg?style=flat-square&logo=SQLAlchemy&logoColor=white" alt="SQLAlchemy">
+<img src="https://img.shields.io/badge/PostCSS-DD3A0A.svg?style=flat-square&logo=PostCSS&logoColor=white" alt="PostCSS">
+<img src="https://img.shields.io/badge/TOML-9C4121.svg?style=flat-square&logo=TOML&logoColor=white" alt="TOML">
+<img src="https://img.shields.io/badge/Polars-CD792C.svg?style=flat-square&logo=Polars&logoColor=white" alt="Polars">
+<img src="https://img.shields.io/badge/tqdm-FFC107.svg?style=flat-square&logo=tqdm&logoColor=black" alt="tqdm">
+<img src="https://img.shields.io/badge/JavaScript-F7DF1E.svg?style=flat-square&logo=JavaScript&logoColor=black" alt="JavaScript">
+<img src="https://img.shields.io/badge/DuckDB-FFF000.svg?style=flat-square&logo=DuckDB&logoColor=black" alt="DuckDB">
+<img src="https://img.shields.io/badge/Ruff-D7FF64.svg?style=flat-square&logo=Ruff&logoColor=black" alt="Ruff">
+<img src="https://img.shields.io/badge/Vitest-6E9F18.svg?style=flat-square&logo=Vitest&logoColor=white" alt="Vitest">
+<img src="https://img.shields.io/badge/GNU%20Bash-4EAA25.svg?style=flat-square&logo=GNU-Bash&logoColor=white" alt="GNU%20Bash">
+<img src="https://img.shields.io/badge/Immer-00E7C3.svg?style=flat-square&logo=Immer&logoColor=white" alt="Immer">
+<img src="https://img.shields.io/badge/FastAPI-009688.svg?style=flat-square&logo=FastAPI&logoColor=white" alt="FastAPI">
+<img src="https://img.shields.io/badge/React-61DAFB.svg?style=flat-square&logo=React&logoColor=black" alt="React">
+<br>
+<img src="https://img.shields.io/badge/NumPy-013243.svg?style=flat-square&logo=NumPy&logoColor=white" alt="NumPy">
+<img src="https://img.shields.io/badge/Pytest-0A9EDC.svg?style=flat-square&logo=Pytest&logoColor=white" alt="Pytest">
+<img src="https://img.shields.io/badge/Docker-2496ED.svg?style=flat-square&logo=Docker&logoColor=white" alt="Docker">
+<img src="https://img.shields.io/badge/Python-3776AB.svg?style=flat-square&logo=Python&logoColor=white" alt="Python">
+<img src="https://img.shields.io/badge/TypeScript-3178C6.svg?style=flat-square&logo=TypeScript&logoColor=white" alt="TypeScript">
+<img src="https://img.shields.io/badge/GitHub%20Actions-2088FF.svg?style=flat-square&logo=GitHub-Actions&logoColor=white" alt="GitHub%20Actions">
+<img src="https://img.shields.io/badge/AIOHTTP-2C5BB4.svg?style=flat-square&logo=AIOHTTP&logoColor=white" alt="AIOHTTP">
+<img src="https://img.shields.io/badge/Vite-646CFF.svg?style=flat-square&logo=Vite&logoColor=white" alt="Vite">
+<img src="https://img.shields.io/badge/ESLint-4B32C3.svg?style=flat-square&logo=ESLint&logoColor=white" alt="ESLint">
+<img src="https://img.shields.io/badge/pandas-150458.svg?style=flat-square&logo=pandas&logoColor=white" alt="pandas">
+<img src="https://img.shields.io/badge/Axios-5A29E4.svg?style=flat-square&logo=Axios&logoColor=white" alt="Axios">
+<img src="https://img.shields.io/badge/CSS-663399.svg?style=flat-square&logo=CSS&logoColor=white" alt="CSS">
+<img src="https://img.shields.io/badge/datefns-770C56.svg?style=flat-square&logo=date-fns&logoColor=white" alt="datefns">
+<img src="https://img.shields.io/badge/Pydantic-E92063.svg?style=flat-square&logo=Pydantic&logoColor=white" alt="Pydantic">
+<img src="https://img.shields.io/badge/Chart.js-FF6384.svg?style=flat-square&logo=chartdotjs&logoColor=white" alt="Chart.js">
+<img src="https://img.shields.io/badge/YAML-CB171E.svg?style=flat-square&logo=YAML&logoColor=white" alt="YAML">
+
+[Features](#-key-features) • [Architecture](#-architecture) • [Quick Start](#-quick-start) • [Documentation](#-documentation)
+
+</div>
+
+<hr />
+<h2 id="what-is-this-project">🎯 What is This Project?</h2>
+<p><strong>TradingView Recreation</strong> is a comprehensive, production-ready market analysis platform that recreates and extends the functionality of professional trading platforms like TradingView and Bloomberg Terminal. Built for serious traders, quantitative researchers, and financial analysts, it provides:</p>
+<ul>
+<li><strong>Professional-grade charting</strong> with real-time data streaming</li>
+<li><strong>Advanced technical analysis</strong> with 35+ indicators and 30+ drawing tools</li>
+<li><strong>Strategy development &amp; backtesting</strong> with deterministic replay</li>
+<li><strong>Portfolio management</strong> with paper trading capabilities</li>
+<li><strong>Bloomberg-style dashboards</strong> with 14 configurable analytics tiles</li>
+<li><strong>Multiple data providers</strong> (Finnhub, Alpaca, Yahoo Finance, Mock data)</li>
+</ul>
+<h3 id="perfect-for">Perfect For:</h3>
+<ul>
+<li>📈 <strong>Active Traders</strong> - Real-time charting and analysis</li>
+<li>🔬 <strong>Quant Researchers</strong> - Strategy development and backtesting</li>
+<li>📊 <strong>Financial Analysts</strong> - Market data visualization and screening</li>
+<li>🎓 <strong>Learning &amp; Education</strong> - Understanding market mechanics</li>
+<li>🧪 <strong>Testing &amp; Development</strong> - Deterministic replay for testing strategies</li>
+</ul>
+<hr />
+<h2 id="key-features">✨ Key Features</h2>
+<h3 id="advanced-charting-engine">📊 Advanced Charting Engine</h3>
+<ul>
+<li><strong>TradingView-style Interface</strong> - Professional candlestick charts with multi-pane support</li>
+<li><strong>35 Technical Indicators</strong> across 5 categories:</li>
+<li><strong>Trend</strong>: SMA, EMA, VWAP, Ichimoku Cloud, Supertrend, Parabolic SAR, ADX, Aroon</li>
+<li><strong>Momentum</strong>: RSI, MACD, Stochastic, Stochastic RSI, CCI, ROC, Williams %R, TRIX, Momentum</li>
+<li><strong>Volatility</strong>: Bollinger Bands, ATR, Keltner Channels, Donchian Channels, BB Width, Historical Volatility</li>
+<li><strong>Volume</strong>: OBV, MFI, CMF, ADL, VWMA, Volume Profile, Volume Bars</li>
+<li><strong>Profile</strong>: VRVP, Anchored VWAP, VWAP Bands, POC, VAH/VAL</li>
+<li><strong>30+ Drawing Tools</strong> - Lines, Fibonacci tools, pitchforks, shapes, annotations, and pattern recognition</li>
+<li><strong>Real-time Updates</strong> - Live bar formation and confirmation via WebSocket</li>
+<li><strong>Multi-timeframe Support</strong> - 1m, 5m, 15m, 1H, 4H, 1D, 1W views</li>
+</ul>
+<h3 id="dashboard-workspace-bloomberg-style">📈 Dashboard Workspace (Bloomberg-style)</h3>
+<p><strong>14 Configurable Analytics Tiles:</strong></p>
+<ol>
+<li><strong>MiniChart</strong> - Compact chart widgets for quick overview</li>
+<li><strong>Scanner</strong> - Market scanner with top movers, gainers, losers</li>
+<li><strong>Heatmap</strong> - Sector performance visualization</li>
+<li><strong>Watchlist</strong> - Multi-symbol monitoring with real-time prices</li>
+<li><strong>Positions</strong> - Open positions with P&amp;L tracking</li>
+<li><strong>Orders</strong> - Orders blotter (pending, filled, cancelled)</li>
+<li><strong>Alerts</strong> - Price and indicator alerts</li>
+<li><strong>News</strong> - Real-time market news feed</li>
+<li><strong>Calendar</strong> - Economic calendar and earnings releases</li>
+<li><strong>TickTable</strong> - Tick-by-tick trade flow</li>
+<li><strong>OptionsChain</strong> - Options chain with Greeks</li>
+<li><strong>GreeksPanel</strong> - Portfolio Greeks aggregation</li>
+<li><strong>IVSurface</strong> - Implied volatility surface visualization</li>
+<li><strong>PnLAnalytics</strong> - Performance analytics and metrics</li>
+</ol>
+<h3 id="strategy-development-backtesting">🔄 Strategy Development &amp; Backtesting</h3>
+<ul>
+<li><strong>In-Browser Strategy Editor</strong> - Monaco Editor with Python syntax highlighting</li>
+<li><strong>Built-in Strategy Framework</strong> - Extensible strategy system</li>
+<li><strong>Comprehensive Backtesting</strong> - Historical performance analysis</li>
+<li><strong>Deterministic Replay</strong> - Test strategies with exact historical data</li>
+<li><strong>Paper Trading</strong> - Risk-free strategy execution</li>
+<li><strong>Real-time Execution Logs</strong> - Monitor strategy signals and orders</li>
+</ul>
+<h3 id="multiple-data-providers">🔌 Multiple Data Providers</h3>
+<ul>
+<li><strong>Finnhub</strong> - Real-time WebSocket streaming + REST API</li>
+<li><strong>Alpaca</strong> - Professional trading API integration</li>
+<li><strong>Yahoo Finance</strong> - Historical data backfill</li>
+<li><strong>Mock Data</strong> - Deterministic CSV-based testing</li>
+<li><strong>Custom Providers</strong> - Extensible provider system</li>
+</ul>
+<h3 id="multiple-operating-modes">🎮 Multiple Operating Modes</h3>
+<ul>
+<li><strong>LIVE</strong> - Real-time market data streaming</li>
+<li><strong>REPLAY</strong> - Deterministic historical replay with speed control (0.5x - 10x)</li>
+<li><strong>BACKTEST</strong> - Historical strategy testing</li>
+<li><strong>PAPER</strong> - Paper trading mode</li>
+</ul>
+<h3 id="portfolio-management">💼 Portfolio Management</h3>
+<ul>
+<li><strong>Position Tracking</strong> - Real-time P&amp;L (realized + unrealized)</li>
+<li><strong>Order Management</strong> - Market, limit, stop orders</li>
+<li><strong>Trade History</strong> - Complete trade log with export to CSV</li>
+<li><strong>Performance Analytics</strong> - Win rate, profit factor, drawdown analysis</li>
+<li><strong>Risk Metrics</strong> - Portfolio Greeks, exposure tracking</li>
+</ul>
+<hr />
+<h2 id="architecture">🏗️ Architecture</h2>
+<h3 id="technology-stack">Technology Stack</h3>
+<p><strong>Frontend:</strong>
+- <strong>React 19.2</strong> with TypeScript 5.9
+- <strong>Vite</strong> - Lightning-fast build tool
+- <strong>Lightweight Charts</strong> - High-performance charting library
+- <strong>Zustand</strong> - State management
+- <strong>Tailwind CSS</strong> - Utility-first styling
+- <strong>Playwright</strong> - End-to-end testing</p>
+<p><strong>Backend:</strong>
+- <strong>FastAPI</strong> - Modern Python web framework
+- <strong>SQLAlchemy</strong> - Database ORM (SQLite/PostgreSQL)
+- <strong>WebSockets</strong> - Real-time bidirectional communication
+- <strong>Pandas/NumPy</strong> - Data processing
+- <strong>Pytest</strong> - Comprehensive testing (275+ tests)</p>
+<h3 id="system-architecture">System Architecture</h3>
+<div class="codehilite"><pre><span></span><code><span class="err">┌─────────────────────────────────────────────────────────────┐</span>
+<span class="err">│</span><span class="w">                    </span><span class="n">FRONTEND</span><span class="w"> </span><span class="p">(</span><span class="n">React</span><span class="p">)</span><span class="w">                         </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="nl">Port:</span><span class="w"> </span><span class="mh">5100</span><span class="w"> </span><span class="p">(</span><span class="n">dev</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mh">4173</span><span class="w"> </span><span class="p">(</span><span class="n">preview</span><span class="p">)</span><span class="w">                         </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Chart</span><span class="w"> </span><span class="n">Workspace</span><span class="w"> </span><span class="p">(</span><span class="n">TradingView</span><span class="o">-</span><span class="n">style</span><span class="p">)</span><span class="w">                      </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Dashboard</span><span class="w"> </span><span class="n">Workspace</span><span class="w"> </span><span class="p">(</span><span class="n">Bloomberg</span><span class="o">-</span><span class="n">style</span><span class="p">)</span><span class="w">                    </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Real</span><span class="o">-</span><span class="kt">time</span><span class="w"> </span><span class="n">WebSocket</span><span class="w"> </span><span class="n">connections</span><span class="w">                          </span><span class="err">│</span>
+<span class="err">└─────────────────────────────────────────────────────────────┘</span>
+<span class="w">                        </span><span class="err">↕</span><span class="w"> </span><span class="n">WebSocket</span><span class="o">/</span><span class="n">REST</span>
+<span class="err">┌─────────────────────────────────────────────────────────────┐</span>
+<span class="err">│</span><span class="w">                    </span><span class="n">BACKEND</span><span class="w"> </span><span class="p">(</span><span class="n">FastAPI</span><span class="p">)</span><span class="w">                        </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="nl">Port:</span><span class="w"> </span><span class="mh">8000</span><span class="w">                                                 </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Data</span><span class="w"> </span><span class="n">Ingestion</span><span class="w"> </span><span class="n">Service</span><span class="w">                                   </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Bar</span><span class="w"> </span><span class="n">Engine</span><span class="w"> </span><span class="p">(</span><span class="n">OHLCV</span><span class="w"> </span><span class="n">aggregation</span><span class="p">)</span><span class="w">                           </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Strategy</span><span class="w"> </span><span class="n">Engine</span><span class="w">                                          </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Portfolio</span><span class="w"> </span><span class="n">Manager</span><span class="w">                                        </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">SQLite</span><span class="o">/</span><span class="n">PostgreSQL</span><span class="w"> </span><span class="n">Database</span><span class="w">                               </span><span class="err">│</span>
+<span class="err">└─────────────────────────────────────────────────────────────┘</span>
+<span class="w">                        </span><span class="err">↕</span>
+<span class="err">┌─────────────────────────────────────────────────────────────┐</span>
+<span class="err">│</span><span class="w">              </span><span class="n">DATA</span><span class="w"> </span><span class="n">SOURCES</span><span class="w">                                   </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Finnhub</span><span class="w"> </span><span class="p">(</span><span class="n">WebSocket</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">REST</span><span class="p">)</span><span class="w">                              </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Alpaca</span><span class="w"> </span><span class="p">(</span><span class="n">REST</span><span class="w"> </span><span class="n">API</span><span class="p">)</span><span class="w">                                        </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Yahoo</span><span class="w"> </span><span class="n">Finance</span><span class="w"> </span><span class="p">(</span><span class="n">Historical</span><span class="p">)</span><span class="w">                               </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Mock</span><span class="w"> </span><span class="n">CSV</span><span class="w"> </span><span class="p">(</span><span class="n">Testing</span><span class="p">)</span><span class="w">                                       </span><span class="err">│</span>
+<span class="err">└─────────────────────────────────────────────────────────────┘</span>
+</code></pre></div>
+
+<h2 id="system-architecture-modules">System Architecture &amp; Modules</h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Description</th>
+<th>Key Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>frontend</strong></td>
+<td>React/Vite-based UI similar to TradingView &amp; Bloomberg</td>
+<td><code>features/chart</code>, <code>features/dashboard</code>, <code>core/ChartEngine</code>, <code>ui/SharedComponents</code></td>
+</tr>
+<tr>
+<td><strong>phase1</strong></td>
+<td>Python/FastAPI Backend Core</td>
+<td><code>services/api</code>, <code>services/ingestion</code>, <code>services/bar_engine</code>, <code>services/strategy</code></td>
+</tr>
+<tr>
+<td><strong>phase1/services/ingestion</strong></td>
+<td>Real-time market data ingestion</td>
+<td><code>FinnhubClient</code>, <code>AlpacaClient</code>, <code>StreamManager</code></td>
+</tr>
+<tr>
+<td><strong>phase1/services/bar_engine</strong></td>
+<td>Aggregates ticks into OHLCV bars</td>
+<td><code>BarAggregator</code>, <code>TimeframeManager</code>, <code>ohlcv_buffer</code></td>
+</tr>
+<tr>
+<td><strong>phase1/services/strategy</strong></td>
+<td>System for running trading algorithms</td>
+<td><code>StrategyEngine</code>, <code>VectorBT</code> integration, <code>SignalGenerator</code></td>
+</tr>
+<tr>
+<td><strong>n8n</strong></td>
+<td>Workflow automation for Ops &amp; Alerts</td>
+<td><code>workflows/alert_pipeline.json</code>, <code>docker-compose.yml</code></td>
+</tr>
+<tr>
+<td><strong>browser_extension</strong></td>
+<td>Browser automation helpers</td>
+<td><code>manifest.json</code>, <code>content_scripts/scraper.js</code></td>
+</tr>
+<tr>
+<td><strong>cboe_pipeline</strong></td>
+<td>Specialized Options Data Pipeline</td>
+<td><code>src/pipeline.py</code>, <code>analysis/volatility.py</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="quick-start">🚀 Quick Start</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li><strong>Python 3.11+</strong> (3.12 recommended)</li>
+<li><strong>Node.js 18+</strong> and npm</li>
+<li><strong>API Keys</strong> (optional, for live data):</li>
+<li>Finnhub API key</li>
+<li>Alpaca API credentials</li>
+</ul>
+<h3 id="installation">Installation</h3>
+<p><strong>1. Backend Setup:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>phase1
+
+<span class="c1"># Create virtual environment</span>
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: venv\Scripts\activate</span>
+
+<span class="c1"># Install dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+
+<span class="c1"># Set up environment variables (optional for live data)</span>
+cp<span class="w"> </span>keys.env.example<span class="w"> </span>keys.env
+<span class="c1"># Edit keys.env and add your API keys</span>
+</code></pre></div>
+
+<p><strong>2. Frontend Setup:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>frontend
+
+<span class="c1"># Install dependencies</span>
+npm<span class="w"> </span>install
+</code></pre></div>
+
+<p><strong>3. Start the System:</strong></p>
+<p><strong>Terminal 1 - Backend:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>phase1
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+python<span class="w"> </span>-m<span class="w"> </span>uvicorn<span class="w"> </span>services.api.main:app<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span>--reload
+</code></pre></div>
+
+<p><strong>Terminal 2 - Frontend:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>frontend
+npm<span class="w"> </span>run<span class="w"> </span>dev
+</code></pre></div>
+
+<p><strong>Terminal 3 - Data Ingestion (optional, for live data):</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>phase1
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+python<span class="w"> </span>-m<span class="w"> </span>services.ingestion.main<span class="w"> </span>--mode<span class="w"> </span>live<span class="w"> </span>--symbols<span class="w"> </span>AAPL,MSFT,TSLA
+</code></pre></div>
+
+<h3 id="access-the-application">Access the Application</h3>
+<ul>
+<li><strong>Frontend</strong>: http://localhost:5100</li>
+<li><strong>Backend API</strong>: http://localhost:8000</li>
+<li><strong>API Documentation</strong>: http://localhost:8000/docs</li>
+<li><strong>WebSocket</strong>: ws://localhost:8000/ws</li>
+</ul>
+<hr />
+<h2 id="documentation">📚 Documentation</h2>
+<ul>
+<li><strong><a href="USAGE_GUIDE.md">Complete Usage Guide</a></strong> - Comprehensive user manual</li>
+<li><strong><a href="PROJECT_REPORT.md">Project Report</a></strong> - Detailed technical documentation</li>
+<li><strong><a href="QUICK_REFERENCE.md">Quick Reference</a></strong> - Quick command reference</li>
+</ul>
+<h3 id="keyboard-shortcuts">Keyboard Shortcuts</h3>
+<table>
+<thead>
+<tr>
+<th>Shortcut</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ctrl/Cmd + 1</code></td>
+<td>Chart Workspace</td>
+</tr>
+<tr>
+<td><code>Ctrl/Cmd + 2</code></td>
+<td>Dashboard Workspace</td>
+</tr>
+<tr>
+<td><code>Ctrl/Cmd + 3</code></td>
+<td>Replay Mode</td>
+</tr>
+<tr>
+<td><code>Ctrl/Cmd + K</code></td>
+<td>Command Palette</td>
+</tr>
+<tr>
+<td><code>1/2/3/4/5</code></td>
+<td>Switch Timeframe (1m/5m/15m/1H/1D)</td>
+</tr>
+<tr>
+<td><code>Space</code></td>
+<td>Play/Pause Replay</td>
+</tr>
+<tr>
+<td><code>→</code></td>
+<td>Step Forward (Replay)</td>
+</tr>
+<tr>
+<td><code>←</code></td>
+<td>Step Backward (Replay)</td>
+</tr>
+<tr>
+<td><code>Ctrl/Cmd + Z</code></td>
+<td>Undo Drawing</td>
+</tr>
+<tr>
+<td><code>Ctrl/Cmd + Y</code></td>
+<td>Redo Drawing</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="testing">🧪 Testing</h2>
+<h3 id="backend-tests">Backend Tests</h3>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>phase1
+pytest<span class="w"> </span>-v
+</code></pre></div>
+
+<p><strong>Test Coverage:</strong> 275 tests passing, comprehensive unit, integration, and E2E tests</p>
+<h3 id="frontend-tests">Frontend Tests</h3>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>frontend
+npm<span class="w"> </span>run<span class="w"> </span>test:unit<span class="w">      </span><span class="c1"># Unit tests</span>
+npm<span class="w"> </span>run<span class="w"> </span>test:int<span class="w">       </span><span class="c1"># Integration tests</span>
+npm<span class="w"> </span>run<span class="w"> </span>test:e2e<span class="w">       </span><span class="c1"># End-to-end tests</span>
+</code></pre></div>
+
+<hr />
+<h2 id="project-statistics">📊 Project Statistics</h2>
+<ul>
+<li><strong>50,000+ lines of code</strong></li>
+<li><strong>35 Technical Indicators</strong></li>
+<li><strong>30+ Drawing Tools</strong></li>
+<li><strong>14 Dashboard Tiles</strong></li>
+<li><strong>5 Data Providers</strong></li>
+<li><strong>3 Built-in Strategies</strong></li>
+<li><strong>275 Automated Tests</strong></li>
+<li><strong>8 Major Service Modules</strong></li>
+</ul>
+<hr />
+<h2 id="development">🛠️ Development</h2>
+<h3 id="project-structure">Project Structure</h3>
+<p><code>Tradingview recreation/</code>sh
+└── /
+    ├── .github
+    │   ├── prompts
+    │   └── workflows
+    ├── AUTOPILOT_EXPLANATION.md
+    ├── CURRENT_STATE.md
+    ├── IMPLEMENTATION_STATUS.md
+    ├── MASTER_PLAN.md
+    ├── Makefile
+    ├── PROJECT_REPORT.md
+    ├── QUICK_REFERENCE.md
+    ├── README.html
+    ├── README.md
+    ├── README_FACTS.md
+    ├── README_Generator_Colab.ipynb
+    ├── README_NEW.html
+    ├── README_NEW.md
+    ├── ROBUSTNESS_IMPROVEMENTS.md
+    ├── RUNBOOK.md
+    ├── Readme ai.code-workspace
+    ├── TEST_STATUS_SUMMARY.md
+    ├── Tradingview
+    │   ├── .pytest_cache
+    │   └── keys.env
+    ├── USAGE_GUIDE.md
+    ├── artifacts
+    │   ├── backend_status.log
+    │   ├── dist
+    │   ├── phase1
+    │   ├── phase4
+    │   ├── release
+    │   └── verification
+    ├── backend.log
+    ├── browser_extension
+    │   ├── manifest.json
+    │   ├── popup.html
+    │   └── popup.js
+    ├── cboe_pipeline
+    │   ├── README.md
+    │   ├── analysis
+    │   ├── audit_data.py
+    │   ├── check_progress.py
+    │   ├── config.yaml
+    │   ├── data
+    │   ├── main.py
+    │   ├── pipeline.log
+    │   ├── requirements.txt
+    │   └── src
+    ├── colab_readme_generator.py
+    ├── current_dashboard.png
+    ├── data
+    │   └── equity
+    ├── debug_browser_ws.js
+    ├── debug_db.py
+    ├── diagnose_browser.js
+    ├── docker-compose.unified.yml
+    ├── docs
+    │   ├── ACCEPTANCE_CHECKLIST.md
+    │   ├── LEAN_LOCAL_RUNBOOK_WINDOWS.md
+    │   ├── QC_ACCEPTANCE_CHECKLIST.md
+    │   ├── QC_ADAPTER_PROOF_REPORT.md
+    │   ├── QC_BRAIN_CONTRACT.md
+    │   ├── QC_CLOUD_RUNBOOK.md
+    │   ├── QC_PATTERN_A_PORT.md
+    │   ├── QC_REAL_RUN_SUMMARY.md
+    │   ├── RUNBOOK.md
+    │   ├── V1_SPEC.md
+    │   ├── api_contracts.md
+    │   ├── build_plan.md
+    │   ├── delivery_summary.md
+    │   ├── final_report.md
+    │   ├── implementation_plan.md
+    │   ├── merge_map.md
+    │   ├── side_project_review.md
+    │   ├── smoke_snapshot.png
+    │   ├── smoke_snapshot_pytest.png
+    │   └── target_architecture.md
+    ├── frontend
+    │   ├── .env.development
+    │   ├── .gitignore
+    │   ├── .pytest_cache
+    │   ├── README.md
+    │   ├── artifacts
+    │   ├── backend_status.log
+    │   ├── dist
+    │   ├── eslint.config.js
+    │   ├── frontend
+    │   ├── frontend.log
+    │   ├── frontend_status.log
+    │   ├── index.html
+    │   ├── node_modules
+    │   ├── nohup.out
+    │   ├── package-lock.json
+    │   ├── package.json
+    │   ├── playwright-report
+    │   ├── playwright.config.ts
+    │   ├── playwright.video.config.ts
+    │   ├── postcss.config.js
+    │   ├── preview.log
+    │   ├── public
+    │   ├── screenshots
+    │   ├── scripts
+    │   ├── src
+    │   ├── tailwind.config.js
+    │   ├── test-results
+    │   ├── test_ws.py
+    │   ├── tests
+    │   ├── tsconfig.app.json
+    │   ├── tsconfig.json
+    │   ├── tsconfig.node.json
+    │   ├── verify_dashboard_prices.cjs
+    │   ├── verify_gate0.cjs
+    │   ├── verify_gate2.cjs
+    │   ├── vite.config.ts
+    │   ├── vite.out
+    │   └── vitest.config.ts
+    ├── frontend.log
+    ├── full_implementation_plan.md
+    ├── full_implementation_plan.md:Zone.Identifier
+    ├── generate_readme_html.py
+    ├── improvement_guide.md
+    ├── inspect_alpaca.py
+    ├── inspect_leg.py
+    ├── keys.env
+    ├── keys.env.example
+    ├── lean.json
+    ├── logs
+    │   ├── backend.log
+    │   ├── frontend.log
+    │   └── n8n_docker.log
+    ├── monitor.log
+    ├── monitor_trades.py
+    ├── n8n
+    │   ├── README.md
+    │   ├── docker-compose.yml
+    │   └── workflows
+    ├── n8n_workflow_validation_report.md
+    ├── node_modules
+    │   ├── .bin
+    │   ├── .package-lock.json
+    │   ├── @playwright
+    │   ├── playwright
+    │   └── playwright-core
+    ├── package-lock.json
+    ├── package.json
+    ├── phase1
+    │   ├── .dockerignore
+    │   ├── .pytest_cache
+    │   ├── =15.0.0
+    │   ├── =2024.1
+    │   ├── DOCUMENTATION.md
+    │   ├── Dockerfile
+    │   ├── Makefile
+    │   ├── README.md
+    │   ├── SYSTEM_AUDIT.md
+    │   ├── artifacts
+    │   ├── autopilot_brain
+    │   ├── autopilot_config.json
+    │   ├── backend.log
+    │   ├── check_creds.py
+    │   ├── data
+    │   ├── debug_db.py
+    │   ├── docker-compose.yml
+    │   ├── docs
+    │   ├── fixtures
+    │   ├── keys.env
+    │   ├── keys.env.example
+    │   ├── n8n
+    │   ├── nohup.out
+    │   ├── phase1.db
+    │   ├── pytest.ini
+    │   ├── requirements.txt
+    │   ├── scripts
+    │   ├── server.log
+    │   ├── services
+    │   ├── tests
+    │   ├── trade_ledger.json
+    │   ├── uvicorn.out
+    │   └── venv
+    ├── phase1.db
+    ├── proxy.log
+    ├── qc
+    │   ├── AutopilotQC_v1
+    │   └── Library
+    ├── quick_ws_test.py
+    ├── readme-config.toml
+    ├── run_all.sh
+    ├── sanity.log
+    ├── scripts
+    │   ├── backtest.py
+    │   ├── live_run.py
+    │   └── sync_brain.py
+    ├── smoke.log
+    ├── smoke_retry.log
+    ├── strategies
+    │   ├── rsi_breakout.py
+    │   ├── sma_crossover.py
+    │   └── vwap_reversion.py
+    ├── test_backend.py
+    ├── test_n8n_from_container.sh
+    ├── test_n8n_workflow.py
+    ├── test_snapshot.js
+    ├── test_websocket.py
+    ├── tests
+    │   ├── <strong>pycache</strong>
+    │   ├── brain
+    │   ├── full_month_backtest.py
+    │   ├── integration
+    │   ├── qc_harness.py
+    │   ├── test_ui_smoke.py
+    │   ├── ui_smoke_test.py
+    │   └── unit
+    ├── tools
+    │   └── generate_lean_data.py
+    ├── verify_extension.js
+    ├── vwap_paper
+    │   ├── backend
+    │   ├── config
+    │   ├── frontend
+    │   └── scripts
+    ├── vwap_trading_system
+    │   ├── .pytest_cache
+    │   ├── README.md
+    │   ├── backend
+    │   ├── backend.log
+    │   ├── config
+    │   ├── data
+    │   ├── frontend
+    │   ├── playwright.config.ts
+    │   ├── pytest.ini
+    │   ├── requirements.txt
+    │   ├── run_tests.sh
+    │   ├── start.sh
+    │   ├── start_demo.sh
+    │   └── tests
+    ```</p>
+<h3 id="key-technologies">Key Technologies</h3>
+<ul>
+<li><strong>Frontend</strong>: React, TypeScript, Vite, Lightweight Charts, Tailwind CSS</li>
+<li><strong>Backend</strong>: FastAPI, SQLAlchemy, WebSockets, Pandas, NumPy</li>
+<li><strong>Data</strong>: Finnhub, Alpaca, Yahoo Finance</li>
+<li><strong>Testing</strong>: Pytest, Playwright, Vitest</li>
+</ul>
+<hr />
+<h2 id="license">📝 License</h2>
+<p>[Add your license here]</p>
+<hr />
+<h2 id="contributing">🤝 Contributing</h2>
+<p>Contributions are welcome! Please feel free to submit a Pull Request.</p>
+<hr />
+<h2 id="contact">📧 Contact</h2>
+<p>[Add your contact information here]</p>
+<hr />
+<div align="center">
+
+**Built with ❤️ for traders, quants, and financial professionals**
+
+[Back to Top](#tradingview-recreation)
+
+</div>
+    </div>
+</body>
+</html>

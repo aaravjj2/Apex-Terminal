@@ -1,0 +1,159 @@
+{
+  "name": "Incident Bundle Replay",
+  "nodes": [
+    {
+      "id": "manual_1",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        250,
+        300
+      ],
+      "name": "Manual Trigger",
+      "parameters": {}
+    },
+    {
+      "id": "http_fetch",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        450,
+        300
+      ],
+      "name": "Fetch Bundle",
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:8000/api/v1/incidents/bundles/{{ $json.bundle_id }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "http_replay",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        650,
+        300
+      ],
+      "name": "Start Replay",
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/incidents/replay",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "bundle_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "verify_hash",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "if_verify",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        850,
+        300
+      ],
+      "name": "Hash Match?",
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.hash_verified }}",
+              "operation": "equals",
+              "value2": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "success_1",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        1050,
+        200
+      ],
+      "name": "\u2713 Hash Verified",
+      "parameters": {}
+    },
+    {
+      "id": "failure_1",
+      "type": "n8n-nodes-base.stopAndError",
+      "position": [
+        1050,
+        400
+      ],
+      "name": "\u2717 Hash Mismatch",
+      "parameters": {
+        "errorMessage": "Bundle replay hash does not match!"
+      }
+    }
+  ],
+  "connections": {
+    "manual_1": {
+      "main": [
+        [
+          {
+            "node": "http_fetch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "http_fetch": {
+      "main": [
+        [
+          {
+            "node": "http_replay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "http_replay": {
+      "main": [
+        [
+          {
+            "node": "if_verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if_verify": {
+      "main": [
+        [
+          {
+            "node": "success_1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "failure_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "exportedAt": "2026-01-12T20:28:09.313308Z",
+    "generator": "tradingview-recreation",
+    "version": "1.0.0"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "config_hash_with_artifact": "c46dd91f6ace3c5812636260206acd9c6a2523bbb0aa58d9a1ff85e0edad8738",
+  "config_hash_without_artifact": "03aaf23a192674d9df85d66842b719066d5bc39b4761c7b4f3f88451f7456e00",
+  "config_with_artifact": {
+    "end_date": "2023-12-31",
+    "fee_per_trade": 1.0,
+    "initial_capital": 100000.0,
+    "seed": 42,
+    "slippage_bps": 5.0,
+    "start_date": "2023-01-01",
+    "strategy_artifact_id": "abc123def456",
+    "strategy_id": "demo-sma",
+    "symbol": "SPY"
+  },
+  "config_without_artifact": {
+    "end_date": "2023-12-31",
+    "fee_per_trade": 1.0,
+    "initial_capital": 100000.0,
+    "seed": 42,
+    "slippage_bps": 5.0,
+    "start_date": "2023-01-01",
+    "strategy_artifact_id": null,
+    "strategy_id": "demo-sma",
+    "symbol": "SPY"
+  },
+  "runs": 3,
+  "unique_hashes": 1
+}

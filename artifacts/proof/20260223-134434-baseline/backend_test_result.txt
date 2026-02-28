@@ -1,0 +1,429 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Tradingview\Tradingview recreation
+configfile: pytest.ini
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 911 items
+
+backend\tests\architecture\test_architecture_import_boundaries.py ...... [  0%]
+.....................FFFF                                                [  3%]
+backend\tests\integration\test_w100_job_queue_v2.py EEEEEEEEEEEEEEEEEEEE [  5%]
+EEEEEEEEEEEEEE                                                           [  7%]
+backend\tests\integration\test_w101_convergence_cockpit_v1.py EEEEEEEEEE [  8%]
+EEEEEEEEEEEEEEE                                                          [  9%]
+backend\tests\integration\test_w102_agent_eval_harness.py FEFEFEFEFEFEFE [ 10%]
+FEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFE                               [ 12%]
+backend\tests\integration\test_w103_ui_page_registry.py FEFEFEFEFEFEFEFE [ 13%]
+FEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFE                               [ 16%]
+backend\tests\integration\test_w104_a11y_audit.py EEEEEEEEEEEEEEEEEEEEEE [ 18%]
+EE                                                                       [ 18%]
+backend\tests\integration\test_w105_perf_budget.py FFFFFFFEEEEEEEEEEEEEE [ 21%]
+EEE                                                                      [ 21%]
+backend\tests\integration\test_w106_controls_domain.py FFFEEEEEEEEEEEEEE [ 23%]
+EEEEEEE                                                                  [ 24%]
+backend\tests\integration\test_w107_safe_actions.py EEEEEEEEEEEEEEEEEEEE [ 26%]
+EEEEEE                                                                   [ 26%]
+backend\tests\integration\test_w108_export_bundle.py FFFFFFFFFFFFFFFFFF. [ 28%]
+.....                                                                    [ 29%]
+backend\tests\integration\test_w109_judge_mode.py ...................... [ 31%]
+...........                                                              [ 33%]
+backend\tests\integration\test_w110_submission_kit.py .................. [ 35%]
+............                                                             [ 36%]
+backend\tests\integration\test_w111_mcp_enforcement.py ..............    [ 37%]
+backend\tests\integration\test_w112_persistent_window.py ............... [ 39%]
+.......                                                                  [ 40%]
+backend\tests\integration\test_w113_ws_stability.py ............         [ 41%]
+backend\tests\integration\test_w114_es_stability.py ..............       [ 43%]
+backend\tests\integration\test_w115_broker_stability.py ...........      [ 44%]
+backend\tests\integration\test_w116_e2e_coverage.py ............         [ 45%]
+backend\tests\integration\test_w117_visual_stability.py .......          [ 46%]
+backend\tests\integration\test_w118_zero_flake.py ......                 [ 47%]
+backend\tests\integration\test_w119_determinism.py .....FF..             [ 48%]
+backend\tests\integration\test_w120_onboarding.py ..........             [ 49%]
+backend\tests\integration\test_w121_runbooks.py ..........               [ 50%]
+backend\tests\integration\test_w122_secrets.py ........                  [ 51%]
+backend\tests\integration\test_w123_compliance.py .........              [ 52%]
+backend\tests\integration\test_w124_terracode.py ........                [ 53%]
+backend\tests\integration\test_w125_elastihack.py ........               [ 54%]
+backend\tests\integration\test_w126_bundle.py .......                    [ 54%]
+backend\tests\integration\test_w127_ci.py .......                        [ 55%]
+backend\tests\integration\test_w128_ux.py .......                        [ 56%]
+backend\tests\integration\test_w129_incident.py .........                [ 57%]
+backend\tests\integration\test_w130_final_proof.py ................      [ 59%]
+backend\tests\integration\test_w81_health_contract.py .........          [ 60%]
+backend\tests\integration\test_w82_import_sanity.py .............        [ 61%]
+backend\tests\integration\test_w84_startup_failfast.py ................. [ 63%]
+.......                                                                  [ 64%]
+backend\tests\integration\test_w86_event_bus.py ..................       [ 66%]
+backend\tests\integration\test_w87_ws_reliability.py ...............     [ 67%]
+backend\tests\integration\test_w88_ops_workspace.py .................... [ 69%]
+.....                                                                    [ 70%]
+backend\tests\integration\test_w90_repo_sanity.py FFF...........         [ 72%]
+backend\tests\integration\test_w91_es_templates.py ..................... [ 74%]
+...                                                                      [ 74%]
+backend\tests\integration\test_w92_bulk_ingest.py ...................... [ 77%]
+..                                                                       [ 77%]
+backend\tests\integration\test_w93_evidence_graph.py ................... [ 79%]
+......                                                                   [ 80%]
+backend\tests\integration\test_w94_agent_tools.py ...................... [ 82%]
+........                                                                 [ 83%]
+backend\tests\integration\test_w95_elastic_agent.py .................... [ 85%]
+...........                                                              [ 86%]
+backend\tests\integration\test_w96_search_ux_v3.py ..................... [ 89%]
+.........                                                                [ 90%]
+backend\tests\integration\test_w97_backtest_contract.py ........FFFFFFFF [ 91%]
+FFF.F............FF.F                                                    [ 94%]
+backend\tests\integration\test_w98_walkforward_v3.py ................... [ 96%]
+.........                                                                [ 97%]
+backend\tests\integration\test_w99_strategy_studio_v3.py ...........FFF. [ 98%]
+F.FFFFFFFFF                                                              [100%]
+
+=========================== short test summary info ===========================
+FAILED backend/tests/architecture/test_architecture_import_boundaries.py::test_audit_events_endpoint_live
+FAILED backend/tests/architecture/test_architecture_import_boundaries.py::test_audit_events_search_live
+FAILED backend/tests/architecture/test_architecture_import_boundaries.py::test_broker_health_domain_live
+FAILED backend/tests/architecture/test_architecture_import_boundaries.py::test_broker_account_domain_live
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_dataset_returns_200
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_dataset_has_six_cases
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_dataset_version_v1
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_dataset_case_ids
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_dataset_categories_present
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_dataset_each_case_has_expected_evidence_ids
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_dataset_each_case_has_expected_keywords
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_returns_201
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_has_run_id
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_case_count_six
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_has_avg_scores
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_has_scores_list
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_scores_have_required_fields
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_scores_in_range
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_total_score_is_average
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_avg_total_matches_scores
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_determinism_run_twice_same_scores
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_determinism_per_case_scores_stable
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_runs_returns_200
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_runs_empty_before_any_run
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_runs_accumulates
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_run_by_id_200
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_run_by_id_has_scores
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_get_run_by_id_unknown_returns_404
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_delete_runs_returns_200
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_delete_runs_clears_all
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_all_six_case_ids_in_run_scores
+FAILED backend/tests/integration/test_w102_agent_eval_harness.py::test_run_scores_include_evidence_returned_and_expected
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_returns_200
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_has_seven_pages
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_version
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_has_hash
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_has_two_components
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_hash_deterministic
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_returns_200
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_count
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_all_core_ids_present
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_group_filter
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_all_have_shell_version_w103
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_page_by_id_returns_200
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_page_by_id_correct_path
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_page_by_id_unknown_returns_404
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_list_components_returns_200
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_list_components_has_page_shell_and_data_table
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_component_page_shell
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_component_data_table_features
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_component_unknown_returns_404
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_shell_states
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_post_heartbeat_returns_201
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_post_heartbeat_has_heartbeat_id
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_post_heartbeat_invalid_status_422
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_post_heartbeat_unknown_page_404
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_get_heartbeats_accumulates
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_delete_data_clears_heartbeats
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_post_snapshot_returns_201
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_post_snapshot_has_snapshot_id
+FAILED backend/tests/integration/test_w103_ui_page_registry.py::test_post_snapshot_page_count_7
+FAILED backend/tests/integration/test_w105_perf_budget.py::TestVersion::test_version_status_ok
+FAILED backend/tests/integration/test_w105_perf_budget.py::TestVersion::test_version_has_w105_tag
+FAILED backend/tests/integration/test_w105_perf_budget.py::TestVersion::test_version_has_budgets_and_pages
+FAILED backend/tests/integration/test_w105_perf_budget.py::TestBudgets::test_budgets_status_ok
+FAILED backend/tests/integration/test_w105_perf_budget.py::TestBudgets::test_budgets_has_timing_and_bundle
+FAILED backend/tests/integration/test_w105_perf_budget.py::TestBudgets::test_budgets_has_lcp_threshold
+FAILED backend/tests/integration/test_w105_perf_budget.py::TestBudgets::test_budgets_has_7_pages
+FAILED backend/tests/integration/test_w106_controls_domain.py::TestVersion::test_version_status_ok
+FAILED backend/tests/integration/test_w106_controls_domain.py::TestVersion::test_version_has_w106_tag
+FAILED backend/tests/integration/test_w106_controls_domain.py::TestVersion::test_version_has_doc_types
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestVersion::test_version_status_ok
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestVersion::test_version_has_w108_tag
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestVersion::test_version_status_field
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestBundleCreate::test_create_bundle_returns_201
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestBundleCreate::test_create_bundle_has_filename
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestBundleCreate::test_create_bundle_has_manifest
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestBundleCreate::test_create_bundle_manifest_has_readme
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestBundleCreate::test_create_bundle_manifest_has_db_tables
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestBundleCreate::test_create_bundle_manifest_has_es_templates
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestManifest::test_manifest_endpoint_ok
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestManifest::test_manifest_has_version
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestManifest::test_manifest_has_bundle_hash
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestManifest::test_manifest_file_hashes_are_sha256
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestManifest::test_manifest_file_sizes_positive
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestDeterminism::test_readme_hash_stable
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestDeterminism::test_bundle_hash_same_state
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestDeterminism::test_db_tables_hash_stable_without_changes
+FAILED backend/tests/integration/test_w108_export_bundle.py::TestDeterminism::test_bundle_hash_changes_after_data_change
+FAILED backend/tests/integration/test_w119_determinism.py::TestW119Determinism::test_run1_json_is_valid
+FAILED backend/tests/integration/test_w119_determinism.py::TestW119Determinism::test_run2_json_is_valid
+FAILED backend/tests/integration/test_w90_repo_sanity.py::TestScanTestids::test_scan_testids_exits_zero
+FAILED backend/tests/integration/test_w90_repo_sanity.py::TestScanTestids::test_scan_testids_reports_ok
+FAILED backend/tests/integration/test_w90_repo_sanity.py::TestScanTestids::test_scan_testids_scans_files
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_ma_cross_returns_201
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_ma_cross_passes
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_ma_cross_trade_count
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_ma_cross_invariants_ok
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_mr_passes
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_mr_trade_count
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_hold_passes
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_hold_trade_count_is_one
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_returns_run_id
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_returns_comparison_block
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_execute_comparison_within_tolerance_true
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestGoldenRunExecution::test_determinism_same_metrics_on_rerun
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestRunsEndpoint::test_runs_returns_200
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestRunsEndpoint::test_runs_accumulate_after_executions
+FAILED backend/tests/integration/test_w97_backtest_contract.py::TestRunsEndpoint::test_delete_runs_clears_history
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestStrategyCRUD::test_create_returns_201
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestStrategyCRUD::test_create_returns_id
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestStrategyCRUD::test_create_returns_version_1
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestStrategyCRUD::test_get_strategy
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestStrategyCRUD::test_list_strategies_returns_200
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestStrategySearch::test_search_by_name_returns_results
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestStrategySearch::test_search_no_match_returns_empty
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestVersionHistory::test_update_increments_version
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestVersionHistory::test_history_grows_after_update
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestArchiveDelete::test_archive_strategy
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestArchiveDelete::test_archived_not_in_default_list
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestArchiveDelete::test_delete_strategy
+FAILED backend/tests/integration/test_w99_strategy_studio_v3.py::TestArchiveDelete::test_delete_all_clears
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_types_returns_list
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_types_contains_backtest
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_submit_job_returns_201
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_submit_job_default_status_queued
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_submit_job_has_id
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_submit_job_has_created_at
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_submit_job_progress_zero
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_submit_invalid_job_type
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_submit_empty_name_rejected
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_submit_all_valid_types
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_get_job_returns_detail
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_get_nonexistent_job_404
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_list_jobs_returns_total
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_list_jobs_status_filter_queued
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_list_jobs_invalid_status_filter
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_cancel_queued_job
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_cancel_already_canceled_is_idempotent
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_cancel_nonexistent_job_404
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_cancel_queued_visible_in_filter
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_start_job_queued_to_running
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_complete_job_running_to_succeeded
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_complete_job_progress_100
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_fail_job_running_to_failed
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_invalid_transition_complete_from_queued
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_cancel_succeeded_is_idempotent
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_auto_run_job_eventually_succeeds
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_clear_jobs_removes_all
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_clear_jobs_idempotent
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_invariant_completed_at_set_on_success
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_invariant_canceled_at_set_on_cancel
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_invariant_started_at_set_on_start
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_invariant_terminal_states_no_regression
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_invariant_failed_job_has_error
+ERROR backend/tests/integration/test_w100_job_queue_v2.py::test_list_jobs_filter_running
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_list_scenarios_returns_4
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_scenarios_have_required_fields
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_volatility_scenario_exists
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_convergence_scenario_exists
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_run_scenario_returns_201
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_run_scenario_has_session_id
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_run_scenario_left_pane_has_results
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_run_scenario_center_pane_has_nodes
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_run_scenario_right_pane_has_citations
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_run_scenario_right_pane_has_agent_trace
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_run_invalid_scenario_returns_404
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_all_four_scenarios_runnable
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_sessions_accumulate_after_runs
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_evidence_nodes_have_relevance
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_search_results_have_score
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_create_ticket_returns_201
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_create_ticket_has_id
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_create_ticket_default_status_open
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_create_ticket_empty_title_rejected
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_get_ticket_by_id
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_get_nonexistent_ticket_404
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_list_tickets_returns_all
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_list_tickets_q_filter
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_ticket_scenario_run_then_create
+ERROR backend/tests/integration/test_w101_convergence_cockpit_v1.py::test_clear_data_removes_sessions_and_tickets
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_dataset_returns_200
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_dataset_has_six_cases
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_dataset_version_v1
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_dataset_case_ids
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_dataset_categories_present
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_dataset_each_case_has_expected_evidence_ids
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_dataset_each_case_has_expected_keywords
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_returns_201
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_has_run_id
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_case_count_six
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_has_avg_scores
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_has_scores_list
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_scores_have_required_fields
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_scores_in_range
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_total_score_is_average
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_post_run_avg_total_matches_scores
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_determinism_run_twice_same_scores
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_determinism_per_case_scores_stable
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_runs_returns_200
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_runs_empty_before_any_run
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_runs_accumulates
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_run_by_id_200
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_run_by_id_has_scores
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_get_run_by_id_unknown_returns_404
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_delete_runs_returns_200
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_delete_runs_clears_all
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_all_six_case_ids_in_run_scores
+ERROR backend/tests/integration/test_w102_agent_eval_harness.py::test_run_scores_include_evidence_returned_and_expected
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_returns_200
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_has_seven_pages
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_version
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_has_hash
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_has_two_components
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_registry_hash_deterministic
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_returns_200
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_count
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_all_core_ids_present
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_group_filter
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_list_pages_all_have_shell_version_w103
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_page_by_id_returns_200
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_page_by_id_correct_path
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_page_by_id_unknown_returns_404
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_list_components_returns_200
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_list_components_has_page_shell_and_data_table
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_component_page_shell
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_component_data_table_features
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_component_unknown_returns_404
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_shell_states
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_post_heartbeat_returns_201
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_post_heartbeat_has_heartbeat_id
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_post_heartbeat_invalid_status_422
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_post_heartbeat_unknown_page_404
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_get_heartbeats_accumulates
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_delete_data_clears_heartbeats
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_post_snapshot_returns_201
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_post_snapshot_has_snapshot_id
+ERROR backend/tests/integration/test_w103_ui_page_registry.py::test_post_snapshot_page_count_7
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Version::test_version_returns_200
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Version::test_version_has_w104_prefix
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Version::test_version_has_excluded_rules
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104PagesUnderTest::test_pages_under_test_returns_200
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104PagesUnderTest::test_pages_under_test_has_7_pages
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104PagesUnderTest::test_pages_under_test_includes_key_pages
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104PagesUnderTest::test_pages_under_test_have_url
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104PostRun::test_post_run_returns_201
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104PostRun::test_post_run_returns_run_id
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104PostRun::test_post_run_counts_critical_serious
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104PostRun::test_post_run_passed_true_when_no_critical_serious
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104GetRuns::test_get_runs_returns_200
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104GetRuns::test_get_runs_empty_initially
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104GetRuns::test_get_runs_returns_saved_runs
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104GetRuns::test_get_runs_filters_by_page_id
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104GetRuns::test_get_runs_has_required_fields
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Summary::test_summary_returns_200
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Summary::test_summary_has_version
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Summary::test_summary_overall_pass_true_when_empty
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Summary::test_summary_overall_pass_false_with_critical
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Summary::test_summary_excluded_rules_present
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104Summary::test_summary_pages_under_test_present
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104DeleteData::test_delete_clears_runs
+ERROR backend/tests/integration/test_w104_a11y_audit.py::TestW104DeleteData::test_delete_returns_deleted_true
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestPostSample::test_post_sample_returns_201
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestPostSample::test_post_sample_returns_id
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestPostSample::test_post_sample_budget_passed_for_fast_page
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestPostSample::test_post_sample_budget_failed_for_slow_page
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestGetSamples::test_get_samples_empty_list
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestGetSamples::test_get_samples_after_post
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestGetSamples::test_get_samples_filter_by_page_id
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestGetSamples::test_get_samples_filter_returns_empty_for_unknown
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestGetSamples::test_get_samples_has_expected_fields
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestSummary::test_summary_empty
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestSummary::test_summary_has_budgets_key
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestSummary::test_summary_total_samples_increments
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestSummary::test_summary_pages_sampled
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestSummary::test_summary_avg_lcp_ms_computed
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestSummary::test_summary_pages_passing_fast_samples
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestDelete::test_delete_returns_deleted_count
+ERROR backend/tests/integration/test_w105_perf_budget.py::TestDelete::test_delete_clears_all_samples
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestIndexControl::test_index_returns_201
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestIndexControl::test_index_returns_id
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestIndexControl::test_index_ap_ar
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestIndexControl::test_index_reconciliation
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestIndexControl::test_index_custom_doc_id
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestSearchControls::test_search_returns_200
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestSearchControls::test_search_empty_returns_empty_hits
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestSearchControls::test_search_finds_indexed_control
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestSearchControls::test_search_filter_by_doc_type
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestGetControl::test_get_returns_404_for_missing
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestGetControl::test_get_returns_control
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestGetControl::test_get_has_id_field
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestGetControl::test_get_has_doc_type
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestEdges::test_post_edge_returns_201
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestEdges::test_post_edge_has_id
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestEdges::test_get_edges_empty
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestEdges::test_get_edges_after_post
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestEdges::test_get_edges_filter_by_to_id
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestEdges::test_edges_has_edge_type
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestDelete::test_delete_returns_counts
+ERROR backend/tests/integration/test_w106_controls_domain.py::TestDelete::test_delete_clears_controls
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestVersion::test_version_status_ok
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestVersion::test_version_has_w107_tag
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestVersion::test_version_status_field
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestRBAC::test_rbac_admin_allowed
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestRBAC::test_rbac_agent_allowed
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestRBAC::test_rbac_auditor_allowed
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestRBAC::test_rbac_viewer_denied
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestCreate::test_create_returns_201
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestCreate::test_create_returns_id
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestCreate::test_create_default_status_open
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestCreate::test_create_viewer_role_blocked
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestCreate::test_create_priority_stored
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestIdempotency::test_same_ticket_id_returns_same_object
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestIdempotency::test_idempotent_preserves_original_title
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestIdempotency::test_idempotent_no_duplicate_audit_events
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestGet::test_get_existing_ticket
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestGet::test_get_missing_returns_404
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestUpdate::test_update_status
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestUpdate::test_update_rbac_denied
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestUpdate::test_update_missing_ticket_404
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestAuditTrail::test_audit_has_created_event
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestAuditTrail::test_audit_actor_recorded
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestAuditTrail::test_audit_update_event_appended
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestSearch::test_search_returns_hits_structure
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestSearch::test_search_finds_created_ticket
+ERROR backend/tests/integration/test_w107_safe_actions.py::TestDelete::test_delete_clears_tickets
+========== 122 failed, 642 passed, 204 errors in 2394.04s (0:39:54) ===========
+C:\Python314\python.exe : Exception ignored in atexit callback <function 
+cleanup_numbered_dir at 0x000002355D0D28D0>:
+At line:1 char:149
++ ... on\phase1"; C:\Python314\python.exe -m pytest backend/tests/ -q --tb= ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Exception ignor...002355D0D28D0>: 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Traceback (most recent call last):
+  File "C:\Users\tld\AppData\Roaming\Python\Python314\site-packages\_pytest\pat
+hlib.py", line 374, in cleanup_numbered_dir
+    cleanup_dead_symlinks(root)
+  File "C:\Users\tld\AppData\Roaming\Python\Python314\site-packages\_pytest\pat
+hlib.py", line 360, in cleanup_dead_symlinks
+    left_dir.unlink()
+  File "C:\Python314\Lib\pathlib\__init__.py", line 1042, in unlink
+    os.unlink(self)
+PermissionError: [WinError 5] Access is denied: 
+'C:\\Users\\tld\\AppData\\Local\\Temp\\pytest-of-tld\\pytest-current'

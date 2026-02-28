@@ -1,0 +1,1 @@
+{"migrated":{"name":"Det Test","schema_version":1,"spec":{},"type":"signal","version":"1"},"needs_migration":true,"source_version":0,"target_version":1,"warnings":["Added default version='1' (migrated from v0)","Added empty spec (migrated from v0)","Migrated from schema_version=0 to 1","Set default type='signal' (migrated from v0)"]}

@@ -1,0 +1,5 @@
+bg-client: connected
+bg-client: recv {"type":"SUBSCRIBED","symbol":"AAPL","timeframe":"1m"}
+bg-client: recv {"type":"HEARTBEAT","timestamp":1768525505042}
+bg-client: recv {"type":"HEARTBEAT","timestamp":1768525535039}
+bg-client error received 1012 (service restart); then sent 1012 (service restart)

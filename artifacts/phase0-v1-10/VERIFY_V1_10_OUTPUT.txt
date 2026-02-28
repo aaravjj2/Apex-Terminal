@@ -1,0 +1,201 @@
+cd frontend && npx tsc --noEmit
+cd frontend && npx vitest run
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90m/home/aarav/Aarav/Tradingview recreation/frontend[39m
+
+ [32m✓[39m tests/unit/ui-components.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/unit/providers.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m tests/unit/indicators/calculators.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/unit/regression-locks.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m tests/unit/core/Scales.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/unit/core/ChartEngine.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/unit/disambiguator.test.ts [2m([22m[2m34 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m tests/unit/state/store.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/unit/strategy-templates.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[32m97 passed[39m[22m[90m (97)[39m
+[2m   Start at [22m 11:15:07
+[2m   Duration [22m 1.20s[2m (transform 1.06s, setup 1.33s, import 1.31s, tests 152ms, environment 5.65s)[22m
+
+python3 -m pytest tests/ -x --tb=short
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.0.2, pluggy-1.6.0 -- /home/aarav/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/aarav/Aarav/Tradingview recreation
+configfile: pytest.ini
+plugins: cov-7.0.0, dash-3.3.0, typeguard-4.4.4, mock-3.15.1, anyio-4.12.1, playwright-0.7.2, httpx-0.36.0, base-url-2.1.0, asyncio-1.3.0
+asyncio: mode=strict, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 117 items
+
+tests/test_backtest_export.py::test_backtest_artifacts_export_structure PASSED [  0%]
+tests/test_backtest_export.py::test_report_html_contains_determinism_data PASSED [  1%]
+tests/test_backtest_export.py::test_backtest_determinism PASSED          [  2%]
+tests/test_backtest_export.py::test_export_nonexistent_run_returns_404 PASSED [  3%]
+tests/test_backtest_export.py::test_readme_contains_reproduction_instructions PASSED [  4%]
+tests/test_risk_desk_export.py::test_risk_desk_export_structure PASSED   [  5%]
+tests/test_risk_desk_export.py::test_risk_desk_export_nonexistent_run_returns_404 PASSED [  5%]
+tests/test_strategy_backtest.py::TestStrategyValidator::test_valid_crossover_strategy PASSED [  6%]
+tests/test_strategy_backtest.py::TestStrategyValidator::test_crossover_needs_two_indicators PASSED [  7%]
+tests/test_strategy_backtest.py::TestStrategyValidator::test_signal_needs_conditions PASSED [  8%]
+tests/test_strategy_backtest.py::TestStrategyValidator::test_large_stop_loss_warning PASSED [  9%]
+tests/test_strategy_backtest.py::TestStrategyValidator::test_empty_name_invalid PASSED [ 10%]
+tests/test_strategy_backtest.py::TestBacktestEngine::test_demo_bars_deterministic PASSED [ 11%]
+tests/test_strategy_backtest.py::TestBacktestEngine::test_config_hash_determinism PASSED [ 11%]
+tests/test_strategy_backtest.py::TestBacktestEngine::test_sma_calculation PASSED [ 12%]
+tests/test_strategy_backtest.py::TestBacktestEngine::test_rsi_calculation PASSED [ 13%]
+tests/test_strategy_backtest.py::TestBacktestEngine::test_backtest_run_completeness PASSED [ 14%]
+tests/test_strategy_backtest.py::TestBacktestEngine::test_backtest_results_determinism PASSED [ 15%]
+tests/test_strategy_backtest.py::TestBacktestEngine::test_metrics_calculation_sanity PASSED [ 16%]
+tests/unit/phase4/test_alerts.py::TestAlertCondition::test_create_price_above PASSED [ 17%]
+tests/unit/phase4/test_alerts.py::TestAlertCondition::test_to_dict PASSED [ 17%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_create_alert PASSED [ 18%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_get_alert PASSED [ 19%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_update_alert PASSED [ 20%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_delete_alert PASSED [ 21%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_get_all_alerts PASSED [ 22%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_check_condition_price_above PASSED [ 23%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_check_condition_price_below PASSED [ 23%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_check_condition_price_cross_above PASSED [ 24%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_check_condition_rsi PASSED [ 25%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_check_condition_volume PASSED [ 26%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_cooldown_prevents_trigger PASSED [ 27%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_max_triggers_limit PASSED [ 28%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_expired_alert PASSED [ 29%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_paused_alert_does_not_trigger PASSED [ 29%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_process_price_update_triggers_alert PASSED [ 30%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_websocket_callback PASSED [ 31%]
+tests/unit/phase4/test_alerts.py::TestAlertsEngine::test_trigger_history PASSED [ 32%]
+tests/unit/phase4/test_fill_simulator.py::TestSlippageConfig::test_default_no_slippage PASSED [ 33%]
+tests/unit/phase4/test_fill_simulator.py::TestSlippageConfig::test_fixed_slippage PASSED [ 34%]
+tests/unit/phase4/test_fill_simulator.py::TestSlippageConfig::test_percentage_slippage PASSED [ 35%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_market_order_fill_at_open PASSED [ 35%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_market_order_with_slippage PASSED [ 36%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_limit_buy_fills_when_price_low_enough PASSED [ 37%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_limit_buy_no_fill_when_price_high PASSED [ 38%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_limit_sell_fills_when_price_high_enough PASSED [ 39%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_stop_buy_triggers PASSED [ 40%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_stop_sell_triggers PASSED [ 41%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_stop_limit_triggers_and_fills PASSED [ 41%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_inactive_order_not_filled PASSED [ 42%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_apply_fill_updates_order PASSED [ 43%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_partial_fill PASSED [ 44%]
+tests/unit/phase4/test_fill_simulator.py::TestFillSimulator::test_commission_calculation PASSED [ 45%]
+tests/unit/phase4/test_fill_simulator.py::TestRandomSlippage::test_seeded_slippage_reproducible PASSED [ 46%]
+tests/unit/phase4/test_portfolio.py::TestPosition::test_position_long PASSED [ 47%]
+tests/unit/phase4/test_portfolio.py::TestPosition::test_position_short PASSED [ 47%]
+tests/unit/phase4/test_portfolio.py::TestPosition::test_position_flat PASSED [ 48%]
+tests/unit/phase4/test_portfolio.py::TestPosition::test_position_to_dict PASSED [ 49%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_initial_state PASSED [ 50%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_buy_creates_position PASSED [ 51%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_sell_closes_position PASSED [ 52%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_partial_close PASSED [ 52%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_average_up PASSED [ 53%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_commission_deducted PASSED [ 54%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_export_trades_json PASSED [ 55%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_export_trades_csv PASSED [ 56%]
+tests/unit/phase4/test_portfolio.py::TestPortfolioManager::test_reset PASSED [ 57%]
+tests/unit/phase4/test_portfolio.py::TestTrade::test_trade_values PASSED [ 58%]
+tests/unit/phase4/test_portfolio.py::TestTrade::test_trade_to_dict PASSED [ 58%]
+tests/unit/phase4/test_risk_manager.py::TestRiskLimits::test_default_limits PASSED [ 59%]
+tests/unit/phase4/test_risk_manager.py::TestRiskLimits::test_custom_limits PASSED [ 60%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_order_passes_all_checks PASSED [ 61%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_order_exceeds_max_shares PASSED [ 62%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_order_exceeds_max_value PASSED [ 63%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_order_exceeds_position_size PASSED [ 64%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_blocked_symbol PASSED [ 64%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_allowed_symbols_only PASSED [ 65%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_insufficient_cash PASSED [ 66%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_trading_halted PASSED [ 67%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_resume_trading PASSED [ 68%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_daily_pnl_tracking PASSED [ 69%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_daily_loss_limit_halts_trading PASSED [ 70%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_reset_daily_limits PASSED [ 70%]
+tests/unit/phase4/test_risk_manager.py::TestRiskManager::test_get_status PASSED [ 71%]
+tests/unit/test_ticker_resolver.py::TestNormalizeSeparator::test_dash_to_dot PASSED [ 72%]
+tests/unit/test_ticker_resolver.py::TestNormalizeSeparator::test_slash_to_dot PASSED [ 73%]
+tests/unit/test_ticker_resolver.py::TestNormalizeSeparator::test_already_dot PASSED [ 74%]
+tests/unit/test_ticker_resolver.py::TestNormalizeSeparator::test_no_separator PASSED [ 75%]
+tests/unit/test_ticker_resolver.py::TestNormalizeSeparator::test_lowercase_input PASSED [ 76%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerBRK::test_brk_dot_b PASSED [ 76%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerBRK::test_brk_dash_b PASSED [ 77%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerBRK::test_brk_slash_b PASSED [ 78%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerBRK::test_brkb_no_separator PASSED [ 79%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerBRK::test_brk_b_lowercase PASSED [ 80%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerBRK::test_brk_b_mixed_case PASSED [ 81%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerMixedCase::test_aapl_lowercase PASSED [ 82%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerMixedCase::test_aapl_uppercase PASSED [ 82%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerMixedCase::test_aapl_mixed PASSED [ 83%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerWhitespace::test_leading_whitespace PASSED [ 84%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerWhitespace::test_trailing_whitespace PASSED [ 85%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerWhitespace::test_both_whitespace PASSED [ 86%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCollisions::test_ticker_a_collision PASSED [ 87%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCollisions::test_ticker_i_collision PASSED [ 88%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCollisions::test_ticker_on_collision PASSED [ 88%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCollisions::test_ticker_it_collision PASSED [ 89%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCollisions::test_ticker_are_collision PASSED [ 90%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerUnknown::test_unknown_ticker PASSED [ 91%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerUnknown::test_unknown_ticker_with_separator PASSED [ 92%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerInvalid::test_empty_string PASSED [ 93%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerInvalid::test_only_whitespace PASSED [ 94%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCompanyNames::test_aapl_has_company PASSED [ 94%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCompanyNames::test_brk_b_has_company PASSED [ 95%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCompanyNames::test_unknown_no_company PASSED [ 96%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerBatch::test_batch_multiple_tickers PASSED [ 97%]
+tests/unit/test_ticker_resolver.py::TestGetNormalizedForm::test_get_normalized_brk PASSED [ 98%]
+tests/unit/test_ticker_resolver.py::TestGetNormalizedForm::test_get_normalized_aapl PASSED [ 99%]
+tests/unit/test_ticker_resolver.py::TestGetNormalizedForm::test_get_normalized_unknown PASSED [100%]
+
+============================= 117 passed in 1.37s ==============================
+cd frontend && npx playwright test tests/e2e/pages.spec.ts tests/e2e/verification.spec.ts tests/e2e/interactions.spec.ts --retries=0 --workers=1
+
+Running 12 tests using 1 worker
+
+  ✓   1 [chromium] › tests/e2e/interactions.spec.ts:9:5 › Interactive Elements › buttons should be clickable and show hover states (1.5s)
+  ✓   2 [chromium] › tests/e2e/interactions.spec.ts:26:5 › Interactive Elements › should handle rapid clicks gracefully (2.1s)
+  ✓   3 [chromium] › tests/e2e/interactions.spec.ts:38:5 › Interactive Elements › should handle double-click (1.1s)
+  ✓   4 [chromium] › tests/e2e/interactions.spec.ts:47:5 › Interactive Elements › should handle right-click context menu (1.1s)
+  ✓   5 [chromium] › tests/e2e/pages.spec.ts:9:5 › Page Navigation and Rendering › Monitor page renders chart (2.1s)
+  ✓   6 [chromium] › tests/e2e/pages.spec.ts:21:5 › Page Navigation and Rendering › Replay page renders controls (1.8s)
+  ✓   7 [chromium] › tests/e2e/pages.spec.ts:32:5 › Page Navigation and Rendering › Strategies page renders list (1.6s)
+  ✓   8 [chromium] › tests/e2e/pages.spec.ts:43:5 › Page Navigation and Rendering › Alerts page renders (1.6s)
+  ✓   9 [chromium] › tests/e2e/pages.spec.ts:53:5 › Page Navigation and Rendering › Portfolio page renders positions (1.6s)
+  ✓  10 [chromium] › tests/e2e/pages.spec.ts:64:5 › Page Navigation and Rendering › Runs/Audit page renders (1.6s)
+  ✓  11 [chromium] › tests/e2e/pages.spec.ts:75:5 › Page Navigation and Rendering › Settings page renders API keys section (1.6s)
+  ✓  12 [chromium] › tests/e2e/verification.spec.ts:3:1 › check page loads without critical errors (4.5s)
+
+  12 passed (24.0s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+cd frontend && npx playwright test tests/e2e/ticker-resolution-v1-10.spec.ts --retries=0 --workers=1
+
+Running 8 tests using 1 worker
+
+  ✓  1 [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:29:3 › Ticker Resolution v1.10 › T1: Ambiguous ticker (ON) returns low confidence with collision warning (2.7s)
+  ✓  2 [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:54:3 › Ticker Resolution v1.10 › T2: Normalized ticker (BRK-B) resolves to BRK.B with high confidence (2.7s)
+  ✓  3 [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:84:3 › Ticker Resolution v1.10 › T3: Batch resolution handles mixed confidence inputs (2.6s)
+  ✓  4 [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:132:3 › Ticker Resolution v1.10 › T4: Unknown ticker returns low confidence (139ms)
+  ✓  5 [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:148:3 › Ticker Resolution v1.10 › T5: Whitespace and case handling (176ms)
+  ✓  6 [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:168:3 › Ticker Resolution v1.10 › T6: Empty and invalid inputs (178ms)
+  ✓  7 [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:185:3 › Ticker Resolution v1.10 › T7: Normalize endpoint provides quick normalization (149ms)
+  ✓  8 [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:196:3 › Ticker Resolution v1.10 › T8: All collision tickers flagged correctly (187ms)
+
+  8 passed (9.7s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+
+═══════════════════════════════════════════
+  ✓ v1.10 Verification Complete (Ticker Disambiguation)
+  TSC: 0 errors
+  Vitest: 97/97 passed
+  Pytest: 117/117 passed (84 baseline + 33 ticker)
+  Playwright Smoke: 12/12 passed
+  Playwright v1.10: 8/8 passed
+  Total: 234/234 tests passed (0 fail, 0 skip)
+═══════════════════════════════════════════

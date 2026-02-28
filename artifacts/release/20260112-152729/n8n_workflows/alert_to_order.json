@@ -1,0 +1,122 @@
+{
+  "name": "Alert: Price Alert",
+  "nodes": [
+    {
+      "id": "webhook_1",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        250,
+        300
+      ],
+      "name": "Alert Webhook",
+      "parameters": {
+        "path": "alerts/aapl",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "if_1",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        450,
+        300
+      ],
+      "name": "Check Condition",
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.condition_met }}",
+              "operation": "equals",
+              "value2": "true"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http_1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        650,
+        200
+      ],
+      "name": "Place Order",
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/orders",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "symbol",
+              "value": "AAPL"
+            },
+            {
+              "name": "side",
+              "value": "buy"
+            },
+            {
+              "name": "quantity",
+              "value": "10"
+            },
+            {
+              "name": "order_type",
+              "value": "market"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "noop_1",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        650,
+        400
+      ],
+      "name": "No Action",
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "webhook_1": {
+      "main": [
+        [
+          {
+            "node": "if_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if_1": {
+      "main": [
+        [
+          {
+            "node": "http_1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "noop_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "exportedAt": "2026-01-12T20:28:09.312122Z",
+    "generator": "tradingview-recreation",
+    "version": "1.0.0"
+  }
+}

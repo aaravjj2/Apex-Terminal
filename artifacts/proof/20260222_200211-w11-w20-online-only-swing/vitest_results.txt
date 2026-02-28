@@ -1,0 +1,511 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Tradingview/Tradingview recreation/frontend[39m
+
+ [32mΓ£ô[39m tests/unit/core/ChartEngine.test.ts[2m > [22mChartEngine[2m > [22mshould initialize correctly[32m 5[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/ChartEngine.test.ts[2m > [22mChartEngine[2m > [22mshould resize correctly[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/ChartEngine.test.ts[2m > [22mChartEngine[2m > [22mshould start loop[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/ChartEngine.test.ts[2m > [22mChartEngine[2m > [22mshould render candles[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/ChartEngine.test.ts[2m > [22mChartEngine[2m > [22mshould pan on drag[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/ChartEngine.test.ts[2m > [22mChartEngine[2m > [22mshould show tooltip on hover[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatNumberSafe ΓÇö null/undefined/NaN guard (regression lock)[2m > [22mreturns fallback for null[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatNumberSafe ΓÇö null/undefined/NaN guard (regression lock)[2m > [22mreturns fallback for undefined[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatNumberSafe ΓÇö null/undefined/NaN guard (regression lock)[2m > [22mreturns fallback for NaN[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatNumberSafe ΓÇö null/undefined/NaN guard (regression lock)[2m > [22mformats valid numbers correctly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatNumberSafe ΓÇö null/undefined/NaN guard (regression lock)[2m > [22muses custom fallback[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatNumberSafe ΓÇö null/undefined/NaN guard (regression lock)[2m > [22mhandles zero[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatNumberSafe ΓÇö null/undefined/NaN guard (regression lock)[2m > [22mhandles negative numbers[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatCurrencySafe ΓÇö null/undefined guard (regression lock)[2m > [22mreturns $0.00 for null[32m 9[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatCurrencySafe ΓÇö null/undefined guard (regression lock)[2m > [22mreturns $0.00 for undefined[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatCurrencySafe ΓÇö null/undefined guard (regression lock)[2m > [22mformats positive currency[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatCurrencySafe ΓÇö null/undefined guard (regression lock)[2m > [22mformats negative currency[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatPercentSafe ΓÇö null/undefined guard (regression lock)[2m > [22mreturns 0.00% for null[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatPercentSafe ΓÇö null/undefined guard (regression lock)[2m > [22mreturns 0.00% for undefined[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatPercentSafe ΓÇö null/undefined guard (regression lock)[2m > [22mformats positive percent[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mformatPercentSafe ΓÇö null/undefined guard (regression lock)[2m > [22mformats percent with custom decimals[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mtickFormatCurrency ΓÇö never crashes (regression lock)[2m > [22mhandles undefined[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mtickFormatCurrency ΓÇö never crashes (regression lock)[2m > [22mhandles null[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mtickFormatCurrency ΓÇö never crashes (regression lock)[2m > [22mhandles string input[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mtickFormatCurrency ΓÇö never crashes (regression lock)[2m > [22mformats thousands correctly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mtickFormatPercent ΓÇö never crashes (regression lock)[2m > [22mhandles undefined[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mtickFormatPercent ΓÇö never crashes (regression lock)[2m > [22mhandles null[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mtickFormatPercent ΓÇö never crashes (regression lock)[2m > [22mformats valid percent[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mCSV header mapping ΓÇö column name regression lock[2m > [22mrequired columns list has 7 items[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mCSV header mapping ΓÇö column name regression lock[2m > [22mincludes all required column names[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mCSV header mapping ΓÇö column name regression lock[2m > [22mcolumn names are lowercase (no CamelCase regression)[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts[2m > [22mvitest config ΓÇö exclude E2E files (regression lock)[2m > [22mvitest must not attempt to run E2E spec files[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould initialize with empty grouped results[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould perform async backend search[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould handle empty query[32m 6[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould handle fetch errors gracefully[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould group results by document type[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould filter by document type[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould set loading state correctly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould notify subscribers on state change[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould reset to initial state[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts[2m > [22msearchStore v1.104[2m > [22mshould backward-compatible sync search still work[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/ui-components.test.tsx[2m > [22mErrorBanner[2m > [22mplaceholder test - component exists[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/ui-components.test.tsx[2m > [22mQuickActions[2m > [22mplaceholder test - component exists[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts[2m > [22mIndicator Calculators[2m > [22mSMA[2m > [22mshould return NaN for initial period - 1 values[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts[2m > [22mIndicator Calculators[2m > [22mSMA[2m > [22mshould calculate correct SMA[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts[2m > [22mIndicator Calculators[2m > [22mEMA[2m > [22mshould return values after period[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts[2m > [22mIndicator Calculators[2m > [22mVWAP[2m > [22mshould calculate cumulative VWAP[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts[2m > [22mIndicator Calculators[2m > [22mRSI[2m > [22mshould return values between 0 and 100[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts[2m > [22mIndicator Calculators[2m > [22mMACD[2m > [22mshould return macdLine, signalLine, and histogram[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts[2m > [22mIndicator Calculators[2m > [22mBollinger Bands[2m > [22mshould return middle, upper, and lower bands[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts[2m > [22mIndicator Calculators[2m > [22mATR[2m > [22mshould calculate positive ATR values[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/no-fake-kpis.test.ts[2m > [22mNo Fake KPIs Guard (v1.93)[2m > [22mUI2 pages must not import DEMO_KPIS/DEMO_ORDERS/DEMO_POSITIONS as real data[32m 5[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautomationStore[2m > [22mstarts with 3 demo workflows[32m 98[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautomationStore[2m > [22mstarts with 0 runs[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautomationStore[2m > [22mcreates a workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautomationStore[2m > [22mruns a workflow and produces steps[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mautomation runs[2m > [22mhas 3 demo runs[32m 7[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mautomation runs[2m > [22mreturns runs sorted by started_at descending[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mautomation runs[2m > [22mgets run by id[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mautomation runs[2m > [22mreturns null for nonexistent run[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mautomation runs[2m > [22mrun has steps[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mautomation runs[2m > [22mrun has logs[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mautomation runs[2m > [22mfailed run has error status[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mworkflows[2m > [22mhas 2 demo workflows[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mworkflows[2m > [22mgets workflow by id[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mworkflows[2m > [22mcreates a new workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mworkflows[2m > [22mdeletes a workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mworkflows[2m > [22mreturns null for nonexistent workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mtemplates[2m > [22mhas 3 demo templates[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mtemplates[2m > [22mapplies template creates a workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mtemplates[2m > [22mapply nonexistent template returns null[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mincidents[2m > [22mhas 2 demo incidents[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mincidents[2m > [22mreturns incidents sorted by created_at descending[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mincidents[2m > [22mgets incident by id[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mincidents[2m > [22mcreates a new incident[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mreplay[2m > [22mstarts playing at speed 1[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mreplay[2m > [22mtoggles pause[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mreplay[2m > [22msets replay speed[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mdecisions[2m > [22mhas 4 demo decisions[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mdecisions[2m > [22mreturns decisions sorted by timestamp descending[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mdecisions[2m > [22mgets decision by id[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mdecisions[2m > [22mdecision has portfolio impact[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mdecisions[2m > [22mdecision has features and risk evaluation[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22msearch[2m > [22mreturns suggestions for empty query[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22msearch[2m > [22mfilters suggestions by query[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22msearch[2m > [22mreturns empty for no match[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22msearch[2m > [22mgetSearchBackend returns local[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22msearch[2m > [22mgetLLMProvider returns deterministic[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mhealthV4[2m > [22mreturns health data[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mhealthV4[2m > [22mhas 8 subsystems[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mhealthV4[2m > [22mall subsystems have status[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22mhealthV4[2m > [22mstatus is healthy[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22msubscribe[2m > [22msubscribe returns unsubscribe function[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts[2m > [22mwave1314Store[2m > [22msubscribe[2m > [22mgetSnapshot returns state object[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mFixtureProvider[2m > [22mreturns candles for valid request[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mFixtureProvider[2m > [22mreturns deterministic data for same symbol[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mFixtureProvider[2m > [22mreturns different data for different symbols[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mFixtureProvider[2m > [22mcandles have monotonically increasing time[32m 3[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mFixtureProvider[2m > [22mhigh >= max(open, close) and low <= min(open, close)[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mFixtureProvider[2m > [22mprovider info is correct[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mCachedProvider[2m > [22mcaches results after first fetch[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mCachedProvider[2m > [22mcache key is deterministic[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mCachedProvider[2m > [22mclearCache removes all mktdata keys[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mCachedProvider[2m > [22mexpired cache re-fetches[32m 23[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mProvider Registry[2m > [22mgetProvider("fixture") returns FixtureProvider[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mProvider Registry[2m > [22mgetDefaultProvider returns fixture[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts[2m > [22mProvider Registry[2m > [22mgetAvailableProviders returns 3 providers[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/provenance-display.test.tsx[2m > [22mProvenanceDisplay[2m > [22mrenders DEMO source provenance[32m 17[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/provenance-display.test.tsx[2m > [22mProvenanceDisplay[2m > [22mrenders LOCAL_REPLAY source provenance[32m 13[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/provenance-display.test.tsx[2m > [22mProvenanceDisplay[2m > [22mreturns null when provenance is null[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/provenance-display.test.tsx[2m > [22mProvenanceDisplay[2m > [22mtruncates long cache_key[32m 3[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/provenance-display.test.tsx[2m > [22mProvenanceDisplay[2m > [22mapplies custom className[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/provenance-display.test.tsx[2m > [22mProvenanceDisplay[2m > [22mhandles provenance without optional fields[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/Scales.test.ts[2m > [22mLinearScale[2m > [22mshould map values to pixels correctly[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/Scales.test.ts[2m > [22mLinearScale[2m > [22mshould map pixels to values correctly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/Scales.test.ts[2m > [22mTimeScale[2m > [22mshould map index to pixels correctly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/Scales.test.ts[2m > [22mTimeScale[2m > [22mshould map pixels to index correctly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mrenders citations with source types[32m 19[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mrenders confidence percentage[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mhides confidence when null[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mshows loading state[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mshows empty state[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mtruncates to maxVisible and shows toggle[32m 3[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mexpands to show all items on toggle click[32m 8[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mdoes not show toggle when count <= maxVisible[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx[2m > [22mCitationsPanel[2m > [22mhandles all source_type color classes[32m 4[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mtradingStore - Wave 9[2m > [22mshould initialize with empty state[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mtradingStore - Wave 9[2m > [22mshould have all required API methods[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mtradingStore - Wave 9[2m > [22mshould return correct types from getters[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mtradingStore - Wave 9[2m > [22mshould reset to empty state[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mautopilotV2Store - Wave 9[2m > [22mshould have required methods[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mautopilotV2Store - Wave 9[2m > [22mshould have default seed=42[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mautopilotV2Store - Wave 9[2m > [22mshould update seed[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mautopilotV2Store - Wave 9[2m > [22mshould have kill switch disabled by default[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mautopilotV2Store - Wave 9[2m > [22mshould arm and disarm kill switch[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mautopilotV2Store - Wave 9[2m > [22mexecute should return promise[32m 17[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mWave 9 KPI Formatting[2m > [22mshould handle P&L signs correctly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts[2m > [22mWave 9 KPI Formatting[2m > [22mshould not produce NaN in P&L calculations[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mdollar-prefix rule[2m > [22m$ON resolves as ON without ambiguity[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mdollar-prefix rule[2m > [22m$ai resolves as AI uppercase without ambiguity[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mdollar-prefix rule[2m > [22m$AAPL resolves as AAPL without ambiguity[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mwell-known rule[2m > [22mAAPL is well-known[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mwell-known rule[2m > [22mspy (lowercase) resolves as SPY[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mwell-known rule[2m > [22mNVDA is well-known[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mwatchlist rule[2m > [22mON in watchlist ΓåÆ not ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mwatchlist rule[2m > [22mIT in watchlist ΓåÆ not ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mON is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mIT is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mAI is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mALL is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mSO is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mA is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mNOW is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mOPEN is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mDO is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mKEY is flagged as ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mambiguity detection[2m > [22mlowercase "on" is still ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mpassthrough rule[2m > [22mZZZZ passes through (unknown, not ambiguous)[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mpassthrough rule[2m > [22mempty string ΓåÆ empty passthrough[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mpassthrough rule[2m > [22mwhitespace ΓåÆ empty passthrough[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22misAmbiguous("IT") returns true[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22misAmbiguous("AAPL") returns false[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22misWellKnown("SPY") returns true[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22misWellKnown("XYZABC") returns false[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22mgetAmbiguousEntry returns entry for known ambiguous ticker[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22mgetAmbiguousEntry returns undefined for non-ambiguous[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22mgetAmbiguousTickers returns non-empty object[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22mgetWellKnownTickers returns non-empty array[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mhelpers[2m > [22mbuildDisambiguationPrompt generates readable string[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mrule priority[2m > [22m$ prefix wins over ambiguity[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mrule priority[2m > [22mwatchlist wins over ambiguity[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts[2m > [22mdisambiguator[2m > [22mrule priority[2m > [22mwell-known is checked before ambiguous (not overlapping currently)[32m 0[2mms[22m[39m
+node.exe : [90mstderr[2m | Object.execute (C:\Tradingview\Tradingview 
+recreation\frontend\src\ui2\stores\autopilotV2Store.ts:192:15)
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...tore.ts:192:15) 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mAutopilot execute error: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:103:5)[39m
+    at Object.execute (C:/Tradingview/Tradingview 
+recreation/frontend/src/ui2/stores/autopilotV2Store.ts:151:24) {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mhas initial state with empty query[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mreturns all entity types[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22msearch finds demo results for AAPL[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mfilters by entity type[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mgroups results correctly[32m 6[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mselects result and populates selectedEntity[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mcomputes related entities when selecting[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mprovides recent searches[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mclears recent searches[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22msets filters[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22msearchStore (v2)[2m > [22mreset restores initial state[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mllmProviderStore[2m > [22mhas initial demo status (not null)[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mllmProviderStore[2m > [22mfetchStatus populates demo status[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mllmProviderStore[2m > [22mfetchReplay populates demo replay entries[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mllmProviderStore[2m > [22mclearCache calls without error[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mllmProviderStore[2m > [22mresetBudget calls without error[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mllmProviderStore[2m > [22mreset restores demo state[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö decisions[2m > [22mgetDecisions returns 4 demo decisions sorted by timestamp desc[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö decisions[2m > [22meach decision has feature_attribution[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö decisions[2m > [22meach decision has confidence_breakdown[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö decisions[2m > [22mapproved decisions have post_trade_eval[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö decisions[2m > [22mrejected decisions have null post_trade_eval[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö decisions[2m > [22mselectDecision sets selectedDecision[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö decisions[2m > [22mselectDecision(null) clears selected[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö NL workflow[2m > [22minitial NL state is empty[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö NL workflow[2m > [22msetNLPrompt updates prompt[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö NL workflow[2m > [22mgenerateWorkflow creates workflow from prompt[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö NL workflow[2m > [22mvalidateWorkflow validates generated workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö NL workflow[2m > [22msimulateWorkflow runs simulation[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts[2m > [22mwave18Store ΓÇö NL workflow[2m > [22mclearWorkflow resets NL state[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautomationStore[2m > [22mrun generates deterministic hash[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautomationStore[2m > [22mdeletes a workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautomationStore[2m > [22mnotifies subscribers[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22msearchStore[2m > [22mreturns entity types[32m 7[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22msearchStore[2m > [22msearches and returns results for SPY[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22msearchStore[2m > [22mfilters by entity type[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22msearchStore[2m > [22mselects a result[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22msearchStore[2m > [22mscores exact matches higher[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautopilot2Store[2m > [22mstarts with 0 runs[32m 17[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautopilot2Store[2m > [22mexecutes pipeline and produces run[32m 10[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautopilot2Store[2m > [22mproduces decisions and rejections[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautopilot2Store[2m > [22mproduces orders matching decisions[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautopilot2Store[2m > [22mgenerates deterministic hash[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautopilot2Store[2m > [22mhas postmortem[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22mautopilot2Store[2m > [22mselects run[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22mstarts empty[32m 15[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22mhas tools[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22minvokes and returns user + assistant messages[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22mrisk prompt triggers tool calls[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22mbacktest prompt triggers tool calls[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22msearch prompt triggers tool calls[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22mclears messages[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22mcalls tool directly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts[2m > [22magentStore[2m > [22mreturns null for unknown tool[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/strategy-templates.spec.ts[2m > [22mStrategy Templates[2m > [22mcontains 10 templates and expected names[32m 1[2mms[22m[39m
+[90mstderr[2m | tests/unit/wave8-stores.test.ts[2m > 
+[22m[2mautopilotV2Store[2m > [22m[2mbackend API failure returns null
+[22m[39mAutopilot run failed: Internal Server Error
+
+[90mstderr[2m | tests/unit/wave8-stores.test.ts[2m > 
+[22m[2mautopilotV2Store[2m > [22m[2mbackend network error returns null
+[22m[39mAutopilot execute error: Error: Network error
+    at C:/Tradingview/Tradingview 
+recreation/frontend/tests/unit/wave8-stores.test.ts:205:46
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:145:11
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:915:26
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Tradingview/Tradingview%20recreation/fro
+ntend/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39
+m
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+    at Traces.$ [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[
+39m
+    at trace [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/[3
+9mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mstarts with empty runs[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mstarts with seed 42[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mkill switch starts disarmed[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mexecute creates a run (async backend call)[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mexecute produces candidates[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mexecute produces orders[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mexecute produces positions[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mexecute produces stages[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mexecute produces explain entries[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mexecute produces rejections for low confidence[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mdeterministic hash is stable (backend guarantees)[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mcan change seed[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22marm kill switch[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mdisarm kill switch[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22marmed kill switch blocks execute[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22marmed kill switch blocks execute[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mselectRun works[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22msetActiveTab works[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mreset clears everything[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mbackend API failure returns null[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautopilotV2Store[2m > [22mbackend network error returns null[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mstarts with 3 demo workflows[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mstarts with 0 runs[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mcan select a workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mrun workflow creates a run log[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mrun workflow with dependencies[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mrun log has deterministic hash[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mcreate workflow adds a new workflow[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mdelete workflow removes it[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mrun nonexistent workflow returns null[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mautomationV2Store[2m > [22mreset restores demo state[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mexportStore[2m > [22mstarts with manifest[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mexportStore[2m > [22mstarts with no bundle[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mexportStore[2m > [22mgenerate bundle creates one[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mexportStore[2m > [22misExporting is false after generation[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mexportStore[2m > [22mreset clears bundle[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mplatformHealthStore[2m > [22mstarts healthy[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mplatformHealthStore[2m > [22mhas 4 services[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mplatformHealthStore[2m > [22mhas metrics[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mplatformHealthStore[2m > [22mrefresh updates timestamp[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mplatformHealthStore[2m > [22mservices include autopilot_v2[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts[2m > [22mplatformHealthStore[2m > [22mreset restores defaults[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts[2m > [22mtelemetryStore[2m > [22mshould initialize with empty state[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mautopilotDepthStore[2m > [22mreturns default risk controls[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mautopilotDepthStore[2m > [22mupdates risk controls immutably[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mautopilotDepthStore[2m > [22mreturns default execution params[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mautopilotDepthStore[2m > [22mupdates execution params[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mautopilotDepthStore[2m > [22mruns evaluation deterministically[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mautopilotDepthStore[2m > [22mcaches evaluations by run_id[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mautopilotDepthStore[2m > [22mexport hash is stable across calls[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mautopilotDepthStore[2m > [22mdifferent run_ids produce different evaluations[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mbacktestDepthStore[2m > [22mruns a parameter sweep with correct grid size[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mbacktestDepthStore[2m > [22msweep results are deterministic[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mbacktestDepthStore[2m > [22mruns walk-forward with 6 windows[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mbacktestDepthStore[2m > [22mwalk-forward is deterministic[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mbacktestDepthStore[2m > [22mruns robustness with 8 scenarios[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mbacktestDepthStore[2m > [22mrobustness is deterministic[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mstarts with admin user[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mswitches users correctly[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22menforces RBAC policies[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mhas 4 initial templates[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22msearches templates by name and tag[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mclones a template[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mhas 3 initial scheduled jobs[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mcreates a schedule[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mtoggles job status[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mhas 8 initial run history records[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mtriggers deterministic run[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mexports audit with hash[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22mworkflowDepthStore[2m > [22mexport hash is deterministic[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mprovider status defaults to elastic backend[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mhas zero doc count before refresh[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mstarts with empty mappings[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mgenerates explain with 4 factors[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mexplain is deterministic[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mdifferent queries produce different explains[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mgenerates stable doc IDs[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mreturns search config with elastic configured[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts[2m > [22msearchDepthStore[2m > [22mdoc schema has expected fields[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/components.test.tsx[2m > [22mUI2 Components - Render Tests[2m > [22mPageHeader renders with title[32m 17[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/components.test.tsx[2m > [22mUI2 Components - Render Tests[2m > [22mPageHeader renders with subtitle and badge[32m 27[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/components.test.tsx[2m > [22mUI2 Components - Render Tests[2m > [22mPanel renders with children[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/components.test.tsx[2m > [22mUI2 Components - Render Tests[2m > [22mPanel renders with title and actions[32m 4[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/components.test.tsx[2m > [22mUI2 Components - Render Tests[2m > [22mPill renders with default variant[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/components.test.tsx[2m > [22mUI2 Components - Render Tests[2m > [22mPill renders with success variant[32m 3[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/components.test.tsx[2m > [22mUI2 Components - Render Tests[2m > [22mPill renders with danger variant[32m 7[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/watchlist-tile.test.tsx[2m > [22mWatchlistTile (demo data consistency)[2m > [22mrenders canonical demo price for AAPL[32m 29[2mms[22m[39m
+[90mstderr[2m | tests/unit/state/store.test.ts
+[22m[39mFailed to fetch latest bar TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:103:5)[39m
+    at Object.fetchLatestBar (C:/Tradingview/Tradingview 
+recreation/frontend/src/state/store.ts:113:25) {
+  [cause]: Error: connect ECONNREFUSED 127.0.0.1:8090
+  [90m    at TCPConnectWrap.afterConnect [as oncomplete] 
+(node:net:1637:16)[39m {
+    errno: [33m-4078[39m,
+    code: [32m'ECONNREFUSED'[39m,
+    syscall: [32m'connect'[39m,
+    address: [32m'127.0.0.1'[39m,
+    port: [33m8090[39m
+  }
+}
+
+[90mstderr[2m | tests/unit/state/store.test.ts
+[22m[39mFailed to fetch latest bar TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:103:5)[39m
+    at Object.fetchLatestBar (C:/Tradingview/Tradingview 
+recreation/frontend/src/state/store.ts:113:25) {
+  [cause]: Error: connect ECONNREFUSED 127.0.0.1:8090
+  [90m    at TCPConnectWrap.afterConnect [as oncomplete] 
+(node:net:1637:16)[39m {
+    errno: [33m-4078[39m,
+    code: [32m'ECONNREFUSED'[39m,
+    syscall: [32m'connect'[39m,
+    address: [32m'127.0.0.1'[39m,
+    port: [33m8090[39m
+  }
+}
+
+[90mstderr[2m | tests/unit/state/store.test.ts
+[22m[39mFailed to fetch drawings: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:103:5)[39m
+    at Object.fetchDrawings (C:/Tradingview/Tradingview 
+recreation/frontend/src/state/store.ts:519:30) {
+  [cause]: Error: connect ECONNREFUSED 127.0.0.1:8090
+  [90m    at TCPConnectWrap.afterConnect [as oncomplete] 
+(node:net:1637:16)[39m {
+    errno: [33m-4078[39m,
+    code: [32m'ECONNREFUSED'[39m,
+    syscall: [32m'connect'[39m,
+    address: [32m'127.0.0.1'[39m,
+    port: [33m8090[39m
+  }
+}
+
+ [32mΓ£ô[39m tests/unit/state/store.test.ts[2m > [22museStore[2m > [22mshould process BAR_FORMING[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/state/store.test.ts[2m > [22museStore[2m > [22mshould process BAR_CONFIRMED[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/state/store.test.ts[2m > [22museStore[2m > [22mshould reconnect on symbol change[32m 4[2mms[22m[39m
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould handle fetch errors gracefully
+[22m[39mFailed to fetch telemetry events: Error: Network error
+    at C:/Tradingview/Tradingview 
+recreation/frontend/tests/unit/telemetryStore.test.ts:73:45
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:145:11
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:915:26
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Tradingview/Tradingview%20recreation/fro
+ntend/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39
+m
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+    at Traces.$ [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[
+39m
+    at trace [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/[3
+9mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts[2m > [22mtelemetryStore[2m > [22mshould update events when polling[32m 157[2mms[22m[39m
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould handle fetch errors gracefully
+[22m[39mFailed to fetch telemetry events: Error: Network error
+    at C:/Tradingview/Tradingview 
+recreation/frontend/tests/unit/telemetryStore.test.ts:73:45
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:145:11
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:915:26
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Tradingview/Tradingview%20recreation/fro
+ntend/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39
+m
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+    at Traces.$ [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[
+39m
+    at trace [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/[3
+9mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts[2m > [22mtelemetryStore[2m > [22mshould handle fetch errors gracefully[32m 156[2mms[22m[39m
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould deduplicate events by event_id
+[22m[39mFailed to fetch telemetry events: TypeError: Cannot read properties 
+of undefined (reading 'ok')
+    at fetchTelemetryEvents (C:/Tradingview/Tradingview 
+recreation/frontend/src/ui2/stores/telemetryStore.ts:134:19)
+
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould update connectionStatus correctly
+[22m[39mFailed to fetch telemetry events: TypeError: Cannot read properties 
+of undefined (reading 'ok')
+    at fetchTelemetryEvents (C:/Tradingview/Tradingview 
+recreation/frontend/src/ui2/stores/telemetryStore.ts:134:19)
+
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts[2m > [22mtelemetryStore[2m > [22mshould deduplicate events by event_id[33m 314[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts[2m > [22mtelemetryStore[2m > [22mshould update connectionStatus correctly[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts[2m > [22mtelemetryStore[2m > [22mshould subscribe and notify listeners[32m 152[2mms[22m[39m
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould stop streaming correctly
+[22m[39mFailed to fetch telemetry events: TypeError: Cannot read properties 
+of undefined (reading 'ok')
+    at fetchTelemetryEvents (C:/Tradingview/Tradingview 
+recreation/frontend/src/ui2/stores/telemetryStore.ts:134:19)
+
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts[2m > [22mtelemetryStore[2m > [22mshould reset to initial state[32m 163[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts[2m > [22mtelemetryStore[2m > [22mshould stop streaming correctly[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m22 passed[39m[22m[90m (22)[39m
+[2m      Tests [22m [1m[32m325 passed[39m[22m[90m (325)[39m
+[2m   Start at [22m 20:02:18
+[2m   Duration [22m 2.04s[2m (transform 2.50s, setup 3.38s, import 3.01s, tests 1.45s, environment 13.57s)[22m
+

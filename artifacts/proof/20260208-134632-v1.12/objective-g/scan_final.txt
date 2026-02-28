@@ -1,0 +1,2 @@
+✅ SELECTOR POLICY: COMPLIANT
+All tests use data-testid selectors only.

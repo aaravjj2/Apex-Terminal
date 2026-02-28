@@ -1,0 +1,62 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Tradingview\Tradingview recreation
+configfile: pytest.ini
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 488 items
+
+tests\integration\test_determinism_v1_12.py .....                        [  1%]
+tests\integration\test_market_data_api_v1_13.py ......                   [  2%]
+tests\test_backtest_export.py .....                                      [  3%]
+tests\test_risk_desk_export.py ..                                        [  3%]
+tests\test_strategy_backtest.py ............                             [  6%]
+tests\unit\phase4\test_alerts.py ...................                     [ 10%]
+tests\unit\phase4\test_fill_simulator.py ................                [ 13%]
+tests\unit\phase4\test_portfolio.py ...............                      [ 16%]
+tests\unit\phase4\test_risk_manager.py ...............                   [ 19%]
+tests\unit\test_autopilot_kill_switch.py .........                       [ 21%]
+tests\unit\test_cache_manifest.py ........                               [ 22%]
+tests\unit\test_depth_routes.py .....................2026-02-23 01:28:27 [info     ] alpaca_ws_subscribed_on_connect connector=alpaca-ws symbols=['TSLA', 'MSFT', 'AAPL']
+............        [ 29%]
+tests\unit\test_lexicon_disambiguation.py .....................          [ 34%]
+tests\unit\test_market_data_providers.py .............                   [ 36%]
+tests\unit\test_multi_portfolio_v25.py ......                            [ 37%]
+tests\unit\test_persistence_v27.py .........                             [ 39%]
+tests\unit\test_portfolio_import_export_v23.py ........                  [ 41%]
+tests\unit\test_portfolio_v19_20.py .................                    [ 44%]
+tests\unit\test_portfolio_valuation_v21.py .........                     [ 46%]
+tests\unit\test_record_replay_v1_13.py ..............                    [ 49%]
+tests\unit\test_recording_verifier.py ..................                 [ 53%]
+tests\unit\test_replay_service.py .........                              [ 55%]
+tests\unit\test_risk_export_v22_streamlined.py .......                   [ 56%]
+tests\unit\test_strategy_v32_36.py ..............................        [ 62%]
+tests\unit\test_ticker_api_compat.py .......                             [ 64%]
+tests\unit\test_ticker_resolver.py .................................     [ 70%]
+tests\unit\test_v37_v40.py ......................                        [ 75%]
+tests\unit\test_v41_v50.py ............................................. [ 84%]
+.....                                                                    [ 85%]
+tests\unit\test_wave6_10.py ............................................ [ 94%]
+..........................                                               [100%]
+
+============================ 488 passed in 11.47s =============================
+C:\Python314\python.exe : Exception ignored in atexit callback <function 
+cleanup_numbered_dir at 0x0000020DE5FE2C40>:
+At line:1 char:1
++ C:\Python314\python.exe -m pytest tests/ -x -q 2>&1 | Out-File "$dir\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Exception ignor...0020DE5FE2C40>: 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Traceback (most recent call last):
+  File "C:\Users\tld\AppData\Roaming\Python\Python314\site-packages\_pytest\pat
+hlib.py", line 374, in cleanup_numbered_dir
+    cleanup_dead_symlinks(root)
+  File "C:\Users\tld\AppData\Roaming\Python\Python314\site-packages\_pytest\pat
+hlib.py", line 360, in cleanup_dead_symlinks
+    left_dir.unlink()
+  File "C:\Python314\Lib\pathlib\__init__.py", line 1042, in unlink
+    os.unlink(self)
+PermissionError: [WinError 5] Access is denied: 
+'C:\\Users\\tld\\AppData\\Local\\Temp\\pytest-of-tld\\pytest-current'

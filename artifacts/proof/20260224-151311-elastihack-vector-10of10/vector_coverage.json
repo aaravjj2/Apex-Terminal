@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "body": {
+    "coverage": {
+      "backtest_run": {
+        "total": 0,
+        "with_pattern_vec": 0,
+        "coverage_pct": 0.0
+      },
+      "autopilot_cycle": {
+        "total": 0,
+        "with_pattern_vec": 0,
+        "coverage_pct": 0.0
+      },
+      "strategies": {
+        "total": 0,
+        "with_text_vec": 0,
+        "coverage_pct": 0.0
+      }
+    },
+    "dims": 64,
+    "similarity": "cosine",
+    "checked_at": "2026-02-24T20:14:02.844374+00:00",
+    "contract_version": "5.0"
+  }
+}

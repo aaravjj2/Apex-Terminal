@@ -1,0 +1,48 @@
+Autopilot Revolution — Lines of Code Report
+Generated: 2026-07-13
+============================================================
+
+NEW FILES CREATED IN THIS SESSION
+----------------------------------
+docs/AUTOPILOT_REALITY_AUDIT.md                     280  lines
+phase1/services/autopilot/data_pipeline.py          517  lines
+phase1/services/autopilot/signal_engine_v2.py       509  lines
+phase1/services/autopilot/execution_engine_v2.py    512  lines
+phase1/services/autopilot/position_journal.py       355  lines
+phase1/services/autopilot/cycle_observer.py         369  lines
+frontend/src/ui2/pages/AutopilotCommandCenterUI2.tsx 1078  lines
+frontend/tests/e2e/autopilot_live/live-health.spec.ts         60  lines
+frontend/tests/e2e/autopilot_live/live-cycle-disarmed.spec.ts 46  lines
+frontend/tests/e2e/autopilot_live/live-order-preview.spec.ts  70  lines
+frontend/tests/e2e/autopilot_live/live-reconciliation.spec.ts 66  lines
+frontend/tests/e2e/autopilot_live/live-smoke-paper-order.spec.ts 85  lines
+artifacts/proof/2026-07-13-autopilot-revolution/MANIFEST.md  (this session)
+                                                  --------
+TOTAL NEW LOC                                       3,947  lines
+
+MODIFIED FILES (git diff --stat HEAD)
+--------------------------------------
+frontend/src/ui2/pages/index.ts                        +1
+frontend/src/ui2/routes.tsx                            +3
+                                                  --------
+TOTAL MODIFIED LOC                                      +4  lines
+
+GRAND TOTAL NEW + MODIFIED                          3,951  lines
+
+============================================================
+
+EXISTING RELEVANT MODULE LOC (for context)
+--------------------------------------------
+phase1/services/autopilot/quote_gateway.py        1,263  lines
+phase1/services/autopilot/options_gateway.py        519  lines
+phase1/services/autopilot/brain_v3.py               771  lines
+phase1/services/autopilot/risk_engine.py            335  lines
+phase1/services/autopilot/v3_store.py               899  lines
+phase1/services/autopilot/unified_router.py       1,114  lines
+phase1/services/api/routes/ops_autopilot.py         720  lines
+frontend/src/ui2/pages/AutopilotOptionsUI2.tsx    1,602  lines
+                                                  --------
+RELEVANT EXISTING LOC                             7,223  lines
+
+TOTAL AUTOPILOT SYSTEM LOC (new + existing)      11,174  lines
+============================================================

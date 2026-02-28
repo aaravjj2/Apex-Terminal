@@ -1,0 +1,29 @@
+{
+  "baseUrl": "http://localhost:5100",
+  "steps": [
+    {
+      "action": "goto",
+      "path": "/"
+    },
+    {
+      "action": "timeout",
+      "duration": 2000
+    },
+    {
+      "action": "assertVisible",
+      "selector": "[data-testid='nav-item-monitor']"
+    },
+    {
+      "action": "click",
+      "selector": "[data-testid='nav-item-dashboard']"
+    },
+    {
+      "action": "timeout",
+      "duration": 2000
+    },
+    {
+      "action": "screenshot",
+      "path": ".ag/outbox/dashboard_view.png"
+    }
+  ]
+}

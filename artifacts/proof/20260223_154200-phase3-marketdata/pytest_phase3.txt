@@ -1,0 +1,36 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Tradingview\Tradingview recreation\phase1
+configfile: pytest.ini
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 25 items
+
+tests/test_phase3_market_data.py::TestCanonicalModels::test_bar_daily_creation PASSED [  4%]
+tests/test_phase3_market_data.py::TestCanonicalModels::test_sha256_determinism PASSED [  8%]
+tests/test_phase3_market_data.py::TestCanonicalModels::test_sha256_order_independent PASSED [ 12%]
+tests/test_phase3_market_data.py::TestCanonicalModels::test_market_data_error PASSED [ 16%]
+tests/test_phase3_market_data.py::TestCanonicalModels::test_batch_record PASSED [ 20%]
+tests/test_phase3_market_data.py::TestProviderTypes::test_provider_names_exist PASSED [ 24%]
+tests/test_phase3_market_data.py::TestProviderTypes::test_no_demo_in_providers PASSED [ 28%]
+tests/test_phase3_market_data.py::TestProviderTypes::test_bar_data_model PASSED [ 32%]
+tests/test_phase3_market_data.py::TestProviderRouter::test_router_rejects_demo PASSED [ 36%]
+tests/test_phase3_market_data.py::TestProviderRouter::test_router_priority_order PASSED [ 40%]
+tests/test_phase3_market_data.py::TestProviderRouter::test_router_builds PASSED [ 44%]
+tests/test_phase3_market_data.py::TestProviderRouter::test_router_list_providers PASSED [ 48%]
+tests/test_phase3_market_data.py::TestQualityGates::test_empty_bars_critical PASSED [ 52%]
+tests/test_phase3_market_data.py::TestQualityGates::test_good_bars_pass PASSED [ 56%]
+tests/test_phase3_market_data.py::TestQualityGates::test_zero_price_critical PASSED [ 60%]
+tests/test_phase3_market_data.py::TestQualityGates::test_outlier_detection PASSED [ 64%]
+tests/test_phase3_market_data.py::TestQualityGates::test_quality_report_dict PASSED [ 68%]
+tests/test_phase3_market_data.py::TestRecordedRealCache::test_cache_dir_exists_or_empty PASSED [ 72%]
+tests/test_phase3_market_data.py::TestRecordedRealCache::test_get_real_bars_unknown_symbol PASSED [ 76%]
+tests/test_phase3_market_data.py::TestRecordedRealCache::test_manifest_returns_none_if_missing PASSED [ 80%]
+tests/test_phase3_market_data.py::TestMarketDataBatchModel::test_model_importable PASSED [ 84%]
+tests/test_phase3_market_data.py::TestMarketDataBatchModel::test_model_has_required_columns PASSED [ 88%]
+tests/test_phase3_market_data.py::TestConfigUniverse::test_universe_list PASSED [ 92%]
+tests/test_phase3_market_data.py::TestConfigUniverse::test_market_history_years PASSED [ 96%]
+tests/test_phase3_market_data.py::TestProviderInit::test_list_providers_no_demo PASSED [100%]
+
+============================= 25 passed in 0.48s ==============================

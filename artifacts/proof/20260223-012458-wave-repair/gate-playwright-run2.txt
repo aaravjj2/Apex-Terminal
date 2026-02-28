@@ -1,0 +1,134 @@
+﻿
+Running 130 tests using 1 worker
+
+[1A[2K[1/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:35:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ POST /api/backtest/run returns 200
+[1A[2K[2/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:43:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ response has run_id
+[1A[2K[3/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:49:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ response status is completed
+[1A[2K[4/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:54:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ response has trades array
+[1A[2K[5/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:59:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ response has config_hash
+[1A[2K[6/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:65:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ response config reflects input seed
+[1A[2K[7/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:70:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ response config reflects input symbol
+[1A[2K[8/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:75:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ response has metrics object
+[1A[2K[9/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:81:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ metrics has total_return_pct
+[1A[2K[10/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:86:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ metrics has sharpe_ratio
+[1A[2K[11/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:91:3 ΓÇ║ Backtest API  schema and response shape ΓÇ║ metrics final_equity is positive
+[1A[2K[12/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:100:3 ΓÇ║ Backtest Determinism  same seed = same result ΓÇ║ two runs with same seed produce same trade count
+[1A[2K[13/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:105:3 ΓÇ║ Backtest Determinism  same seed = same result ΓÇ║ two runs with same seed produce identical first trade
+[1A[2K[14/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:112:3 ΓÇ║ Backtest Determinism  same seed = same result ΓÇ║ two runs with same seed produce identical last trade
+[1A[2K[15/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:120:3 ΓÇ║ Backtest Determinism  same seed = same result ΓÇ║ two runs with same seed produce identical total_return_pct
+[1A[2K[16/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:125:3 ΓÇ║ Backtest Determinism  same seed = same result ΓÇ║ two runs with same seed produce identical final_equity
+[1A[2K[17/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:130:3 ΓÇ║ Backtest Determinism  same seed = same result ΓÇ║ two runs with same seed produce identical sharpe_ratio
+[1A[2K[18/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:135:3 ΓÇ║ Backtest Determinism  same seed = same result ΓÇ║ two runs with same seed produce identical config_hash
+[1A[2K[19/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:140:3 ΓÇ║ Backtest Determinism  same seed = same result ΓÇ║ different seed produces different run_id
+[1A[2K[20/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:150:3 ΓÇ║ Backtest Runs  GET /api/backtest/runs ΓÇ║ GET /api/backtest/runs returns 200
+[1A[2K[21/130] [chromium] ΓÇ║ tests\e2e\hardening\backtest-determinism.spec.ts:155:3 ΓÇ║ Backtest Runs  GET /api/backtest/runs ΓÇ║ GET /api/backtest/runs returns an array
+[1A[2K[22/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:21:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ GET /api/v1/verification/alpaca/health returns 200
+[1A[2K[23/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:26:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ alpaca status is healthy
+[1A[2K[24/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:31:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ api_reachable is true
+[1A[2K[25/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:36:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ account_status is ACTIVE
+[1A[2K[26/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:41:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ trading_blocked is false
+[1A[2K[27/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:46:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ account_number is a string
+[1A[2K[28/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:52:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ cash is positive
+[1A[2K[29/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:58:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ buying_power is positive
+[1A[2K[30/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:64:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ portfolio_value is positive
+[1A[2K[31/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:70:3 ΓÇ║ Alpaca Paper Account  Live Health ΓÇ║ error is null (no API error)
+[1A[2K[32/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:82:3 ΓÇ║ Broker Readiness ΓÇ║ GET /api/v2/broker/readiness returns 200
+[1A[2K[33/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:87:3 ΓÇ║ Broker Readiness ΓÇ║ broker_mode is paper
+[1A[2K[34/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:92:3 ΓÇ║ Broker Readiness ΓÇ║ kill_switch_active is false
+[1A[2K[35/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:97:3 ΓÇ║ Broker Readiness ΓÇ║ kill_switch_reason is null
+[1A[2K[36/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:102:3 ΓÇ║ Broker Readiness ΓÇ║ readiness has session object
+[1A[2K[37/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:115:3 ΓÇ║ Broker Positions ΓÇ║ GET /api/v2/broker/positions returns 200
+[1A[2K[38/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:120:3 ΓÇ║ Broker Positions ΓÇ║ positions response has positions key
+[1A[2K[39/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:132:3 ΓÇ║ Broker Orders ΓÇ║ GET /api/v2/broker/orders returns 200
+[1A[2K[40/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:137:3 ΓÇ║ Broker Orders ΓÇ║ orders response has orders array
+[1A[2K[41/130] [chromium] ΓÇ║ tests\e2e\hardening\broker-sync.spec.ts:142:3 ΓÇ║ Broker Orders ΓÇ║ orders response has total field
+[1A[2K[42/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:27:3 ΓÇ║ Elasticsearch  Direct Cluster ΓÇ║ GET http://localhost:9200/ returns 200
+[1A[2K[43/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:32:3 ΓÇ║ Elasticsearch  Direct Cluster ΓÇ║ ES root response has cluster_name
+[1A[2K[44/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:38:3 ΓÇ║ Elasticsearch  Direct Cluster ΓÇ║ ES root has version object
+[1A[2K[45/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:44:3 ΓÇ║ Elasticsearch  Direct Cluster ΓÇ║ ES cluster/health returns 200
+[1A[2K[46/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:49:3 ΓÇ║ Elasticsearch  Direct Cluster ΓÇ║ cluster_name is apex-local
+[1A[2K[47/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:54:3 ΓÇ║ Elasticsearch  Direct Cluster ΓÇ║ cluster status is green or yellow (not red)
+[1A[2K[48/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:59:3 ΓÇ║ Elasticsearch  Direct Cluster ΓÇ║ cluster has at least 1 node
+[1A[2K[49/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:64:3 ΓÇ║ Elasticsearch  Direct Cluster ΓÇ║ cluster has no unassigned shards (or is normal for single-node)
+[1A[2K[50/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:77:3 ΓÇ║ Elasticsearch  apex-trades Index ΓÇ║ GET /apex-trades returns 200 (index exists)
+[1A[2K[51/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:82:3 ΓÇ║ Elasticsearch  apex-trades Index ΓÇ║ apex-trades index has mappings
+[1A[2K[52/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:95:3 ΓÇ║ Elasticsearch  Indices List ΓÇ║ GET /_cat/indices?format=json returns 200
+[1A[2K[53/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:100:3 ΓÇ║ Elasticsearch  Indices List ΓÇ║ indices list is an array
+[1A[2K[54/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:105:3 ΓÇ║ Elasticsearch  Indices List ΓÇ║ apex-trades appears in indices list
+[1A[2K[55/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:118:3 ΓÇ║ Elasticsearch  Document Round-trip ΓÇ║ can index a test document into apex-trades
+[1A[2K[56/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:134:3 ΓÇ║ Elasticsearch  Document Round-trip ΓÇ║ indexed document has result created or updated
+[1A[2K[57/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:150:3 ΓÇ║ Elasticsearch  Search ΓÇ║ GET /apex-trades/_search returns 200
+[1A[2K[58/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:155:3 ΓÇ║ Elasticsearch  Search ΓÇ║ search response has hits object
+[1A[2K[59/130] [chromium] ΓÇ║ tests\e2e\hardening\elasticsearch.spec.ts:161:3 ΓÇ║ Elasticsearch  Search ΓÇ║ search total is non-negative
+[1A[2K[60/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:20:3 ΓÇ║ Liveness  /health ΓÇ║ GET /health returns 200
+[1A[2K[61/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:24:3 ΓÇ║ Liveness  /health ΓÇ║ /health reports status=healthy
+[1A[2K[62/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:28:3 ΓÇ║ Liveness  /health ΓÇ║ /health confirms alpaca_connected
+[1A[2K[63/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:32:3 ΓÇ║ Liveness  /health ΓÇ║ /health has alpaca_configured=true
+[1A[2K[64/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:39:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ GET /api/v1/verification/alpaca/health returns 200
+[1A[2K[65/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:43:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health status=healthy
+[1A[2K[66/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:47:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health api_reachable=true
+[1A[2K[67/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:51:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health has account_number
+[1A[2K[68/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:56:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health cash is positive number
+[1A[2K[69/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:61:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health has portfolio_value
+[1A[2K[70/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:69:3 ΓÇ║ WebSocket Status ΓÇ║ GET /api/v1/autopilot/ws_status returns 200
+[1A[2K[71/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:73:3 ΓÇ║ WebSocket Status ΓÇ║ ws_status has heartbeat_running=true
+[1A[2K[72/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:77:3 ΓÇ║ WebSocket Status ΓÇ║ ws_status connections is a number
+[1A[2K[73/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:81:3 ΓÇ║ WebSocket Status ΓÇ║ ws_status subscriptions is a number
+[1A[2K[74/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:88:3 ΓÇ║ Broker Readiness ΓÇ║ GET /api/v2/broker/readiness returns 200
+[1A[2K[75/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:92:3 ΓÇ║ Broker Readiness ΓÇ║ readiness broker_mode is paper
+[1A[2K[76/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:96:3 ΓÇ║ Broker Readiness ΓÇ║ readiness kill_switch_active is boolean
+[1A[2K[77/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:100:3 ΓÇ║ Broker Readiness ΓÇ║ readiness kill_switch not active
+[1A[2K[78/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:107:3 ΓÇ║ Platform Health Summary ΓÇ║ GET /api/v1/platform-health/summary returns 200
+[1A[2K[79/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:111:3 ΓÇ║ Platform Health Summary ΓÇ║ platform health has overall_status
+[1A[2K[80/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:115:3 ΓÇ║ Platform Health Summary ΓÇ║ platform health has total_components
+[1A[2K[81/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:122:3 ΓÇ║ v1 Health Components ΓÇ║ GET /api/v1/health returns 200
+[1A[2K[82/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:126:3 ΓÇ║ v1 Health Components ΓÇ║ v1 health has components
+[1A[2K[83/130] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:130:3 ΓÇ║ v1 Health Components ΓÇ║ v1 health has overall_status
+[1A[2K[84/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:19:3 ΓÇ║ App Shell ΓÇ║ ui2 root app-shell renders
+[1A[2K[85/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:24:3 ΓÇ║ App Shell ΓÇ║ ui2-topbar is visible on any page
+[1A[2K[86/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:29:3 ΓÇ║ App Shell ΓÇ║ navigation does not crash after 3 route changes
+[1A[2K[87/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Dashboard page renders root element
+[1A[2K[88/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Backtest page renders root element
+[1A[2K[89/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Trading page renders root element
+[1A[2K[90/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Portfolio page renders root element
+[1A[2K[91/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Risk page renders root element
+[1A[2K[92/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Search page renders root element
+[1A[2K[93/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Alerts page renders root element
+[1A[2K[94/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Automation page renders root element
+[1A[2K[95/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Autopilot page renders root element
+[1A[2K[96/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Orders page renders root element
+[1A[2K[97/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Research page renders root element
+[1A[2K[98/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Sentiment page renders root element
+[1A[2K[99/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Regime page renders root element
+[1A[2K[100/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Performance page renders root element
+[1A[2K[101/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Discovery page renders root element
+[1A[2K[102/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Settings page renders root element
+[1A[2K[103/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Platform Health page renders root element
+[1A[2K[104/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Ops page renders root element
+[1A[2K[105/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ Observability page renders root element
+[1A[2K[106/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:68:5 ΓÇ║ UI2 Pages  render check ΓÇ║ System Health page renders root element
+[1A[2K[107/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:83:3 ΓÇ║ UI2 Pages  ready state ΓÇ║ search page has search-ui2-page root
+[1A[2K[108/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:88:3 ΓÇ║ UI2 Pages  ready state ΓÇ║ dashboard page has dashboard-ui2-page root
+[1A[2K[109/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:93:3 ΓÇ║ UI2 Pages  ready state ΓÇ║ backtest page has backtest-ui2-page root
+[1A[2K[110/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:98:3 ΓÇ║ UI2 Pages  ready state ΓÇ║ backtest page shows runs-manager
+[1A[2K[111/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:104:3 ΓÇ║ UI2 Pages  ready state ΓÇ║ portfolio page has portfolio-ui2-page root
+[1A[2K[112/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:109:3 ΓÇ║ UI2 Pages  ready state ΓÇ║ autopilot page has autopilot-ui2-page root
+[1A[2K[113/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:114:3 ΓÇ║ UI2 Pages  ready state ΓÇ║ automation page has automation-ui2-page root
+[1A[2K[114/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:129:5 ΓÇ║ UI2 Pages  no fatal errors ΓÇ║ /dashboard has no fatal error overlay
+[1A[2K[115/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:129:5 ΓÇ║ UI2 Pages  no fatal errors ΓÇ║ /backtest has no fatal error overlay
+[1A[2K[116/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:129:5 ΓÇ║ UI2 Pages  no fatal errors ΓÇ║ /trading has no fatal error overlay
+[1A[2K[117/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:129:5 ΓÇ║ UI2 Pages  no fatal errors ΓÇ║ /risk has no fatal error overlay
+[1A[2K[118/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:129:5 ΓÇ║ UI2 Pages  no fatal errors ΓÇ║ /portfolio has no fatal error overlay
+[1A[2K[119/130] [chromium] ΓÇ║ tests\e2e\hardening\ui2-pages.spec.ts:146:3 ΓÇ║ UI2  chart containers visible ΓÇ║ trading page has trading-ui2-page root (chart may need symbol)
+[1A[2K[120/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:24:3 ΓÇ║ WebSocket Status API ΓÇ║ GET /api/v1/autopilot/ws_status returns 200
+[1A[2K[121/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:29:3 ΓÇ║ WebSocket Status API ΓÇ║ heartbeat_running is true
+[1A[2K[122/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:34:3 ΓÇ║ WebSocket Status API ΓÇ║ connections is a non-negative number
+[1A[2K[123/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:40:3 ΓÇ║ WebSocket Status API ΓÇ║ subscriptions is a non-negative number
+[1A[2K[124/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:53:3 ΓÇ║ WebSocket Autopilot  real connection ΓÇ║ can connect to /ws/autopilot
+[1A[2K[125/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:65:3 ΓÇ║ WebSocket Autopilot  real connection ΓÇ║ autopilot WS stays open for 3 seconds without disconnect
+[1A[2K[126/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:93:3 ΓÇ║ WebSocket Autopilot  real connection ΓÇ║ autopilot WS receives messages or stays silent for 2s (no error)
+[1A[2K[127/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:122:3 ΓÇ║ WebSocket Bars  real connection ΓÇ║ can connect to /ws/bars/AAPL/1m
+[1A[2K[128/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:134:3 ΓÇ║ WebSocket Bars  real connection ΓÇ║ bars WS stays open for 2 seconds
+[1A[2K[129/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:165:3 ΓÇ║ WebSocket Heartbeat Persistence ΓÇ║ heartbeat_running stays true after connecting
+[1A[2K[130/130] [chromium] ΓÇ║ tests\e2e\hardening\ws-stability.spec.ts:180:3 ΓÇ║ WebSocket Heartbeat Persistence ΓÇ║ ws_status still returns 200 after WS activity
+[1A[2K  130 passed (52.2s)

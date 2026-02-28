@@ -1,0 +1,685 @@
+﻿demo	RUNTIME	phase1\services\api\autopilot_routes.py:103	# Generate mock candidates for demo (in production, would scan real data)
+demo	RUNTIME	phase1\services\api\autopilot_routes.py:104	candidates = _generate_demo_candidates(run_id)
+demo	RUNTIME	phase1\services\api\autopilot_routes.py:323	def _generate_demo_candidates(run_id: str) -> List[TradeLedgerEntry]:
+demo	RUNTIME	phase1\services\api\autopilot_routes.py:324	"""Generate demo candidates for testing."""
+demo	RUNTIME	phase1\services\api\autopilot_routes.py:351	# For demo, select top 3 by base_score
+demo	RUNTIME	phase1\services\api\autopilot_routes.py:361	entry.selection_reason = f"Selected by {llm_mode.value} (demo)"
+demo	RUNTIME	phase1\services\api\main.py:118	# Waves 11-20: Online-only mode — no mock/demo/synthetic
+demo	RUNTIME	phase1\services\api\ticker_resolver.py:212	# (In DEMO mode, we treat unknown tokens as potential words rather than invalid)
+demo	RUNTIME	phase1\services\api\verification_routes.py:392	# Demo/paper mode - accept as verified if alpaca_order_id starts with paper_
+demo	TEST	phase1\services\backtest_engine\engine.py:17	from .fixtures import get_demo_bars
+demo	TEST	phase1\services\backtest_engine\engine.py:54	# Load strategy (with demo fallback for any strategy_id)
+demo	TEST	phase1\services\backtest_engine\engine.py:57	# Demo fallback: create a default SMA crossover strategy
+demo	TEST	phase1\services\backtest_engine\engine.py:62	description="Auto-generated fallback strategy for demo mode",
+demo	TEST	phase1\services\backtest_engine\engine.py:80	tags=["demo", "fallback"],
+demo	TEST	phase1\services\backtest_engine\engine.py:84	bars = get_demo_bars(
+demo	TEST	phase1\services\backtest_engine\engine.py:105	source="DEMO",
+demo	TEST	phase1\services\backtest_engine\engine.py:106	provider="Demo Data",
+demo	TEST	phase1\services\backtest_engine\fixtures.py:2	Demo bar data fixtures for backtesting
+demo	TEST	phase1\services\backtest_engine\fixtures.py:10	def generate_demo_bars(symbol: str, start_date: datetime, end_date: datetime, seed: int = 42) -> List[Dict]:
+demo	TEST	phase1\services\backtest_engine\fixtures.py:12	Generate deterministic demo OHLCV bars for backtesting.
+demo	TEST	phase1\services\backtest_engine\fixtures.py:67	def get_demo_bars(symbol: str, start_date: str, end_date: str, seed: int = 42) -> List[Dict]:
+demo	TEST	phase1\services\backtest_engine\fixtures.py:69	Get demo bars for a symbol and date range.
+demo	TEST	phase1\services\backtest_engine\fixtures.py:75	return generate_demo_bars(symbol, start_dt, end_dt, seed)
+demo	TEST	phase1\services\backtest_engine\models.py:41	"strategy_id": "demo-sma-crossover",
+demo	TEST	phase1\services\backtest_engine\models.py:123	source: str = Field(..., description="Data source: DEMO, LOCAL_CACHE, LOCAL_REPLAY, LOCAL_FETCH")
+demo	TEST	phase1\services\backtest_engine\storage.py:2	Backtest run storage (in-memory for v1/demo mode)
+demo	RUNTIME	phase1\services\market_data\record_replay.py:4	DEMO mode remains zero-network. Tests remain fully offline.
+demo	RUNTIME	phase1\services\market_data\record_replay.py:29	DEMO = "DEMO"
+demo	RUNTIME	phase1\services\market_data\record_replay.py:40	- DEMO mode: zero network, fixture-driven, bypasses this layer
+demo	RUNTIME	phase1\services\market_data\record_replay.py:47	Tests: Always use DEMO mode or mock, never trigger real fetches.
+demo	RUNTIME	phase1\services\portfolio\api.py:3	RESTful endpoints for portfolio management in DEMO mode.
+demo	RUNTIME	phase1\services\portfolio\api.py:21	from .store import get_demo_store
+demo	RUNTIME	phase1\services\portfolio\api.py:22	from .fixtures import create_demo_fixtures
+demo	RUNTIME	phase1\services\portfolio\api.py:30	_store = get_demo_store()
+demo	RUNTIME	phase1\services\portfolio\api.py:31	_store.seed_fixtures(create_demo_fixtures())
+demo	RUNTIME	phase1\services\portfolio\api.py:254	Uses fixture-based pricing (DEMO mode) for stable, reproducible valuations.
+demo	RUNTIME	phase1\services\portfolio\api.py:281	Reset portfolios to fixture state (DEMO mode only).
+demo	RUNTIME	phase1\services\portfolio\api.py:288	_store.seed_fixtures(create_demo_fixtures())
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:2	DEMO Portfolio Fixtures (v1.19)
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:3	Deterministic fixture portfolios with checksums for testing and DEMO mode.
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:13	def create_demo_fixtures() -> List[Portfolio]:
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:15	Create deterministic DEMO fixture portfolios.
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:24	portfolio_id="DEMO-PORT-001",
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:36	lot_id="DEMO-LOT-001",
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:52	lot_id="DEMO-LOT-002",
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:68	lot_id="DEMO-LOT-003",
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:87	portfolio_id="DEMO-PORT-002",
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:99	lot_id="DEMO-LOT-004",
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:115	lot_id="DEMO-LOT-005",
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:134	portfolio_id="DEMO-PORT-003",
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:157	fixtures = create_demo_fixtures()
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:166	"DEMO-PORT-001": None,  # Computed on first load
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:167	"DEMO-PORT-002": None,
+demo	RUNTIME	phase1\services\portfolio\fixtures.py:168	"DEMO-PORT-003": None
+demo	RUNTIME	phase1\services\portfolio\pricing.py:4	Provides stable, fixture-based pricing for DEMO mode valuation.
+demo	RUNTIME	phase1\services\portfolio\pricing.py:23	def load_demo_prices() -> Tuple[Dict[str, Decimal], datetime, str]:
+demo	RUNTIME	phase1\services\portfolio\pricing.py:25	Load deterministic prices from DEMO bar fixtures.
+demo	RUNTIME	phase1\services\portfolio\pricing.py:49	# Add other symbols with deterministic fixedprices (for demo portfolios)
+demo	RUNTIME	phase1\services\portfolio\pricing.py:51	prices['MSFT'] = Decimal("350.00")  # Matches DEMO-PORT-001
+demo	RUNTIME	phase1\services\portfolio\pricing.py:52	prices['GOOGL'] = Decimal("140.00")  # Matches DEMO-PORT-001
+demo	RUNTIME	phase1\services\portfolio\pricing.py:53	prices['JNJ'] = Decimal("165.00")  # Matches DEMO-PORT-002
+demo	RUNTIME	phase1\services\portfolio\pricing.py:54	prices['KO'] = Decimal("60.00")  # Matches DEMO-PORT-002
+demo	RUNTIME	phase1\services\portfolio\pricing.py:70	return "demo-bars:last-close"
+demo	RUNTIME	phase1\services\portfolio\schemas.py:129	pricing_source: str = Field(..., description="Source of pricing data (e.g., 'demo-bars:last-close')")
+demo	RUNTIME	phase1\services\portfolio\schemas.py:134	model_config = {"json_schema_extra": {"example": {"pricing_source": "demo-bars:last-close", "source_checksum": "abc123...", "rounding_policy": "0.01", "as_of": "2024-01-15T16:00:00Z"}}}
+demo	RUNTIME	phase1\services\portfolio\store.py:2	DEMO Portfolio Store (v1.20)
+demo	RUNTIME	phase1\services\portfolio\store.py:25	Seeded from fixtures at startup for DEMO mode.
+demo	RUNTIME	phase1\services\portfolio\store.py:145	# Update existing position (simple averaging for DEMO)
+demo	RUNTIME	phase1\services\portfolio\store.py:194	# Global store instance for DEMO mode
+demo	RUNTIME	phase1\services\portfolio\store.py:195	_demo_store: Optional[PortfolioStore] = None
+demo	RUNTIME	phase1\services\portfolio\store.py:198	def get_demo_store() -> PortfolioStore:
+demo	RUNTIME	phase1\services\portfolio\store.py:199	"""Get or create the global DEMO store"""
+demo	RUNTIME	phase1\services\portfolio\store.py:200	global _demo_store
+demo	RUNTIME	phase1\services\portfolio\store.py:201	if _demo_store is None:
+demo	RUNTIME	phase1\services\portfolio\store.py:202	_demo_store = PortfolioStore(seed=42)
+demo	RUNTIME	phase1\services\portfolio\store.py:203	return _demo_store
+demo	RUNTIME	phase1\services\portfolio\store.py:206	def reset_demo_store():
+demo	RUNTIME	phase1\services\portfolio\store.py:207	"""Reset the DEMO store (for testing)"""
+demo	RUNTIME	phase1\services\portfolio\store.py:208	global _demo_store
+demo	RUNTIME	phase1\services\portfolio\store.py:209	_demo_store = None
+demo	RUNTIME	phase1\services\portfolio\valuation.py:20	from .pricing import load_demo_prices, get_pricing_source_label
+demo	RUNTIME	phase1\services\portfolio\valuation.py:43	prices, as_of, source_checksum = load_demo_prices()
+demo	RUNTIME	phase1\services\portfolio\__init__.py:23	create_demo_fixtures,
+demo	RUNTIME	phase1\services\portfolio\__init__.py:30	get_demo_store,
+demo	RUNTIME	phase1\services\portfolio\__init__.py:31	reset_demo_store
+demo	RUNTIME	phase1\services\portfolio\__init__.py:38	from .pricing import load_demo_prices, get_pricing_source_label
+demo	RUNTIME	phase1\services\portfolio\__init__.py:56	"create_demo_fixtures",
+demo	RUNTIME	phase1\services\portfolio\__init__.py:60	"get_demo_store",
+demo	RUNTIME	phase1\services\portfolio\__init__.py:61	"reset_demo_store",
+demo	RUNTIME	phase1\services\portfolio\__init__.py:65	"load_demo_prices",
+demo	RUNTIME	phase1\services\risk_desk\greeks_calculator.py:96	# Default underlying prices (synthetic demo data)
+demo	RUNTIME	phase1\services\risk_desk\greeks_calculator.py:97	_DEMO_UNDERLYING: dict[str, float] = {
+demo	RUNTIME	phase1\services\risk_desk\greeks_calculator.py:129	S = _DEMO_UNDERLYING.get(norm_sym, 200.0)
+demo	RUNTIME	phase1\services\risk_desk\greeks_verifier.py:17	from .greeks_calculator import _find_snapshot_entry, _DEMO_UNDERLYING, _RISK_FREE_RATE, _DEFAULT_T
+demo	RUNTIME	phase1\services\risk_desk\greeks_verifier.py:101	S = _DEMO_UNDERLYING.get(norm_sym, 200.0)
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:33	def _is_demo_mode() -> bool:
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:34	return os.environ.get("DEMO_MODE", "0") == "1"
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:38	"""Deterministic run_id in DEMO_MODE, random otherwise."""
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:39	if _is_demo_mode():
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:121	provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:134	provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:183	provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:227	provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:272	provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:318	provenance=ProvenanceInfo(source="DEMO", provider="Demo Data"),
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:335	source="DEMO",
+demo	RUNTIME	phase1\services\risk_desk\pipeline.py:336	provider="Demo Data",
+demo	RUNTIME	phase1\services\risk_desk\schemas_w2.py:148	snapshot_id: str = "demo"
+demo	TEST	phase1\services\risk_desk\stress_tester.py:25	from .greeks_calculator import _bs_greeks, _find_snapshot_entry, _DEMO_UNDERLYING, _RISK_FREE_RATE, _DEFAULT_T
+demo	TEST	phase1\services\risk_desk\stress_tester.py:101	S = _DEMO_UNDERLYING.get(norm_sym, 200.0)
+demo	TEST	phase1\services\risk_desk\stress_tester.py:138	primary_S = _DEMO_UNDERLYING.get(primary_symbol, 200.0)
+demo	RUNTIME	phase1\services\risk_desk\validator.py:62	"""Load the committed demo_snapshot.json fixture."""
+demo	RUNTIME	phase1\services\risk_desk\validator.py:63	path = FIXTURES_DIR / "demo_snapshot.json"
+demo	RUNTIME	phase1\services\risk_desk\validator.py:127	If *snapshot* is ``None`` the built-in demo fixture is loaded.
+demo	RUNTIME	phase1\services\strategy_lab\artifact_models.py:13	# Deterministic timestamp for DEMO mode artifacts
+demo	RUNTIME	phase1\services\strategy_lab\artifact_models.py:14	DEMO_TIMESTAMP = "2025-01-15T00:00:00Z"
+demo	RUNTIME	phase1\services\strategy_lab\artifact_models.py:30	created_at: str = Field(default=DEMO_TIMESTAMP, description="Creation timestamp (DEMO: constant)")
+demo	RUNTIME	phase1\services\strategy_lab\artifact_models.py:101	created_at: str = DEMO_TIMESTAMP,
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:11	# Demo seed artifacts for deterministic E2E
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:12	_DEMO_SEED_ARTIFACTS: List[dict] = [
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:50	self._seed_demo()
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:52	def _seed_demo(self) -> None:
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:53	"""Seed with demo artifacts for E2E determinism."""
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:54	for seed in _DEMO_SEED_ARTIFACTS:
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:63	def reset_demo(self) -> None:
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:64	"""Reset store to seeded demo state (E2E determinism)."""
+demo	RUNTIME	phase1\services\strategy_lab\artifact_store.py:66	self._seed_demo()
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:2	Strategy storage (in-memory for v1/demo mode)
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:12	"""In-memory strategy storage with DEMO fixtures"""
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:16	self._init_demo_strategies()
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:18	def _init_demo_strategies(self):
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:19	"""Initialize with demo strategies"""
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:20	# Demo strategy 1: SMA Crossover
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:21	demo1 = StrategyDefinition(
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:22	id="demo-sma-crossover",
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:42	tags=["momentum", "trend", "demo"],
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:46	self._strategies[demo1.id] = demo1
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:48	# Demo strategy 2: RSI Mean Reversion
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:49	demo2 = StrategyDefinition(
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:50	id="demo-rsi-mean-reversion",
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:69	tags=["mean-reversion", "oscillator", "demo"],
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:73	self._strategies[demo2.id] = demo2
+demo	RUNTIME	phase1\services\strategy_lab\storage.py:114	# Global instance for demo mode
+demo	RUNTIME	phase1\services\ticker\service.py:3	Deterministic DEMO mode implementation with known collision detection.
+demo	RUNTIME	phase1\services\ticker\service.py:9	# Known ticker normalizations (DEMO mode fixtures)
+demo	RUNTIME	phase1\services\api\routes\agents.py:2	v1.40 — Agent Runner (DEMO-first multi-step)
+demo	RUNTIME	phase1\services\api\routes\agents.py:33	# Deterministic demo agent run
+demo	RUNTIME	phase1\services\api\routes\agents.py:34	DEMO_STEPS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\agents.py:51	"inputs": {"strategy_id": "demo-sma", "period": "1Y"},
+demo	RUNTIME	phase1\services\api\routes\agents.py:101	DEMO_RUN: dict = {
+demo	RUNTIME	phase1\services\api\routes\agents.py:102	"run_id": "agent-run-demo-001",
+demo	RUNTIME	phase1\services\api\routes\agents.py:105	"steps": DEMO_STEPS,
+demo	RUNTIME	phase1\services\api\routes\agents.py:113	"""Execute a DEMO agent run. Returns deterministic fixture steps."""
+demo	RUNTIME	phase1\services\api\routes\agents.py:114	run = dict(DEMO_RUN)
+demo	RUNTIME	phase1\services\api\routes\agents.py:123	return [DEMO_RUN]
+demo	RUNTIME	phase1\services\api\routes\agents.py:128	"""Determinism hash of the demo run."""
+demo	RUNTIME	phase1\services\api\routes\agents.py:129	canonical = json.dumps(DEMO_RUN, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\agents.py:137	if run_id == DEMO_RUN["run_id"]:
+demo	RUNTIME	phase1\services\api\routes\agents.py:138	return DEMO_RUN
+demo	RUNTIME	phase1\services\api\routes\alt_data.py:7	DEMO_CATALOG: list = [
+demo	RUNTIME	phase1\services\api\routes\alt_data.py:19	return hashlib.sha256(json.dumps(DEMO_CATALOG, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\alt_data.py:21	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\alt_data.py:25	items = DEMO_CATALOG
+demo	RUNTIME	phase1\services\api\routes\alt_data.py:30	return {"datasets": items, "count": len(items), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\alt_data.py:34	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\alt_data.py:38	ds = next((d for d in DEMO_CATALOG if d["id"] == dataset_id), None)
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:8	DEMO_ANOMALIES: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:20	return hashlib.sha256(json.dumps(DEMO_ANOMALIES, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:22	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:26	items = DEMO_ANOMALIES if not severity else [a for a in DEMO_ANOMALIES if a["severity"] == severity]
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:27	return {"anomalies": items, "count": len(items), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:31	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:35	for a in DEMO_ANOMALIES:
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:43	for a in DEMO_ANOMALIES:
+demo	RUNTIME	phase1\services\api\routes\anomalies.py:45	return {"total": len(DEMO_ANOMALIES), "by_severity": counts, "unresolved": sum(1 for a in DEMO_ANOMALIES if not a["resolved"]), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\attribution.py:2	v1.46 — Performance Attribution (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\attribution.py:11	DEMO_ATTRIBUTION: dict = {
+demo	RUNTIME	phase1\services\api\routes\attribution.py:36	return DEMO_ATTRIBUTION
+demo	RUNTIME	phase1\services\api\routes\attribution.py:42	canonical = json.dumps(DEMO_ATTRIBUTION, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\attribution.py:50	return DEMO_ATTRIBUTION["by_strategy"]
+demo	RUNTIME	phase1\services\api\routes\attribution.py:56	return DEMO_ATTRIBUTION["by_sector"]
+demo	RUNTIME	phase1\services\api\routes\attribution.py:62	return DEMO_ATTRIBUTION["by_bucket"]
+demo	RUNTIME	phase1\services\api\routes\audit_log.py:2	v1.45 — System Audit Log (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\audit_log.py:12	DEMO_AUDIT_ENTRIES: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\audit_log.py:73	return DEMO_AUDIT_ENTRIES
+demo	RUNTIME	phase1\services\api\routes\audit_log.py:79	canonical = json.dumps(DEMO_AUDIT_ENTRIES, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\audit_log.py:87	return [e for e in DEMO_AUDIT_ENTRIES if e["action"] == action]
+demo	RUNTIME	phase1\services\api\routes\audit_log.py:93	return [e for e in DEMO_AUDIT_ENTRIES if e["actor"] == actor]
+demo	RUNTIME	phase1\services\api\routes\audit_log.py:99	return {"count": len(DEMO_AUDIT_ENTRIES)}
+demo	RUNTIME	phase1\services\api\routes\automation.py:113	# In-Memory State (for demo; production would use DB)
+demo	RUNTIME	phase1\services\api\routes\automation.py:154	# Simulate activating a strategy for demonstration
+demo	RUNTIME	phase1\services\api\routes\autopilot_depth.py:3	Pure deterministic demo endpoints for the Core Depth Upgrade.
+demo	RUNTIME	phase1\services\api\routes\autopilot_depth.py:15	DEMO_TS = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+demo	RUNTIME	phase1\services\api\routes\autopilot_depth.py:121	seed = _fnv32(f"{run_id}:eval:{DEMO_TS}")
+demo	RUNTIME	phase1\services\api\routes\autopilot_depth.py:156	ts=DEMO_TS,
+demo	RUNTIME	phase1\services\api\routes\autopilot_depth.py:180	ts=DEMO_TS, rule="daily_loss_warning",
+demo	RUNTIME	phase1\services\api\routes\autopilot_depth.py:184	hash_str = hashlib.sha256(f"{run_id}:{expected}:{realized}:{DEMO_TS}".encode()).hexdigest()[:16]
+demo	RUNTIME	phase1\services\api\routes\autopilot_depth.py:202	return {"hash": hashlib.sha256(f"autopilot-depth:{DEMO_TS}".encode()).hexdigest()[:16]}
+demo	TEST	phase1\services\api\routes\backtest_depth.py:3	Pure deterministic demo endpoints for the Core Depth Upgrade.
+demo	TEST	phase1\services\api\routes\backtest_depth.py:14	DEMO_TS = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+demo	TEST	phase1\services\api\routes\backtest_depth.py:133	h = hashlib.sha256(f"{sweep_id}:{len(cells)}:{DEMO_TS}".encode()).hexdigest()[:16]
+demo	TEST	phase1\services\api\routes\backtest_depth.py:165	h = hashlib.sha256(f"{wf_id}:{agg_sharpe}:{DEMO_TS}".encode()).hexdigest()[:16]
+demo	TEST	phase1\services\api\routes\backtest_depth.py:207	h = hashlib.sha256(f"{rob_id}:{score}:{DEMO_TS}".encode()).hexdigest()[:16]
+demo	TEST	phase1\services\api\routes\backtest_depth.py:244	return {"hash": hashlib.sha256(f"backtest-depth:{DEMO_TS}".encode()).hexdigest()[:16]}
+demo	RUNTIME	phase1\services\api\routes\cache.py:5	DEMO mode returns empty lists (no vendor data exposure).
+demo	RUNTIME	phase1\services\api\routes\cache.py:30	mode: str  # DEMO or LOCAL
+demo	RUNTIME	phase1\services\api\routes\cache.py:41	- DEMO mode: Returns empty list (no vendor data exposure)
+demo	RUNTIME	phase1\services\api\routes\cache.py:43	demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+demo	RUNTIME	phase1\services\api\routes\cache.py:45	if demo_mode:
+demo	RUNTIME	phase1\services\api\routes\cache.py:46	# DEMO mode: no cache exposure
+demo	RUNTIME	phase1\services\api\routes\cache.py:48	mode="DEMO",
+demo	RUNTIME	phase1\services\api\routes\cache.py:84	Returns empty checksum in DEMO mode.
+demo	RUNTIME	phase1\services\api\routes\cache.py:86	demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+demo	RUNTIME	phase1\services\api\routes\cache.py:88	if demo_mode:
+demo	RUNTIME	phase1\services\api\routes\cache.py:89	return {"mode": "DEMO", "checksum": ""}
+demo	RUNTIME	phase1\services\api\routes\citations.py:28	DEMO_CITATIONS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\citations.py:65	"source_id": "STR-demo-sma",
+demo	RUNTIME	phase1\services\api\routes\citations.py:104	"""Return all demo citations in stable order."""
+demo	RUNTIME	phase1\services\api\routes\citations.py:105	return DEMO_CITATIONS
+demo	RUNTIME	phase1\services\api\routes\citations.py:111	canonical = _canonical_json(DEMO_CITATIONS)
+demo	RUNTIME	phase1\services\api\routes\citations.py:113	return {"hash": h, "count": len(DEMO_CITATIONS)}
+demo	RUNTIME	phase1\services\api\routes\citations.py:119	return [c for c in DEMO_CITATIONS if c["source_type"] == source_type]
+demo	RUNTIME	phase1\services\api\routes\citations.py:125	for c in DEMO_CITATIONS:
+demo	RUNTIME	phase1\services\api\routes\compliance.py:36	DEMO_CHECKS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\compliance.py:53	checks = [ComplianceCheck(**c) for c in DEMO_CHECKS]
+demo	RUNTIME	phase1\services\api\routes\compliance.py:58	canonical = json.dumps(DEMO_CHECKS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\compliance.py:81	checks = DEMO_CHECKS
+demo	RUNTIME	phase1\services\api\routes\compliance.py:89	for c in DEMO_CHECKS:
+demo	RUNTIME	phase1\services\api\routes\compliance.py:97	cats = sorted(set(c["category"] for c in DEMO_CHECKS))
+demo	RUNTIME	phase1\services\api\routes\correlation.py:2	v1.42 — Correlation Matrix (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\correlation.py:11	# Deterministic demo correlation matrix for core symbols
+demo	RUNTIME	phase1\services\api\routes\correlation.py:12	DEMO_SYMBOLS = ["SPY", "QQQ", "AAPL", "MSFT", "NVDA", "TSLA"]
+demo	RUNTIME	phase1\services\api\routes\correlation.py:14	# Pre-computed demo correlations (symmetric)
+demo	RUNTIME	phase1\services\api\routes\correlation.py:15	DEMO_MATRIX: dict = {
+demo	RUNTIME	phase1\services\api\routes\correlation.py:16	"symbols": DEMO_SYMBOLS,
+demo	RUNTIME	phase1\services\api\routes\correlation.py:32	"""Return demo correlation matrix."""
+demo	RUNTIME	phase1\services\api\routes\correlation.py:33	return DEMO_MATRIX
+demo	RUNTIME	phase1\services\api\routes\correlation.py:39	canonical = json.dumps(DEMO_MATRIX, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\correlation.py:47	syms = DEMO_MATRIX["symbols"]
+demo	RUNTIME	phase1\services\api\routes\correlation.py:54	"correlation": DEMO_MATRIX["data"][i][j],
+demo	RUNTIME	phase1\services\api\routes\correlation.py:55	"period": DEMO_MATRIX["period"],
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:2	v1.48 — Data Quality Monitor (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:12	DEMO_FEEDS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:69	return DEMO_FEEDS
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:75	canonical = json.dumps(DEMO_FEEDS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:83	healthy = sum(1 for f in DEMO_FEEDS if f["status"] == "healthy")
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:84	degraded = sum(1 for f in DEMO_FEEDS if f["status"] == "degraded")
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:85	stale = sum(1 for f in DEMO_FEEDS if f["status"] == "stale")
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:86	avg_integrity = sum(f["integrity_score"] for f in DEMO_FEEDS) / len(DEMO_FEEDS)
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:88	"total_feeds": len(DEMO_FEEDS),
+demo	RUNTIME	phase1\services\api\routes\data_quality.py:99	for f in DEMO_FEEDS:
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:4	No demo data, no fallback. ES must be reachable.
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:186	DEMO_HITS = [
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:187	ESDocument(id="demo-trade-1", index="apex-trades", score=1.0, source={"symbol": "AAPL", "side": "buy", "qty": 10, "price": 189.5, "status": "filled", "executed_at": "2026-01-16T14:30:00Z"}),
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:188	ESDocument(id="demo-trade-2", index="apex-trades", score=0.9, source={"symbol": "SPY", "side": "sell", "qty": 5, "price": 478.2, "status": "filled", "executed_at": "2026-01-16T13:45:00Z"}),
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:189	ESDocument(id="demo-order-1", index="apex-orders", score=0.8, source={"symbol": "AAPL", "side": "buy", "qty": 10, "order_type": "market", "status": "filled", "created_at": "2026-01-16T14:29:55Z"}),
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:197	# ES unavailable: return demo hits for graceful offline/test operation
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:199	# Filter demo hits by query keyword (case-insensitive)
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:201	hits = [h for h in DEMO_HITS if q in h.id.upper() or q in str(h.source).upper()]
+demo	RUNTIME	phase1\services\api\routes\elasticsearch_gateway.py:203	hits = DEMO_HITS  # return all demo hits if no keyword match
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:7	DEMO_ALLOCATIONS: list = [
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:16	DEMO_SUMMARY: dict = {
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:24	"buckets": len(DEMO_ALLOCATIONS),
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:25	"allocations": DEMO_ALLOCATIONS,
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:29	return hashlib.sha256(json.dumps(DEMO_SUMMARY, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:31	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:35	return {**DEMO_SUMMARY, "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:39	return {"allocations": DEMO_ALLOCATIONS, "count": len(DEMO_ALLOCATIONS), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\hedge_fund.py:43	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\journal.py:2	v1.43 — Trade Journal (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\journal.py:12	DEMO_ENTRIES: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\journal.py:15	"trade_id": "trade-demo-001",
+demo	RUNTIME	phase1\services\api\routes\journal.py:28	"trade_id": "trade-demo-002",
+demo	RUNTIME	phase1\services\api\routes\journal.py:41	"trade_id": "trade-demo-003",
+demo	RUNTIME	phase1\services\api\routes\journal.py:54	"trade_id": "trade-demo-004",
+demo	RUNTIME	phase1\services\api\routes\journal.py:70	"""Return all demo journal entries."""
+demo	RUNTIME	phase1\services\api\routes\journal.py:71	return DEMO_ENTRIES
+demo	RUNTIME	phase1\services\api\routes\journal.py:77	canonical = json.dumps(DEMO_ENTRIES, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\journal.py:86	for entry in DEMO_ENTRIES:
+demo	RUNTIME	phase1\services\api\routes\journal.py:94	return [e for e in DEMO_ENTRIES if tag in e["tags"]]
+demo	RUNTIME	phase1\services\api\routes\journal.py:100	total = len(DEMO_ENTRIES)
+demo	RUNTIME	phase1\services\api\routes\journal.py:101	wins = sum(1 for e in DEMO_ENTRIES if e["pnl"] > 0)
+demo	RUNTIME	phase1\services\api\routes\journal.py:102	losses = sum(1 for e in DEMO_ENTRIES if e["pnl"] < 0)
+demo	RUNTIME	phase1\services\api\routes\journal.py:103	total_pnl = sum(e["pnl"] for e in DEMO_ENTRIES)
+demo	RUNTIME	phase1\services\api\routes\journal.py:116	for entry in DEMO_ENTRIES:
+demo	RUNTIME	phase1\services\api\routes\kill_switch_recovery.py:42	DEMO_EVENTS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\kill_switch_recovery.py:62	events=[RecoveryEvent(**e) for e in DEMO_EVENTS],
+demo	RUNTIME	phase1\services\api\routes\kill_switch_recovery.py:88	return {"events": DEMO_EVENTS[:limit], "total": len(DEMO_EVENTS)}
+demo	RUNTIME	phase1\services\api\routes\kill_switch_recovery.py:93	canonical = json.dumps(DEMO_EVENTS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\liquidity.py:21	DEMO_HEATMAP: dict = {
+demo	RUNTIME	phase1\services\api\routes\liquidity.py:28	return hashlib.sha256(json.dumps(DEMO_HEATMAP, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\liquidity.py:30	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\liquidity.py:34	return {**DEMO_HEATMAP, "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\liquidity.py:38	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\liquidity.py:43	if sym not in DEMO_HEATMAP["grid"]:
+demo	RUNTIME	phase1\services\api\routes\liquidity.py:46	return {"symbol": sym, "time_buckets": TIME_BUCKETS, "scores": DEMO_HEATMAP["grid"][sym], "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\market_data.py:45	provider: ProviderName = ProviderName.DEMO
+demo	RUNTIME	phase1\services\api\routes\market_data.py:52	provider: Provider to use (default: demo)
+demo	RUNTIME	phase1\services\api\routes\market_data.py:75	provider: ProviderName = ProviderName.DEMO
+demo	RUNTIME	phase1\services\api\routes\market_data.py:82	provider: Provider to use (default: demo)
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:25	enabled_demo: bool
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:32	source: Literal["DEMO", "LOCAL_CACHE", "LOCAL_REPLAY", "LOCAL_FETCH"]
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:76	name="DEMO",
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:77	enabled_demo=True,
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:83	enabled_demo=False,
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:89	enabled_demo=False,
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:102	- DEMO mode (DEMO_MODE=1): Returns fixture data, source=DEMO
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:109	demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:111	if demo_mode:
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:112	# DEMO mode: fixture data (zero network)
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:119	source="DEMO",
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:172	In DEMO mode, derives from bars fixture.
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:174	demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:176	if demo_mode:
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:177	# DEMO: simple fixture
+demo	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:181	source="DEMO",
+demo	RUNTIME	phase1\services\api\routes\market_hours.py:35	DEMO_HOLIDAYS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\market_hours.py:51	"""Return deterministic session status for demo mode."""
+demo	RUNTIME	phase1\services\api\routes\market_hours.py:59	if 9 <= hour < 10 or (hour == 9 and True):  # Simplified for demo
+demo	RUNTIME	phase1\services\api\routes\market_hours.py:86	return {"holidays": [h for h in DEMO_HOLIDAYS if h["date"].startswith(str(year))], "year": year}
+demo	RUNTIME	phase1\services\api\routes\market_hours.py:92	upcoming = [h for h in DEMO_HOLIDAYS if h["date"] >= today]
+demo	RUNTIME	phase1\services\api\routes\market_hours.py:102	is_holiday = any(h["date"] == today for h in DEMO_HOLIDAYS)
+demo	RUNTIME	phase1\services\api\routes\market_hours.py:109	canonical = json.dumps(DEMO_HOLIDAYS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\metrics.py:14	# In-memory metrics store (for demo; production would use Redis/Prometheus)
+demo	RUNTIME	phase1\services\api\routes\microstructure.py:7	DEMO_METRICS: list = [
+demo	RUNTIME	phase1\services\api\routes\microstructure.py:17	return hashlib.sha256(json.dumps(DEMO_METRICS, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\microstructure.py:19	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\microstructure.py:23	return {"metrics": DEMO_METRICS, "count": len(DEMO_METRICS), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\microstructure.py:27	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\microstructure.py:31	m = next((m for m in DEMO_METRICS if m["symbol"].upper() == symbol.upper()), None)
+demo	RUNTIME	phase1\services\api\routes\notifications.py:2	v1.44 — Notifications Center (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\notifications.py:12	DEMO_NOTIFICATIONS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\notifications.py:68	"""Return all demo notifications."""
+demo	RUNTIME	phase1\services\api\routes\notifications.py:69	return DEMO_NOTIFICATIONS
+demo	RUNTIME	phase1\services\api\routes\notifications.py:75	canonical = json.dumps(DEMO_NOTIFICATIONS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\notifications.py:83	count = sum(1 for n in DEMO_NOTIFICATIONS if not n["read"])
+demo	RUNTIME	phase1\services\api\routes\notifications.py:90	return [n for n in DEMO_NOTIFICATIONS if n["type"] == notif_type]
+demo	RUNTIME	phase1\services\api\routes\notifications.py:96	return [n for n in DEMO_NOTIFICATIONS if n["severity"] == severity]
+demo	RUNTIME	phase1\services\api\routes\nova.py:4	Falls back to deterministic demo responses when disabled.
+demo	RUNTIME	phase1\services\api\routes\nova.py:55	demo_mode: bool
+demo	RUNTIME	phase1\services\api\routes\nova.py:70	demo_mode: bool
+demo	RUNTIME	phase1\services\api\routes\nova.py:93	# ── Demo Responses ─────────────────────────────────────────────────
+demo	RUNTIME	phase1\services\api\routes\nova.py:94	DEMO_RESPONSES = {
+demo	RUNTIME	phase1\services\api\routes\nova.py:102	def _demo_generate(prompt: str) -> str:
+demo	RUNTIME	phase1\services\api\routes\nova.py:105	return DEMO_RESPONSES["risk"]
+demo	RUNTIME	phase1\services\api\routes\nova.py:107	return DEMO_RESPONSES["analyze"]
+demo	RUNTIME	phase1\services\api\routes\nova.py:109	return DEMO_RESPONSES["validate"]
+demo	RUNTIME	phase1\services\api\routes\nova.py:110	return DEMO_RESPONSES["default"]
+demo	RUNTIME	phase1\services\api\routes\nova.py:141	latency_ms=latency, request_hash=request_hash, demo_mode=False)
+demo	RUNTIME	phase1\services\api\routes\nova.py:145	text = _demo_generate(req.prompt)
+demo	RUNTIME	phase1\services\api\routes\nova.py:147	text=text, model="demo-nova", tokens_used=len(text.split()),
+demo	RUNTIME	phase1\services\api\routes\nova.py:148	latency_ms=5, request_hash=request_hash, demo_mode=True)
+demo	RUNTIME	phase1\services\api\routes\nova.py:175	demo_mode=not NOVA_ENABLED,
+demo	RUNTIME	phase1\services\api\routes\nova.py:208	canonical = json.dumps(DEMO_RESPONSES, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\observability.py:37	DEMO_METRICS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\observability.py:55	return {"metrics": DEMO_METRICS, "count": len(DEMO_METRICS)}
+demo	RUNTIME	phase1\services\api\routes\observability.py:62	for m in DEMO_METRICS:
+demo	RUNTIME	phase1\services\api\routes\observability.py:117	canonical = json.dumps(DEMO_METRICS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:47	DEMO_PERIODS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:55	DEMO_STRATEGIES: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:65	canonical = json.dumps({"periods": DEMO_PERIODS, "strategies": DEMO_STRATEGIES}, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:70	periods=[PerformancePeriod(**p) for p in DEMO_PERIODS],
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:71	strategies=[StrategyPerformance(**s) for s in DEMO_STRATEGIES],
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:83	return {"periods": DEMO_PERIODS}
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:88	for p in DEMO_PERIODS:
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:96	return {"strategies": DEMO_STRATEGIES}
+demo	RUNTIME	phase1\services\api\routes\performance_analytics.py:101	for s in DEMO_STRATEGIES:
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:2	v1.50 — Platform Health Dashboard (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:12	DEMO_COMPONENTS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:69	DEMO_PLATFORM_SUMMARY: dict = {
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:71	"total_components": len(DEMO_COMPONENTS),
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:72	"operational": sum(1 for c in DEMO_COMPONENTS if c["status"] == "operational"),
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:73	"degraded": sum(1 for c in DEMO_COMPONENTS if c["status"] == "degraded"),
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:74	"down": sum(1 for c in DEMO_COMPONENTS if c["status"] == "down"),
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:76	sum(c["uptime_pct"] for c in DEMO_COMPONENTS) / len(DEMO_COMPONENTS), 2
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:79	"environment": "demo",
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:86	return DEMO_COMPONENTS
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:92	canonical = json.dumps(DEMO_COMPONENTS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:100	return DEMO_PLATFORM_SUMMARY
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:106	for c in DEMO_COMPONENTS:
+demo	RUNTIME	phase1\services\api\routes\platform_health.py:115	return [c for c in DEMO_COMPONENTS if c["status"] == status]
+demo	RUNTIME	phase1\services\api\routes\policy_signal.py:7	DEMO_EVENTS: list = [
+demo	RUNTIME	phase1\services\api\routes\policy_signal.py:18	return hashlib.sha256(json.dumps(DEMO_EVENTS, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\policy_signal.py:20	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\policy_signal.py:24	return {"events": DEMO_EVENTS, "count": len(DEMO_EVENTS), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\policy_signal.py:28	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\policy_signal.py:32	ev = next((e for e in DEMO_EVENTS if e["id"] == event_id), None)
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:7	DEMO_ALLOCATION: list = [
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:16	DEMO_RESULT = {
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:17	"run_id": "po-demo-001",
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:24	"allocations": DEMO_ALLOCATION,
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:28	return hashlib.sha256(json.dumps(DEMO_RESULT, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:30	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:34	return {**DEMO_RESULT, "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:38	return {**DEMO_RESULT, "hash": DEMO_HASH, "status": "complete"}
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:42	return {"hash": DEMO_HASH, "portfolio_sharpe": DEMO_RESULT["portfolio_sharpe"]}
+demo	RUNTIME	phase1\services\api\routes\portfolio_optimizer.py:46	return {"allocations": DEMO_ALLOCATION, "count": len(DEMO_ALLOCATION), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:3	Standardized provider abstraction returning deterministic status in DEMO mode.
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:17	mode: str  # "demo" | "live" | "mock"
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:24	DEMO_PROVIDERS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:26	"name": "market-data-demo",
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:27	"mode": "demo",
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:35	"mode": "demo",
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:43	"mode": "demo",
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:51	"mode": "demo",
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:59	"mode": "demo",
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:67	"mode": "demo",
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:75	"mode": "demo",
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:91	return DEMO_PROVIDERS
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:97	canonical = _canonical_json(DEMO_PROVIDERS)
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:99	return {"hash": h, "count": len(DEMO_PROVIDERS), "canonical_bytes": len(canonical)}
+demo	RUNTIME	phase1\services\api\routes\provider_registry.py:105	return [p for p in DEMO_PROVIDERS if p["subsystem"] == subsystem]
+demo	RUNTIME	phase1\services\api\routes\regime.py:26	DEMO_REGIMES: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\regime.py:38	return {"regimes": DEMO_REGIMES}
+demo	RUNTIME	phase1\services\api\routes\regime.py:43	canonical = json.dumps(DEMO_REGIMES, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\regime.py:50	for r in DEMO_REGIMES:
+demo	RUNTIME	phase1\services\api\routes\regime.py:53	avg_vix = sum(r["vix_level"] for r in DEMO_REGIMES) / len(DEMO_REGIMES)
+demo	RUNTIME	phase1\services\api\routes\regime.py:58	"symbol_count": len(DEMO_REGIMES),
+demo	RUNTIME	phase1\services\api\routes\regime.py:64	for r in DEMO_REGIMES:
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:3	Week 1: /validate, /demo-csv
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:29	get_demo_store,
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:40	# In-memory run store (keyed by run_id) — good enough for demo mode.
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:77	@router.get("/demo-csv")
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:78	async def get_demo_csv() -> dict:
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:79	"""Return the committed demo portfolio CSV so the frontend can load it."""
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:80	path = FIXTURES_DIR / "demo_portfolio.csv"
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:129	async def export_risk_run(run_id: str, portfolio_id: Optional[str] = "DEMO-PORT-001"):
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:144	store = get_demo_store()
+demo	RUNTIME	phase1\services\api\routes\risk_desk.py:148	portfolio_id = "DEMO-PORT-001"
+demo	RUNTIME	phase1\services\api\routes\risk_network.py:7	DEMO_NODES: list = [
+demo	RUNTIME	phase1\services\api\routes\risk_network.py:20	DEMO_EDGES: list = [
+demo	RUNTIME	phase1\services\api\routes\risk_network.py:36	payload = {"nodes": DEMO_NODES, "edges": DEMO_EDGES}
+demo	RUNTIME	phase1\services\api\routes\risk_network.py:39	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\risk_network.py:43	return {"nodes": DEMO_NODES, "edges": DEMO_EDGES, "node_count": len(DEMO_NODES), "edge_count": len(DEMO_EDGES), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\risk_network.py:47	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\risk_network.py:51	return {"nodes": DEMO_NODES, "count": len(DEMO_NODES), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\risk_network.py:55	return {"edges": DEMO_EDGES, "count": len(DEMO_EDGES), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\risk_scenarios.py:2	v1.47 — Risk Scenarios (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\risk_scenarios.py:12	DEMO_SCENARIOS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\risk_scenarios.py:58	"""Return all demo scenarios."""
+demo	RUNTIME	phase1\services\api\routes\risk_scenarios.py:59	return DEMO_SCENARIOS
+demo	RUNTIME	phase1\services\api\routes\risk_scenarios.py:65	canonical = json.dumps(DEMO_SCENARIOS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\risk_scenarios.py:73	for s in DEMO_SCENARIOS:
+demo	RUNTIME	phase1\services\api\routes\risk_scenarios.py:82	worst = min(DEMO_SCENARIOS, key=lambda s: s["portfolio_impact"])
+demo	RUNTIME	phase1\services\api\routes\sandbox_runner.py:7	DEMO_EVENTS: list = [
+demo	RUNTIME	phase1\services\api\routes\sandbox_runner.py:19	return hashlib.sha256(json.dumps(DEMO_EVENTS, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\sandbox_runner.py:21	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\sandbox_runner.py:25	return {"events": DEMO_EVENTS, "count": len(DEMO_EVENTS), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\sandbox_runner.py:29	return {"events": DEMO_EVENTS, "hash": DEMO_HASH, "status": "complete", "orders_placed": 2, "signals_generated": 2}
+demo	RUNTIME	phase1\services\api\routes\sandbox_runner.py:33	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\sandbox_runner.py:37	return {"agent_id": "arb_v1", "mode": "sandbox", "status": "idle", "last_run_events": len(DEMO_EVENTS), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\scenario_sim.py:7	DEMO_SCENARIOS: list = [
+demo	RUNTIME	phase1\services\api\routes\scenario_sim.py:17	return hashlib.sha256(json.dumps(DEMO_SCENARIOS, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\scenario_sim.py:19	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\scenario_sim.py:23	return {"scenarios": DEMO_SCENARIOS, "count": len(DEMO_SCENARIOS), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\scenario_sim.py:27	return {"scenarios": DEMO_SCENARIOS, "hash": DEMO_HASH, "status": "complete"}
+demo	RUNTIME	phase1\services\api\routes\scenario_sim.py:31	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\scenario_sim.py:35	sc = next((s for s in DEMO_SCENARIOS if s["id"] == scenario_id), None)
+demo	RUNTIME	phase1\services\api\routes\scoring.py:92	DEMO_SCORES = [
+demo	RUNTIME	phase1\services\api\routes\scoring.py:112	@router.get("/demo")
+demo	RUNTIME	phase1\services\api\routes\scoring.py:113	async def demo_scores():
+demo	RUNTIME	phase1\services\api\routes\scoring.py:114	return {"scores": [_compute_score(d).model_dump() for d in DEMO_SCORES]}
+demo	RUNTIME	phase1\services\api\routes\scoring.py:119	results = [_compute_score(d) for d in DEMO_SCORES]
+demo	RUNTIME	phase1\services\api\routes\search.py:2	v1.39 — Internal Search Index (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\search.py:26	# Deterministic demo index
+demo	RUNTIME	phase1\services\api\routes\search.py:27	DEMO_INDEX: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\search.py:53	"metadata": {"strategy_id": "demo-sma", "period": "1Y", "trades": 47},
+demo	RUNTIME	phase1\services\api\routes\search.py:98	"metadata": {"strategy_id": "demo-rsi", "period": "6M", "trades": 31},
+demo	RUNTIME	phase1\services\api\routes\search.py:120	"""Search the demo index with deterministic stable ordering."""
+demo	RUNTIME	phase1\services\api\routes\search.py:122	for item in DEMO_INDEX:
+demo	RUNTIME	phase1\services\api\routes\search.py:135	"""Return the full demo index."""
+demo	RUNTIME	phase1\services\api\routes\search.py:136	return DEMO_INDEX
+demo	RUNTIME	phase1\services\api\routes\search.py:142	canonical = json.dumps(DEMO_INDEX, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\search.py:144	return {"hash": h, "count": len(DEMO_INDEX)}
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:3	Pure deterministic demo endpoints. Elasticsearch is OFF by default.
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:14	DEMO_TS = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:76	# ── Demo Data ────────────────────────────────────────────────────────────────
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:80	index_name="apex-orders", doc_count=156, last_updated=DEMO_TS,
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:91	index_name="apex-strategies", doc_count=42, last_updated=DEMO_TS,
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:102	index_name="apex-workflows", doc_count=28, last_updated=DEMO_TS,
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:117	last_index_build=DEMO_TS,
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:119	version="1.0.0-demo",
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:126	doc_hash = f"{_fnv32(f'{doc_id}:{DEMO_TS}') & 0xFFFFFFFF:08x}"
+demo	RUNTIME	phase1\services\api\routes\search_depth.py:178	return {"hash": hashlib.sha256(f"search-depth:{DEMO_TS}".encode()).hexdigest()[:16]}
+demo	RUNTIME	phase1\services\api\routes\sentiment.py:36	DEMO_ARTICLES: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\sentiment.py:55	DEMO_SYMBOL_SENTIMENTS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\sentiment.py:69	articles = DEMO_ARTICLES
+demo	RUNTIME	phase1\services\api\routes\sentiment.py:77	return {"sentiments": DEMO_SYMBOL_SENTIMENTS}
+demo	RUNTIME	phase1\services\api\routes\sentiment.py:82	for s in DEMO_SYMBOL_SENTIMENTS:
+demo	RUNTIME	phase1\services\api\routes\sentiment.py:91	canonical = json.dumps(DEMO_SYMBOL_SENTIMENTS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\sentiment.py:97	avg_score = sum(s["score"] for s in DEMO_SYMBOL_SENTIMENTS) / len(DEMO_SYMBOL_SENTIMENTS)
+demo	RUNTIME	phase1\services\api\routes\sentiment.py:104	return {"mood": mood, "avg_score": round(avg_score, 4), "symbol_count": len(DEMO_SYMBOL_SENTIMENTS)}
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:7	DEMO_SIGNALS: list = [
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:17	return hashlib.sha256(json.dumps(DEMO_SIGNALS, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:19	DEMO_HASH = _hash()
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:23	items = DEMO_SIGNALS
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:26	return {"signals": items, "count": len(items), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:30	new_id = f"sig-{100 + len(DEMO_SIGNALS):03d}"
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:31	return {"id": new_id, "status": "published", "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:35	sig = next((s for s in DEMO_SIGNALS if s["id"] == signal_id), None)
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:39	return {"signal_id": signal_id, "subscribed": True, "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\signal_market.py:43	return {"hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\strategy_artifacts.py:3	Endpoints for artifact CRUD, validation, diff, lineage, and demo reset.
+demo	RUNTIME	phase1\services\api\routes\strategy_artifacts.py:134	@router.post("/reset-demo")
+demo	RUNTIME	phase1\services\api\routes\strategy_artifacts.py:135	async def reset_demo():
+demo	RUNTIME	phase1\services\api\routes\strategy_artifacts.py:136	"""Reset the artifact store to seeded demo state (E2E determinism)."""
+demo	RUNTIME	phase1\services\api\routes\strategy_artifacts.py:138	store.reset_demo()
+demo	RUNTIME	phase1\services\api\routes\strategy_artifacts.py:139	return {"status": "ok", "message": "Artifact store reset to demo state", "count": store.count()}
+demo	RUNTIME	phase1\services\api\routes\strategy_compare.py:2	v1.49 — Strategy Comparison Matrix (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\strategy_compare.py:12	DEMO_STRATEGIES: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\strategy_compare.py:79	return DEMO_STRATEGIES
+demo	RUNTIME	phase1\services\api\routes\strategy_compare.py:85	canonical = json.dumps(DEMO_STRATEGIES, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\strategy_compare.py:96	ranked = sorted(DEMO_STRATEGIES, key=lambda s: s.get(metric, 0), reverse=True)
+demo	RUNTIME	phase1\services\api\routes\strategy_compare.py:103	for s in DEMO_STRATEGIES:
+demo	RUNTIME	phase1\services\api\routes\strategy_optimizer.py:21	DEMO_OPTIMIZED: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\strategy_optimizer.py:30	canonical = json.dumps(DEMO_OPTIMIZED, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\strategy_optimizer.py:33	DEMO_HASH = _build_hash()
+demo	RUNTIME	phase1\services\api\routes\strategy_optimizer.py:37	return {"strategies": DEMO_OPTIMIZED, "count": len(DEMO_OPTIMIZED), "hash": DEMO_HASH}
+demo	RUNTIME	phase1\services\api\routes\strategy_optimizer.py:41	return {"hash": DEMO_HASH, "algorithm": "sha256", "inputs": ["mc", "walk_forward", "scoring"]}
+demo	RUNTIME	phase1\services\api\routes\strategy_optimizer.py:45	for s in DEMO_OPTIMIZED:
+demo	RUNTIME	phase1\services\api\routes\strategy_optimizer.py:52	return {"strategies": DEMO_OPTIMIZED, "hash": DEMO_HASH, "run_id": f"opt-{DEMO_HASH[:8]}", "status": "complete"}
+demo	RUNTIME	phase1\services\api\routes\w11_data_spine.py:4	Online-only — no mock/demo/synthetic.
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:3	Out-of-sample walk-forward analysis with deterministic demo data.
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:15	strategy_id: str = "demo-sma-crossover"
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:50	DEMO_FOLDS = [
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:72	avg_is = sum(f.in_sample_sharpe for f in DEMO_FOLDS) / len(DEMO_FOLDS)
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:73	avg_oos = sum(f.out_sample_sharpe for f in DEMO_FOLDS) / len(DEMO_FOLDS)
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:74	avg_is_r = sum(f.in_sample_return_pct for f in DEMO_FOLDS) / len(DEMO_FOLDS)
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:75	avg_oos_r = sum(f.out_sample_return_pct for f in DEMO_FOLDS) / len(DEMO_FOLDS)
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:81	folds=DEMO_FOLDS,
+demo	RUNTIME	phase1\services\api\routes\walk_forward.py:104	return [f.model_dump() for f in DEMO_FOLDS]
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:2	v1.41 — Watchlist Manager (DEMO-first)
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:3	CRUD watchlists with deterministic demo data.
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:27	DEMO_WATCHLISTS: List[dict] = [
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:64	"""Return all demo watchlists."""
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:65	return DEMO_WATCHLISTS
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:70	"""Determinism hash of demo watchlists."""
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:71	canonical = json.dumps(DEMO_WATCHLISTS, sort_keys=True, separators=(",", ":"))
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:79	for wl in DEMO_WATCHLISTS:
+demo	RUNTIME	phase1\services\api\routes\watchlist.py:88	for wl in DEMO_WATCHLISTS:
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:3	Pure deterministic demo endpoints for the Core Depth Upgrade.
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:14	DEMO_TS = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:87	# ── Demo Data ────────────────────────────────────────────────────────────────
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:129	seed = _fnv32(f"{wf_id}:run:{i}:{DEMO_TS}")
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:165	tid = f"tmpl-{_fnv32(f'{req.name}:{DEMO_TS}') & 0xFFFFFF:06x}"
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:169	created_by="admin", created_at=DEMO_TS, use_count=0,
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:180	clone_id = f"tmpl-{_fnv32(f'clone:{template_id}:{DEMO_TS}') & 0xFFFFFF:06x}"
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:184	created_by="admin", created_at=DEMO_TS, use_count=0,
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:197	jid = f"job-{_fnv32(f'{req.workflow_id}:{req.cron}:{DEMO_TS}') & 0xFFFFFF:06x}"
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:201	status="active", created_by="admin", created_at=DEMO_TS,
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:223	seed = _fnv32(f"{workflow_id}:trigger:{len(_RUNS)}:{DEMO_TS}")
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:227	job_id=None, status="success", started_at=DEMO_TS,
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:228	completed_at=DEMO_TS, duration_ms=2000 + (seed % 5000),
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:241	export_id=f"export-{_fnv32(f'{workflow_id}:export:{DEMO_TS}') & 0xFFFFFFFF:08x}",
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:243	hash=h, exported_at=DEMO_TS,
+demo	RUNTIME	phase1\services\api\routes\workflow_depth.py:249	return {"hash": hashlib.sha256(f"workflow-depth:{DEMO_TS}".encode()).hexdigest()[:16]}
+demo	RUNTIME	phase1\services\automation\strategies\mock_strategy.py:9	A mock strategy that generates random signals for demonstration purposes.
+demo	RUNTIME	phase1\services\automation\strategies\mock_strategy.py:19	return "Random Walk Demo"
+demo	RUNTIME	phase1\services\automation\strategies\mock_strategy.py:23	return "Demonstration strategy that generates random buy/sell signals."
+demo	RUNTIME	phase1\services\market_data\providers\demo_provider.py:2	Demo market data provider.
+demo	RUNTIME	phase1\services\market_data\providers\demo_provider.py:24	class DemoProvider(MarketDataProvider):
+demo	RUNTIME	phase1\services\market_data\providers\demo_provider.py:25	"""Demo provider using CSV fixtures with replay-first policy."""
+demo	RUNTIME	phase1\services\market_data\providers\demo_provider.py:28	super().__init__(ProviderName.DEMO)
+demo	RUNTIME	phase1\services\market_data\providers\demo_provider.py:32	f"DemoProvider initialized",
+demo	RUNTIME	phase1\services\market_data\providers\demo_provider.py:149	For demo mode, we derive the quote from the last available bar.
+demo	RUNTIME	phase1\services\market_data\providers\demo_provider.py:193	"""Demo provider is always available."""
+demo	RUNTIME	phase1\services\market_data\providers\types.py:13	DEMO = "demo"
+demo	RUNTIME	phase1\services\market_data\providers\types.py:87	mode: str = Field("DEMO", description="Current mode (DEMO/LOCAL)")
+demo	RUNTIME	phase1\services\market_data\providers\yahoo_provider.py:5	Only enabled in LOCAL mode (not DEMO mode).
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:4	Provides unified interface to multiple market data sources (demo, yahoo).
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:16	from .demo_provider import DemoProvider
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:31	demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:32	enable_replay_save = not demo_mode  # LOCAL mode can save replays
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:34	# Demo provider always available (checks replay, optionally saves in LOCAL)
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:35	_providers[ProviderName.DEMO] = DemoProvider(enable_replay_save=enable_replay_save)
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:37	"Demo provider initialized",mode=("DEMO" if demo_mode else "LOCAL"),
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:42	if not demo_mode:
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:49	logger.info("Yahoo provider disabled (DEMO mode)")
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:79	provider_name: Provider to use (demo, yahoo)
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:114	demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:115	mode = "DEMO" if demo_mode else "LOCAL"
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:116	replay_enabled = not demo_mode  # Can save replays in LOCAL
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:120	# Demo provider
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:121	if ProviderName.DEMO in _providers:
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:123	name=ProviderName.DEMO,
+demo	RUNTIME	phase1\services\market_data\providers\__init__.py:125	description="Demo provider using CSV fixtures (replay-first)",
+demo	RUNTIME	phase1\services\waves11_20\productization\__init__.py:410	"data_mode": "online-only (NO mock/demo/synthetic)",
+mock	RUNTIME	phase1\services\config.py:60	ingestion_mode: Literal["mock", "live"] = Field(default="live")
+mock	RUNTIME	phase1\services\models.py:27	MOCK = "mock"
+mock	RUNTIME	phase1\services\api\autopilot_routes.py:103	# Generate mock candidates for demo (in production, would scan real data)
+mock	RUNTIME	phase1\services\api\autopilot_routes.py:175	# Connectors named 'alpaca' are REST/polling; 'mock' and 'yfinance' are non-streaming as well
+mock	RUNTIME	phase1\services\api\autopilot_routes.py:176	if connector_name in ("alpaca", "mock", "yfinance"):
+mock	RUNTIME	phase1\services\api\main.py:118	# Waves 11-20: Online-only mode — no mock/demo/synthetic
+mock	RUNTIME	phase1\services\api\main.py:119	# Prefer Alpaca, fallback to Finnhub, but never mock
+mock	RUNTIME	phase1\services\api\main.py:443	"bars_source": "alpaca" if alpaca_connected else "mock_csv",
+mock	RUNTIME	phase1\services\api\main.py:444	"mode": "paper" if settings.apca_api_key_id else "mock",
+mock	RUNTIME	phase1\services\autopilot\candidates.py:290	# For mock data, create simplified features
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:196	Implementations: Alpaca, Yahoo Finance, Mock
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:240	Implementations: Finnhub, Benzinga, Mock
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:271	Implementations: Alpaca, Paper, Mock
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:327	# MOCK PROVIDERS (for testing)
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:330	class MockQuoteProvider(QuoteProvider):
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:331	"""Mock quote provider for testing."""
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:338	"""Set a mock quote."""
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:365	return "MockQuote"
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:372	class MockNewsProvider(NewsProvider):
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:373	"""Mock news provider for testing."""
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:380	"""Set mock news for symbol."""
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:384	"""Set mock sentiment for symbol."""
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:401	return "MockNews"
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:404	class MockBrokerProvider(BrokerProvider):
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:405	"""Mock broker provider for testing."""
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:422	order_id = f"MOCK-{self._order_counter:06d}"
+mock	RUNTIME	phase1\services\autopilot\v1_providers.py:488	return "MockBroker"
+mock	RUNTIME	phase1\services\ingestion\main.py:12	from .connectors.mock import MockConnector
+mock	RUNTIME	phase1\services\ingestion\main.py:34	- Data connectors (mock/live)
+mock	RUNTIME	phase1\services\ingestion\main.py:51	mode: "mock" or "live"
+mock	RUNTIME	phase1\services\ingestion\main.py:57	# If Alpaca credentials are present, prefer live mode even if mock was requested
+mock	RUNTIME	phase1\services\ingestion\main.py:58	if mode == "mock" and (settings.apca_api_key_id or settings.apca_api_secret_key or os.environ.get('APCA_API_KEY_ID') or os.environ.get('ALPACA3_KEY')):
+mock	RUNTIME	phase1\services\ingestion\main.py:59	logger.info("auto_switching_to_live_in_init", reason="Alpaca keys detected, overriding mock mode")
+mock	RUNTIME	phase1\services\ingestion\main.py:108	if self.mode == "mock":
+mock	RUNTIME	phase1\services\ingestion\main.py:109	self.connector = MockConnector()
+mock	RUNTIME	phase1\services\ingestion\main.py:131	# No live provider configured, fallback to mock
+mock	RUNTIME	phase1\services\ingestion\main.py:132	self.logger.warning("no_live_provider_configured", msg="Falling back to mock connector")
+mock	RUNTIME	phase1\services\ingestion\main.py:133	self.connector = MockConnector()
+mock	RUNTIME	phase1\services\ingestion\main.py:217	async def run_mock_replay(self, csv_path: str) -> dict:
+mock	RUNTIME	phase1\services\ingestion\main.py:219	Run mock data replay from CSV file.
+mock	RUNTIME	phase1\services\ingestion\main.py:224	if not isinstance(self.connector, MockConnector):
+mock	RUNTIME	phase1\services\ingestion\main.py:225	raise RuntimeError("Mock replay only available in mock mode")
+mock	RUNTIME	phase1\services\ingestion\main.py:227	self.logger.info("starting_mock_replay", csv_path=csv_path)
+mock	RUNTIME	phase1\services\ingestion\main.py:243	self.logger.info("mock_replay_completed", stats=stats)
+mock	RUNTIME	phase1\services\ingestion\main.py:254	choices=["mock", "live"],
+mock	RUNTIME	phase1\services\ingestion\main.py:267	help="CSV file for mock replay",
+mock	RUNTIME	phase1\services\ingestion\main.py:272	# Auto-switch to live mode if Alpaca keys are present even when 'mock' was requested
+mock	RUNTIME	phase1\services\ingestion\main.py:274	if args.mode == "mock" and (settings.apca_api_key_id or settings.apca_api_secret_key or os.environ.get('APCA_API_KEY_ID') or os.environ.get('ALPACA3_KEY')):
+mock	RUNTIME	phase1\services\ingestion\main.py:275	logger.info("auto_switching_to_live", reason="Alpaca keys detected, overriding mock mode")
+mock	RUNTIME	phase1\services\ingestion\main.py:304	# Run mock replay and exit
+mock	RUNTIME	phase1\services\ingestion\main.py:305	await service.run_mock_replay(args.csv)
+mock	RUNTIME	phase1\services\ingestion\normalizer.py:118	"mock": TickSource.MOCK,
+mock	RUNTIME	phase1\services\ingestion\normalizer.py:123	source = source_map.get(src, TickSource.MOCK)
+mock	RUNTIME	phase1\services\ingestion\__init__.py:3	from .connectors.mock import MockConnector
+mock	RUNTIME	phase1\services\ingestion\__init__.py:11	"MockConnector",
+mock	RUNTIME	phase1\services\market_data\record_replay.py:47	Tests: Always use DEMO mode or mock, never trigger real fetches.
+mock	RUNTIME	phase1\services\persistence\models.py:4	No in-memory mocks — everything persists to Postgres.
+mock	RUNTIME	phase1\services\replay\tick_replayer.py:79	source=row.get('source', 'mock'),
+mock	RUNTIME	phase1\services\replay\tick_replayer.py:389	source=TickSourceEnum.MOCK,
+mock	RUNTIME	phase1\services\api\routes\autopilot.py:233	if connector_name in ("alpaca", "mock", "yfinance"):
+mock	RUNTIME	phase1\services\api\routes\ingest.py:14	from ...ingestion.connectors.mock import MockConnector
+mock	RUNTIME	phase1\services\api\routes\ingest.py:72	@router.post("/mock", response_model=IngestResult)
+mock	RUNTIME	phase1\services\api\routes\ingest.py:73	async def ingest_mock_csv(
+mock	RUNTIME	phase1\services\api\routes\ingest.py:104	source="mock",
+mock	RUNTIME	phase1\services\api\routes\ingest.py:174	source="mock",
+mock	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:140	"""Mock fetch function - in reality would call yfinance."""
+mock	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:141	# For testing: return deterministic mock data
+mock	RUNTIME	phase1\services\api\routes\market_data_v1_13.py:192	# For simplicity, return mock
+mock	RUNTIME	phase1\services\api\routes\portfolio.py:249	"total_equity": 100000.0 + unrealized_pnl, # Mock cash
+mock	RUNTIME	phase1\services\api\routes\provider_registry.py:17	mode: str  # "demo" | "live" | "mock"
+mock	RUNTIME	phase1\services\api\routes\provider_registry.py:79	"metadata": {"provider": "mock", "model": "none", "reason": "No API key configured"},
+mock	RUNTIME	phase1\services\api\routes\w11_data_spine.py:4	Online-only — no mock/demo/synthetic.
+mock	RUNTIME	phase1\services\automation\strategies\mock_strategy.py:7	class MockStrategy(BaseStrategy):
+mock	RUNTIME	phase1\services\automation\strategies\mock_strategy.py:9	A mock strategy that generates random signals for demonstration purposes.
+mock	RUNTIME	phase1\services\automation\strategies\mock_strategy.py:15	return "mock_strategy_v1"
+mock	RUNTIME	phase1\services\automation\strategies\mock_strategy.py:31	logger.info(f"MockStrategy generated {signal_type} signal at {price}")
+mock	RUNTIME	phase1\services\autopilot\decision\models.py:21	MOCK = "mock"
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:2	Mock connector for reproducible testing.
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:19	class MockConnector(BaseConnector):
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:21	Mock data connector that reads ticks from CSV files.
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:31	Initialize mock connector.
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:37	super().__init__(name="mock")
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:44	"""Mock connection - just mark as running."""
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:46	self.logger.info("mock_connector_connected")
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:49	"""Mock disconnection."""
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:52	self.logger.info("mock_connector_disconnected")
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:55	"""Subscribe to symbols (mock - just track them)."""
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:57	self.logger.info("mock_subscribed", symbols=symbols)
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:62	self.logger.info("mock_unsubscribed", symbols=symbols)
+mock	RUNTIME	phase1\services\ingestion\connectors\mock.py:105	source="mock",
+mock	RUNTIME	phase1\services\waves11_20\data_spine\__init__.py:120	Online-only data spine. No mock data. No synthetic generators.
+mock	RUNTIME	phase1\services\waves11_20\productization\__init__.py:410	"data_mode": "online-only (NO mock/demo/synthetic)",
+dummy	RUNTIME	phase1\services\market_data\providers\demo_provider.py:165	# Return dummy quote
+dummy	RUNTIME	phase1\services\market_data\providers\yahoo_provider.py:209	# Try to fetch a dummy ticker (minimal request)
+fake	RUNTIME	phase1\services\api\routes\ops_health_v3.py:30	Returns real dependency statuses — no fake values.
+get_demo_bars	TEST	phase1\services\backtest_engine\engine.py:17	from .fixtures import get_demo_bars
+get_demo_bars	TEST	phase1\services\backtest_engine\engine.py:84	bars = get_demo_bars(
+get_demo_bars	TEST	phase1\services\backtest_engine\fixtures.py:67	def get_demo_bars(symbol: str, start_date: str, end_date: str, seed: int = 42) -> List[Dict]:

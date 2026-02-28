@@ -1,0 +1,35 @@
+{
+  "wave": "20.1",
+  "mission": "GATE REPAIR",
+  "timestamp": "2026-02-22T21:12:53",
+  "git_sha": "1dbb248bbdb5d08245ba5c4b456bf268ec25ca8a",
+  "gates": {
+    "tsc": { "result": "PASS", "errors": 0 },
+    "vitest": { "result": "PASS", "passed": 325, "failed": 0, "test_files": 22 },
+    "pytest_root": { "result": "PASS", "passed": 488, "failed": 0, "errors": 0, "duration_s": 93 },
+    "pytest_phase1": { "result": "PASS", "passed": 1394, "failed": 0, "errors": 0, "duration_s": 48 },
+    "playwright_headed": { "result": "PASS", "method": "MCP_browser", "online_badge": true, "demo_mode": false }
+  },
+  "total_tests_passing": 2207,
+  "packages_installed": [
+    "aiohttp==3.13.3",
+    "websockets==16.0",
+    "numpy==2.2.6",
+    "pandas==2.3.3",
+    "requests==2.32.5",
+    "asyncpg==0.31.0",
+    "pyarrow==23.0.0",
+    "pytest-mock==3.15.1",
+    "elasticsearch==8.17.0",
+    "yfinance==1.0",
+    "alpaca-py==0.43.2",
+    "pillow==12.1.0"
+  ],
+  "code_changes": [
+    "tests/conftest.py",
+    "phase1/tests/conftest.py",
+    "tests/unit/test_recording_verifier.py",
+    "phase1/services/api/routes/elasticsearch_gateway.py",
+    "phase1/tests/unit/test_tick_replayer.py"
+  ]
+}

@@ -1,0 +1,25 @@
+=== PHASE 0 PRECHECKS - v1.10 ===
+Date: Sun Feb  8 10:54:24 EST 2026
+
+--- Node.js ---
+v22.21.1
+--- npm ---
+10.9.4
+--- Python ---
+Python 3.10.12
+--- pip ---
+pip 26.0 from /home/aarav/.venv/lib/python3.10/site-packages/pip (python 3.10)
+--- Playwright ---
+Version 1.57.0
+
+--- Git Status ---
+5fba9c8
+main
+Modified files: 104
+
+--- Backend Health Check ---
+{"status":"healthy","alpaca_configured":true,"alpaca_connected":true,"tradier_configured":true,"tradier_connected":true,"options_provider":"tradier","bars_source":"alpaca","mode":"paper"}
+
+--- Frontend Health Check ---
+HTTP 200
+

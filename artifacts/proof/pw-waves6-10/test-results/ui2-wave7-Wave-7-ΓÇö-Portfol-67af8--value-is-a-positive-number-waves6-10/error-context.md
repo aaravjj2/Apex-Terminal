@@ -1,0 +1,186 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: A
+      - generic [ref=e7]:
+        - generic [ref=e8]: Apex Terminal
+        - generic [ref=e9]: Professional Edition
+    - button "🔍 Search or run command... Ctrl+K" [ref=e10] [cursor=pointer]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: 🔍
+        - generic [ref=e13]: Search or run command...
+      - generic [ref=e14]: Ctrl+K
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]: 🎯
+        - generic [ref=e18]: DEMO
+      - generic [ref=e19]:
+        - generic [ref=e20]: ●
+        - generic [ref=e21]: Market Open
+      - 'generic "Connection: disconnected" [ref=e22]':
+        - generic [ref=e23]: ○
+        - generic [ref=e24]: Offline
+      - generic [ref=e25]:
+        - generic [ref=e26]: DE
+        - generic [ref=e27]: Demo Trader
+  - generic [ref=e29]:
+    - generic [ref=e30]: DEMO STREAM
+    - generic [ref=e33]: seq:0
+  - generic [ref=e34]:
+    - button "🏠" [ref=e36] [cursor=pointer]
+    - button "📈" [ref=e38] [cursor=pointer]
+    - button "💼" [ref=e40] [cursor=pointer]
+    - button "📋" [ref=e42] [cursor=pointer]
+    - button "🛡️" [ref=e44] [cursor=pointer]
+    - button "🔬" [ref=e46] [cursor=pointer]
+    - button "🧪" [ref=e48] [cursor=pointer]
+    - button "🤖" [ref=e50] [cursor=pointer]
+    - button "🔔" [ref=e52] [cursor=pointer]
+    - button "⏪" [ref=e54] [cursor=pointer]
+    - button "📜" [ref=e56] [cursor=pointer]
+    - button "⚙️" [ref=e58] [cursor=pointer]
+    - button "🔧" [ref=e60] [cursor=pointer]
+    - button "🔄" [ref=e62] [cursor=pointer]
+    - button "🔍" [ref=e64] [cursor=pointer]
+    - button "💡" [ref=e66] [cursor=pointer]
+    - button "🚀" [ref=e68] [cursor=pointer]
+    - button "⚡" [ref=e70] [cursor=pointer]
+    - button "📦" [ref=e72] [cursor=pointer]
+    - button "💚" [ref=e74] [cursor=pointer]
+    - button "📡" [ref=e76] [cursor=pointer]
+    - button "🧠" [ref=e78] [cursor=pointer]
+    - button "🏃" [ref=e80] [cursor=pointer]
+    - button "🔨" [ref=e82] [cursor=pointer]
+    - button "🚨" [ref=e84] [cursor=pointer]
+    - button "🧭" [ref=e86] [cursor=pointer]
+    - button "💊" [ref=e88] [cursor=pointer]
+    - button "🧩" [ref=e90] [cursor=pointer]
+    - button "📊" [ref=e92] [cursor=pointer]
+    - button "✨" [ref=e94] [cursor=pointer]
+  - generic [ref=e95]:
+    - generic [ref=e96]: Portfolio
+    - generic [ref=e97]: Context-sensitive list (watchlist, strategies, portfolios, etc.)
+  - generic [ref=e99]:
+    - heading "Portfolio Optimizer" [level=1] [ref=e100]
+    - paragraph [ref=e101]: "Hash: 03546a1589cffe10…"
+    - generic [ref=e102]:
+      - generic [ref=e103]:
+        - generic [ref=e104]: Portfolio Sharpe
+        - generic [ref=e105]: "0.938"
+      - generic [ref=e106]:
+        - generic [ref=e107]: Expected Return
+        - generic [ref=e108]: —
+      - generic [ref=e109]:
+        - generic [ref=e110]: Portfolio Vol
+        - generic [ref=e111]: —
+    - table [ref=e113]:
+      - rowgroup [ref=e114]:
+        - row "Symbol Weight Return Vol Sharpe" [ref=e115]:
+          - columnheader "Symbol" [ref=e116]
+          - columnheader "Weight" [ref=e117]
+          - columnheader "Return" [ref=e118]
+          - columnheader "Vol" [ref=e119]
+          - columnheader "Sharpe" [ref=e120]
+      - rowgroup [ref=e121]:
+        - row "SPY 30.0% 12.0% 15.0% 0.8" [ref=e122]:
+          - cell "SPY" [ref=e123]
+          - cell "30.0%" [ref=e124]
+          - cell "12.0%" [ref=e125]
+          - cell "15.0%" [ref=e126]
+          - cell "0.8" [ref=e127]
+        - row "QQQ 20.0% 15.0% 18.0% 0.83" [ref=e128]:
+          - cell "QQQ" [ref=e129]
+          - cell "20.0%" [ref=e130]
+          - cell "15.0%" [ref=e131]
+          - cell "18.0%" [ref=e132]
+          - cell "0.83" [ref=e133]
+        - row "TLT 20.0% 4.0% 8.0% 0.5" [ref=e134]:
+          - cell "TLT" [ref=e135]
+          - cell "20.0%" [ref=e136]
+          - cell "4.0%" [ref=e137]
+          - cell "8.0%" [ref=e138]
+          - cell "0.5" [ref=e139]
+        - row "GLD 10.0% 6.0% 12.0% 0.5" [ref=e140]:
+          - cell "GLD" [ref=e141]
+          - cell "10.0%" [ref=e142]
+          - cell "6.0%" [ref=e143]
+          - cell "12.0%" [ref=e144]
+          - cell "0.5" [ref=e145]
+        - row "IWM 10.0% 11.0% 17.0% 0.65" [ref=e146]:
+          - cell "IWM" [ref=e147]
+          - cell "10.0%" [ref=e148]
+          - cell "11.0%" [ref=e149]
+          - cell "17.0%" [ref=e150]
+          - cell "0.65" [ref=e151]
+        - row "CASH 10.0% 5.0% 0.0% 0" [ref=e152]:
+          - cell "CASH" [ref=e153]
+          - cell "10.0%" [ref=e154]
+          - cell "5.0%" [ref=e155]
+          - cell "0.0%" [ref=e156]
+          - cell "0" [ref=e157]
+  - generic [ref=e159]:
+    - generic [ref=e160]:
+      - heading "Inspector" [level=3] [ref=e161]
+      - button "▶" [ref=e162] [cursor=pointer]
+    - generic [ref=e164]: Select an item to inspect
+  - generic [ref=e166]:
+    - generic [ref=e167]:
+      - button "Orders" [ref=e168] [cursor=pointer]
+      - button "Trades" [ref=e169] [cursor=pointer]
+      - button "Logs" [ref=e170] [cursor=pointer]
+      - button "▼" [ref=e171] [cursor=pointer]
+    - generic [ref=e173]:
+      - generic [ref=e174]:
+        - textbox "Symbol..." [ref=e175]
+        - combobox [ref=e176]:
+          - option "All Status" [selected]
+          - option "Submitted"
+          - option "Filled"
+          - option "Canceled"
+        - button [ref=e177]:
+          - img [ref=e178]
+      - table [ref=e184]:
+        - rowgroup [ref=e185]:
+          - row "Time Symbol Side Type Qty Filled Price Status" [ref=e186]:
+            - columnheader "Time" [ref=e187] [cursor=pointer]:
+              - text: Time
+              - img [ref=e188]
+            - columnheader "Symbol" [ref=e190] [cursor=pointer]
+            - columnheader "Side" [ref=e191]
+            - columnheader "Type" [ref=e192]
+            - columnheader "Qty" [ref=e193]
+            - columnheader "Filled" [ref=e194]
+            - columnheader "Price" [ref=e195]
+            - columnheader "Status" [ref=e196]
+        - rowgroup [ref=e197]:
+          - row "09:14:16 PM AAPL BUY market 100 100 $175.50 filled" [ref=e198] [cursor=pointer]:
+            - cell "09:14:16 PM" [ref=e199]
+            - cell "AAPL" [ref=e200]
+            - cell "BUY" [ref=e201]
+            - cell "market" [ref=e202]
+            - cell "100" [ref=e203]
+            - cell "100" [ref=e204]
+            - cell "$175.50" [ref=e205]
+            - cell "filled" [ref=e206]
+          - row "09:14:16 PM TSLA SELL limit 50 0 $250.00 submitted" [ref=e207] [cursor=pointer]:
+            - cell "09:14:16 PM" [ref=e208]
+            - cell "TSLA" [ref=e209]
+            - cell "SELL" [ref=e210]
+            - cell "limit" [ref=e211]
+            - cell "50" [ref=e212]
+            - cell "0" [ref=e213]
+            - cell "$250.00" [ref=e214]
+            - cell "submitted" [ref=e215]
+          - row "09:14:16 PM MSFT BUY stop 75 0 - canceled" [ref=e216] [cursor=pointer]:
+            - cell "09:14:16 PM" [ref=e217]
+            - cell "MSFT" [ref=e218]
+            - cell "BUY" [ref=e219]
+            - cell "stop" [ref=e220]
+            - cell "75" [ref=e221]
+            - cell "0" [ref=e222]
+            - cell "-" [ref=e223]
+            - cell "canceled" [ref=e224]
+```

@@ -1,0 +1,22 @@
+{
+  "errors": [
+    {
+      "message": "Strategy name is required",
+      "path": "name",
+      "rule_id": "STRAT_001"
+    },
+    {
+      "message": "Unsupported strategy type: invalid_type. Must be one of: breakout, crossover, mean_reversion, signal",
+      "path": "type",
+      "rule_id": "STRAT_002"
+    },
+    {
+      "message": "Strategy spec is required and must be an object",
+      "path": "spec",
+      "rule_id": "STRAT_003"
+    }
+  ],
+  "input_checksum": "9ac62be9c4cc00100cb712b5a12ce82ac880d43a816184e6b6503d36491ff9f4",
+  "valid": false,
+  "warnings": []
+}

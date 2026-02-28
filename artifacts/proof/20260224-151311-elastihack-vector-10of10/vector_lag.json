@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "body": {
+    "lag_metrics": [],
+    "pattern_vec_lag": 0,
+    "text_vec_lag": 0,
+    "slo_met": true,
+    "slo_threshold_docs": 500,
+    "checked_at": "2026-02-24T20:14:02.850108+00:00"
+  }
+}

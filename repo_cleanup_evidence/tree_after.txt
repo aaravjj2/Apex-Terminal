@@ -1,0 +1,449 @@
+.
+├── .ag
+│   ├── inbox
+│   └── outbox
+├── .agent
+│   └── skills
+├── .antigravity
+│   └── skills
+├── .claude
+│   └── skills
+├── .codebuddy
+│   └── skills
+├── .codex
+│   ├── skills
+│   └── mcp.json
+├── .continue
+│   └── skills
+├── .cursor
+│   └── commands
+├── .gemini
+│   └── skills
+├── .github
+│   ├── hooks
+│   ├── prompts
+│   └── workflows
+├── .kiro
+│   └── steering
+├── .opencode
+│   └── skills
+├── .playwright-mcp
+│   ├── 01_dashboard_updated.png
+│   ├── 02_voice_on.png
+│   ├── 04_autopilot_updated.png
+│   ├── autopilot_cycle_complete.png
+│   ├── autopilot_dashboard_connected.png
+│   ├── autopilot_dashboard_initial.png
+│   ├── autopilot_final_state.png
+│   ├── autopilot_tab_e2e.png
+│   ├── autopilot_view_working.png
+│   ├── chart_monitor_working.png
+│   ├── chart_real_data_fixed.png
+│   ├── chart_route_render.png
+│   ├── chart_workspace_view.png
+│   ├── command_center_autopilot.png
+│   ├── command_center_overview.png
+│   ├── command_center_positions.png
+│   ├── dashboard_e2e.png
+│   ├── dashboard_initial_load.png
+│   ├── dashboard_verification.png
+│   ├── final_dashboard.png
+│   ├── final_universe.png
+│   ├── final_verified_state.png
+│   ├── forecast_sentiment_verified.png
+│   ├── options_analytics_working.png
+│   ├── orders_tab.png
+│   ├── our_dashboard.png
+│   ├── page-2026-02-02T16-47-14-177Z.png
+│   ├── page-2026-02-02T16-47-30-481Z.png
+│   ├── page-2026-02-02T16-47-36-712Z.png
+│   ├── page-2026-02-02T16-47-47-900Z.png
+│   ├── page-2026-02-02T16-47-48-654Z.png
+│   ├── page-2026-02-02T16-47-49-466Z.png
+│   ├── page-2026-02-02T16-47-50-221Z.png
+│   ├── page-2026-02-02T16-47-50-739Z.png
+│   ├── page-2026-02-02T16-48-17-348Z.png
+│   ├── page-2026-02-02T16-48-20-705Z.png
+│   ├── page-2026-02-02T16-48-24-033Z.png
+│   ├── page-2026-02-02T16-48-40-539Z.png
+│   ├── page-2026-02-02T16-48-43-895Z.png
+│   ├── page-2026-02-02T16-48-47-229Z.png
+│   ├── portfolio_page_verified.png
+│   ├── test_cycle_2_complete.png
+│   ├── test_orders_page.png
+│   ├── test_portfolio_page.png
+│   ├── test_runs_page.png
+│   ├── tradingview_real.png
+│   ├── voice_toggle_on.png
+│   └── voice_toggle_topbar.png
+├── .pytest_cache
+│   ├── v
+│   ├── .gitignore
+│   ├── CACHEDIR.TAG
+│   └── README.md
+├── .qoder
+│   └── skills
+├── .roo
+│   └── commands
+├── .shared
+│   └── ui-ux-pro-max
+├── .trae
+│   └── skills
+├── .windsurf
+│   └── workflows
+├── Tradingview
+│   ├── .pytest_cache
+│   └── keys.env
+├── artifacts
+│   ├── phase1
+│   ├── phase4
+│   ├── release
+│   ├── verification
+│   ├── dashboard_fetch_error.png
+│   ├── dashboard_fetch_error_1.png
+│   ├── dashboard_fetch_error_10.png
+│   ├── dashboard_fetch_error_11.png
+│   ├── dashboard_fetch_error_12.png
+│   ├── dashboard_fetch_error_13.png
+│   ├── dashboard_fetch_error_14.png
+│   ├── dashboard_fetch_error_15.png
+│   ├── dashboard_fetch_error_16.png
+│   ├── dashboard_fetch_error_17.png
+│   ├── dashboard_fetch_error_18.png
+│   ├── dashboard_fetch_error_19.png
+│   ├── dashboard_fetch_error_2.png
+│   ├── dashboard_fetch_error_20.png
+│   ├── dashboard_fetch_error_21.png
+│   ├── dashboard_fetch_error_22.png
+│   ├── dashboard_fetch_error_23.png
+│   ├── dashboard_fetch_error_24.png
+│   ├── dashboard_fetch_error_25.png
+│   ├── dashboard_fetch_error_26.png
+│   ├── dashboard_fetch_error_27.png
+│   ├── dashboard_fetch_error_28.png
+│   ├── dashboard_fetch_error_29.png
+│   ├── dashboard_fetch_error_3.png
+│   ├── dashboard_fetch_error_30.png
+│   ├── dashboard_fetch_error_31.png
+│   ├── dashboard_fetch_error_32.png
+│   ├── dashboard_fetch_error_33.png
+│   ├── dashboard_fetch_error_34.png
+│   ├── dashboard_fetch_error_35.png
+│   ├── dashboard_fetch_error_36.png
+│   ├── dashboard_fetch_error_37.png
+│   ├── dashboard_fetch_error_38.png
+│   ├── dashboard_fetch_error_39.png
+│   ├── dashboard_fetch_error_4.png
+│   ├── dashboard_fetch_error_40.png
+│   ├── dashboard_fetch_error_41.png
+│   ├── dashboard_fetch_error_42.png
+│   ├── dashboard_fetch_error_43.png
+│   ├── dashboard_fetch_error_44.png
+│   ├── dashboard_fetch_error_45.png
+│   ├── dashboard_fetch_error_46.png
+│   ├── dashboard_fetch_error_47.png
+│   ├── dashboard_fetch_error_48.png
+│   ├── dashboard_fetch_error_49.png
+│   ├── dashboard_fetch_error_5.png
+│   ├── dashboard_fetch_error_50.png
+│   ├── dashboard_fetch_error_6.png
+│   ├── dashboard_fetch_error_7.png
+│   ├── dashboard_fetch_error_8.png
+│   ├── dashboard_fetch_error_9.png
+│   ├── dashboard_price_match.png
+│   ├── dashboard_price_match_1.png
+│   ├── dashboard_price_match_10.png
+│   ├── dashboard_price_match_11.png
+│   ├── dashboard_price_match_12.png
+│   ├── dashboard_price_match_13.png
+│   ├── dashboard_price_match_14.png
+│   ├── dashboard_price_match_15.png
+│   ├── dashboard_price_match_16.png
+│   ├── dashboard_price_match_17.png
+│   ├── dashboard_price_match_18.png
+│   ├── dashboard_price_match_19.png
+│   ├── dashboard_price_match_2.png
+│   ├── dashboard_price_match_20.png
+│   ├── dashboard_price_match_21.png
+│   ├── dashboard_price_match_22.png
+│   ├── dashboard_price_match_23.png
+│   ├── dashboard_price_match_24.png
+│   ├── dashboard_price_match_25.png
+│   ├── dashboard_price_match_26.png
+│   ├── dashboard_price_match_27.png
+│   ├── dashboard_price_match_28.png
+│   ├── dashboard_price_match_29.png
+│   ├── dashboard_price_match_3.png
+│   ├── dashboard_price_match_30.png
+│   ├── dashboard_price_match_31.png
+│   ├── dashboard_price_match_32.png
+│   ├── dashboard_price_match_33.png
+│   ├── dashboard_price_match_34.png
+│   ├── dashboard_price_match_35.png
+│   ├── dashboard_price_match_36.png
+│   ├── dashboard_price_match_37.png
+│   ├── dashboard_price_match_38.png
+│   ├── dashboard_price_match_39.png
+│   ├── dashboard_price_match_4.png
+│   ├── dashboard_price_match_40.png
+│   ├── dashboard_price_match_41.png
+│   ├── dashboard_price_match_42.png
+│   ├── dashboard_price_match_43.png
+│   ├── dashboard_price_match_44.png
+│   ├── dashboard_price_match_45.png
+│   ├── dashboard_price_match_46.png
+│   ├── dashboard_price_match_47.png
+│   ├── dashboard_price_match_48.png
+│   ├── dashboard_price_match_49.png
+│   ├── dashboard_price_match_5.png
+│   ├── dashboard_price_match_50.png
+│   ├── dashboard_price_match_6.png
+│   ├── dashboard_price_match_7.png
+│   ├── dashboard_price_match_8.png
+│   └── dashboard_price_match_9.png
+├── browser_extension
+│   ├── manifest.json
+│   ├── popup.html
+│   └── popup.js
+├── cboe_pipeline
+│   ├── analysis
+│   ├── data
+│   ├── src
+│   ├── README.md
+│   ├── audit_data.py
+│   ├── check_progress.py
+│   ├── config.yaml
+│   ├── main.py
+│   ├── pipeline.log
+│   └── requirements.txt
+├── data
+│   ├── equity
+│   └── sample_ticks.csv
+├── devpost_media
+│   ├── elevenlabs
+│   ├── images
+│   ├── scripts
+│   ├── video
+│   ├── DELIVERABLES_REPORT.md
+│   ├── DEVPOST_CHECKLIST.md
+│   ├── QUICK_START.md
+│   ├── README.md
+│   ├── demo.webm
+│   ├── demo_runbook.md
+│   ├── demo_script.md
+│   ├── generate_all.sh
+│   ├── package-lock.json
+│   ├── package.json
+│   └── tsconfig.json
+├── docs
+│   ├── ACCEPTANCE_CHECKLIST.md
+│   ├── HEROKU_DEPLOYMENT.md
+│   ├── LEAN_LOCAL_RUNBOOK_WINDOWS.md
+│   ├── QC_ACCEPTANCE_CHECKLIST.md
+│   ├── QC_ADAPTER_PROOF_REPORT.md
+│   ├── QC_BRAIN_CONTRACT.md
+│   ├── QC_CLOUD_RUNBOOK.md
+│   ├── QC_PATTERN_A_PORT.md
+│   ├── QC_REAL_RUN_SUMMARY.md
+│   ├── RUNBOOK.md
+│   ├── V1_SPEC.md
+│   ├── api_contracts.md
+│   ├── build_plan.md
+│   ├── delivery_summary.md
+│   ├── final_report.md
+│   ├── implementation_plan.md
+│   ├── mcp_playwright_smoke.md
+│   ├── merge_map.md
+│   ├── side_project_review.md
+│   ├── smoke_snapshot.png
+│   ├── smoke_snapshot_pytest.png
+│   └── target_architecture.md
+├── e2e-results
+├── frontend
+│   ├── .pytest_cache
+│   ├── artifacts
+│   ├── dist
+│   ├── frontend
+│   ├── playwright-report
+│   ├── public
+│   ├── screenshots
+│   ├── scripts
+│   ├── src
+│   ├── test-results
+│   ├── tests
+│   ├── .env.development
+│   ├── .gitignore
+│   ├── README.md
+│   ├── backend_status.log
+│   ├── eslint.config.js
+│   ├── frontend.log
+│   ├── frontend_manual.log
+│   ├── frontend_status.log
+│   ├── index.html
+│   ├── nohup.out
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── playwright.config.ts
+│   ├── playwright.video.config.ts
+│   ├── postcss.config.js
+│   ├── preview.log
+│   ├── tailwind.config.js
+│   ├── test_ws.py
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── verify_dashboard_prices.cjs
+│   ├── verify_gate0.cjs
+│   ├── verify_gate2.cjs
+│   ├── vite.config.ts
+│   ├── vite.out
+│   └── vitest.config.ts
+├── lean_clean
+├── logs
+│   ├── backend.log
+│   ├── backend_demo.log
+│   ├── frontend.log
+│   ├── frontend_demo.log
+│   └── n8n_docker.log
+├── n8n
+│   ├── workflows
+│   ├── README.md
+│   └── docker-compose.yml
+├── phase1
+│   ├── .pytest_cache
+│   ├── artifacts
+│   ├── autopilot_brain
+│   ├── data
+│   ├── docs
+│   ├── e2e-results
+│   ├── fixtures
+│   ├── logs
+│   ├── n8n
+│   ├── scripts
+│   ├── services
+│   ├── test-results
+│   ├── tests
+│   ├── .dockerignore
+│   ├── =15.0.0
+│   ├── =2024.1
+│   ├── DOCUMENTATION.md
+│   ├── Dockerfile
+│   ├── Makefile
+│   ├── README.md
+│   ├── SYSTEM_AUDIT.md
+│   ├── autopilot_config.json
+│   ├── backend.log
+│   ├── backend_manual.log
+│   ├── check_creds.py
+│   ├── debug_db.py
+│   ├── docker-compose.yml
+│   ├── keys.env
+│   ├── keys.env.example
+│   ├── nohup.out
+│   ├── phase1.db
+│   ├── pytest.ini
+│   ├── requirements.txt
+│   ├── server.log
+│   ├── trade_ledger.json
+│   ├── tts_cache.db
+│   └── uvicorn.out
+├── pw-server
+├── qc
+│   ├── AutopilotQC_v1
+│   └── Library
+├── repo_cleanup_evidence
+│   ├── grep_secrets_report.txt
+│   ├── repo_size_after.txt
+│   ├── repo_size_before.txt
+│   ├── tracked_files_after.txt
+│   ├── tracked_files_before.txt
+│   ├── tree_after.txt
+│   └── tree_before.txt
+├── scripts
+│   ├── backtest.py
+│   ├── check_repo_health.sh
+│   ├── live_run.py
+│   ├── run_backend.sh
+│   ├── run_demo.sh
+│   ├── run_frontend.sh
+│   └── sync_brain.py
+├── strategies
+│   ├── rsi_breakout.py
+│   ├── sma_crossover.py
+│   └── vwap_reversion.py
+├── tests
+│   ├── adapter
+│   ├── brain
+│   ├── integration
+│   ├── unit
+│   ├── full_month_backtest.py
+│   ├── qc_harness.py
+│   ├── test_ui_smoke.py
+│   └── ui_smoke_test.py
+├── tools
+│   └── generate_lean_data.py
+├── .current_artifact_dir
+├── .gitignore
+├── .gitignore.save
+├── .gitignore.save.1
+├── .readmeaiignore
+├── AUTOPILOT_EXPLANATION.md
+├── CURRENT_STATE.md
+├── IMPLEMENTATION_STATUS.md
+├── MASTER_PLAN.md
+├── Makefile
+├── PROJECT_REPORT.md
+├── Procfile
+├── QUICK_REFERENCE.md
+├── README.html
+├── README.md
+├── README_FACTS.md
+├── README_Generator_Colab.ipynb
+├── ROBUSTNESS_IMPROVEMENTS.md
+├── RUNBOOK.md
+├── Readme ai.code-workspace
+├── TEST_STATUS_SUMMARY.md
+├── USAGE_GUIDE.md
+├── app.json
+├── backend.log
+├── backend_demo.log
+├── colab_readme_generator.py
+├── current_dashboard.png
+├── debug_browser_ws.js
+├── debug_db.py
+├── diagnose_browser.js
+├── docker-compose.unified.yml
+├── frontend.log
+├── frontend_demo.log
+├── full_implementation_plan.md
+├── full_implementation_plan.md:Zone.Identifier
+├── generate_mock_csv.py
+├── generate_readme_html.py
+├── improvement_guide.md
+├── inspect_alpaca.py
+├── inspect_leg.py
+├── keys.env
+├── keys.env.example
+├── lean.json
+├── monitor.log
+├── monitor_trades.py
+├── n8n_workflow_validation_report.md
+├── package-lock.json
+├── package.json
+├── phase1.db
+├── proxy.log
+├── quick_ws_test.py
+├── requirements.txt
+├── run_all.sh
+├── runtime.txt
+├── sanity.log
+├── smoke.log
+├── smoke_retry.log
+├── test_backend.py
+├── test_n8n_from_container.sh
+├── test_n8n_workflow.py
+├── test_snapshot.js
+├── test_websocket.py
+└── verify_extension.js
+
+104 directories, 342 files

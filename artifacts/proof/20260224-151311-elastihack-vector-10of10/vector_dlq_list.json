@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "body": {
+    "entries": [
+      {
+        "id": "d08aa7d3-bafc-4f0e-b03a-1eb49a1ad542",
+        "entity_type": "backtests",
+        "error": "vector_computation_failed",
+        "missing_fields": [
+          "daily_returns",
+          "cagr"
+        ],
+        "fallback_used": true,
+        "created_at": "2026-02-24T20:14:27.330772+00:00"
+      }
+    ],
+    "count": 1,
+    "checked_at": "2026-02-24T20:14:27.333039+00:00"
+  }
+}

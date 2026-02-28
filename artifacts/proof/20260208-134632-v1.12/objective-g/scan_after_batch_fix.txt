@@ -1,0 +1,23 @@
+❌ SELECTOR POLICY: VIOLATIONS FOUND
+
+Total violations: 2
+
+File: frontend/tests/e2e/visual-regression-v1-4.spec.ts
+Violations: 1
+  Line 221: locator() with CSS class/id
+    const tabStrip = page.locator('[data-testid="options-main-tab-analytics"], [data-testid="options-mai...
+
+File: frontend/tests/e2e/websocket-status.spec.ts
+Violations: 1
+  Line 21: getByText()
+    await expect(aiPanel.getByText('WebSocket Status')).toBeVisible();
+
+FORBIDDEN PATTERNS:
+  - .getByText(), .getByRole(), .getByLabel(), .getByPlaceholder(), .getByAltText(), .getByTitle()
+  - .locator() with CSS selectors (class, id, tag, combinator)
+  - .locator() with non-testid attribute selectors
+
+ALLOWED PATTERNS:
+  - .getByTestId("my-element")
+  - .locator('[data-testid="my-element"]')
+  - data-testid="my-element" in JSX/HTML

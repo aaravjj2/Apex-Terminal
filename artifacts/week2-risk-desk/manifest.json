@@ -1,0 +1,130 @@
+{
+  "week": 2,
+  "title": "Risk Desk — 5-Tool Deterministic Pipeline",
+  "version": "2.0.0",
+  "date": "2025-02-07",
+
+  "repository": {
+    "commit": "5fba9c86c09eeb8c43fc398c6183b53ec169ca89",
+    "branch": "main",
+    "status": "dirty (10 modified files, 23 untracked files)",
+    "diffstat": "10 files changed, 408 insertions(+), 11 deletions(-)"
+  },
+
+  "environment": {
+    "python": "3.10.12",
+    "node": "v22.21.1",
+    "npm": "10.9.4",
+    "playwright": "1.57.0",
+    "pydantic": "2.x",
+    "react": "19.2.0",
+    "typescript": "5.9.0",
+    "vite": "5.4.21"
+  },
+
+  "test_matrix": {
+    "backend_unit": {
+      "command": "python -m pytest test_risk_desk_w2.py -v --tb=short",
+      "output_file": "/tmp/backend_tests.txt",
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 0.96
+    },
+    "typescript": {
+      "command": "cd frontend && npx tsc --noEmit",
+      "output_file": "/tmp/tsc_output.txt",
+      "errors": 0
+    },
+    "playwright_e2e": {
+      "command": "cd frontend && npx playwright test --config=playwright.risk-desk.config.ts",
+      "output_file": "/tmp/playwright_output.txt",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 56.3
+    },
+    "determinism": {
+      "command": "python check_determinism.py",
+      "output_file": "/tmp/determinism_check.txt",
+      "verified": true,
+      "hash_match": true,
+      "excluded_fields": ["run_id"]
+    }
+  },
+
+  "backend": {
+    "tools": [
+      { "id": "T1", "name": "portfolio_validator", "file": "phase1/services/risk_desk/validator.py" },
+      { "id": "T2", "name": "greeks_calculator", "file": "phase1/services/risk_desk/greeks_calculator.py" },
+      { "id": "T3", "name": "stress_tester", "file": "phase1/services/risk_desk/stress_tester.py" },
+      { "id": "T4", "name": "greeks_verifier", "file": "phase1/services/risk_desk/greeks_verifier.py" },
+      { "id": "T5", "name": "compliance_checker", "file": "phase1/services/risk_desk/compliance_checker.py" },
+      { "id": "T6", "name": "ticket_builder", "file": "phase1/services/risk_desk/ticket_builder.py" }
+    ],
+    "pipeline": "phase1/services/risk_desk/pipeline.py",
+    "schemas": "phase1/services/risk_desk/schemas_w2.py",
+    "api_routes": "phase1/services/api/routes/risk_desk.py",
+    "endpoints": [
+      { "method": "POST", "path": "/api/risk-desk/run", "description": "Execute 5-tool risk pipeline" },
+      { "method": "POST", "path": "/api/risk-desk/ticket", "description": "Build trade ticket (T6)" },
+      { "method": "GET",  "path": "/api/risk-desk/scenarios", "description": "List stress scenarios" },
+      { "method": "POST", "path": "/api/risk-desk/validate", "description": "Week 1 validate-only" },
+      { "method": "GET",  "path": "/api/risk-desk/demo-csv", "description": "Week 1 demo CSV" }
+    ],
+    "unit_tests": "test_risk_desk_w2.py",
+    "unit_test_count": 33
+  },
+
+  "frontend": {
+    "panel": "frontend/src/features/options/riskDesk/RiskDeskPanel.tsx",
+    "types": "frontend/src/features/options/riskDesk/types.ts",
+    "api_client": "frontend/src/features/options/riskDesk/api.ts",
+    "layout": "3-column: inputs | outputs | trace"
+  },
+
+  "e2e": {
+    "config": "frontend/playwright.risk-desk.config.ts",
+    "specs": [
+      { "file": "frontend/tests/e2e/risk-desk.spec.ts", "tests": 6, "description": "Week 1 tests updated for Week 2 UI" },
+      { "file": "frontend/tests/e2e/risk-desk-w2.spec.ts", "tests": 6, "description": "Week 2 new tests" }
+    ],
+    "test_count": 12,
+    "config_settings": {
+      "retries": 0,
+      "workers": 1,
+      "video": "on",
+      "screenshot": "on",
+      "trace": "on",
+      "web_servers": [
+        { "port": 8000, "env": "E2E_MODE=1", "service": "backend" },
+        { "port": 4173, "command": "vite preview", "service": "frontend" }
+      ]
+    },
+    "artifacts": {
+      "html_report": "frontend/playwright-report-risk-desk/index.html",
+      "videos": "frontend/test-results-risk-desk/*/*.webm (12 files)",
+      "traces": "frontend/test-results-risk-desk/*/trace.zip (12 files)",
+      "screenshots": "frontend/test-results-risk-desk/*/test-finished-1.png (12 files)",
+      "report_screenshot": "artifacts/week2-risk-desk/playwright_report_screenshot.png",
+      "ui_completion_screenshot": "artifacts/week2-risk-desk/ui_completion_screenshot.png"
+    }
+  },
+
+  "make_targets": {
+    "demo": "make demo",
+    "verify": "make verify",
+    "test-risk-desk": "make test-risk-desk"
+  },
+
+  "fixtures": {
+    "demo_portfolio": "phase1/services/risk_desk/fixtures/demo_portfolio.csv",
+    "demo_snapshot": "phase1/services/risk_desk/fixtures/demo_snapshot.json"
+  },
+
+  "stress_scenarios": [
+    { "id": "moderate_selloff", "label": "Moderate Sell-off (-10% spot, +20% vol)" },
+    { "id": "severe_crash", "label": "Severe Crash (-25% spot, +50% vol)" },
+    { "id": "vol_expansion", "label": "Vol Expansion (0% spot, +40% vol)" }
+  ]
+}

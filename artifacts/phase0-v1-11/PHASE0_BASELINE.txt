@@ -1,0 +1,22 @@
+=== PHASE 0 BASELINE TEST MATRIX ===
+
+1. TypeScript Compiler
+
+2. Vitest
+[2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[32m97 passed[39m[22m[90m (97)[39m
+
+3. Pytest
+tests/unit/test_ticker_resolver.py::TestResolveTickerInvalid::test_only_whitespace PASSED [ 94%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCompanyNames::test_aapl_has_company PASSED [ 94%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCompanyNames::test_brk_b_has_company PASSED [ 95%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerCompanyNames::test_unknown_no_company PASSED [ 96%]
+tests/unit/test_ticker_resolver.py::TestResolveTickerBatch::test_batch_multiple_tickers PASSED [ 97%]
+tests/unit/test_ticker_resolver.py::TestGetNormalizedForm::test_get_normalized_brk PASSED [ 98%]
+tests/unit/test_ticker_resolver.py::TestGetNormalizedForm::test_get_normalized_aapl PASSED [ 99%]
+tests/unit/test_ticker_resolver.py::TestGetNormalizedForm::test_get_normalized_unknown PASSED [100%]
+
+============================= 117 passed in 2.78s ==============================
+4. Playwright Smoke
+Running 8 tests using 1 worker
+  8 passed (19.0s)

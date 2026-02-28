@@ -1,0 +1,85 @@
+{
+  "changes": [
+    {
+      "left_value": "SMA Crossover 20/50",
+      "op": "changed",
+      "path": "/name",
+      "right_value": "SMA Crossover 20/50 v2"
+    },
+    {
+      "left_value": 50,
+      "op": "changed",
+      "path": "/spec/indicators/1/params/period",
+      "right_value": 100
+    },
+    {
+      "left_value": null,
+      "op": "added",
+      "path": "/spec/stop_loss_pct",
+      "right_value": 2
+    }
+  ],
+  "left_canonical": {
+    "name": "SMA Crossover 20/50",
+    "schema_version": 1,
+    "spec": {
+      "entry": {
+        "condition": "crosses_above",
+        "indicator": "SMA_20"
+      },
+      "exit": {
+        "condition": "crosses_below",
+        "indicator": "SMA_20"
+      },
+      "indicators": [
+        {
+          "params": {
+            "period": 20
+          },
+          "type": "SMA"
+        },
+        {
+          "params": {
+            "period": 50
+          },
+          "type": "SMA"
+        }
+      ]
+    },
+    "type": "crossover",
+    "version": "1"
+  },
+  "left_id": "ca78f55cc50ffce6a99ee2484d48e97a228bc667112b80bba0a94ad39836e6d7",
+  "right_canonical": {
+    "name": "SMA Crossover 20/50 v2",
+    "schema_version": 1,
+    "spec": {
+      "entry": {
+        "condition": "crosses_above",
+        "indicator": "SMA_20"
+      },
+      "exit": {
+        "condition": "crosses_below",
+        "indicator": "SMA_20"
+      },
+      "indicators": [
+        {
+          "params": {
+            "period": 20
+          },
+          "type": "SMA"
+        },
+        {
+          "params": {
+            "period": 100
+          },
+          "type": "SMA"
+        }
+      ],
+      "stop_loss_pct": 2
+    },
+    "type": "crossover",
+    "version": "1"
+  },
+  "right_id": "1388216039183c1b86b0f586b3c1402322c6e8313962f490b977a89ee23cce58"
+}

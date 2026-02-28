@@ -1,0 +1,28 @@
+﻿
+Running 24 tests using 1 worker
+
+[1A[2K[1/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:20:3 ΓÇ║ Liveness  /health ΓÇ║ GET /health returns 200
+[1A[2K[2/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:24:3 ΓÇ║ Liveness  /health ΓÇ║ /health reports status=healthy
+[1A[2K[3/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:28:3 ΓÇ║ Liveness  /health ΓÇ║ /health confirms alpaca_connected
+[1A[2K[4/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:32:3 ΓÇ║ Liveness  /health ΓÇ║ /health has alpaca_configured=true
+[1A[2K[5/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:39:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ GET /api/v1/verification/alpaca/health returns 200
+[1A[2K[6/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:43:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health status=healthy
+[1A[2K[7/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:47:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health api_reachable=true
+[1A[2K[8/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:51:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health has account_number
+[1A[2K[9/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:56:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health cash is positive number
+[1A[2K[10/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:61:3 ΓÇ║ Broker Health  Alpaca verification ΓÇ║ alpaca health has portfolio_value
+[1A[2K[11/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:69:3 ΓÇ║ WebSocket Status ΓÇ║ GET /api/v1/autopilot/ws_status returns 200
+[1A[2K[12/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:73:3 ΓÇ║ WebSocket Status ΓÇ║ ws_status has heartbeat_running=true
+[1A[2K[13/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:77:3 ΓÇ║ WebSocket Status ΓÇ║ ws_status connections is a number
+[1A[2K[14/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:81:3 ΓÇ║ WebSocket Status ΓÇ║ ws_status subscriptions is a number
+[1A[2K[15/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:88:3 ΓÇ║ Broker Readiness ΓÇ║ GET /api/v2/broker/readiness returns 200
+[1A[2K[16/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:92:3 ΓÇ║ Broker Readiness ΓÇ║ readiness broker_mode is paper
+[1A[2K[17/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:96:3 ΓÇ║ Broker Readiness ΓÇ║ readiness kill_switch_active is boolean
+[1A[2K[18/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:100:3 ΓÇ║ Broker Readiness ΓÇ║ readiness kill_switch not active
+[1A[2K[19/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:107:3 ΓÇ║ Platform Health Summary ΓÇ║ GET /api/v1/platform-health/summary returns 200
+[1A[2K[20/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:111:3 ΓÇ║ Platform Health Summary ΓÇ║ platform health has overall_status
+[1A[2K[21/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:115:3 ΓÇ║ Platform Health Summary ΓÇ║ platform health has total_components
+[1A[2K[22/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:122:3 ΓÇ║ v1 Health Components ΓÇ║ GET /api/v1/health returns 200
+[1A[2K[23/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:126:3 ΓÇ║ v1 Health Components ΓÇ║ v1 health has components
+[1A[2K[24/24] [chromium] ΓÇ║ tests\e2e\hardening\health-gates.spec.ts:130:3 ΓÇ║ v1 Health Components ΓÇ║ v1 health has overall_status
+[1A[2K  24 passed (3.1s)

@@ -1,0 +1,10 @@
+{
+  "strategy_id": "demo-sma-crossover",
+  "symbol": "SPY",
+  "start_date": "2023-01-01",
+  "end_date": "2023-01-31",
+  "initial_capital": 100000.0,
+  "slippage_bps": 5.0,
+  "fee_per_trade": 1.0,
+  "seed": 42
+}

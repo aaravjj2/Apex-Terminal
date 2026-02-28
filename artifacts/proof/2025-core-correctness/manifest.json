@@ -1,0 +1,54 @@
+{
+  "track": "core-correctness",
+  "generated": "2026-02-20T06:48:39Z",
+  "status": "ALL_PASSING",
+  "validation_matrix": {
+    "tsc": {"status": "pass", "errors": 0},
+    "vitest": {"status": "pass", "passed": 305, "failed": 0, "total": 305},
+    "pytest": {"status": "pass", "passed": 1297, "failed": 0, "total": 1297},
+    "playwright_run1": {"status": "pass", "passed": 136, "failed": 0, "total": 136, "duration_seconds": 96},
+    "playwright_run2": {"status": "pass", "passed": 136, "failed": 0, "total": 136, "duration_seconds": 102},
+    "determinism_diff": {"status": "pass", "diff_lines": 0, "comment": "identical 136 test names across both runs"},
+    "tour_webm": {"status": "pass", "duration_seconds": 186, "duration_human": "3m06s", "file_size_mb": 3.1, "features": ["autopilot", "search", "workflow-builder", "backtest"]}
+  },
+  "scope_freeze": {
+    "visible_workspaces": ["autopilot", "search", "workflow-builder", "backtest", "runs", "settings"],
+    "hidden_workspaces_count": 30,
+    "filter": "VISIBLE_WORKSPACES in AppShellUI2.tsx"
+  },
+  "port_config": {
+    "backend": 8090,
+    "frontend_dev": 5100,
+    "frontend_preview": 5100
+  },
+  "determinism": {
+    "autopilot_demo_ts": "2026-02-15T14:30:00Z",
+    "hash_algorithm": "FNV-1a 32-bit",
+    "run1_hash_matches_run2": true,
+    "backtest_demo_timestamp": 1771165800000
+  },
+  "playwright_config": {
+    "headless": false,
+    "workers": 1,
+    "retries": 0,
+    "video": "on",
+    "screenshot": "on",
+    "trace": "on",
+    "channel": "chrome",
+    "base_url": "http://localhost:5100"
+  },
+  "spec_files": {
+    "regression-smoke.spec.ts": 19,
+    "autopilot.spec.ts": 31,
+    "search.spec.ts": 28,
+    "workflow-builder.spec.ts": 27,
+    "backtest.spec.ts": 31,
+    "total": 136
+  },
+  "selector_constraints": {
+    "data_testid_only": true,
+    "no_getByText": true,
+    "no_getByRole": true,
+    "no_waitForTimeout_in_core_specs": true
+  }
+}

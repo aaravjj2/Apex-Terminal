@@ -1,0 +1,49 @@
+{
+  "status": 200,
+  "body": {
+    "ok": true,
+    "symbol": "AAPL",
+    "steps": [
+      "compute_pattern_vec",
+      "knn_search",
+      "summarize",
+      "recommend"
+    ],
+    "pattern_vec_dims": 64,
+    "pattern_vec_sample": [
+      -0.039272,
+      0.094621,
+      0.240436,
+      0.147436,
+      0.259332,
+      -0.148568,
+      -0.110071,
+      0.239653
+    ],
+    "es_available": true,
+    "similar_hits": [],
+    "summary": {
+      "similar_count": 0,
+      "avg_cosine_similarity": 0.91,
+      "common_patterns": [
+        "high_win_rate",
+        "moderate_volatility",
+        "positive_momentum"
+      ],
+      "dominant_entity_types": [
+        "backtests"
+      ]
+    },
+    "recommendation": {
+      "action": "PROCEED",
+      "confidence": 0.82,
+      "rationale": "Found 0 similar setups for AAPL; historical avg CAGR 18%+ in similar conditions.",
+      "risk_factors": [
+        "correlated_drawdown",
+        "liquidity_risk"
+      ],
+      "suggested_position_size": 0.05
+    },
+    "correlation_id": "agent-flow-6d85ae1f"
+  }
+}

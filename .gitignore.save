@@ -1,0 +1,79 @@
+################################
+# Environment variables / secrets
+################################
+.env
+.env.*
+!.env.example
+
+################################
+# Python bytecode / cache
+################################
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+################################
+# Virtual environments (MANDATORY)
+################################
+.venv/
+venv/
+env/
+ENV/
+
+################################
+# Python packaging / build artifacts
+################################
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+*.whl
+
+################################
+# Databases / runtime state
+################################
+*.db
+*.sqlite
+*.sqlite3
+
+################################
+# Tests / coverage
+################################
+test-results/
+coverage/
+.coverage
+htmlcov/
+
+################################
+# Playwright (local-only)
+################################
+pw-server/
+.playwright/
+.playwright-artifacts/
+playwright-report/
+
+################################
+# Node / JS tooling
+################################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+################################
+# Logs / temp
+################################
+*.log
+*.tmp
+*.out
+
+################################
+# OS / IDE noise
+################################
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+b

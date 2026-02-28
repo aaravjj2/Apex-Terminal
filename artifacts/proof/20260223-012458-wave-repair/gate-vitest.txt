@@ -1,0 +1,140 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Tradingview/Tradingview recreation/frontend[39m
+
+ [32mΓ£ô[39m tests/unit/ui-components.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/no-fake-kpis.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/regression-locks.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave13-14-stores.test.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/Scales.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/indicators/calculators.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/disambiguator.test.ts [2m([22m[2m34 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/core/ChartEngine.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/searchStore-v104.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/providers.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave9-stores.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/provenance-display.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/citations-panel.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/waves21_50Stores.test.ts [2m([22m[2m45 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave15-17-18-stores.test.ts [2m([22m[2m30 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+npx.cmd : [90mstderr[2m | tests/unit/wave8-stores.test.ts[2m > 
+[22m[2mautopilotV2Store[2m > [22m[2mbackend API failure returns null
+At line:1 char:1
++ npx.cmd vitest run 2>&1 | Out-File "$dir\gate-vitest.txt" -Encoding U ...
++ ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...re returns null 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mAutopilot run failed: Internal Server Error
+
+ [32mΓ£ô[39m tests/unit/strategy-templates.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstderr[2m | tests/unit/wave8-stores.test.ts[2m > 
+[22m[2mautopilotV2Store[2m > [22m[2mbackend network error returns null
+[22m[39mAutopilot execute error: Error: Network error
+    at C:/Tradingview/Tradingview 
+recreation/frontend/tests/unit/wave8-stores.test.ts:205:46
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:145:11
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:915:26
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Tradingview/Tradingview%20recreation/fro
+ntend/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39
+m
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+    at Traces.$ [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[
+39m
+    at trace [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/[3
+9mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+
+ [32mΓ£ô[39m tests/unit/wave8-stores.test.ts [2m([22m[2m42 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/wave7-stores.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 140[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/depthStores.test.ts [2m([22m[2m36 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mΓ£ô[39m src/ui2/__tests__/components.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/watchlist-tile.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/state/store.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould handle fetch errors gracefully
+[22m[39mFailed to fetch telemetry events: Error: Network error
+    at C:/Tradingview/Tradingview 
+recreation/frontend/tests/unit/telemetryStore.test.ts:73:45
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:145:11
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:915:26
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Tradingview/Tradingview%20recreation/fro
+ntend/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39
+m
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+    at Traces.$ [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[
+39m
+    at trace [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/[3
+9mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould handle fetch errors gracefully
+[22m[39mFailed to fetch telemetry events: Error: Network error
+    at C:/Tradingview/Tradingview 
+recreation/frontend/tests/unit/telemetryStore.test.ts:73:45
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:145:11
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:915:26
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Tradingview/Tradingview%20recreation/fro
+ntend/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39
+m
+    at [90mfile:///C:/Tradingview/Tradingview%20recreation/frontend/[39mnode_
+modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+    at Traces.$ [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[
+39m
+    at trace [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/[3
+9mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///C:/Tradingview/Tradingview%20recreation/frontend/
+[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould deduplicate events by event_id
+[22m[39mFailed to fetch telemetry events: TypeError: Cannot read properties 
+of undefined (reading 'ok')
+    at fetchTelemetryEvents (C:/Tradingview/Tradingview 
+recreation/frontend/src/ui2/stores/telemetryStore.ts:134:19)
+
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould update connectionStatus correctly
+[22m[39mFailed to fetch telemetry events: TypeError: Cannot read properties 
+of undefined (reading 'ok')
+    at fetchTelemetryEvents (C:/Tradingview/Tradingview 
+recreation/frontend/src/ui2/stores/telemetryStore.ts:134:19)
+
+[90mstderr[2m | tests/unit/telemetryStore.test.ts[2m > 
+[22m[2mtelemetryStore[2m > [22m[2mshould stop streaming correctly
+[22m[39mFailed to fetch telemetry events: TypeError: Cannot read properties 
+of undefined (reading 'ok')
+    at fetchTelemetryEvents (C:/Tradingview/Tradingview 
+recreation/frontend/src/ui2/stores/telemetryStore.ts:134:19)
+
+ [32mΓ£ô[39m tests/unit/telemetryStore.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 950[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m should deduplicate events by event_id [33m 316[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m23 passed[39m[22m[90m (23)[39m
+[2m      Tests [22m [1m[32m370 passed[39m[22m[90m (370)[39m
+[2m   Start at [22m 01:28:06
+[2m   Duration [22m 2.16s[2m (transform 2.80s, setup 3.94s, import 3.39s, tests 1.45s, environment 15.87s)[22m
+

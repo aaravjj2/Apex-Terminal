@@ -1,0 +1,12 @@
+{
+  "TEST-RUN-001/README.txt": "048019077d1da62a1c0ad568242fb06cca5e37b26cc65e5e09997ff4da0711b6",
+  "TEST-RUN-001/compliance.json": "1095fcb91c8612dbd97d7c757a27807e0bf8f11f4d0eabf451d9eff955c6eb89",
+  "TEST-RUN-001/config_hash.txt": "4fc5438e58af7a1efc0eb2346592589a8d997b09b44c4b27ed42985496ee234e",
+  "TEST-RUN-001/portfolio.csv": "b04a7283fa97d92a2ace42a17554b1264168a9ef4f9c4571de5d2b8515a26dd8",
+  "TEST-RUN-001/portfolio/portfolio.json": "9fd1ba5c96e18e460177ad576703f1b3c110833a12c7fa6c5a75dc75b13864ff",
+  "TEST-RUN-001/portfolio/valuation_inputs.json": "b3218f78be993962337dd7dfce307c7d75a18f3c8b74a1b814804b12b9e777c8",
+  "TEST-RUN-001/report.html": "3a70b9d8f8942b8651ffda518ec16b11955888ceb969bfae6b9d6541d824ea45",
+  "TEST-RUN-001/risk_run.json": "ba53a5dbb1107de22780513e3e3d10653d7b535c61b6d86ba0c3400503d69452",
+  "TEST-RUN-001/snapshot.json": "62c70b5def371950255db2d1610dd5f6f290e1a7b6f83f9c4aa2434ff902049f",
+  "TEST-RUN-001/tool_trace.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+}

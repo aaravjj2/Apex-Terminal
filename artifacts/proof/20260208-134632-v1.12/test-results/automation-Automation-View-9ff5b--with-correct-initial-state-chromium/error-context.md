@@ -1,0 +1,199 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - text: PAPER MODE — All trades are simulated
+      - img [ref=e8]
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e13]: T
+        - generic [ref=e15]:
+          - generic [ref=e16]: "Broker:"
+          - generic [ref=e17]: Alpaca
+          - generic [ref=e18]: (Paper Trading •••XXXX)
+        - generic [ref=e20]:
+          - button "Autopilot ON" [ref=e21]:
+            - img [ref=e22]
+            - generic [ref=e24]: Autopilot
+            - generic [ref=e25]: "ON"
+          - button "Kill Switch - Emergency Stop" [ref=e26]:
+            - img [ref=e27]
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - 'generic "Alpaca REST: disconnected" [ref=e32]':
+            - generic [ref=e34]: Alpaca REST
+          - 'generic "Alpaca Stream: connected" [ref=e35]':
+            - generic [ref=e37]: Alpaca Stream
+          - 'generic "Finnhub: connected" [ref=e38]':
+            - generic [ref=e40]: Finnhub
+          - 'generic "yfinance: connected" [ref=e41]':
+            - generic [ref=e43]: yfinance
+          - 'generic "Groq: connected" [ref=e44]':
+            - generic [ref=e46]: Groq
+          - 'generic "Gemini: connected" [ref=e47]':
+            - generic [ref=e49]: Gemini
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - img [ref=e54]
+            - generic [ref=e58]: CONNECTED
+          - button "Force WebSocket Reconnect" [ref=e59]:
+            - img [ref=e60]
+        - button "Demo Fixtures" [ref=e67]:
+          - img [ref=e68]
+          - generic [ref=e72]: Demo Fixtures
+          - img [ref=e73]
+        - button "Search /" [ref=e77]:
+          - img [ref=e78]
+          - generic [ref=e81]: Search
+          - generic [ref=e82]: /
+        - generic [ref=e84]:
+          - img [ref=e85]
+          - generic [ref=e88]: 18:04:12 ET
+        - button [ref=e91]:
+          - img [ref=e92]
+  - generic [ref=e95]:
+    - navigation [ref=e96]:
+      - generic [ref=e97]:
+        - generic [ref=e98]: Main
+        - button "Dashboard ⌘D" [ref=e99]:
+          - img [ref=e101]
+        - button "Portfolio ⌘P" [ref=e106]:
+          - img [ref=e108]
+        - button "Orders ⌘O" [ref=e111]:
+          - img [ref=e113]
+        - button "Runs / Audit Log ⌘R" [ref=e116]:
+          - img [ref=e118]
+        - button "Strategies & Rules ⌘S" [ref=e122]:
+          - img [ref=e124]
+      - generic [ref=e129]:
+        - button "Chart ⌘1" [ref=e130]:
+          - img [ref=e132]
+        - button "Options ⌘2" [ref=e134]:
+          - img [ref=e136]
+        - button "Backtests ⌘B" [ref=e139]:
+          - img [ref=e141]
+        - button "Autopilot ⌘A" [active] [ref=e143]:
+          - img [ref=e146]
+        - button "Replay ⌘3" [ref=e149]:
+          - img [ref=e151]
+        - button "Alerts ⌘4" [ref=e154]:
+          - img [ref=e156]
+        - button "Incidents ⌘I" [ref=e158]:
+          - img [ref=e160]
+      - generic [ref=e162]:
+        - button "Settings" [ref=e163]:
+          - img [ref=e165]
+        - button "Expand" [ref=e168]:
+          - img [ref=e169]
+    - main [ref=e171]:
+      - generic [ref=e172]:
+        - generic [ref=e173]:
+          - button "Dashboard" [ref=e174]
+          - button "Positions" [ref=e175]
+          - button "Activity" [ref=e176]
+          - button "Settings" [ref=e177]
+        - generic [ref=e179]:
+          - generic [ref=e180]: 📄 PAPER TRADING MODE - NO REAL MONEY AT RISK
+          - generic [ref=e181]:
+            - generic [ref=e182]:
+              - heading "🤖 AI Options Autopilot" [level=1] [ref=e183]
+              - generic [ref=e184]: RUNNING
+              - generic [ref=e185]: "WS: CONNECTING"
+            - generic [ref=e186]:
+              - generic [ref=e187]:
+                - text: "Equity: $1,000.00"
+                - generic [ref=e188]: (+$0.00)
+              - button "🌎 Universe" [ref=e189]
+              - button "⏸️ Pause" [ref=e190]
+              - button "🔄 Run Cycle" [ref=e191]
+              - button "🛑 Kill Switch" [ref=e192]
+          - generic [ref=e195]: 📈 Market Overview
+          - generic [ref=e196]:
+            - generic [ref=e197]:
+              - generic [ref=e198]:
+                - generic [ref=e199]:
+                  - text: Paper Equity
+                  - paragraph [ref=e200]: $1,000.00
+                - generic [ref=e201]:
+                  - text: Total P&L
+                  - paragraph [ref=e202]: +$0.00
+                - generic [ref=e203]:
+                  - text: Open Positions
+                  - paragraph [ref=e204]: 0 / 5
+                - generic [ref=e205]:
+                  - text: Win Rate
+                  - paragraph [ref=e206]: 0.00%
+              - generic [ref=e207]:
+                - generic [ref=e208]:
+                  - text: Net Delta
+                  - paragraph [ref=e209]: "0.00"
+                - generic [ref=e210]:
+                  - text: Net Theta
+                  - paragraph [ref=e211]: "0.00"
+              - generic [ref=e212]:
+                - generic [ref=e214]:
+                  - generic [ref=e215]:
+                    - heading "📊 Position Ledger" [level=2] [ref=e216]
+                    - generic [ref=e217]:
+                      - generic [ref=e218]:
+                        - button "Open" [ref=e219]
+                        - button "Closed" [ref=e220]
+                        - button "All" [ref=e221]
+                      - button "🔄 Refresh" [ref=e222]
+                  - generic [ref=e223]:
+                    - generic [ref=e224]: Positions:0
+                    - generic [ref=e225]: Total Risk:$0.00
+                    - generic [ref=e226]: Total P&L:$0.00
+                  - generic [ref=e228]: No positions found
+                - generic [ref=e230]:
+                  - generic [ref=e231]:
+                    - generic [ref=e232]:
+                      - heading "Trade Proposals" [level=2] [ref=e233]
+                      - paragraph [ref=e234]: Cycle • Invalid Date
+                    - button "↻ Refresh" [ref=e235]:
+                      - generic [ref=e236]: ↻
+                      - text: Refresh
+                  - generic [ref=e237]:
+                    - generic [ref=e238]:
+                      - heading "Candidates Generated" [level=3] [ref=e239]
+                      - paragraph
+                    - generic [ref=e240]:
+                      - heading "Selected" [level=3] [ref=e241]
+                      - paragraph
+                    - generic [ref=e242]:
+                      - heading "Rejected" [level=3] [ref=e243]
+                      - paragraph [ref=e244]: NaN
+                    - generic [ref=e245]:
+                      - heading "Selection Method" [level=3] [ref=e246]
+                      - paragraph [ref=e247]: unknown
+                  - heading "Candidates by Strategy Template" [level=3] [ref=e249]
+            - generic [ref=e250]:
+              - generic [ref=e251]:
+                - generic [ref=e253]:
+                  - heading "🛡️ Active Guardians Dispatcher Active" [level=3] [ref=e254]:
+                    - generic [ref=e255]: 🛡️ Active Guardians
+                    - generic [ref=e256]: Dispatcher Active
+                  - generic [ref=e257]: No active positions to monitor.
+                - generic [ref=e258]: No run history available
+              - generic [ref=e259]:
+                - heading "🧠 Think Engine" [level=3] [ref=e260]
+                - generic [ref=e262]:
+                  - generic [ref=e263]:
+                    - generic [ref=e264]:
+                      - generic [ref=e265]: 🧠
+                      - heading "Think Engine Log" [level=2] [ref=e266]
+                    - generic [ref=e267]:
+                      - generic [ref=e268]:
+                        - checkbox "Auto-refresh" [checked] [ref=e269]
+                        - text: Auto-refresh
+                      - button "🔄 Refresh" [ref=e270]
+                  - generic [ref=e272]: No think log entries yet. Run a cycle to see the AI's decision process.
+                  - generic [ref=e273]: "Last updated: 6:04:11 PM"
+  - button "PAPER" [ref=e275]:
+    - img [ref=e276]
+    - generic [ref=e278]: PAPER
+    - img [ref=e280]
+```

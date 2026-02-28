@@ -1,0 +1,155 @@
+{
+  "name": "Colab Job Scheduler",
+  "nodes": [
+    {
+      "id": "cron_1",
+      "type": "n8n-nodes-base.cron",
+      "position": [
+        250,
+        300
+      ],
+      "name": "Scheduled Trigger",
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "0 */6 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set_1",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        450,
+        300
+      ],
+      "name": "Prepare Job",
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "job_id",
+              "value": "={{ $now.toFormat('yyyyMMdd-HHmmss') }}"
+            },
+            {
+              "name": "notebook_url",
+              "value": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http_colab",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        650,
+        300
+      ],
+      "name": "Trigger Colab Job",
+      "parameters": {
+        "method": "POST",
+        "url": "https://colab.research.google.com/api/v1/execute",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "notebook",
+              "value": "={{ $json.notebook_url }}"
+            },
+            {
+              "name": "job_id",
+              "value": "={{ $json.job_id }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api"
+      },
+      "credentials": {
+        "oAuth2Api": {
+          "id": "google_oauth",
+          "name": "Google OAuth2"
+        }
+      }
+    },
+    {
+      "id": "http_store",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        850,
+        300
+      ],
+      "name": "Record Job Result",
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/jobs/results",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_id",
+              "value": "={{ $json.job_id }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "output_path",
+              "value": "={{ $json.output_path }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "cron_1": {
+      "main": [
+        [
+          {
+            "node": "set_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_1": {
+      "main": [
+        [
+          {
+            "node": "http_colab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "http_colab": {
+      "main": [
+        [
+          {
+            "node": "http_store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "exportedAt": "2026-01-12T20:28:09.313030Z",
+    "generator": "tradingview-recreation",
+    "version": "1.0.0"
+  }
+}

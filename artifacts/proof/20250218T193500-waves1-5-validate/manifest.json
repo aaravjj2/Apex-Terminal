@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-02-18T19:35:00Z",
+  "suite": "waves1-5",
+  "gates": {
+    "tsc": {
+      "status": "pass",
+      "errors": 0
+    },
+    "vitest": {
+      "status": "pass",
+      "total": 112,
+      "failed": 0,
+      "skipped": 0
+    },
+    "pytest": {
+      "status": "pass",
+      "total": 368,
+      "failed": 0,
+      "skipped": 0
+    },
+    "preflight": {
+      "status": "pass",
+      "violations": 0
+    },
+    "playwright_run1": {
+      "status": "pass",
+      "total": 123,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "playwright_run2": {
+      "status": "pass",
+      "total": 123,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0
+    }
+  },
+  "determinism": "PASS",
+  "enforcement": {
+    "headless": false,
+    "workers": 1,
+    "retries": 0,
+    "video": "on",
+    "trace": "on",
+    "screenshot": "on",
+    "selectors": "data-testid only",
+    "webServer": "vite build + vite preview",
+    "frontendPort": 5100,
+    "backendPort": 8090
+  },
+  "screenshots_count": 98,
+  "results_sha256": "0aa777c7a5ad975ae1c6aabee131ce3c6e10cd484941cc36cbcf3e97b81b1b06"
+}

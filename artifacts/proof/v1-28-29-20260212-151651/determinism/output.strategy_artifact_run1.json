@@ -1,0 +1,29 @@
+{
+  "checksum": "20f033269220de1d3e1879e83bcd83a9e916596458240eb0df7eae6b581abcc5",
+  "created_at": "2025-01-15T00:00:00Z",
+  "id": "20f033269220de1d3e1879e83bcd83a9e916596458240eb0df7eae6b581abcc5",
+  "name": "Determinism Test",
+  "schema_version": 1,
+  "spec": {
+    "entry": {
+      "condition": "crosses_above",
+      "indicator": "SMA_20"
+    },
+    "exit": {
+      "condition": "crosses_below",
+      "indicator": "SMA_20"
+    },
+    "indicators": [
+      {
+        "period": 20,
+        "type": "SMA"
+      },
+      {
+        "period": 50,
+        "type": "SMA"
+      }
+    ]
+  },
+  "type": "crossover",
+  "version": "1.0.0"
+}

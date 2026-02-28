@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "body": {
+    "ok": true,
+    "mode": "bm25",
+    "query": "AAPL momentum backtest",
+    "entity_type": null,
+    "pattern_vec_dims": 64,
+    "pattern_vec_sample": [
+      -0.056732,
+      0.077161,
+      0.222976,
+      0.129975,
+      0.241872,
+      -0.166029,
+      -0.127532,
+      0.222192
+    ],
+    "bm25_hits": [],
+    "knn_hits": [],
+    "rrf_hits": [],
+    "bm25_count": 0,
+    "knn_count": 0,
+    "rrf_count": 0,
+    "latency_ms": 2144.73,
+    "index": "apex-backtests-*",
+    "correlation_id": "hybrid-0551de38",
+    "retriever": "bm25"
+  }
+}

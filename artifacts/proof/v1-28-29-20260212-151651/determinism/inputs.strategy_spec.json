@@ -1,0 +1,26 @@
+{
+  "name": "Determinism Test",
+  "schema_version": 1,
+  "spec": {
+    "entry": {
+      "condition": "crosses_above",
+      "indicator": "SMA_20"
+    },
+    "exit": {
+      "condition": "crosses_below",
+      "indicator": "SMA_20"
+    },
+    "indicators": [
+      {
+        "period": 20,
+        "type": "SMA"
+      },
+      {
+        "period": 50,
+        "type": "SMA"
+      }
+    ]
+  },
+  "type": "crossover",
+  "version": "1.0.0"
+}

@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "body": {
+    "vector_enabled": false,
+    "pattern_vec": {
+      "dims": 64,
+      "similarity": "cosine",
+      "hnsw_m": 16,
+      "hnsw_ef_construction": 100,
+      "deterministic": true,
+      "external_api_required": false
+    },
+    "text_vec": {
+      "dims": 384,
+      "similarity": "cosine",
+      "model": null,
+      "enabled": false
+    },
+    "coverage_summary": {
+      "backtest_run": 0.0,
+      "autopilot_cycle": 0.0,
+      "strategies": 0.0
+    },
+    "contract_version": "5.0",
+    "checked_at": "2026-02-24T20:14:02.846485+00:00"
+  }
+}

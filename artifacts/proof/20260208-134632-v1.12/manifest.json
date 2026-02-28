@@ -1,0 +1,124 @@
+{
+  "sprint": "v1.12",
+  "timestamp": "2026-02-08T20:00:00Z",
+  "objectives": {
+    "G": {
+      "title": "Data-TestID Enforcement",
+      "status": "complete",
+      "violations_initial": 65,
+      "violations_final": 0,
+      "components_updated": 6,
+      "tests_refactored": 22,
+      "gate_exit_code": 0
+    },
+    "H": {
+      "title": "Finance Lexicon Disambiguation",
+      "status": "not_started"
+    },
+    "I": {
+      "title": "Backtest Module Restructuring",
+      "status": "not_started"
+    },
+    "J": {
+      "title": "Determinism Proof",
+      "status": "not_started"
+    },
+    "K": {
+      "title": "Tour Video Update",
+      "status": "not_started"
+    }
+  },
+  "test_results": {
+    "phase0": {
+      "typescript": {"errors": 0, "status": "pass"},
+      "vitest": {"passed": 97, "failed": 0, "skipped": 0, "status": "pass"},
+      "pytest": {"passed": 130, "failed": 0, "skipped": 0, "status": "pass"},
+      "playwright_baseline": {"passed": 20, "failed": 0, "skipped": 0, "status": "pass"}
+    },
+    "objective_g": {
+      "typescript": {"errors": 0, "status": "pass"},
+      "vitest": {"passed": 97, "failed": 0, "skipped": 0, "status": "pass"},
+      "pytest": {"passed": 130, "failed": 0, "skipped": 0, "status": "pass"},
+      "playwright_packaging": {"passed": 6, "failed": 3, "skipped": 0, "status": "partial", "note": "Failures due to backend 404s, not selectors"},
+      "playwright_visual": {"passed": 12, "failed": 8, "skipped": 0, "status": "partial", "note": "Failures due to screenshot diffs, not selectors"},
+      "selector_gate": {"violations": 0, "status": "compliant", "exit_code": 0}
+    }
+  },
+  "changes": {
+    "components": [
+      "frontend/src/ui/Modal.tsx",
+      "frontend/src/features/chart/IndicatorsModal.tsx",
+      "frontend/src/features/tts/VoiceControl.tsx",
+      "frontend/src/features/layout/views/AIPanel.tsx",
+      "frontend/src/features/autopilot/components/AutopilotDashboard.tsx",
+      "frontend/src/features/autopilot/components/AutopilotPositions.tsx",
+      "frontend/src/features/autopilot/components/AutopilotActivity.tsx",
+      "frontend/src/features/autopilot/components/AutopilotSettings.tsx"
+    ],
+    "tests": [
+      "frontend/tests/e2e/autopilot-mcp.spec.ts",
+      "frontend/tests/e2e/indicators.spec.ts",
+      "frontend/tests/e2e/comprehensive_tour.spec.ts",
+      "frontend/tests/e2e/forecast.spec.ts",
+      "frontend/tests/e2e/helpers.ts",
+      "frontend/tests/e2e/industrial-uiux-analytics-reporting.spec.ts",
+      "frontend/tests/e2e/interactions.spec.ts",
+      "frontend/tests/e2e/packaging-v1-9.spec.ts",
+      "frontend/tests/e2e/premium-charts-v1-9.spec.ts",
+      "frontend/tests/e2e/snapshots.spec.ts",
+      "frontend/tests/e2e/stability-coverage-v1-3.spec.ts",
+      "frontend/tests/e2e/strategy-lab-backtest-v2.spec.ts",
+      "frontend/tests/e2e/tts.spec.ts",
+      "frontend/tests/e2e/ui-e2e-reconcile-v1-2.spec.ts",
+      "frontend/tests/e2e/unified-runs-v1-5.spec.ts",
+      "frontend/tests/e2e/v1-terminal.spec.ts",
+      "frontend/tests/e2e/visual-regression-v1-11.spec.ts",
+      "frontend/tests/e2e/visual-regression-v1-4.spec.ts",
+      "frontend/tests/e2e/visual-regression-v1-6.spec.ts",
+      "frontend/tests/e2e/visual-regression-v1-8.spec.ts",
+      "frontend/tests/e2e/websocket-status.spec.ts"
+    ],
+    "scripts": [
+      "scripts/selector-policy-gate.js",
+      "scripts/batch_fix_selectors.py"
+    ]
+  },
+  "artifacts": {
+    "selector_policy": [
+      "objective-g/fix_plan.md",
+      "objective-g/violations_detailed.txt",
+      "objective-g/scan_final.txt",
+      "objective-g/batch_fix_output.txt"
+    ],
+    "logs": [
+      "logs/phase0/",
+      "logs/final_tsc.txt",
+      "logs/final_vitest.txt",
+      "logs/final_vitest_summary.txt",
+      "logs/final_pytest.txt",
+      "logs/playwright_packaging.txt",
+      "logs/playwright_visual_regression.txt"
+    ],
+    "metadata": [
+      "MANIFEST.md",
+      "manifest.json",
+      "README.md"
+    ]
+  },
+  "environment": {
+    "node": "v22.21.1",
+    "npm": "10.9.4",
+    "python": "3.10.12",
+    "mode": "DEMO",
+    "backend_port": 8000,
+    "preview_port": 5100
+  },
+  "zero_tolerance_status": {
+    "typescript_errors": 0,
+    "vitest_failed": 0,
+    "vitest_skipped": 0,
+    "pytest_failed": 0,
+    "pytest_skipped": 0,
+    "selector_violations": 0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-02-27T03:34:42.182188",
+  "symbols": {
+    "SPY": {
+      "rows": 1760,
+      "start": "2019-02-27",
+      "end": "2026-02-26",
+      "sha256": "711337d1a10b8900ef8c5457b572e55ddaf1ce927558e179c4b141aefe9a169f",
+      "provider": "yfinance"
+    }
+  }
+}

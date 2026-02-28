@@ -1,0 +1,86 @@
+❌ SELECTOR POLICY: VIOLATIONS FOUND
+
+Total violations: 68
+
+File: frontend/tests/e2e/autopilot-mcp.spec.ts
+Violations: 8
+  Line 38: getByText()
+    const banner = page.getByText('PAPER TRADING MODE - NO REAL MONEY AT RISK');
+  Line 49: getByText()
+    await expect(page.getByText('Paper Equity')).toBeVisible();
+  Line 50: getByText()
+    await expect(page.getByText('$1,000.00').first()).toBeVisible();  // Use first() to avoid strict mod...
+  Line 51: getByText()
+    await expect(page.getByText('Total P&L')).toBeVisible();
+  Line 52: getByText()
+    await expect(page.getByText('Open Positions')).toBeVisible();
+  Line 60: getByRole()
+    await expect(page.getByRole('heading', { name: /Position Ledger/ })).toBeVisible();
+  Line 71: getByRole()
+    await expect(page.getByRole('heading', { name: /Activity Log/ })).toBeVisible();
+  Line 82: getByRole()
+    await expect(page.getByRole('heading', { name: /Autopilot Settings/ })).toBeVisible();
+
+File: frontend/tests/e2e/comprehensive_tour.spec.ts
+Violations: 1
+  Line 43: getByText()
+    await page.getByText('Options Chain').first().waitFor({ state: 'visible' }).catch(() => { });
+
+File: frontend/tests/e2e/dashboard-tour-v1-9.spec.ts
+Violations: 1
+  Line 50: getByText()
+    await page.getByText('Load Demo').click();
+
+File: frontend/tests/e2e/forecast.spec.ts
+Violations: 1
+  Line 21: getByRole()
+    const seesTab = page.getByRole('button', { name: /Sees/i }).first();
+
+File: frontend/tests/e2e/helpers.ts
+Violations: 1
+  Line 175: getByText()
+    await expect(page.getByText(text)).toBeVisible({ timeout });
+
+File: frontend/tests/e2e/indicators.spec.ts
+Violations: 8
+  Line 25: getByRole()
+    const modal = page.getByRole('dialog');
+  Line 37: getByRole()
+    await expect(page.getByRole('button', { name: 'Add to Chart' })).toBeVisible({ timeout: 3000 });
+  Line 38: getByRole()
+    await page.getByRole('button', { name: 'Add to Chart' }).click();
+  Line 51: getByRole()
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+  Line 61: getByRole()
+    await expect(page.getByRole('button', { name: 'Add to Chart' })).toBeVisible({ timeout: 3000 });
+  Line 62: getByRole()
+    await page.getByRole('button', { name: 'Add to Chart' }).click();
+  Line 29: getByPlaceholder()
+    const searchInput = page.getByPlaceholder('Search...');
+  Line 53: getByPlaceholder()
+    await page.getByPlaceholder('Search...').fill('SMA');
+
+File: frontend/tests/e2e/industrial-uiux-analytics-reporting.spec.ts
+Violations: 1
+  Line 232: locator() with CSS class/id
+    const cards = metricsContainer.locator('.bg-panel-bg');
+
+File: frontend/tests/e2e/interactions.spec.ts
+Violations: 1
+  Line 40: locator() with CSS class/id
+    const chartContainer = page.locator('.chart-container, canvas').first();
+
+File: frontend/tests/e2e/packaging-v1-9.spec.ts
+Violations: 3
+  Line 76: getByText()
+    await page.getByText('Load Demo').click();
+  Line 113: getByText()
+    await page.getByText('Load Demo').click();
+  Line 123: getByText()
+    await page.getByText('Load Demo').click();
+
+File: frontend/tests/e2e/premium-charts-v1-9.spec.ts
+Violations: 4
+  Line 25: getByText()
+    const loadBtn = page.getByText('Load Demo').first();
+  Line 52: locator() with CSS class/id

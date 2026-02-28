@@ -1,0 +1,241 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - text: PAPER MODE — All trades are simulated
+      - img [ref=e8]
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e13]: T
+        - generic [ref=e15]:
+          - generic [ref=e16]: "Broker:"
+          - generic [ref=e17]: Alpaca
+          - generic [ref=e18]: (Paper Trading •••XXXX)
+        - generic [ref=e20]:
+          - button "Autopilot OFF" [disabled] [ref=e21]:
+            - img [ref=e22]
+            - generic [ref=e25]: Autopilot
+            - generic [ref=e26]: "OFF"
+          - button "Kill Switch - Emergency Stop" [disabled] [ref=e27]:
+            - img [ref=e28]
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - 'generic "Alpaca REST: disconnected" [ref=e33]':
+            - generic [ref=e35]: Alpaca REST
+          - 'generic "Alpaca Stream: degraded" [ref=e36]':
+            - generic [ref=e38]: Alpaca Stream
+          - 'generic "Finnhub: connected" [ref=e39]':
+            - generic [ref=e41]: Finnhub
+          - 'generic "yfinance: connected" [ref=e42]':
+            - generic [ref=e44]: yfinance
+          - 'generic "Groq: connected" [ref=e45]':
+            - generic [ref=e47]: Groq
+          - 'generic "Gemini: connected" [ref=e48]':
+            - generic [ref=e50]: Gemini
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - img [ref=e55]
+            - generic [ref=e59]: CONNECTED
+          - button "Force WebSocket Reconnect" [ref=e60]:
+            - img [ref=e61]
+        - button "Demo Fixtures" [ref=e68]:
+          - img [ref=e69]
+          - generic [ref=e73]: Demo Fixtures
+          - img [ref=e74]
+        - button "Search /" [ref=e78]:
+          - img [ref=e79]
+          - generic [ref=e82]: Search
+          - generic [ref=e83]: /
+        - generic [ref=e85]:
+          - img [ref=e86]
+          - generic [ref=e89]: 18:05:54 ET
+        - button "3" [ref=e92]:
+          - img [ref=e93]
+          - generic [ref=e96]: "3"
+  - generic [ref=e97]:
+    - navigation [ref=e98]:
+      - generic [ref=e99]:
+        - generic [ref=e100]: Main
+        - button "Dashboard ⌘D" [ref=e101]:
+          - img [ref=e103]
+        - button "Portfolio ⌘P" [ref=e108]:
+          - img [ref=e110]
+        - button "Orders ⌘O" [ref=e113]:
+          - img [ref=e115]
+        - button "Runs / Audit Log ⌘R" [ref=e118]:
+          - img [ref=e120]
+        - button "Strategies & Rules ⌘S" [ref=e124]:
+          - img [ref=e126]
+      - generic [ref=e131]:
+        - button "Chart ⌘1" [ref=e132]:
+          - img [ref=e134]
+        - button "Options ⌘2" [ref=e136]:
+          - img [ref=e138]
+        - button "Backtests ⌘B" [ref=e141]:
+          - img [ref=e143]
+        - button "Autopilot ⌘A" [ref=e145]:
+          - img [ref=e148]
+        - button "Replay ⌘3" [ref=e151]:
+          - img [ref=e153]
+        - button "Alerts ⌘4" [ref=e156]:
+          - img [ref=e158]
+        - button "Incidents ⌘I" [ref=e160]:
+          - img [ref=e162]
+      - generic [ref=e164]:
+        - button "Settings" [ref=e165]:
+          - img [ref=e167]
+        - button "Expand" [ref=e170]:
+          - img [ref=e171]
+    - main [ref=e173]:
+      - generic [ref=e174]:
+        - generic [ref=e175]:
+          - button "Dashboard" [ref=e176]
+          - button "Positions" [ref=e177]
+          - button "Activity" [ref=e178]
+          - button "Settings" [active] [ref=e179]
+        - generic [ref=e182]:
+          - generic [ref=e183]:
+            - heading "⚙️ Autopilot Settings" [level=2] [ref=e184]
+            - generic [ref=e185]:
+              - button "Reset to Defaults" [ref=e186]
+              - button "💾 Save Changes" [disabled] [ref=e187]
+          - generic [ref=e188]:
+            - generic [ref=e189]:
+              - heading "General" [level=3] [ref=e190]
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - text: Paper Equity
+                  - paragraph [ref=e193]: Starting paper trading equity (no real money)
+                - generic [ref=e195]:
+                  - generic [ref=e196]: $
+                  - spinbutton [ref=e197]: "1000"
+              - generic [ref=e198]:
+                - generic [ref=e199]:
+                  - text: Focus Symbol
+                  - paragraph [ref=e200]: Only trade this underlying (leave blank for full universe)
+                - textbox "AAPL" [ref=e202]
+              - generic [ref=e203]:
+                - generic [ref=e204]:
+                  - text: Contracts Per Trade
+                  - paragraph [ref=e205]: Fixed number of contracts per trade
+                - spinbutton [ref=e207]: "1"
+              - generic [ref=e208]:
+                - generic [ref=e209]:
+                  - text: Max Symbols Per Cycle
+                  - paragraph [ref=e210]: Limit to a single underlying per cycle
+                - spinbutton [ref=e212]: "5"
+              - generic [ref=e213]:
+                - generic [ref=e214]:
+                  - text: Continuous Run
+                  - paragraph [ref=e215]: Keep running cycles until stopped
+                - generic [ref=e217] [cursor=pointer]:
+                  - checkbox "Disabled" [ref=e218]
+                  - generic [ref=e219]: Disabled
+              - generic [ref=e220]:
+                - generic [ref=e221]:
+                  - text: Weekly Expiry Only
+                  - paragraph [ref=e222]: Prefer weekly options expirations
+                - generic [ref=e224] [cursor=pointer]:
+                  - checkbox "Enabled" [checked] [ref=e225]
+                  - generic [ref=e226]: Enabled
+              - generic [ref=e227]:
+                - generic [ref=e228]:
+                  - text: Operating Mode
+                  - paragraph [ref=e229]: auto = fully automated, semi = requires approval, manual = suggestions only
+                - combobox [ref=e231]:
+                  - option "Auto" [selected]
+                  - option "Semi-Auto"
+                  - option "Manual"
+              - generic [ref=e232]:
+                - generic [ref=e233]:
+                  - text: LLM Integration
+                  - paragraph [ref=e234]: Enable AI-powered candidate ranking (requires external LLM endpoint)
+                - generic [ref=e236] [cursor=pointer]:
+                  - checkbox "Enabled" [checked] [ref=e237]
+                  - generic [ref=e238]: Enabled
+              - generic [ref=e239]:
+                - generic [ref=e240]:
+                  - text: Forecast Influence
+                  - paragraph [ref=e241]: How much LLM forecasts affect candidate ranking (0-1)
+                - generic [ref=e242]:
+                  - slider [ref=e243]: "0.5"
+                  - text: "0.5"
+            - generic [ref=e244]:
+              - heading "Risk Limits" [level=3] [ref=e245]
+              - generic [ref=e246]:
+                - generic [ref=e247]:
+                  - text: Max Risk Per Trade
+                  - paragraph [ref=e248]: Maximum dollar risk on any single trade
+                - generic [ref=e250]:
+                  - generic [ref=e251]: $
+                  - spinbutton [ref=e252]: "200"
+              - generic [ref=e253]:
+                - generic [ref=e254]:
+                  - text: Max Total Risk
+                  - paragraph [ref=e255]: Maximum total portfolio risk across all positions
+                - generic [ref=e257]:
+                  - generic [ref=e258]: $
+                  - spinbutton [ref=e259]: "500"
+              - generic [ref=e260]:
+                - generic [ref=e261]:
+                  - text: Max Daily Loss
+                  - paragraph [ref=e262]: Maximum allowed loss in a single day (triggers pause)
+                - generic [ref=e264]:
+                  - generic [ref=e265]: $
+                  - spinbutton [ref=e266]: "100"
+              - generic [ref=e267]:
+                - generic [ref=e268]:
+                  - text: Max Open Positions
+                  - paragraph [ref=e269]: Maximum number of simultaneous open positions
+                - spinbutton [ref=e271]: "5"
+              - generic [ref=e272]:
+                - generic [ref=e273]:
+                  - text: Max Symbol Concentration
+                  - paragraph [ref=e274]: Maximum risk percentage in any single underlying
+                - generic [ref=e276]:
+                  - slider [ref=e277]: "0.5"
+                  - generic [ref=e278]: 100%
+            - generic [ref=e279]:
+              - heading "Strategy Templates" [level=3] [ref=e280]
+              - paragraph [ref=e281]: Select which strategy templates the autopilot is allowed to use. All templates are defined-risk.
+              - generic [ref=e282]:
+                - generic [ref=e283]:
+                  - generic [ref=e284]:
+                    - text: Put Credit Spread
+                    - paragraph [ref=e285]: Bullish, sell OTM put spread
+                  - checkbox [ref=e287]
+                - generic [ref=e288]:
+                  - generic [ref=e289]:
+                    - text: Call Credit Spread
+                    - paragraph [ref=e290]: Bearish, sell OTM call spread
+                  - checkbox [ref=e292]
+                - generic [ref=e293]:
+                  - generic [ref=e294]:
+                    - text: Iron Condor
+                    - paragraph [ref=e295]: Neutral, sell both spreads
+                  - checkbox [ref=e297]
+                - generic [ref=e298]:
+                  - generic [ref=e299]:
+                    - text: Call Debit Spread
+                    - paragraph [ref=e300]: Bullish, buy ATM call spread
+                  - checkbox [ref=e302]
+                - generic [ref=e303]:
+                  - generic [ref=e304]:
+                    - text: Put Debit Spread
+                    - paragraph [ref=e305]: Bearish, buy ATM put spread
+                  - checkbox [ref=e307]
+            - generic [ref=e308]:
+              - heading "⚠️ Danger Zone" [level=3] [ref=e309]
+              - generic [ref=e310]:
+                - paragraph [ref=e311]: These actions cannot be undone. Use with caution.
+                - generic [ref=e312]:
+                  - button "🗑️ Clear All Positions" [ref=e313]
+                  - button "🔄 Reset Everything" [ref=e314]
+  - button "PAPER" [ref=e316]:
+    - img [ref=e317]
+    - generic [ref=e319]: PAPER
+    - img [ref=e321]
+```

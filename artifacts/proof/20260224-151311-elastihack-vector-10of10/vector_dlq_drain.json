@@ -1,0 +1,8 @@
+{
+  "status": 200,
+  "body": {
+    "drained": 1,
+    "remaining": 0,
+    "correlation_id": "vec-dlq-43ef0a5f"
+  }
+}

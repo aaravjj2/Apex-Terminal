@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "body": {
+    "ok": true,
+    "cycle_id": "proof-cycle-001",
+    "pattern_vec_dims": 64,
+    "pattern_vec_sample": [
+      -0.188665,
+      -0.045545,
+      -0.068997,
+      0.182435,
+      -0.061024,
+      -0.123436,
+      -0.119278,
+      -0.170713
+    ],
+    "pattern_vec_computed": true,
+    "es_available": true,
+    "k": 5,
+    "hits": [],
+    "hit_count": 0,
+    "index": "apex-workflows-*",
+    "similarity": "cosine",
+    "correlation_id": "knn-cycle-95071398"
+  }
+}

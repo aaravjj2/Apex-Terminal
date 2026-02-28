@@ -1,0 +1,199 @@
+{
+  "id": "options-workstation-e2e-verification",
+  "title": "Options Workstation E2E Verification",
+  "description": "Complete end-to-end verification of production-grade options workstation with volume profile, advanced indicators, pattern detection, fundamentals, strategy builder, and UI integration",
+  "tasks": [
+    {
+      "id": "task-1",
+      "title": "Backend Health & API Verification",
+      "steps": [
+        "Verify backend is running on http://localhost:8000",
+        "Test /api/v1/health endpoint returns 200",
+        "Test /api/v1/ingest/status endpoint returns live ingestion status",
+        "Test /api/v1/options/expirations/AAPL returns list of expirations",
+        "Test /api/v1/options/chain/AAPL with valid expiration returns options data",
+        "Test /api/v1/profiles/volume-profile/AAPL returns profile data",
+        "Test /api/v1/profiles/anchored-vwap/AAPL with anchor_date returns VWAP data",
+        "Test /api/v1/profiles/atr-bands/AAPL returns ATR bands",
+        "Test /api/v1/profiles/ema-regime/AAPL returns EMA regime data",
+        "Test /api/v1/patterns/detect/AAPL returns pattern list",
+        "Test /api/v1/fundamentals/AAPL returns fundamentals with all categories"
+      ]
+    },
+    {
+      "id": "task-2",
+      "title": "Frontend Load & Trust UX Verification",
+      "steps": [
+        "Navigate to http://localhost:5100",
+        "Wait for app to load (no errors in console)",
+        "Verify Trust UX floating badge is visible in top-right",
+        "Verify Trust UX shows LIVE mode",
+        "Verify Trust UX shows provider health (healthy/degraded/offline)",
+        "Verify Trust UX shows last tick timestamp",
+        "Click Trust UX to expand data provenance panel",
+        "Verify data sources listed (Alpaca for stocks, yfinance for options/fundamentals)",
+        "Close data provenance panel"
+      ]
+    },
+    {
+      "id": "task-3",
+      "title": "Options Chain UI Verification",
+      "steps": [
+        "Open Options panel (if not visible, enable from menu)",
+        "Verify symbol input is present",
+        "Enter symbol AAPL",
+        "Verify expiration dropdown populates",
+        "Select nearest expiration date",
+        "Wait for options chain to load",
+        "Verify table shows: Calls (Bid, Ask, Vol, OI, IV) | Strike | Puts (Bid, Ask, Vol, OI, IV)",
+        "Verify ATM strike is highlighted",
+        "Click on IV column header to sort",
+        "Verify table re-sorts",
+        "Take screenshot: options-chain-aapl.png"
+      ]
+    },
+    {
+      "id": "task-4",
+      "title": "IV Skew Chart Verification",
+      "steps": [
+        "Navigate to IV Analytics tab/panel",
+        "Select IV Skew chart",
+        "Verify chart loads with Call IV and Put IV lines",
+        "Verify X-axis shows strike prices",
+        "Verify Y-axis shows implied volatility %",
+        "Hover over chart to see tooltip with IV values",
+        "Take screenshot: iv-skew-aapl.png"
+      ]
+    },
+    {
+      "id": "task-5",
+      "title": "IV Term Structure Verification",
+      "steps": [
+        "Select IV Term Structure chart",
+        "Verify chart loads with ATM IV across multiple expirations",
+        "Verify X-axis shows days to expiration",
+        "Verify Y-axis shows implied volatility %",
+        "Verify multiple data points (multiple expirations)",
+        "Hover to see expiration date and IV in tooltip",
+        "Take screenshot: iv-term-structure-aapl.png"
+      ]
+    },
+    {
+      "id": "task-6",
+      "title": "Indicator Manager Verification",
+      "steps": [
+        "Open Indicator Manager dock (should be on right side or accessible via menu)",
+        "Verify '+' button is present",
+        "Click '+' to add indicator",
+        "Verify preset list shows: Volume Profile, Anchored VWAP, ATR Bands, EMA Regime, Pattern Detection",
+        "Add Volume Profile indicator",
+        "Verify indicator appears in list with visibility toggle, settings, and delete buttons",
+        "Click settings icon to edit parameters",
+        "Change profile_type parameter",
+        "Add Anchored VWAP indicator",
+        "Verify both indicators are in list",
+        "Toggle visibility for one indicator (eye icon)",
+        "Delete one indicator (trash icon)",
+        "Take screenshot: indicator-manager.png"
+      ]
+    },
+    {
+      "id": "task-7",
+      "title": "Strategy Builder Verification",
+      "steps": [
+        "Open Strategy Builder panel",
+        "Verify 'Templates' and 'Add Leg' buttons are present",
+        "Click 'Templates' button",
+        "Verify template list shows: Covered Call, Protective Put, Bull Call Spread, Bear Put Spread, Iron Condor, Straddle",
+        "Select 'Iron Condor' template",
+        "Verify 4 legs are added automatically",
+        "Verify payoff chart displays with profit/loss curve",
+        "Verify stats panel shows Max Profit, Max Loss, Breakeven(s)",
+        "Click 'Add Leg' to add custom leg",
+        "Select Call/Put type",
+        "Set strike price",
+        "Set quantity and premium",
+        "Verify payoff chart updates in real-time",
+        "Take screenshot: strategy-builder-iron-condor.png"
+      ]
+    },
+    {
+      "id": "task-8",
+      "title": "Fundamentals Panel Verification",
+      "steps": [
+        "Open Fundamentals panel",
+        "Enter symbol AAPL",
+        "Click search or press Enter",
+        "Wait for fundamentals to load",
+        "Verify PROFITABILITY section shows: ROIC, Gross Margin, Operating Margin, Net Margin",
+        "Verify CASH FLOW section shows: FCF, FCF Yield, Operating Cash Flow",
+        "Verify LEVERAGE section shows: Debt/Equity, Current Ratio, Quick Ratio",
+        "Verify QUALITY section shows: ROE, ROA, Asset Turnover",
+        "Verify VALUATION section shows: P/E, P/B, P/S",
+        "Verify GROWTH section shows: Revenue Growth, Earnings Growth",
+        "Verify ADDITIONAL section shows: Market Cap, Enterprise Value, Shares Outstanding",
+        "Verify values display correctly (N/A for unavailable, formatted numbers with colors)",
+        "Take screenshot: fundamentals-aapl.png"
+      ]
+    },
+    {
+      "id": "task-9",
+      "title": "End-to-End User Flow",
+      "steps": [
+        "Start fresh session (reload page)",
+        "Verify Trust UX shows LIVE mode and healthy providers",
+        "Load AAPL in main chart",
+        "Add Volume Profile indicator via Indicator Manager",
+        "Verify volume profile overlays on chart (POC, VAH, VAL visible)",
+        "Open Options Chain for AAPL",
+        "Select nearest expiration",
+        "Note ATM strike",
+        "Open Strategy Builder",
+        "Create Bull Call Spread using ATM and OTM strikes",
+        "Verify payoff chart shows limited risk/reward profile",
+        "Open Fundamentals panel",
+        "Verify AAPL fundamentals loaded",
+        "Note ROIC and FCF Yield for decision context",
+        "Take screenshot: complete-workflow.png"
+      ]
+    },
+    {
+      "id": "task-10",
+      "title": "Error Handling & Edge Cases",
+      "steps": [
+        "Test invalid symbol in Options Chain (e.g., INVALIDXYZ)",
+        "Verify graceful error message (not crash)",
+        "Test fundamentals with invalid symbol",
+        "Verify returns 'N/A' or error message",
+        "Test Strategy Builder with 0 legs",
+        "Verify shows 'Add legs to see payoff diagram' message",
+        "Test Indicator Manager with max indicators",
+        "Verify can add multiple indicators without performance issues",
+        "Check browser console for any errors",
+        "Verify no unhandled promise rejections"
+      ]
+    }
+  ],
+  "expectedArtifacts": [
+    "screenshots/options-chain-aapl.png",
+    "screenshots/iv-skew-aapl.png",
+    "screenshots/iv-term-structure-aapl.png",
+    "screenshots/indicator-manager.png",
+    "screenshots/strategy-builder-iron-condor.png",
+    "screenshots/fundamentals-aapl.png",
+    "screenshots/complete-workflow.png",
+    "test-results/junit.xml",
+    "test-results/test-summary.json"
+  ],
+  "successCriteria": [
+    "All backend API endpoints return valid responses",
+    "Trust UX displays and updates correctly",
+    "Options Chain loads and displays data",
+    "IV Skew and Term Structure charts render",
+    "Indicator Manager allows add/edit/delete operations",
+    "Strategy Builder templates work and payoff charts display",
+    "Fundamentals panel loads all categories of data",
+    "No critical console errors",
+    "All screenshots captured successfully"
+  ]
+}

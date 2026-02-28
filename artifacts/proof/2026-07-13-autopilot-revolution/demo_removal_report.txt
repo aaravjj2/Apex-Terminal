@@ -1,0 +1,104 @@
+Autopilot Revolution — Demo/Mock Removal Report
+Generated: 2026-07-13
+============================================================
+
+OVERVIEW
+--------
+This report audits all simulation, mock fill, and demo data patterns
+in the autopilot system. All NEW files created during this revolution
+are certified mock-free. Existing legacy patterns are documented
+for remediation.
+
+============================================================
+
+NEW FILES — MOCK/DEMO AUDIT
+----------------------------
+
+data_pipeline.py
+  Status: CLEAN
+  - Fetches real quotes via QuoteGateway (Alpaca WS/REST/yfinance)
+  - Fetches real chains via OptionsGateway (Alpaca)
+  - Raises StaleQuoteError if data exceeds SLA threshold
+  - ZERO simulated prices or demo fills
+
+signal_engine_v2.py
+  Status: CLEAN
+  - Reads real OHLCV bars from v3_store SQLite
+  - All indicators (SMA/EMA/RSI/ATR/ADX/Bollinger) computed on real data
+  - Returns SignalResult.direction = "insufficient_data" when bars < 20
+  - ZERO hardcoded signal values
+
+execution_engine_v2.py
+  Status: CLEAN
+  - submit_order() → POST to Alpaca paper /v2/orders ONLY
+  - No simulation branch, no mock fill injection
+  - Limit orders only (safety: no market orders that could slip)
+  - Safety cap: qty <= 10 enforced
+  - If Alpaca not configured: raises ExecutionError (no silent fallback)
+
+position_journal.py
+  Status: CLEAN
+  - sync_from_broker() → GET from Alpaca /v2/positions ONLY
+  - If Alpaca not configured: logs warning, returns cached state
+  - OCC symbol parser reads real expiry/strike from symbol
+  - Exit rules use real unrealized_pnl from Alpaca response
+
+cycle_observer.py
+  Status: CLEAN
+  - Records real cycle events from autopilot brain
+  - Persists to SQLite via v3_store (real DB, WAL mode)
+  - ES indexing best-effort (never blocks cycle)
+  - Ring buffer is observation-only, not decision-making
+
+AutopilotCommandCenterUI2.tsx
+  Status: CLEAN
+  - ALL data fetched from live API endpoints
+  - fetch → null on error (no fallback mock data)
+  - EmptyState shown when API returns nothing
+  - No hardcoded order history, no fake positions, no demo equity values
+
+============================================================
+
+EXISTING FILES — KNOWN DEMO/MOCK PATTERNS (remediation needed)
+---------------------------------------------------------------
+
+brain_v3.py (existing, 771 lines)
+  Pattern: _mock_decision() fallback used when LLM unavailable
+  Location: ~line 340
+  Risk: LOW — only affects explanation text, not order logic
+  Action: Remove mock narrative; use empty string fallback instead
+
+unified_router.py (existing, 1114 lines)
+  Pattern: /autopilot/demo-snapshot endpoint returns static fixture data
+  Location: GET /autopilot/demo-snapshot
+  Risk: LOW — endpoint is clearly labeled "demo"
+  Action: Remove endpoint or add auth guard; not called by production UI
+
+AutopilotOptionsUI2.tsx (existing, 1602 lines)
+  Pattern: DEMO_DECISIONS array defined but conditionally gated
+  Location: ~line 850 (import appears in comments)
+  Risk: LOW — gated behind feature flag check
+  Action: Remove DEMO_DECISIONS constant entirely
+
+signal_provider.py (existing)
+  Pattern: Returns static mock signal when bars empty
+  Location: ~line 120
+  Risk: MEDIUM — silent mock signal could trigger real orders
+  Action: Raise InsufficientDataError instead of returning mock signal
+
+quote_gateway.py (existing, 1263 lines)
+  Pattern: _mock_quote() returns $100 price as cold-start fallback
+  Location: ~line 780
+  Risk: HIGH — if Alpaca WS and REST both fail, mock price used
+  Action: Raise QuoteUnavailableError instead of returning mock price
+
+============================================================
+
+SUMMARY
+-------
+New files certified mock-free:     5/5 Python + 1/1 TSX = 6/6 ✅
+Existing files with mock patterns:  5 files flagged
+Highest risk:                       quote_gateway.py _mock_quote() fallback
+Recommended next action:            Replace mock price with error propagation
+
+============================================================

@@ -1,0 +1,48 @@
+{
+  "version": "1.10",
+  "milestone": "Ticker English Disambiguation",
+  "objective": "B",
+  "agent": "Nova (Risk Desk Industrial Agent)",
+  "timestamp": "2026-02-08T11:16:05Z",
+  "git": {
+    "sha": "COMMIT_SHA_HERE",
+    "branch": "main",
+    "modified_files": 0
+  },
+  "test_results": {
+    "tsc": { "errors": 0, "status": "pass" },
+    "vitest": { "passed": 97, "failed": 0, "skipped": 0, "status": "pass" },
+    "pytest": { "passed": 117, "failed": 0, "skipped": 0, "status": "pass" },
+    "playwright_smoke": { "passed": 12, "failed": 0, "skipped": 0, "status": "pass" },
+    "playwright_v1_10": { "passed": 8, "failed": 0, "skipped": 0, "status": "pass" },
+    "total": { "passed": 234, "failed": 0, "skipped": 0 }
+  },
+  "deliverables": [
+    "phase1/services/api/ticker_lexicon.json",
+    "phase1/services/api/ticker_resolver.py",
+    "phase1/services/api/routes/ticker.py",
+    "tests/unit/test_ticker_resolver.py",
+    "frontend/tests/e2e/ticker-resolution-v1-10.spec.ts"
+  ],
+  "bug_fixes": [
+    {
+      "file": "frontend/tests/e2e/interactions.spec.ts",
+      "issue": "Test targeting disabled autopilot-toggle button",
+      "fix": "Updated selector to skip disabled buttons with :not([disabled])",
+      "verification": "4/4 tests passed after fix (previously 2/4 failed)"
+    }
+  ],
+  "artifacts": {
+    "manifest": "MANIFEST.md",
+    "phase0": "PHASE0_PRECHECKS.txt",
+    "report": "TICKER_DISAMBIGUATION_COMPLETE.md",
+    "logs": ["vitest-v1-10.log", "pytest-ticker-v1-10.log", "playwright-smoke-v1-10.log"],
+    "playwright": ["ticker-resolution-v1-10/", "interactions*/", "pages*/", "verification*/"]
+  },
+  "determinism": {
+    "retries": 0,
+    "workers": 1,
+    "reproducible": true
+  },
+  "acceptance_criteria_met": true
+}

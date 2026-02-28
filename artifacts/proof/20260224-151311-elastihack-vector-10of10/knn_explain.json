@@ -1,0 +1,44 @@
+{
+  "status": 200,
+  "body": {
+    "run_id": "run-A",
+    "candidate_id": "run-B",
+    "cosine_similarity": 0.94,
+    "top_features": [
+      {
+        "dim": 20,
+        "name": "realized_vol",
+        "query": 0.22,
+        "candidate": 0.21,
+        "delta": 0.01,
+        "contribution": "high"
+      },
+      {
+        "dim": 27,
+        "name": "win_rate",
+        "query": 0.55,
+        "candidate": 0.58,
+        "delta": 0.03,
+        "contribution": "high"
+      },
+      {
+        "dim": 29,
+        "name": "sharpe_ratio",
+        "query": 1.2,
+        "candidate": 1.3,
+        "delta": 0.1,
+        "contribution": "medium"
+      },
+      {
+        "dim": 31,
+        "name": "cagr",
+        "query": 0.18,
+        "candidate": 0.22,
+        "delta": 0.04,
+        "contribution": "medium"
+      }
+    ],
+    "dims_compared": 64,
+    "correlation_id": "knn-explain-946699c7"
+  }
+}

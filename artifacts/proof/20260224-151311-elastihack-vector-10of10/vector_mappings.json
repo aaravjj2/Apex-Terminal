@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "body": {
+    "vector_enabled": false,
+    "pattern_vec": {
+      "type": "dense_vector",
+      "dims": 64,
+      "index": true,
+      "similarity": "cosine",
+      "index_options": {
+        "type": "hnsw",
+        "m": 16,
+        "ef_construction": 100
+      },
+      "applies_to": [
+        "backtest_run",
+        "autopilot_cycle"
+      ],
+      "description": "Deterministic 64-dim pattern vector from market/backtest metrics (no external API)"
+    },
+    "text_vec": {
+      "type": "dense_vector",
+      "dims": 384,
+      "index": true,
+      "similarity": "cosine",
+      "index_options": {
+        "type": "hnsw",
+        "m": 16,
+        "ef_construction": 100
+      },
+      "applies_to": [
+        "strategies"
+      ],
+      "enabled": false,
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "description": "Optional 384-dim text embedding for strategy descriptions (env-gated)"
+    },
+    "contract_version": "5.0"
+  }
+}

@@ -1,0 +1,24 @@
+﻿
+Running 19 tests using 1 worker
+
+  Γ£ô   1 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:31:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ GET /api/v3/backtest/datasets returns dataset list (534ms)
+  Γ£ô   2 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:41:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ GET /api/v3/backtest/datasets/snapshot requires auth (401) (9ms)
+  Γ£ô   3 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:48:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ GET /api/v3/backtest/datasets/snapshot with auth returns 200 (19ms)
+  Γ£ô   4 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:58:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ POST /api/v3/backtest/datasets/snapshot requires auth (401) (8ms)
+  Γ£ô   5 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:65:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ POST snapshot with invalid date returns 422 (8ms)
+  Γ£ô   6 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:74:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ POST snapshot creates real dataset with SHA-256 (23ms)
+  Γ£ô   7 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:97:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ POST snapshot dedup returns same ID (30ms)
+  Γ£ô   8 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:118:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ GET /api/v3/backtest/datasets/{id} returns snapshot metadata (24ms)
+  Γ£ô   9 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:137:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ GET /api/v3/backtest/datasets/{id}/bars returns bar data (38ms)
+  Γ£ô  10 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:163:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ GET /api/v3/backtest/datasets/{id}/checksum verifies integrity (30ms)
+  Γ£ô  11 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:179:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ GET nonexistent dataset returns BT_DATA_MISSING (409) (8ms)
+  Γ£ô  12 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:188:3 ΓÇ║ W14 ΓÇö Dataset Snapshot API ΓÇ║ GET nonexistent dataset bars returns BT_DATA_MISSING (409) (8ms)
+  Γ£ô  13 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:202:3 ΓÇ║ W14 ΓÇö Backtest with Dataset Binding ΓÇ║ POST /api/backtest/run with dataset_id uses DATASET_SNAPSHOT source (58ms)
+  Γ£ô  14 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:232:3 ΓÇ║ W14 ΓÇö Backtest with Dataset Binding ΓÇ║ POST /api/backtest/run with bad dataset_id returns error (9ms)
+  Γ£ô  15 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:265:3 ΓÇ║ W14 ΓÇö Dataset Snapshot UI ΓÇ║ page loads with ready marker (1.1s)
+  Γ£ô  16 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:271:3 ΓÇ║ W14 ΓÇö Dataset Snapshot UI ΓÇ║ tabs are visible and switchable (1.4s)
+  Γ£ô  17 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:287:3 ΓÇ║ W14 ΓÇö Dataset Snapshot UI ΓÇ║ create tab has form inputs (1.2s)
+  Γ£ô  18 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:297:3 ΓÇ║ W14 ΓÇö Dataset Snapshot UI ΓÇ║ inspect tab has load and verify controls (1.2s)
+  Γ£ô  19 [mcp-headed] ΓÇ║ tests\e2e\w14\w14-dataset-snapshot.spec.ts:310:3 ΓÇ║ W14 ΓÇö SHA-256 Determinism ΓÇ║ same inputs produce identical SHA-256 across 3 calls (364ms)
+
+  19 passed (7.3s)

@@ -1,0 +1,127 @@
+{
+  "proofPackId": "20260208-132518-v1.11",
+  "date": "2026-02-08T13:25:18Z",
+  "sprint": "v1.11",
+  "objectives": ["D", "E", "F"],
+  "summary": {
+    "objectiveD": "Provider Infrastructure + Yahoo Finance + Caching",
+    "objectiveE": "UX Polish + Charts + Visual Regression (20 screenshots)",
+    "objectiveF": "Full Walkthrough Tour Video Guide (TOUR.md)"
+  },
+  "tests": {
+    "typescript": {
+      "errors": 0,
+      "status": "PASS"
+    },
+    "vitest": {
+      "testFiles": 9,
+      "passed": 97,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "1.06s",
+      "status": "PASS"
+    },
+    "pytest": {
+      "passed": 130,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "2.05s",
+      "status": "PASS"
+    },
+    "playwright": {
+      "totalTests": 46,
+      "passed": 46,
+      "failed": 0,
+      "skipped": 0,
+      "suites": {
+        "visualRegressionV111": {
+          "tests": 20,
+          "passed": 20,
+          "duration": "31.2s"
+        },
+        "stabilityCoverageV13": {
+          "tests": 26,
+          "passed": 26,
+          "duration": "1.1m"
+        }
+      },
+      "config": {
+        "retries": 0,
+        "workers": 1,
+        "viewport": "1440x900"
+      },
+      "status": "PASS"
+    }
+  },
+  "environment": {
+    "node": "v22.21.1",
+    "npm": "10.9.4",
+    "python": "3.10.12",
+    "mode": "DEMO",
+    "backend": "FastAPI",
+    "frontend": "Vite preview"
+  },
+  "artifacts": {
+    "manifest": "MANIFEST.md",
+    "manifestJson": "manifest.json",
+    "readme": "README.md",
+    "tour": "TOUR.md",
+    "phase0": [
+      "phase0/node_version.txt",
+      "phase0/npm_version.txt",
+      "phase0/python_version.txt",
+      "phase0/tsc_output.txt",
+      "phase0/vitest_output.txt",
+      "phase0/pytest_output.txt"
+    ],
+    "playwright": [
+      "playwright/html-report/",
+      "playwright/visual-regression-v1-11/screenshots/",
+      "playwright/visual-regression-v1-11/videos/",
+      "playwright/visual-regression-v1-11/traces/",
+      "playwright/stability-coverage-v1-3/screenshots/",
+      "playwright/stability-coverage-v1-3/videos/",
+      "playwright/stability-coverage-v1-3/traces/"
+    ],
+    "logs": [
+      "logs/backend.log",
+      "logs/frontend_build.log",
+      "logs/frontend_preview.log"
+    ],
+    "tour": [
+      "tour/APEX_TERMINAL_TOUR_v1_11.webm"
+    ]
+  },
+  "changes": {
+    "newFiles": [
+      "frontend/src/components/ux-polish.tsx",
+      "frontend/tests/e2e/visual-regression-v1-11.spec.ts",
+      "TOUR.md",
+      "artifacts/proof/20260208-132518-v1.11/MANIFEST.md",
+      "artifacts/proof/20260208-132518-v1.11/manifest.json"
+    ],
+    "modifiedFiles": [
+      "phase1/requirements.txt",
+      "frontend/src/features/options/backtest/AnalyzeTab.tsx",
+      "frontend/src/features/options/riskDesk/PremiumRiskCharts.tsx",
+      "frontend/src/features/options/runs/RunsPanel.tsx"
+    ],
+    "fixes": [
+      "TypeScript: Recharts formatter types (3 fixes)",
+      "TypeScript: Null check on result.stress (1 fix)",
+      "TypeScript: Unused imports and JSX types (3 fixes)",
+      "Python: ruff version compatibility",
+      "Python: websockets version compatibility"
+    ]
+  },
+  "verification": {
+    "typescript": "cd frontend && npx tsc --noEmit",
+    "vitest": "cd frontend && npm run test:unit",
+    "pytest": "python -m pytest -v",
+    "playwrightVisual": "cd frontend && npx playwright test visual-regression-v1-11.spec.ts --reporter=list",
+    "playwrightStability": "cd frontend && npx playwright test stability-coverage-v1-3.spec.ts --reporter=list",
+    "playwrightFull": "cd frontend && npx playwright test --reporter=html"
+  },
+  "status": "COMPLETE",
+  "verdict": "ALL OBJECTIVES PASSED — ZERO FAILURES"
+}

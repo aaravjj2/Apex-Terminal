@@ -1,0 +1,131 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - text: PAPER MODE — All trades are simulated
+      - img [ref=e8]
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e13]: T
+        - generic [ref=e15]:
+          - generic [ref=e16]: "Broker:"
+          - generic [ref=e17]: Alpaca
+          - generic [ref=e18]: (Paper Trading •••XXXX)
+        - generic [ref=e20]:
+          - button "Autopilot OFF" [disabled] [ref=e21]:
+            - img [ref=e22]
+            - generic [ref=e25]: Autopilot
+            - generic [ref=e26]: "OFF"
+          - button "Kill Switch - Emergency Stop" [disabled] [ref=e27]:
+            - img [ref=e28]
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - 'generic "Alpaca REST: disconnected" [ref=e33]':
+            - generic [ref=e35]: Alpaca REST
+          - 'generic "Alpaca Stream: degraded" [ref=e36]':
+            - generic [ref=e38]: Alpaca Stream
+          - 'generic "Finnhub: connected" [ref=e39]':
+            - generic [ref=e41]: Finnhub
+          - 'generic "yfinance: connected" [ref=e42]':
+            - generic [ref=e44]: yfinance
+          - 'generic "Groq: connected" [ref=e45]':
+            - generic [ref=e47]: Groq
+          - 'generic "Gemini: connected" [ref=e48]':
+            - generic [ref=e50]: Gemini
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - img [ref=e55]
+            - generic [ref=e59]: CONNECTED
+          - button "Force WebSocket Reconnect" [ref=e60]:
+            - img [ref=e61]
+        - button "Demo Fixtures" [ref=e68]:
+          - img [ref=e69]
+          - generic [ref=e73]: Demo Fixtures
+          - img [ref=e74]
+        - button "Search /" [ref=e78]:
+          - img [ref=e79]
+          - generic [ref=e82]: Search
+          - generic [ref=e83]: /
+        - generic [ref=e85]:
+          - img [ref=e86]
+          - generic [ref=e89]: 18:18:40 ET
+        - button "3" [ref=e92]:
+          - img [ref=e93]
+          - generic [ref=e96]: "3"
+  - generic [ref=e97]:
+    - navigation [ref=e98]:
+      - generic [ref=e99]:
+        - generic [ref=e100]: Main
+        - button "Dashboard ⌘D" [ref=e101]:
+          - img [ref=e103]
+        - button "Portfolio ⌘P" [ref=e108]:
+          - img [ref=e110]
+        - button "Orders ⌘O" [ref=e113]:
+          - img [ref=e115]
+        - button "Runs / Audit Log ⌘R" [ref=e118]:
+          - img [ref=e120]
+        - button "Strategies & Rules ⌘S" [ref=e124]:
+          - img [ref=e126]
+      - generic [ref=e131]:
+        - button "Chart ⌘1" [ref=e132]:
+          - img [ref=e134]
+        - button "Options ⌘2" [ref=e136]:
+          - img [ref=e138]
+        - button "Backtests ⌘B" [active] [ref=e141]:
+          - img [ref=e144]
+        - button "Autopilot ⌘A" [ref=e146]:
+          - img [ref=e148]
+        - button "Replay ⌘3" [ref=e151]:
+          - img [ref=e153]
+        - button "Alerts ⌘4" [ref=e156]:
+          - img [ref=e158]
+        - button "Incidents ⌘I" [ref=e160]:
+          - img [ref=e162]
+      - generic [ref=e164]:
+        - button "Settings" [ref=e165]:
+          - img [ref=e167]
+        - button "Expand" [ref=e170]:
+          - img [ref=e171]
+    - main [ref=e173]:
+      - generic [ref=e174]:
+        - generic [ref=e175]:
+          - heading "Backtest" [level=2] [ref=e176]
+          - tablist "Backtest tabs" [ref=e177]:
+            - tab "Configure" [selected] [ref=e178]
+            - tab "Runs" [ref=e179]
+            - tab "Analyze" [ref=e180]
+            - tab "Compare" [ref=e181]
+            - tab "Export" [ref=e182]
+          - generic [ref=e183]: idle
+        - generic [ref=e187]:
+          - generic [ref=e188]:
+            - generic [ref=e189]: Strategy
+            - combobox [ref=e190]:
+              - option "Select strategy..."
+              - option "Sample Mean Reversion" [selected]
+              - option "Sample Breakout"
+              - option "RSI Oversold Bounce"
+              - option "Momentum Breakout"
+              - option "VWAP Mean Reversion"
+          - generic [ref=e191]:
+            - generic [ref=e192]: Symbol
+            - textbox [ref=e193]: SPY
+          - generic [ref=e194]:
+            - generic [ref=e195]:
+              - generic [ref=e196]: Start Date
+              - textbox [ref=e197]: 2023-01-01
+            - generic [ref=e198]:
+              - generic [ref=e199]: End Date
+              - textbox [ref=e200]: 2023-12-31
+          - generic [ref=e201]:
+            - generic [ref=e202]: Initial Capital ($)
+            - spinbutton [ref=e203]: "100000"
+          - button "Run Backtest" [ref=e204]
+  - button "PAPER" [ref=e206]:
+    - img [ref=e207]
+    - generic [ref=e209]: PAPER
+    - img [ref=e211]
+```

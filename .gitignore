@@ -1,220 +1,58 @@
-# ===========================================
-# SECRETS - NEVER COMMIT
-# ===========================================
-*.env
-.env
-.env.*
-.env.local
-.env.*.local
-keys.env
-phase1/keys.env
-keys.env.local
-*.pem
-*.key
-*.crt
-*.secret
-secrets*
-credentials.*
-
-# ===========================================
-# PYTHON
-# ===========================================
-venv/
-.venv/
-env/
-.env/
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-.eggs/
-pip-wheel-metadata/
-
-# ===========================================
-# NODE / FRONTEND
-# ===========================================
+# Base python/node environment
 node_modules/
-frontend/node_modules/
-frontend/dist/
-.next/
-.vite/
-.npm/
-package-lock.json.bak
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
 
-# ===========================================
-# BUILD / DIST
-# ===========================================
-build/
+# Local configuration
+keys.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build output
 dist/
-out/
+build/
 coverage/
-htmlcov/
+.next/
+out/
+.nuxt
+frontend/dist/
 
-# ===========================================
-# TESTING / CI
-# ===========================================
-.cache/
-.pytest_cache/
-test-results/
-playwright-report/
-blob-report/
-.nyc_output/
-junit.xml
-*.lcov
-
-# ===========================================
-# REPLAY / CACHE (LOCAL mode only)
-# ===========================================
-cache/
-cache/replay/
-
-# ===========================================
-# LOGS & RUNTIME STATE
-# ===========================================
-logs/
+# Logs and databases
 *.log
-*.out
-nohup.out
-uvicorn.out
-
-# ===========================================
-# DATABASES
-# ===========================================
-*.db
-*.sqlite
+logs/
+data/databases/*.db
 *.sqlite3
-phase1.db
+*.sqlite
 
-# ===========================================
-# IDE / EDITOR
-# ===========================================
+# IDEs and OS
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.project
-.settings/
-.classpath
-
-# ===========================================
-# OS FILES
-# ===========================================
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-desktop.ini
 
-# ===========================================
-# WINDOWS ADS (Alternate Data Streams)
-# ===========================================
-*:Zone.Identifier
-Zone.Identifier
+# Test suites
+.pytest_cache/
+.coverage
+htmlcov/
+tests-results/
+playwright-report/
+frontend/playwright-report/
+frontend/test-results/
 
-# ===========================================
-# PLAYWRIGHT MCP (local screenshots)
-# ===========================================
-.playwright-mcp/
-
-# ===========================================
-# PROJECT SPECIFIC
-# ===========================================
-# Playwright / test artifacts and generated reports
-artifacts/
-frontend/artifacts/
-frontend/e2e-results/
-frontend/playwright-report-*
-
-# Project-specific data and local configs
-cboe_pipeline/data/
-.envrc
-
-
-# Market data cache (v1.11)
-.cache/
-phase1/data/cache/
-
-# ===========================================
-# AI ASSISTANTS & CODING AGENTS
-# ===========================================
-.gemini/
-.claude/
-.cursor/
-.agent/
-.agents/
-.ag/
-.antigravity/
-.codebuddy/
-.codex/
-.continue/
-.kiro/
-.opencode/
-.qoder/
-.roo/
-.shared/
-.trae/
-.windsurf/
-.current_artifact_dir
-
-# ===========================================
-# ADDITIONAL CLEANUP
-# ===========================================
-# Backup files
-*.save
-*.save.*
-*.bak
-*.backup
-
-# Colab notebooks (not needed for demo)
-*.ipynb
-
-# Zone identifiers (Windows ADS)
-*Zone.Identifier
-
-# Proof packs and artifacts (local only)
-proofpacks/
-proof/
-artifacts/proof/
-repo_cleanup_evidence/
-submission_bundle.zip
-
-# Stale run logs (root-level)
-w*.txt
-pw_*.txt
-pytest_*.txt
-e2e_*.txt
-*.log
-
-# Playwright duplicate output directories
-playwright-report-*/
-test-results-*/
-frontend/playwright-report-*/
-frontend/test-results-*/
-e2e-results/
-frontend/e2e-results/
-phase1/e2e-results/
-phase1/test-results/
-
-# Demo media (regenerate as needed)
-devpost_media/*.mp4
-devpost_media/*.webm
-
-# Generated HTML docs
-README.html
-README_NEW.html
-
-# Lean/QC local data
-lean_clean/
-qc/
-
-# VWAP subsystems (dev experiments)
-vwap_paper/
-vwap_trading_system/
-
-# Ignore Windows Playwright snapshots
-frontend/tests/e2e/__snapshots__/**/*-win32.png
-
+# Archives and uploads
+*.zip
+*.tar.gz
+archives/

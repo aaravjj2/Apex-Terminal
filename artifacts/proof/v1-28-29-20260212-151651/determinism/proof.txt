@@ -1,0 +1,47 @@
+DETERMINISM PROOF — v1.28 Strategy Artifacts + v1.29 Validation Reports
+Generated: 2026-02-12T23:01:07.554759Z
+
+═══════════════════════════════════════════════════════
+1. STRATEGY ARTIFACT CONTENT-HASH DETERMINISM
+═══════════════════════════════════════════════════════
+
+Input:   inputs.strategy_spec.json
+Process: POST /api/v1/strategy-artifacts (with reset-demo between runs)
+
+Run 1 → ID: 20f033269220de1d3e1879e83bcd83a9e916596458240eb0df7eae6b581abcc5
+Run 2 → ID: 20f033269220de1d3e1879e83bcd83a9e916596458240eb0df7eae6b581abcc5
+IDs Match: True
+
+Run 1 → Checksum: 20f033269220de1d3e1879e83bcd83a9e916596458240eb0df7eae6b581abcc5
+Run 2 → Checksum: 20f033269220de1d3e1879e83bcd83a9e916596458240eb0df7eae6b581abcc5
+Checksums Match: True
+
+Output SHA256 (Run 1): 5daf026f69b8431cf79f9a8a64472a079d4760bf532674a7b9436f627dfe45f5
+Output SHA256 (Run 2): 5daf026f69b8431cf79f9a8a64472a079d4760bf532674a7b9436f627dfe45f5
+SHA256 Match: True
+
+VERDICT: DETERMINISTIC ✓
+
+═══════════════════════════════════════════════════════
+2. VALIDATION REPORT DETERMINISM
+═══════════════════════════════════════════════════════
+
+Input:   inputs.validation_spec.json
+Process: POST /api/v1/strategy-artifacts/validate (3 consecutive runs)
+
+Errors:   3
+Warnings: 0
+
+Run 1 SHA256: 6de7087c92865cddd8930ecec01f41650706603f4c7e3c563be86ab75e5cee56
+Run 2 SHA256: 6de7087c92865cddd8930ecec01f41650706603f4c7e3c563be86ab75e5cee56
+Run 3 SHA256: 6de7087c92865cddd8930ecec01f41650706603f4c7e3c563be86ab75e5cee56
+All Match: True
+
+Error rule_ids (sorted): STRAT_001, STRAT_002, STRAT_003
+Warning rule_ids (sorted): 
+
+VERDICT: DETERMINISTIC ✓
+
+═══════════════════════════════════════════════════════
+OVERALL: BOTH PROOFS PASS ✓
+═══════════════════════════════════════════════════════

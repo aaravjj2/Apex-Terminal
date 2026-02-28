@@ -1,0 +1,262 @@
+{
+  "captured_at": "2026-02-26T00:49:14.344628Z",
+  "fixtures": {
+    "create_snapshot": {
+      "status": 200,
+      "body": {
+        "dataset_id": "ds-6baa32e03bd4",
+        "symbol": "AAPL",
+        "start_date": "2018-01-01",
+        "end_date": "2025-01-01",
+        "provider": "yfinance",
+        "sha256": "6baa32e03bd48200c8077f22698a801fd6b2e225c4f2d09401fcf1937b165d84",
+        "row_count": 1474,
+        "created_at": "2026-02-26T00:48:33.987213Z",
+        "source_manifest": {
+          "provider": "yfinance",
+          "fetch_ms": 24.0,
+          "checksum_algorithm": "SHA-256",
+          "integrity": "verified",
+          "batch_id": "batch-999ca0077bcb",
+          "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+        },
+        "correlation_id": "fc04094e-5539-456a-a506-c644525ff630",
+        "performance": {
+          "elapsed_ms": 14.4
+        }
+      }
+    },
+    "list_datasets": {
+      "status": 200,
+      "body": {
+        "correlation_id": "94248eba-287a-45c9-9b01-60c73ef0652c",
+        "datasets": [
+          {
+            "dataset_id": "ds-3f7aa99f1243",
+            "symbol": "AAPL",
+            "start_date": "2020-01-01",
+            "end_date": "2027-01-01",
+            "provider": "yfinance",
+            "sha256": "3f7aa99f12436d163ceeaf912426bd8bf80ea813266ff732f8a2935ded5cd9c2",
+            "row_count": 1543,
+            "created_at": "2026-02-26T00:48:34.098806Z",
+            "source_manifest": {
+              "provider": "yfinance",
+              "fetch_ms": 23.9,
+              "checksum_algorithm": "SHA-256",
+              "integrity": "verified",
+              "batch_id": "batch-999ca0077bcb",
+              "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+            }
+          },
+          {
+            "dataset_id": "ds-29db7d9d4c4e",
+            "symbol": "AAPL",
+            "start_date": "2019-01-01",
+            "end_date": "2026-01-01",
+            "provider": "yfinance",
+            "sha256": "29db7d9d4c4e7a7578af8fade36b60543ae469006cc2f4d28e84ae35bfca9255",
+            "row_count": 1724,
+            "created_at": "2026-02-26T00:48:34.044433Z",
+            "source_manifest": {
+              "provider": "yfinance",
+              "fetch_ms": 33.5,
+              "checksum_algorithm": "SHA-256",
+              "integrity": "verified",
+              "batch_id": "batch-999ca0077bcb",
+              "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+            }
+          },
+          {
+            "dataset_id": "ds-6baa32e03bd4",
+            "symbol": "AAPL",
+            "start_date": "2018-01-01",
+            "end_date": "2025-01-01",
+            "provider": "yfinance",
+            "sha256": "6baa32e03bd48200c8077f22698a801fd6b2e225c4f2d09401fcf1937b165d84",
+            "row_count": 1474,
+            "created_at": "2026-02-26T00:48:33.987213Z",
+            "source_manifest": {
+              "provider": "yfinance",
+              "fetch_ms": 24.0,
+              "checksum_algorithm": "SHA-256",
+              "integrity": "verified",
+              "batch_id": "batch-999ca0077bcb",
+              "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+            }
+          },
+          {
+            "dataset_id": "ds-0005c1945c51",
+            "symbol": "AAPL",
+            "start_date": "2017-01-01",
+            "end_date": "2024-01-01",
+            "provider": "yfinance",
+            "sha256": "0005c1945c51ce4679a83d2f3efba3fea430656f80fa3fe7d780a2415dcf854a",
+            "row_count": 1222,
+            "created_at": "2026-02-26T00:48:33.938171Z",
+            "source_manifest": {
+              "provider": "yfinance",
+              "fetch_ms": 21.9,
+              "checksum_algorithm": "SHA-256",
+              "integrity": "verified",
+              "batch_id": "batch-999ca0077bcb",
+              "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+            }
+          },
+          {
+            "dataset_id": "ds-b9695f2121ee",
+            "symbol": "AAPL",
+            "start_date": "2016-01-01",
+            "end_date": "2023-01-01",
+            "provider": "yfinance",
+            "sha256": "b9695f2121ee793082726628050ba51ad275269cffa85f17c5a5d81307484b3e",
+            "row_count": 972,
+            "created_at": "2026-02-26T00:48:33.880113Z",
+            "source_manifest": {
+              "provider": "yfinance",
+              "fetch_ms": 26.9,
+              "checksum_algorithm": "SHA-256",
+              "integrity": "verified",
+              "batch_id": "batch-999ca0077bcb",
+              "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+            }
+          },
+          {
+            "dataset_id": "ds-cfe7917842f8",
+            "symbol": "DEDUP",
+            "start_date": "2020-01-01",
+            "end_date": "2022-01-01",
+            "provider": "yfinance",
+            "sha256": "cfe7917842f8fefdbb8da8520bbce63123f8fbdd986e06dbea755a9c28ee298c",
+            "row_count": 36,
+            "created_at": "2026-02-26T00:33:42.541796Z",
+            "source_manifest": {
+              "provider": "yfinance",
+              "fetch_ms": 0.7,
+              "checksum_algorithm": "SHA-256",
+              "integrity": "verified",
+              "batch_id": null,
+              "batch_sha256": null
+            }
+          },
+          {
+            "dataset_id": "ds-a2bdbe76f21a",
+            "symbol": "TSLA",
+            "start_date": "2020-01-01",
+            "end_date": "2023-01-01",
+            "provider": "yfinance",
+            "sha256": "a2bdbe76f21ab469405035d6497f78605f13635d6235b86d9dae6e91b3a28889",
+            "row_count": 72,
+            "created_at": "2026-02-26T00:33:42.526792Z",
+            "source_manifest": {
+              "provider": "yfinance",
+              "fetch_ms": 0.7,
+              "checksum_algorithm": "SHA-256",
+              "integrity": "verified",
+              "batch_id": null,
+              "batch_sha256": null
+            }
+          },
+          {
+            "dataset_id": "ds-720704c193fe",
+            "symbol": "AAPL",
+            "start_date": "2020-01-01",
+            "end_date": "2023-01-01",
+            "provider": "yfinance",
+            "sha256": "720704c193feae1038675ad82f19dad0af3ee8f203ec0f91d6a92cc19fa31b16",
+            "row_count": 756,
+            "created_at": "2026-02-26T00:30:54.734318Z",
+            "source_manifest": {
+              "provider": "yfinance",
+              "fetch_ms": 16.6,
+              "checksum_algorithm": "SHA-256",
+              "integrity": "verified",
+              "batch_id": "batch-999ca0077bcb",
+              "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+            }
+          }
+        ],
+        "count": 8
+      }
+    },
+    "get_by_id": {
+      "status": 200,
+      "body": {
+        "dataset_id": "ds-3f7aa99f1243",
+        "symbol": "AAPL",
+        "start_date": "2020-01-01",
+        "end_date": "2027-01-01",
+        "provider": "yfinance",
+        "sha256": "3f7aa99f12436d163ceeaf912426bd8bf80ea813266ff732f8a2935ded5cd9c2",
+        "row_count": 1543,
+        "created_at": "2026-02-26T00:48:34.098806Z",
+        "source_manifest": {
+          "provider": "yfinance",
+          "fetch_ms": 23.9,
+          "checksum_algorithm": "SHA-256",
+          "integrity": "verified",
+          "batch_id": "batch-999ca0077bcb",
+          "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+        },
+        "correlation_id": "128c6989-31b6-4960-af91-c1023c15736a"
+      }
+    },
+    "get_bars": {
+      "status": 200,
+      "bar_count": 500,
+      "first_bar": {
+        "symbol": "AAPL",
+        "date": "2020-01-02",
+        "open": 74.06,
+        "high": 75.15,
+        "low": 73.7975,
+        "close": 75.0875,
+        "adj_close": 72.4005,
+        "volume": 135480400,
+        "source": "yfinance",
+        "fetched_at": "2026-02-24T05:45:51.686210"
+      }
+    },
+    "checksum_verify": {
+      "status": 200,
+      "body": {
+        "correlation_id": "d8928120-9370-4f70-82fe-9f33d4096972",
+        "dataset_id": "ds-3f7aa99f1243",
+        "stored_sha256": "3f7aa99f12436d163ceeaf912426bd8bf80ea813266ff732f8a2935ded5cd9c2",
+        "recomputed_sha256": "3f7aa99f12436d163ceeaf912426bd8bf80ea813266ff732f8a2935ded5cd9c2",
+        "integrity": "verified",
+        "row_count": 1543
+      }
+    },
+    "auth_401": {
+      "status": 401,
+      "body": "HTTP Error 401: Unauthorized"
+    },
+    "auth_pass": {
+      "status": 200,
+      "body": {
+        "dataset_id": "ds-720704c193fe",
+        "symbol": "AAPL",
+        "start_date": "2020-01-01",
+        "end_date": "2023-01-01",
+        "provider": "yfinance",
+        "sha256": "720704c193feae1038675ad82f19dad0af3ee8f203ec0f91d6a92cc19fa31b16",
+        "row_count": 756,
+        "created_at": "2026-02-26T00:30:54.734318Z",
+        "source_manifest": {
+          "provider": "yfinance",
+          "fetch_ms": 16.6,
+          "checksum_algorithm": "SHA-256",
+          "integrity": "verified",
+          "batch_id": "batch-999ca0077bcb",
+          "batch_sha256": "1c4e99eb250517bdf98361ba933bea3edba8671bead1fc3ebf1b7e7c18c9ca60"
+        },
+        "correlation_id": "8774696d-37a3-4ce6-94e2-4829bce584ad"
+      }
+    },
+    "nonexistent_409": {
+      "status": 409,
+      "body": "HTTP Error 409: Conflict"
+    }
+  }
+}

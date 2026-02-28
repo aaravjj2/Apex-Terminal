@@ -1,0 +1,206 @@
+❌ SELECTOR POLICY: VIOLATIONS FOUND
+
+Total violations: 65
+
+File: frontend/tests/e2e/autopilot-mcp.spec.ts
+Violations: 8
+  Line 38: getByText()
+    const banner = page.getByText('PAPER TRADING MODE - NO REAL MONEY AT RISK');
+  Line 49: getByText()
+    await expect(page.getByText('Paper Equity')).toBeVisible();
+  Line 50: getByText()
+    await expect(page.getByText('$1,000.00').first()).toBeVisible();  // Use first() to avoid strict mod...
+  Line 51: getByText()
+    await expect(page.getByText('Total P&L')).toBeVisible();
+  Line 52: getByText()
+    await expect(page.getByText('Open Positions')).toBeVisible();
+  Line 60: getByRole()
+    await expect(page.getByRole('heading', { name: /Position Ledger/ })).toBeVisible();
+  Line 71: getByRole()
+    await expect(page.getByRole('heading', { name: /Activity Log/ })).toBeVisible();
+  Line 82: getByRole()
+    await expect(page.getByRole('heading', { name: /Autopilot Settings/ })).toBeVisible();
+
+File: frontend/tests/e2e/comprehensive_tour.spec.ts
+Violations: 1
+  Line 43: getByText()
+    await page.getByText('Options Chain').first().waitFor({ state: 'visible' }).catch(() => { });
+
+File: frontend/tests/e2e/forecast.spec.ts
+Violations: 1
+  Line 21: getByRole()
+    const seesTab = page.getByRole('button', { name: /Sees/i }).first();
+
+File: frontend/tests/e2e/helpers.ts
+Violations: 1
+  Line 175: getByText()
+    await expect(page.getByText(text)).toBeVisible({ timeout });
+
+File: frontend/tests/e2e/indicators.spec.ts
+Violations: 8
+  Line 25: getByRole()
+    const modal = page.getByRole('dialog');
+  Line 37: getByRole()
+    await expect(page.getByRole('button', { name: 'Add to Chart' })).toBeVisible({ timeout: 3000 });
+  Line 38: getByRole()
+    await page.getByRole('button', { name: 'Add to Chart' }).click();
+  Line 51: getByRole()
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+  Line 61: getByRole()
+    await expect(page.getByRole('button', { name: 'Add to Chart' })).toBeVisible({ timeout: 3000 });
+  Line 62: getByRole()
+    await page.getByRole('button', { name: 'Add to Chart' }).click();
+  Line 29: getByPlaceholder()
+    const searchInput = page.getByPlaceholder('Search...');
+  Line 53: getByPlaceholder()
+    await page.getByPlaceholder('Search...').fill('SMA');
+
+File: frontend/tests/e2e/industrial-uiux-analytics-reporting.spec.ts
+Violations: 1
+  Line 232: locator() with CSS class/id
+    const cards = metricsContainer.locator('.bg-panel-bg');
+
+File: frontend/tests/e2e/interactions.spec.ts
+Violations: 1
+  Line 40: locator() with CSS class/id
+    const chartContainer = page.locator('.chart-container, canvas').first();
+
+File: frontend/tests/e2e/packaging-v1-9.spec.ts
+Violations: 1
+  Line 76: getByText()
+    await page.getByText('Load Demo').click();
+
+File: frontend/tests/e2e/premium-charts-v1-9.spec.ts
+Violations: 4
+  Line 25: getByText()
+    const loadBtn = page.getByText('Load Demo').first();
+  Line 52: locator() with CSS class/id
+    await expect(chart.locator('.recharts-responsive-container')).toBeVisible();
+  Line 61: locator() with CSS class/id
+    await expect(chart.locator('.recharts-responsive-container')).toBeVisible();
+  Line 70: locator() with CSS class/id
+    await expect(chart.locator('.recharts-responsive-container')).toBeVisible();
+
+File: frontend/tests/e2e/snapshots.spec.ts
+Violations: 1
+  Line 54: locator() with CSS class/id
+    const chartContainer = page.locator('.chart-container, [data-testid="chart"], canvas').first();
+
+File: frontend/tests/e2e/stability-coverage-v1-3.spec.ts
+Violations: 4
+  Line 24: getByText()
+    await page.getByText('Load Demo').click();
+  Line 68: getByText()
+    await page.getByText('Load Demo').click();
+  Line 106: getByText()
+    await page.getByText('Load Demo').click();
+  Line 114: getByText()
+    await page.getByText('Load Demo').click();
+
+File: frontend/tests/e2e/strategy-lab-backtest-v2.spec.ts
+Violations: 7
+  Line 30: getByText()
+    await page.getByText('Strategy Lab').first().click();
+  Line 34: getByText()
+    await expect(page.getByText('Strategy Lab')).toBeVisible();
+  Line 42: getByText()
+    await page.getByText('Backtest').first().click();
+  Line 46: getByText()
+    await expect(page.getByText('Backtest')).toBeVisible();
+  Line 53: getByText()
+    await page.getByText('Risk Desk').first().click();
+  Line 56: getByText()
+    await expect(page.getByText('Risk Desk')).toBeVisible();
+  Line 63: getByText()
+    await page.getByText('Analytics').first().click();
+
+File: frontend/tests/e2e/tts.spec.ts
+Violations: 3
+  Line 97: getByText()
+    const toggle = page.getByText('VOICE OFF');
+  Line 101: getByText()
+    await expect(page.getByText('VOICE ON')).toBeVisible();
+  Line 116: getByText()
+    const voiceToggle = page.getByText('VOICE OFF');
+
+File: frontend/tests/e2e/ui-e2e-reconcile-v1-2.spec.ts
+Violations: 7
+  Line 46: getByText()
+    await expect(page.getByText('Options Chain')).toBeVisible();
+  Line 54: getByText()
+    await expect(page.getByText('Load Demo')).toBeVisible();
+  Line 62: getByText()
+    await page.getByText('Load Demo').click();
+  Line 74: getByText()
+    await page.getByText('Load Demo').click();
+  Line 86: getByText()
+    await page.getByText('Load Demo').click();
+  Line 98: getByText()
+    await page.getByText('Load Demo').click();
+  Line 190: getByText()
+    await expect(page.getByText('Options Chain')).toBeVisible();
+
+File: frontend/tests/e2e/unified-runs-v1-5.spec.ts
+Violations: 2
+  Line 36: getByText()
+    await page.getByText('Load Demo').click();
+  Line 307: getByText()
+    await expect(page.getByText('Load Demo')).toBeVisible();
+
+File: frontend/tests/e2e/v1-terminal.spec.ts
+Violations: 1
+  Line 180: locator() with CSS class/id
+    const pnlElements = page.locator('.text-green-400, .text-red-400');
+
+File: frontend/tests/e2e/visual-regression-v1-11.spec.ts
+Violations: 3
+  Line 131: getByText()
+    await page.getByText('Load Demo').click();
+  Line 143: getByText()
+    await page.getByText('Load Demo').click();
+  Line 155: getByText()
+    await page.getByText('Load Demo').click();
+
+File: frontend/tests/e2e/visual-regression-v1-4.spec.ts
+Violations: 3
+  Line 29: getByText()
+    await page.getByText('Load Demo').click();
+  Line 89: getByText()
+    await page.getByText('Load Demo').click();
+  Line 221: locator() with CSS class/id
+    const tabStrip = page.locator('[data-testid="options-main-tab-analytics"], [data-testid="options-mai...
+
+File: frontend/tests/e2e/visual-regression-v1-6.spec.ts
+Violations: 4
+  Line 29: getByText()
+    await page.getByText('Load Demo').click();
+  Line 78: getByText()
+    await expect(page.getByText('Load Demo')).toBeVisible();
+  Line 85: getByText()
+    await page.getByText('Load Demo').click();
+  Line 203: getByText()
+    await expect(page.getByText('Load Demo')).toBeVisible();
+
+File: frontend/tests/e2e/visual-regression-v1-8.spec.ts
+Violations: 1
+  Line 25: getByText()
+    await page.getByText('Load Demo').click();
+
+File: frontend/tests/e2e/websocket-status.spec.ts
+Violations: 3
+  Line 17: getByText()
+    await page.getByText('Alerts').click();
+  Line 21: getByText()
+    await expect(aiPanel.getByText('WebSocket Status')).toBeVisible();
+  Line 26: locator() with CSS class/id
+    const statusBadge = aiPanel.locator('.rounded').filter({ hasText: /connected|disconnected|polling/i ...
+
+FORBIDDEN PATTERNS:
+  - .getByText(), .getByRole(), .getByLabel(), .getByPlaceholder(), .getByAltText(), .getByTitle()
+  - .locator() with CSS selectors (class, id, tag, combinator)
+  - .locator() with non-testid attribute selectors
+
+ALLOWED PATTERNS:
+  - .getByTestId("my-element")
+  - .locator('[data-testid="my-element"]')
+  - data-testid="my-element" in JSX/HTML

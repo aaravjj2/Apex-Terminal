@@ -1,0 +1,57 @@
+{
+  "version": "v1.28+v1.29",
+  "git_sha": "075c0fe2436033fa30bb846a99317ebb29f3663a",
+  "timestamp": "2025-02-12T15:16:51Z",
+  "environment": {
+    "node": "v22.21.1",
+    "npm": "10.9.4",
+    "python": "3.10.12",
+    "os": "Linux"
+  },
+  "test_results": {
+    "tsc": { "errors": 0 },
+    "vitest": { "total": 103, "passed": 103, "failed": 0, "skipped": 0 },
+    "pytest_artifacts": { "total": 39, "passed": 39, "failed": 0, "skipped": 0 },
+    "pytest_full": { "total": 1031, "passed": 1031, "failed": 0, "skipped": 0 },
+    "playwright_v128_v129": { "total": 9, "passed": 9, "failed": 0, "skipped": 0 },
+    "playwright_full": { "total": 480, "passed": 403, "failed": 77, "skipped": 0, "note": "77 failures are all pre-existing visual regression baselines, none from v1.28/v1.29" },
+    "autopilot_precheck": { "total": 32, "passed": 32, "failed": 0, "runs": 2 },
+    "autopilot_postcheck": { "total": 32, "passed": 32, "failed": 0, "runs": 2 }
+  },
+  "determinism": {
+    "strategy_artifact": {
+      "runs": 2,
+      "sha256_match": true,
+      "artifact_id": "20f033269220de1d3e1879e83bcd83a9e916596458240eb0df7eae6b581abcc5"
+    },
+    "validation_report": {
+      "runs": 3,
+      "sha256_match": true,
+      "errors_count": 3,
+      "warnings_count": 0
+    }
+  },
+  "files_created": [
+    "phase1/services/strategy_lab/artifact_models.py",
+    "phase1/services/strategy_lab/artifact_store.py",
+    "phase1/services/strategy_lab/artifact_validator.py",
+    "phase1/services/api/routes/strategy_artifacts.py",
+    "phase1/tests/unit/test_strategy_artifacts.py",
+    "frontend/src/features/options/strategyLab/artifactTypes.ts",
+    "frontend/src/features/options/strategyLab/StrategyArtifactsPanel.tsx",
+    "frontend/src/features/options/strategyLab/StrategyValidationPanel.tsx",
+    "frontend/tests/e2e/strategy-artifacts-v1-28.spec.ts",
+    "frontend/tests/e2e/strategy-validation-v1-29.spec.ts"
+  ],
+  "files_modified": [
+    "phase1/services/api/main.py",
+    "frontend/src/features/options/strategyLab/StrategyLabPanel.tsx",
+    "frontend/src/features/options/strategyLab/index.ts"
+  ],
+  "proof_pack_paths": {
+    "logs": "logs/",
+    "determinism": "determinism/",
+    "screenshots": "screenshots/",
+    "playwright_report": "playwright-report/"
+  }
+}

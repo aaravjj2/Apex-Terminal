@@ -1,0 +1,120 @@
+{
+  "week": 1,
+  "mission": "Terminal shell refactor",
+  "timestamp": "2026-02-26T00:11:17.174741+00:00",
+  "score": 10.0,
+  "gates_passed": 18,
+  "total_gates": 18,
+  "all_green": true,
+  "criticisms": [],
+  "gates": {
+    "A1": {
+      "pass": true,
+      "proof": "status=200, keys=['git_sha', 'build_time', 'api_version', 'active_port']",
+      "section": "A",
+      "name": "/api/ops/version returns git_sha + api_version"
+    },
+    "A2": {
+      "pass": true,
+      "proof": "status=200, connected=True",
+      "section": "A",
+      "name": "/api/ops/elastic/health returns connected + cluster_status"
+    },
+    "A3": {
+      "pass": true,
+      "proof": "status=200, connected=True",
+      "section": "A",
+      "name": "/api/ops/broker/health returns broker connection status"
+    },
+    "A4": {
+      "pass": true,
+      "proof": "status=200, running=True",
+      "section": "A",
+      "name": "/api/ops/ws/health returns running + heartbeat info"
+    },
+    "A5": {
+      "pass": true,
+      "proof": "status=200, session=post, tz=America/New_York",
+      "section": "A",
+      "name": "/api/ops/market_session returns session + timezone America/New_York"
+    },
+    "A6": {
+      "pass": true,
+      "proof": "status=200, keys=['ok', 'symbol', 'ts', 'bid', 'ask', 'last', 'price', 'c']",
+      "section": "A",
+      "name": "Market quote endpoint returns live price for AAPL"
+    },
+    "B1": {
+      "pass": true,
+      "proof": "CommandPalette.tsx: 281 LOC, testids=True",
+      "section": "B",
+      "name": "CommandPalette.tsx: >100 LOC + data-testid instrumented"
+    },
+    "B2": {
+      "pass": true,
+      "proof": "contextBusStore.ts: 108 LOC, has_api=True",
+      "section": "B",
+      "name": "ContextBus store: activeSymbol + setActiveSymbol + >30 LOC"
+    },
+    "B3": {
+      "pass": true,
+      "proof": "MonitorGrid.tsx: 450 LOC, persist=True, testids=True",
+      "section": "B",
+      "name": "MonitorGrid.tsx: layout persistence + data-testid + >100 LOC"
+    },
+    "B4": {
+      "pass": true,
+      "proof": "OpsUI2.tsx: 604 LOC, data-ready=True, cid=True",
+      "section": "B",
+      "name": "OpsUI2.tsx: data-ready gating + correlation_id display + >200 LOC"
+    },
+    "C1": {
+      "pass": true,
+      "proof": "1 spec files, 412 total LOC",
+      "section": "C",
+      "name": "W01 Playwright spec exists with >100 LOC of tests"
+    },
+    "C2": {
+      "pass": true,
+      "proof": "Config checks: {'headless_false': True, 'trace_on': True, 'video_on': True, 'screenshot_on': True, 'workers_1': True, 'retries_0': True}",
+      "section": "C",
+      "name": "Playwright config: headed + trace + video + screenshot + workers=1 + retries=0"
+    },
+    "C3": {
+      "pass": true,
+      "proof": "All selectors use data-testid \u2014 compliant",
+      "section": "C",
+      "name": "W01 specs use data-testid ONLY (no getByRole/getByText/waitForTimeout)"
+    },
+    "D1": {
+      "pass": true,
+      "proof": "fetch=True, no_mock=True, testid=True",
+      "section": "D",
+      "name": "OrdersBlotter: fetches real Alpaca data, no mock/demo, has data-testid"
+    },
+    "D2": {
+      "pass": true,
+      "proof": "2 endpoints with correlation_id",
+      "section": "D",
+      "name": "At least 1 ops endpoint returns correlation_id in JSON body"
+    },
+    "D3": {
+      "pass": true,
+      "proof": "uses_bus=True, indicator=True",
+      "section": "D",
+      "name": "AppShellUI2 wires ContextBus with active symbol indicator"
+    },
+    "D4": {
+      "pass": true,
+      "proof": "saves=True, reads=True",
+      "section": "D",
+      "name": "MonitorGrid persists layout in localStorage (read + write)"
+    },
+    "D5": {
+      "pass": true,
+      "proof": "market=True, conn=True, palette=True",
+      "section": "D",
+      "name": "AppShellUI2: market status + conn status + command trigger all data-testid'd"
+    }
+  }
+}

@@ -1,0 +1,1477 @@
+
+Running 425 tests using 1 worker
+
+[1A[2K[1/425] [chromium] › tests/e2e/automation.spec.ts:24:5 › Automation View › Automation view loads with correct initial state
+[1A[2K[2/425] [chromium] › tests/e2e/automation.spec.ts:35:5 › Automation View › Paper trading can be started and stopped
+[1A[2K[3/425] [chromium] › tests/e2e/automation.spec.ts:46:5 › Automation View › Live trading requires two-step confirmation
+[1A[2K[4/425] [chromium] › tests/e2e/automation.spec.ts:56:5 › Automation View › Kill switch disables automation
+[1A[2K[5/425] [chromium] › tests/e2e/automation.spec.ts:70:5 › Automation View › Budget controls are displayed
+[1A[2K[6/425] [chromium] › tests/e2e/autopilot_frontend.spec.ts:108:5 › Autopilot Frontend Features › should display sentiment indicator
+[1A[2K[7/425] [chromium] › tests/e2e/autopilot_frontend.spec.ts:124:5 › Autopilot Frontend Features › should trigger panic sell
+[1A[2K[8/425] [chromium] › tests/e2e/autopilot-mcp.spec.ts:13:3 › Autopilot MCP Testing › should navigate to autopilot view
+[1A[2K[9/425] [chromium] › tests/e2e/autopilot-mcp.spec.ts:24:3 › Autopilot MCP Testing › should display all 4 tabs
+[1A[2K[10/425] [chromium] › tests/e2e/autopilot-mcp.spec.ts:34:3 › Autopilot MCP Testing › should show paper mode banner
+[1A[2K[chromium] › tests/e2e/autopilot-mcp.spec.ts:34:3 › Autopilot MCP Testing › should show paper mode banner
+/home/aarav/Aarav/Tradingview recreation/frontend/tests/e2e/__snapshots__/autopilot-mcp.spec.ts-snapshots/autopilot-dashboard-chromium-linux.png is re-generated, writing actual.
+
+[1A[2K[11/425] [chromium] › tests/e2e/autopilot-mcp.spec.ts:45:3 › Autopilot MCP Testing › should display portfolio metrics
+[1A[2K[12/425] [chromium] › tests/e2e/autopilot-mcp.spec.ts:53:3 › Autopilot MCP Testing › should switch to positions tab
+[1A[2K[13/425] [chromium] › tests/e2e/autopilot-mcp.spec.ts:64:3 › Autopilot MCP Testing › should switch to activity tab
+[1A[2K[14/425] [chromium] › tests/e2e/autopilot-mcp.spec.ts:75:3 › Autopilot MCP Testing › should switch to settings tab
+[1A[2K[15/425] [chromium] › tests/e2e/autopilot-mcp.spec.ts:86:3 › Autopilot MCP Testing › should toggle autopilot state
+[1A[2K[16/425] [chromium] › tests/e2e/autopilot.spec.ts:31:9 › Autopilot Feature › Navigation & Access › autopilot nav item is visible in left navigation
+[1A[2K[17/425] [chromium] › tests/e2e/autopilot.spec.ts:42:9 › Autopilot Feature › Navigation & Access › clicking autopilot nav item navigates to autopilot view
+[1A[2K[18/425] [chromium] › tests/e2e/autopilot.spec.ts:64:9 › Autopilot Feature › Dashboard Tab › shows PAPER TRADING MODE banner prominently
+[1A[2K[19/425] [chromium] › tests/e2e/autopilot.spec.ts:77:9 › Autopilot Feature › Dashboard Tab › displays portfolio summary cards
+[1A[2K[20/425] [chromium] › tests/e2e/autopilot.spec.ts:95:9 › Autopilot Feature › Dashboard Tab › run cycle button is clickable
+[1A[2K[21/425] [chromium] › tests/e2e/autopilot.spec.ts:118:9 › Autopilot Feature › Dashboard Tab › pause/resume button toggles state
+[1A[2K[22/425] [chromium] › tests/e2e/autopilot.spec.ts:143:9 › Autopilot Feature › Dashboard Tab › kill switch button has warning styling
+[1A[2K[23/425] [chromium] › tests/e2e/autopilot.spec.ts:158:9 › Autopilot Feature › Dashboard Tab › clicking kill switch shows confirmation or activates
+[1A[2K[24/425] [chromium] › tests/e2e/autopilot.spec.ts:181:9 › Autopilot Feature › Positions Tab › positions view loads with filter buttons
+[1A[2K[25/425] [chromium] › tests/e2e/autopilot.spec.ts:197:9 › Autopilot Feature › Positions Tab › filter buttons change active state on click
+[1A[2K[26/425] [chromium] › tests/e2e/autopilot.spec.ts:227:9 › Autopilot Feature › Positions Tab › refresh button triggers data reload
+[1A[2K[27/425] [chromium] › tests/e2e/autopilot.spec.ts:250:9 › Autopilot Feature › Activity Tab › activity view loads with filter options
+[1A[2K[28/425] [chromium] › tests/e2e/autopilot.spec.ts:267:9 › Autopilot Feature › Activity Tab › limit dropdown has options
+[1A[2K[29/425] [chromium] › tests/e2e/autopilot.spec.ts:281:9 › Autopilot Feature › Activity Tab › clicking errors filter shows only errors
+[1A[2K[30/425] [chromium] › tests/e2e/autopilot.spec.ts:302:9 › Autopilot Feature › Settings Tab › settings view loads with all sections
+[1A[2K[31/425] [chromium] › tests/e2e/autopilot.spec.ts:313:9 › Autopilot Feature › Settings Tab › paper equity input is editable
+[1A[2K[32/425] [chromium] › tests/e2e/autopilot.spec.ts:331:9 › Autopilot Feature › Settings Tab › mode dropdown has options
+[1A[2K[33/425] [chromium] › tests/e2e/autopilot.spec.ts:345:9 › Autopilot Feature › Settings Tab › LLM checkbox toggles
+[1A[2K[34/425] [chromium] › tests/e2e/autopilot.spec.ts:365:9 › Autopilot Feature › Settings Tab › risk limit inputs are editable
+[1A[2K[35/425] [chromium] › tests/e2e/autopilot.spec.ts:381:9 › Autopilot Feature › Settings Tab › strategy templates are toggleable
+[1A[2K[36/425] [chromium] › tests/e2e/autopilot.spec.ts:397:9 › Autopilot Feature › Settings Tab › save button enables when changes made
+[1A[2K[37/425] [chromium] › tests/e2e/autopilot.spec.ts:422:9 › Autopilot Feature › Settings Tab › reset button restores defaults
+[1A[2K[38/425] [chromium] › tests/e2e/autopilot.spec.ts:450:9 › Autopilot Feature › Tab Navigation › all tabs are clickable and switch content
+[1A[2K[39/425] [chromium] › tests/e2e/autopilot.spec.ts:467:9 › Autopilot Feature › Tab Navigation › active tab has visual indicator
+[1A[2K[40/425] [chromium] › tests/e2e/autopilot.spec.ts:489:9 › Autopilot Feature › Visual Regression Snapshots › full autopilot dashboard snapshot
+[1A[2K[41/425] [chromium] › tests/e2e/autopilot.spec.ts:499:9 › Autopilot Feature › Visual Regression Snapshots › full positions view snapshot
+[1A[2K[42/425] [chromium] › tests/e2e/autopilot.spec.ts:508:9 › Autopilot Feature › Visual Regression Snapshots › full activity view snapshot
+[1A[2K[43/425] [chromium] › tests/e2e/autopilot.spec.ts:517:9 › Autopilot Feature › Visual Regression Snapshots › full settings view snapshot
+[1A[2K[44/425] [chromium] › tests/e2e/autopilot.spec.ts:536:5 › Autopilot Accessibility › all interactive elements have accessible labels
+[1A[2K[45/425] [chromium] › tests/e2e/autopilot.spec.ts:551:5 › Autopilot Accessibility › keyboard navigation works
+[1A[2K[46/425] [chromium] › tests/e2e/capture_evidence.spec.ts:3:1 › capture autopilot evidence
+[1A[2K[47/425] [chromium] › tests/e2e/dashboard-tour-v1-9.spec.ts:22:1 › v1.9-TOUR – Full Dashboard Tour
+[1A[2K[48/425] [chromium] › tests/e2e/data-provider-v1-9.spec.ts:17:3 › Data Provider Selector (v1.9) › v1.9-data-01 - Data source selector visible in top bar
+[1A[2K[49/425] [chromium] › tests/e2e/data-provider-v1-9.spec.ts:24:3 › Data Provider Selector (v1.9) › v1.9-data-02 - Dropdown opens with 3 provider options
+[1A[2K[50/425] [chromium] › tests/e2e/data-provider-v1-9.spec.ts:38:3 › Data Provider Selector (v1.9) › v1.9-data-03 - Default is Demo Fixtures
+[1A[2K[51/425] [chromium] › tests/e2e/data-provider-v1-9.spec.ts:44:3 › Data Provider Selector (v1.9) › v1.9-data-04 - Switch to Cached provider
+[1A[2K[52/425] [chromium] › tests/e2e/data-provider-v1-9.spec.ts:60:3 › Data Provider Selector (v1.9) › v1.9-data-05 - Switch back to Demo Fixtures
+[1A[2K[53/425] [chromium] › tests/e2e/data-provider-v1-9.spec.ts:79:3 › Data Provider Selector (v1.9) › v1.9-data-06 - Yahoo Finance option shows network requirement
+[1A[2K[54/425] [chromium] › tests/e2e/debug-backtest.spec.ts:7:3 › Backtest Panel Debug › Navigate to Backtest and check for errors
+[1A[2K[chromium] › tests/e2e/debug-backtest.spec.ts:7:3 › Backtest Panel Debug › Navigate to Backtest and check for errors
+=== DEBUG INFO ===
+
+[1A[2KBacktest panel visible: [33mtrue[39m
+
+[1A[2KErrors captured: []
+
+[1A[2KStrategy select visible: [33mtrue[39m
+
+[1A[2KStrategy options count: [33m0[39m
+
+[1A[2K
+=== NO ERRORS ===
+
+[1A[2K[55/425] [chromium] › tests/e2e/debug-ws-flap.spec.ts:4:1 › debug: reproduce WS flap
+[1A[2K[chromium] › tests/e2e/debug-ws-flap.spec.ts:4:1 › debug: reproduce WS flap
+page:websocket ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2Kpage:websocket:framereceived { payload: [32m'{"type":"SUBSCRIBED","symbol":"AAPL","timeframe":"1m"}'[39m }
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514103,"ts_start_ms":1770846180000,"ts_end_ms":1770846240000,"open":275.95,"high":275.95,"low":275.7972,"close":275.87,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514104,"ts_start_ms":1770846240000,"ts_end_ms":1770846300000,"open":275.95,"high":276.0,"low":275.7612,"close":275.9257,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514105,"ts_start_ms":1770846300000,"ts_end_ms":1770846360000,"open":275.95,"high":276.17,"low":259.6758,"close":275.76,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514106,"ts_start_ms":1770846360000,"ts_end_ms":1770846420000,"open":276.08,"high":276.1,"low":275.5,"close":276.1,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514107,"ts_start_ms":1770846420000,"ts_end_ms":1770846480000,"open":275.98,"high":276.1,"low":275.771,"close":276.01,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514108,"ts_start_ms":1770846480000,"ts_end_ms":1770846540000,"open":276.09,"high":276.2,"low":275.76,"close":275.76,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514109,"ts_start_ms":1770846540000,"ts_end_ms":1770846600000,"open":276.0,"high":276.19,"low":276.0,"close":276.04,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514110,"ts_start_ms":1770846600000,"ts_end_ms":1770846660000,"open":276.03,"high":276.189,"low":276.03,"close":276.189,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514111,"ts_start_ms":1770846660000,"ts_end_ms":1770846720000,"open":276.03,"high":276.08,"low":275.7612,"close":276.08,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514112,"ts_start_ms":1770846720000,"ts_end_ms":1770846780000,"open":276.2,"high":276.2,"low":276.01,"close":276.03,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514113,"ts_start_ms":1770846780000,"ts_end_ms":1770846840000,"open":276.03,"high":276.09,"low":275.5,"close":276.09,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514114,"ts_start_ms":1770846840000,"ts_end_ms":1770846900000,"open":276.08,"high":276.19,"low":276.05,"close":276.06,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514115,"ts_start_ms":1770846900000,"ts_end_ms":1770846960000,"open":276.13,"high":276.2,"low":276.13,"close":276.14,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514116,"ts_start_ms":1770846960000,"ts_end_ms":1770847020000,"open":276.06,"high":276.2,"low":276.06,"close":276.14,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514117,"ts_start_ms":1770847020000,"ts_end_ms":1770847080000,"open":276.08,"high":276.1,"low":275.9,"close":276.1,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514118,"ts_start_ms":1770847080000,"ts_end_ms":1770847140000,"open":276.1535,"high":276.1535,"low":275.9,"close":275.95,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514119,"ts_start_ms":1770847140000,"ts_end_ms":1770847200000,"open":275.9465,"high":276.2,"low":275.9,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514120,"ts_start_ms":1770847200000,"ts_end_ms":1770847260000,"open":275.95,"high":275.95,"low":275.9,"close":275.92,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514121,"ts_start_ms":1770847260000,"ts_end_ms":1770847320000,"open":275.92,"high":276.19,"low":275.9,"close":276.09,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514122,"ts_start_ms":1770847320000,"ts_end_ms":1770847380000,"open":276.2,"high":276.2,"low":275.9,"close":275.94,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514123,"ts_start_ms":1770847380000,"ts_end_ms":1770847440000,"open":276.03,"high":276.03,"low":275.9,"close":275.98,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514124,"ts_start_ms":1770847440000,"ts_end_ms":1770847500000,"open":275.92,"high":276.2,"low":275.92,"close":276.02,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514125,"ts_start_ms":1770847500000,"ts_end_ms":1770847560000,"open":276.1945,"high":276.1945,"low":276.1945,"close":276.1945,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514126,"ts_start_ms":1770847560000,"ts_end_ms":1770847620000,"open":275.9855,"high":276.2,"low":275.98,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514127,"ts_start_ms":1770847620000,"ts_end_ms":1770847680000,"open":275.98,"high":275.98,"low":275.9,"close":275.9,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514128,"ts_start_ms":1770847680000,"ts_end_ms":1770847740000,"open":275.95,"high":275.97,"low":275.9016,"close":275.91,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514129,"ts_start_ms":1770847740000,"ts_end_ms":1770847800000,"open":275.92,"high":275.92,"low":275.88,"close":275.88,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514130,"ts_start_ms":1770847800000,"ts_end_ms":1770847860000,"open":275.8898,"high":275.97,"low":275.8898,"close":275.97,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514131,"ts_start_ms":1770847860000,"ts_end_ms":1770847920000,"open":275.881,"high":275.92,"low":275.88,"close":275.88,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514132,"ts_start_ms":1770847920000,"ts_end_ms":1770847980000,"open":275.88,"high":275.9138,"low":275.88,"close":275.8879,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514133,"ts_start_ms":1770847980000,"ts_end_ms":1770848040000,"open":275.8821,"high":275.8821,"low":275.88,"close":275.88,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514134,"ts_start_ms":1770848040000,"ts_end_ms":1770848100000,"open":275.88,"high":275.97,"low":275.7652,"close":275.9375,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514135,"ts_start_ms":1770848100000,"ts_end_ms":1770848160000,"open":275.78,"high":275.97,"low":275.78,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514136,"ts_start_ms":1770848160000,"ts_end_ms":1770848220000,"open":275.87,"high":275.9647,"low":275.76,"close":275.76,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514137,"ts_start_ms":1770848220000,"ts_end_ms":1770848280000,"open":275.84,"high":275.9375,"low":256.97,"close":275.89,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514138,"ts_start_ms":1770848280000,"ts_end_ms":1770848340000,"open":275.91,"high":275.91,"low":275.84,"close":275.84,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514139,"ts_start_ms":1770848340000,"ts_end_ms":1770848400000,"open":275.85,"high":275.9,"low":275.7652,"close":275.89,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514140,"ts_start_ms":1770848400000,"ts_end_ms":1770848460000,"open":275.97,"high":275.97,"low":275.8161,"close":275.97,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514141,"ts_start_ms":1770848460000,"ts_end_ms":1770848520000,"open":275.97,"high":275.97,"low":275.7727,"close":275.84,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514142,"ts_start_ms":1770848520000,"ts_end_ms":1770848580000,"open":275.84,"high":275.89,"low":275.77,"close":275.77,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514143,"ts_start_ms":1770848580000,"ts_end_ms":1770848640000,"open":275.85,"high":275.89,"low":275.84,"close":275.86,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514144,"ts_start_ms":1770848640000,"ts_end_ms":1770848700000,"open":275.9306,"high":275.9306,"low":275.7994,"close":275.85,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514145,"ts_start_ms":1770848700000,"ts_end_ms":1770848760000,"open":275.79,"high":275.97,"low":275.79,"close":275.79,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514146,"ts_start_ms":1770848760000,"ts_end_ms":1770848820000,"open":275.79,"high":275.92,"low":275.77,"close":275.82,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514147,"ts_start_ms":1770848820000,"ts_end_ms":1770848880000,"open":275.83,"high":275.9162,"low":275.7737,"close":275.8207,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514148,"ts_start_ms":1770848880000,"ts_end_ms":1770848940000,"open":275.77,"high":275.83,"low":275.75,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514149,"ts_start_ms":1770848940000,"ts_end_ms":1770849000000,"open":275.9645,"high":275.9699,"low":275.75,"close":275.76,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514150,"ts_start_ms":1770849000000,"ts_end_ms":1770849060000,"open":275.75,"high":292.3233,"low":275.75,"close":275.9645,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514151,"ts_start_ms":1770849060000,"ts_end_ms":1770849120000,"open":275.7555,"high":275.9645,"low":275.7555,"close":275.9645,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514152,"ts_start_ms":1770849120000,"ts_end_ms":1770849180000,"open":275.75,"high":275.78,"low":275.75,"close":275.75,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514153,"ts_start_ms":1770849180000,"ts_end_ms":1770849240000,"open":275.75,"high":275.97,"low":275.5,"close":275.97,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514154,"ts_start_ms":1770849240000,"ts_end_ms":1770849300000,"open":275.79,"high":275.97,"low":275.79,"close":275.79,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514155,"ts_start_ms":1770849300000,"ts_end_ms":1770849360000,"open":275.8,"high":275.81,"low":275.76,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514156,"ts_start_ms":1770849360000,"ts_end_ms":1770849420000,"open":275.82,"high":275.94,"low":275.79,"close":275.79,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514157,"ts_start_ms":1770849420000,"ts_end_ms":1770849480000,"open":275.8,"high":275.8,"low":275.7981,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514158,"ts_start_ms":1770849480000,"ts_end_ms":1770849540000,"open":275.79,"high":275.8,"low":275.75,"close":275.75,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514159,"ts_start_ms":1770849540000,"ts_end_ms":1770849600000,"open":275.77,"high":275.8,"low":275.75,"close":275.75,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514160,"ts_start_ms":1770849600000,"ts_end_ms":1770849660000,"open":275.7987,"high":275.8,"low":275.75,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514161,"ts_start_ms":1770849660000,"ts_end_ms":1770849720000,"open":275.81,"high":275.94,"low":275.81,"close":275.85,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514162,"ts_start_ms":1770849720000,"ts_end_ms":1770849780000,"open":275.8,"high":275.82,"low":275.8,"close":275.82,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514163,"ts_start_ms":1770849780000,"ts_end_ms":1770849840000,"open":275.77,"high":275.9357,"low":275.77,"close":275.9357,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514164,"ts_start_ms":1770849840000,"ts_end_ms":1770849900000,"open":275.77,"high":275.9357,"low":275.77,"close":275.9357,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514165,"ts_start_ms":1770849900000,"ts_end_ms":1770849960000,"open":275.77,"high":292.3233,"low":275.77,"close":275.83,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514166,"ts_start_ms":1770849960000,"ts_end_ms":1770850020000,"open":275.94,"high":275.94,"low":275.8281,"close":275.8281,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514167,"ts_start_ms":1770850020000,"ts_end_ms":1770850080000,"open":275.83,"high":275.86,"low":275.82,"close":275.82,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514168,"ts_start_ms":1770850080000,"ts_end_ms":1770850140000,"open":275.8456,"high":275.93,"low":275.82,"close":275.8253,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514169,"ts_start_ms":1770850140000,"ts_end_ms":1770850200000,"open":275.83,"high":275.84,"low":275.8,"close":275.8274,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514170,"ts_start_ms":1770850200000,"ts_end_ms":1770850260000,"open":275.89,"high":275.89,"low":275.8,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514171,"ts_start_ms":1770850260000,"ts_end_ms":1770850320000,"open":275.8241,"high":275.94,"low":275.8241,"close":275.94,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514172,"ts_start_ms":1770850320000,"ts_end_ms":1770850380000,"open":275.89,"high":275.9388,"low":275.8,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514173,"ts_start_ms":1770850380000,"ts_end_ms":1770850440000,"open":275.862,"high":276.16,"low":275.862,"close":276.16,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514174,"ts_start_ms":1770850440000,"ts_end_ms":1770850500000,"open":275.8,"high":276.2,"low":275.8,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514175,"ts_start_ms":1770850500000,"ts_end_ms":1770850560000,"open":276.1663,"high":276.1663,"low":276.031,"close":276.031,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514176,"ts_start_ms":1770850560000,"ts_end_ms":1770850620000,"open":276.04,"high":276.04,"low":276.03,"close":276.03,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514177,"ts_start_ms":1770850620000,"ts_end_ms":1770850680000,"open":276.03,"high":276.2,"low":276.005,"close":276.1999,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514178,"ts_start_ms":1770850680000,"ts_end_ms":1770850740000,"open":276.0,"high":276.001,"low":276.0,"close":276.001,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514179,"ts_start_ms":1770850740000,"ts_end_ms":1770850800000,"open":276.02,"high":276.03,"low":276.0,"close":276.02,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514180,"ts_start_ms":1770850800000,"ts_end_ms":1770850860000,"open":276.02,"high":276.02,"low":275.8,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514181,"ts_start_ms":1770850860000,"ts_end_ms":1770850920000,"open":275.82,"high":276.14,"low":275.8,"close":275.924,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514182,"ts_start_ms":1770850920000,"ts_end_ms":1770850980000,"open":275.91,"high":275.91,"low":275.8,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514183,"ts_start_ms":1770850980000,"ts_end_ms":1770851040000,"open":276.1,"high":276.2,"low":276.1,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514184,"ts_start_ms":1770851040000,"ts_end_ms":1770851100000,"open":276.15,"high":276.15,"low":276.15,"close":276.15,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514185,"ts_start_ms":1770851100000,"ts_end_ms":1770851160000,"open":276.2,"high":276.2,"low":275.82,"close":276.0,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514186,"ts_start_ms":1770851160000,"ts_end_ms":1770851220000,"open":275.82,"high":276.01,"low":275.5,"close":275.9165,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514187,"ts_start_ms":1770851220000,"ts_end_ms":1770851280000,"open":276.0,"high":276.0,"low":275.86,"close":275.86,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514188,"ts_start_ms":1770851280000,"ts_end_ms":1770851340000,"open":275.86,"high":276.093,"low":275.82,"close":276.093,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514189,"ts_start_ms":1770851340000,"ts_end_ms":1770851400000,"open":275.82,"high":276.093,"low":275.82,"close":275.84,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514190,"ts_start_ms":1770851400000,"ts_end_ms":1770851460000,"open":275.82,"high":276.093,"low":275.82,"close":275.86,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514191,"ts_start_ms":1770851460000,"ts_end_ms":1770851520000,"open":275.85,"high":275.86,"low":275.85,"close":275.85,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514192,"ts_start_ms":1770851520000,"ts_end_ms":1770851580000,"open":276.1,"high":276.1,"low":275.75,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514193,"ts_start_ms":1770851580000,"ts_end_ms":1770851640000,"open":275.88,"high":275.88,"low":275.75,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514194,"ts_start_ms":1770851640000,"ts_end_ms":1770851700000,"open":275.81,"high":275.9001,"low":275.7695,"close":275.7695,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514195,"ts_start_ms":1770851700000,"ts_end_ms":1770851760000,"open":275.75,"high":275.91,"low":275.6487,"close":275.91,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514196,"ts_start_ms":1770851760000,"ts_end_ms":1770851820000,"open":276.19,"high":276.19,"low":275.81,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514197,"ts_start_ms":1770851820000,"ts_end_ms":1770851880000,"open":275.845,"high":276.0888,"low":275.839,"close":276.0888,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514198,"ts_start_ms":1770851880000,"ts_end_ms":1770851940000,"open":275.6,"high":276.2,"low":275.6,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514199,"ts_start_ms":1770851940000,"ts_end_ms":1770852000000,"open":275.6,"high":275.9,"low":275.6,"close":275.9,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514200,"ts_start_ms":1770852000000,"ts_end_ms":1770852060000,"open":275.7,"high":275.93,"low":275.7,"close":275.71,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514201,"ts_start_ms":1770852060000,"ts_end_ms":1770852120000,"open":275.8,"high":275.82,"low":275.6,"close":275.73,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514202,"ts_start_ms":1770852169000,"ts_end_ms":1770852229000,"open":275.83,"high":275.83,"low":275.83,"close":275.83,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived { payload: [32m'{"type":"SUBSCRIBED","symbol":"AAPL","timeframe":"1m"}'[39m }
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514103,"ts_start_ms":1770846180000,"ts_end_ms":1770846240000,"open":275.95,"high":275.95,"low":275.7972,"close":275.87,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514104,"ts_start_ms":1770846240000,"ts_end_ms":1770846300000,"open":275.95,"high":276.0,"low":275.7612,"close":275.9257,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514105,"ts_start_ms":1770846300000,"ts_end_ms":1770846360000,"open":275.95,"high":276.17,"low":259.6758,"close":275.76,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514106,"ts_start_ms":1770846360000,"ts_end_ms":1770846420000,"open":276.08,"high":276.1,"low":275.5,"close":276.1,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514107,"ts_start_ms":1770846420000,"ts_end_ms":1770846480000,"open":275.98,"high":276.1,"low":275.771,"close":276.01,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514108,"ts_start_ms":1770846480000,"ts_end_ms":1770846540000,"open":276.09,"high":276.2,"low":275.76,"close":275.76,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514109,"ts_start_ms":1770846540000,"ts_end_ms":1770846600000,"open":276.0,"high":276.19,"low":276.0,"close":276.04,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514110,"ts_start_ms":1770846600000,"ts_end_ms":1770846660000,"open":276.03,"high":276.189,"low":276.03,"close":276.189,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514111,"ts_start_ms":1770846660000,"ts_end_ms":1770846720000,"open":276.03,"high":276.08,"low":275.7612,"close":276.08,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514112,"ts_start_ms":1770846720000,"ts_end_ms":1770846780000,"open":276.2,"high":276.2,"low":276.01,"close":276.03,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514113,"ts_start_ms":1770846780000,"ts_end_ms":1770846840000,"open":276.03,"high":276.09,"low":275.5,"close":276.09,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514114,"ts_start_ms":1770846840000,"ts_end_ms":1770846900000,"open":276.08,"high":276.19,"low":276.05,"close":276.06,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514115,"ts_start_ms":1770846900000,"ts_end_ms":1770846960000,"open":276.13,"high":276.2,"low":276.13,"close":276.14,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514116,"ts_start_ms":1770846960000,"ts_end_ms":1770847020000,"open":276.06,"high":276.2,"low":276.06,"close":276.14,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514117,"ts_start_ms":1770847020000,"ts_end_ms":1770847080000,"open":276.08,"high":276.1,"low":275.9,"close":276.1,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514118,"ts_start_ms":1770847080000,"ts_end_ms":1770847140000,"open":276.1535,"high":276.1535,"low":275.9,"close":275.95,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514119,"ts_start_ms":1770847140000,"ts_end_ms":1770847200000,"open":275.9465,"high":276.2,"low":275.9,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514120,"ts_start_ms":1770847200000,"ts_end_ms":1770847260000,"open":275.95,"high":275.95,"low":275.9,"close":275.92,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514121,"ts_start_ms":1770847260000,"ts_end_ms":1770847320000,"open":275.92,"high":276.19,"low":275.9,"close":276.09,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514122,"ts_start_ms":1770847320000,"ts_end_ms":1770847380000,"open":276.2,"high":276.2,"low":275.9,"close":275.94,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514123,"ts_start_ms":1770847380000,"ts_end_ms":1770847440000,"open":276.03,"high":276.03,"low":275.9,"close":275.98,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514124,"ts_start_ms":1770847440000,"ts_end_ms":1770847500000,"open":275.92,"high":276.2,"low":275.92,"close":276.02,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514125,"ts_start_ms":1770847500000,"ts_end_ms":1770847560000,"open":276.1945,"high":276.1945,"low":276.1945,"close":276.1945,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514126,"ts_start_ms":1770847560000,"ts_end_ms":1770847620000,"open":275.9855,"high":276.2,"low":275.98,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514127,"ts_start_ms":1770847620000,"ts_end_ms":1770847680000,"open":275.98,"high":275.98,"low":275.9,"close":275.9,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514128,"ts_start_ms":1770847680000,"ts_end_ms":1770847740000,"open":275.95,"high":275.97,"low":275.9016,"close":275.91,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514129,"ts_start_ms":1770847740000,"ts_end_ms":1770847800000,"open":275.92,"high":275.92,"low":275.88,"close":275.88,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514130,"ts_start_ms":1770847800000,"ts_end_ms":1770847860000,"open":275.8898,"high":275.97,"low":275.8898,"close":275.97,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514131,"ts_start_ms":1770847860000,"ts_end_ms":1770847920000,"open":275.881,"high":275.92,"low":275.88,"close":275.88,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514132,"ts_start_ms":1770847920000,"ts_end_ms":1770847980000,"open":275.88,"high":275.9138,"low":275.88,"close":275.8879,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514133,"ts_start_ms":1770847980000,"ts_end_ms":1770848040000,"open":275.8821,"high":275.8821,"low":275.88,"close":275.88,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514134,"ts_start_ms":1770848040000,"ts_end_ms":1770848100000,"open":275.88,"high":275.97,"low":275.7652,"close":275.9375,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514135,"ts_start_ms":1770848100000,"ts_end_ms":1770848160000,"open":275.78,"high":275.97,"low":275.78,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514136,"ts_start_ms":1770848160000,"ts_end_ms":1770848220000,"open":275.87,"high":275.9647,"low":275.76,"close":275.76,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514137,"ts_start_ms":1770848220000,"ts_end_ms":1770848280000,"open":275.84,"high":275.9375,"low":256.97,"close":275.89,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514138,"ts_start_ms":1770848280000,"ts_end_ms":1770848340000,"open":275.91,"high":275.91,"low":275.84,"close":275.84,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514139,"ts_start_ms":1770848340000,"ts_end_ms":1770848400000,"open":275.85,"high":275.9,"low":275.7652,"close":275.89,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514140,"ts_start_ms":1770848400000,"ts_end_ms":1770848460000,"open":275.97,"high":275.97,"low":275.8161,"close":275.97,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514141,"ts_start_ms":1770848460000,"ts_end_ms":1770848520000,"open":275.97,"high":275.97,"low":275.7727,"close":275.84,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514142,"ts_start_ms":1770848520000,"ts_end_ms":1770848580000,"open":275.84,"high":275.89,"low":275.77,"close":275.77,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514143,"ts_start_ms":1770848580000,"ts_end_ms":1770848640000,"open":275.85,"high":275.89,"low":275.84,"close":275.86,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514144,"ts_start_ms":1770848640000,"ts_end_ms":1770848700000,"open":275.9306,"high":275.9306,"low":275.7994,"close":275.85,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514145,"ts_start_ms":1770848700000,"ts_end_ms":1770848760000,"open":275.79,"high":275.97,"low":275.79,"close":275.79,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514146,"ts_start_ms":1770848760000,"ts_end_ms":1770848820000,"open":275.79,"high":275.92,"low":275.77,"close":275.82,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514147,"ts_start_ms":1770848820000,"ts_end_ms":1770848880000,"open":275.83,"high":275.9162,"low":275.7737,"close":275.8207,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514148,"ts_start_ms":1770848880000,"ts_end_ms":1770848940000,"open":275.77,"high":275.83,"low":275.75,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514149,"ts_start_ms":1770848940000,"ts_end_ms":1770849000000,"open":275.9645,"high":275.9699,"low":275.75,"close":275.76,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514150,"ts_start_ms":1770849000000,"ts_end_ms":1770849060000,"open":275.75,"high":292.3233,"low":275.75,"close":275.9645,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514151,"ts_start_ms":1770849060000,"ts_end_ms":1770849120000,"open":275.7555,"high":275.9645,"low":275.7555,"close":275.9645,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514152,"ts_start_ms":1770849120000,"ts_end_ms":1770849180000,"open":275.75,"high":275.78,"low":275.75,"close":275.75,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514153,"ts_start_ms":1770849180000,"ts_end_ms":1770849240000,"open":275.75,"high":275.97,"low":275.5,"close":275.97,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514154,"ts_start_ms":1770849240000,"ts_end_ms":1770849300000,"open":275.79,"high":275.97,"low":275.79,"close":275.79,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514155,"ts_start_ms":1770849300000,"ts_end_ms":1770849360000,"open":275.8,"high":275.81,"low":275.76,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514156,"ts_start_ms":1770849360000,"ts_end_ms":1770849420000,"open":275.82,"high":275.94,"low":275.79,"close":275.79,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514157,"ts_start_ms":1770849420000,"ts_end_ms":1770849480000,"open":275.8,"high":275.8,"low":275.7981,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514158,"ts_start_ms":1770849480000,"ts_end_ms":1770849540000,"open":275.79,"high":275.8,"low":275.75,"close":275.75,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514159,"ts_start_ms":1770849540000,"ts_end_ms":1770849600000,"open":275.77,"high":275.8,"low":275.75,"close":275.75,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514160,"ts_start_ms":1770849600000,"ts_end_ms":1770849660000,"open":275.7987,"high":275.8,"low":275.75,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514161,"ts_start_ms":1770849660000,"ts_end_ms":1770849720000,"open":275.81,"high":275.94,"low":275.81,"close":275.85,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514162,"ts_start_ms":1770849720000,"ts_end_ms":1770849780000,"open":275.8,"high":275.82,"low":275.8,"close":275.82,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514163,"ts_start_ms":1770849780000,"ts_end_ms":1770849840000,"open":275.77,"high":275.9357,"low":275.77,"close":275.9357,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514164,"ts_start_ms":1770849840000,"ts_end_ms":1770849900000,"open":275.77,"high":275.9357,"low":275.77,"close":275.9357,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514165,"ts_start_ms":1770849900000,"ts_end_ms":1770849960000,"open":275.77,"high":292.3233,"low":275.77,"close":275.83,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514166,"ts_start_ms":1770849960000,"ts_end_ms":1770850020000,"open":275.94,"high":275.94,"low":275.8281,"close":275.8281,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514167,"ts_start_ms":1770850020000,"ts_end_ms":1770850080000,"open":275.83,"high":275.86,"low":275.82,"close":275.82,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514168,"ts_start_ms":1770850080000,"ts_end_ms":1770850140000,"open":275.8456,"high":275.93,"low":275.82,"close":275.8253,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514169,"ts_start_ms":1770850140000,"ts_end_ms":1770850200000,"open":275.83,"high":275.84,"low":275.8,"close":275.8274,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514170,"ts_start_ms":1770850200000,"ts_end_ms":1770850260000,"open":275.89,"high":275.89,"low":275.8,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514171,"ts_start_ms":1770850260000,"ts_end_ms":1770850320000,"open":275.8241,"high":275.94,"low":275.8241,"close":275.94,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514172,"ts_start_ms":1770850320000,"ts_end_ms":1770850380000,"open":275.89,"high":275.9388,"low":275.8,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514173,"ts_start_ms":1770850380000,"ts_end_ms":1770850440000,"open":275.862,"high":276.16,"low":275.862,"close":276.16,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514174,"ts_start_ms":1770850440000,"ts_end_ms":1770850500000,"open":275.8,"high":276.2,"low":275.8,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514175,"ts_start_ms":1770850500000,"ts_end_ms":1770850560000,"open":276.1663,"high":276.1663,"low":276.031,"close":276.031,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514176,"ts_start_ms":1770850560000,"ts_end_ms":1770850620000,"open":276.04,"high":276.04,"low":276.03,"close":276.03,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514177,"ts_start_ms":1770850620000,"ts_end_ms":1770850680000,"open":276.03,"high":276.2,"low":276.005,"close":276.1999,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514178,"ts_start_ms":1770850680000,"ts_end_ms":1770850740000,"open":276.0,"high":276.001,"low":276.0,"close":276.001,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514179,"ts_start_ms":1770850740000,"ts_end_ms":1770850800000,"open":276.02,"high":276.03,"low":276.0,"close":276.02,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514180,"ts_start_ms":1770850800000,"ts_end_ms":1770850860000,"open":276.02,"high":276.02,"low":275.8,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514181,"ts_start_ms":1770850860000,"ts_end_ms":1770850920000,"open":275.82,"high":276.14,"low":275.8,"close":275.924,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514182,"ts_start_ms":1770850920000,"ts_end_ms":1770850980000,"open":275.91,"high":275.91,"low":275.8,"close":275.8,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514183,"ts_start_ms":1770850980000,"ts_end_ms":1770851040000,"open":276.1,"high":276.2,"low":276.1,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514184,"ts_start_ms":1770851040000,"ts_end_ms":1770851100000,"open":276.15,"high":276.15,"low":276.15,"close":276.15,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514185,"ts_start_ms":1770851100000,"ts_end_ms":1770851160000,"open":276.2,"high":276.2,"low":275.82,"close":276.0,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514186,"ts_start_ms":1770851160000,"ts_end_ms":1770851220000,"open":275.82,"high":276.01,"low":275.5,"close":275.9165,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514187,"ts_start_ms":1770851220000,"ts_end_ms":1770851280000,"open":276.0,"high":276.0,"low":275.86,"close":275.86,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514188,"ts_start_ms":1770851280000,"ts_end_ms":1770851340000,"open":275.86,"high":276.093,"low":275.82,"close":276.093,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514189,"ts_start_ms":1770851340000,"ts_end_ms":1770851400000,"open":275.82,"high":276.093,"low":275.82,"close":275.84,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514190,"ts_start_ms":1770851400000,"ts_end_ms":1770851460000,"open":275.82,"high":276.093,"low":275.82,"close":275.86,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514191,"ts_start_ms":1770851460000,"ts_end_ms":1770851520000,"open":275.85,"high":275.86,"low":275.85,"close":275.85,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514192,"ts_start_ms":1770851520000,"ts_end_ms":1770851580000,"open":276.1,"high":276.1,"low":275.75,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514193,"ts_start_ms":1770851580000,"ts_end_ms":1770851640000,"open":275.88,"high":275.88,"low":275.75,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514194,"ts_start_ms":1770851640000,"ts_end_ms":1770851700000,"open":275.81,"high":275.9001,"low":275.7695,"close":275.7695,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514195,"ts_start_ms":1770851700000,"ts_end_ms":1770851760000,"open":275.75,"high":275.91,"low":275.6487,"close":275.91,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514196,"ts_start_ms":1770851760000,"ts_end_ms":1770851820000,"open":276.19,"high":276.19,"low":275.81,"close":275.81,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514197,"ts_start_ms":1770851820000,"ts_end_ms":1770851880000,"open":275.845,"high":276.0888,"low":275.839,"close":276.0888,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514198,"ts_start_ms":1770851880000,"ts_end_ms":1770851940000,"open":275.6,"high":276.2,"low":275.6,"close":276.2,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514199,"ts_start_ms":1770851940000,"ts_end_ms":1770852000000,"open":275.6,"high":275.9,"low":275.6,"close":275.9,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514200,"ts_start_ms":1770852000000,"ts_end_ms":1770852060000,"open":275.7,"high":275.93,"low":275.7,"close":275.71,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514201,"ts_start_ms":1770852060000,"ts_end_ms":1770852120000,"open":275.8,"high":275.82,"low":275.6,"close":275.73,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2Kpage:websocket:framereceived {
+  payload: [32m'{"type":"BAR_HISTORICAL","symbol":"AAPL","timeframe":"1m","bar_index":29514202,"ts_start_ms":1770852169000,"ts_end_ms":1770852229000,"open":275.83,"high":275.83,"low":275.83,"close":275.83,"volume":0.0,"last_update_ms":null,"hash":null}'[39m
+}
+
+[1A[2KOpened Monitor view
+
+[1A[2KStarting ws_status polling...
+
+[1A[2Kws_status [33m0[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m1[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m2[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m3[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m4[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m5[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m6[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m7[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m8[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m9[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m10[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2Kws_status [33m11[39m {"connections":2,"subscriptions":2,"heartbeat_running":true}
+
+[1A[2KCollected browser console logs:
+
+[1A[2Klog WS State: DISCONNECTED -> CONNECTING
+
+[1A[2Klog Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2Klog WS Connected in 99ms
+
+[1A[2Klog WS State: CONNECTING -> CONNECTED
+
+[1A[2Klog WS State: DISCONNECTED -> CONNECTING
+
+[1A[2Klog Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2Klog WS Connected in 247ms
+
+[1A[2Klog WS State: CONNECTING -> CONNECTED
+
+[1A[2Klog WS Connection Stable - Resetting Backoff
+
+[1A[2Klog WS Connection Stable - Resetting Backoff
+
+[1A[2K[56/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:20:3 › Finance Lexicon Disambiguation (Objective H) › H1 - Ambiguous input triggers modal
+[1A[2K[57/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:32:3 › Finance Lexicon Disambiguation (Objective H) › H2 - Choose ticker proceeds to load DEMO data
+[1A[2K[58/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:40:3 › Finance Lexicon Disambiguation (Objective H) › H3 - Choose word prevents ticker parse
+[1A[2K[59/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:47:3 › Finance Lexicon Disambiguation (Objective H) › H4 - Cancel restores prior state
+[1A[2K[60/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:54:3 › Finance Lexicon Disambiguation (Objective H) › H5 - Repeat entry respects session choice
+[1A[2K[61/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:73:3 › Finance Lexicon Disambiguation (Objective H) › H6 - Selector gate confirms no forbidden selectors
+[1A[2K[62/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:94:3 › Token Classification API (Objective H Backend) › H7 - Classification API returns TICKER for unambiguous ticker
+[1A[2K[63/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:109:3 › Token Classification API (Objective H Backend) › H8 - Classification API returns AMBIGUOUS for collision ticker
+[1A[2K[64/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:124:3 › Token Classification API (Objective H Backend) › H9 - Classification API returns WORD for unknown token
+[1A[2K[65/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:138:3 › Token Classification API (Objective H Backend) › H10 - Classification API returns INVALID for empty input
+[1A[2K[66/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:152:3 › Token Classification API (Objective H Backend) › H11 - Batch classification API works correctly
+[1A[2K[67/425] [chromium] › tests/e2e/disambiguation-h.spec.ts:167:3 › Token Classification API (Objective H Backend) › H12 - Classification is deterministic
+[1A[2K[68/425] [chromium] › tests/e2e/forecast.spec.ts:9:3 › Forecast/AI Panel Verification › AI Panel displays forecast data on Autopilot
+[1A[2K[69/425] [chromium] › tests/e2e/forecast.spec.ts:31:3 › Forecast/AI Panel Verification › Dashboard shows trading panels
+[1A[2K[70/425] [chromium] › tests/e2e/full-walkthrough.spec.ts:4:5 › Full System Walkthrough › navigate through all major features
+[1A[2K[71/425] [chromium] › tests/e2e/indicators.spec.ts:20:3 › Indicator System › should open indicator library and add RSI
+[1A[2K[chromium] › tests/e2e/indicators.spec.ts:20:3 › Indicator System › should open indicator library and add RSI
+PAGE LOG: WS State: DISCONNECTED -> CONNECTING
+
+[1A[2KPAGE LOG: Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2KPAGE LOG: WS Connected in 142ms
+
+[1A[2KPAGE LOG: WS State: CONNECTING -> CONNECTED
+
+[1A[2KPAGE LOG: WS State: DISCONNECTED -> CONNECTING
+
+[1A[2KPAGE LOG: Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2KPAGE LOG: WS Connected in 283ms
+
+[1A[2KPAGE LOG: WS State: CONNECTING -> CONNECTED
+
+[1A[2K[72/425] [chromium] › tests/e2e/indicators.spec.ts:48:3 › Indicator System › should add and remove SMA from library
+[1A[2K[chromium] › tests/e2e/indicators.spec.ts:48:3 › Indicator System › should add and remove SMA from library
+PAGE LOG: WS State: DISCONNECTED -> CONNECTING
+
+[1A[2KPAGE LOG: Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2KPAGE LOG: WS Connected in 139ms
+
+[1A[2KPAGE LOG: WS State: CONNECTING -> CONNECTED
+
+[1A[2KPAGE LOG: WS State: DISCONNECTED -> CONNECTING
+
+[1A[2KPAGE LOG: Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2KPAGE LOG: WS Connected in 279ms
+
+[1A[2KPAGE LOG: WS State: CONNECTING -> CONNECTED
+
+[1A[2K[73/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:26:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 01 - E2E mode disables animations
+[1A[2K[74/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:34:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 02 - Quick Actions strip is visible in Options
+[1A[2K[75/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:47:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 03 - Quick Action Start Demo navigates to Risk Desk
+[1A[2K[76/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:61:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 04 - Quick Action Run Backtest navigates to Backtest tab
+[1A[2K[77/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:75:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 05 - Backtest Analyze tab shows 5 charts
+[1A[2K[78/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:111:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 06 - Equity curve chart renders with data
+[1A[2K[79/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:139:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 07 - Returns histogram displays distribution
+[1A[2K[80/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:163:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 08 - Monthly returns heatmap shows grid
+[1A[2K[81/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:187:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 09 - Backtest Export downloads report bundle
+[1A[2K[82/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:210:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 10 - Analyze metrics cards display correctly
+[1A[2K[83/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:238:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 11 - Trade blotter table is scrollable and has sticky headers
+[1A[2K[84/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:265:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 12 - Runs table allows download per run
+[1A[2K[85/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:287:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 13 - Backend API: /api/backtest/run/{run_id}/artifacts returns ZIP
+[1A[2K[86/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:316:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 14 - Backend determinism: same config produces same hash
+[1A[2K[87/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:341:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 15 - Regression: Strategy Lab still functional
+[1A[2K[88/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:356:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 16 - Regression: Risk Desk still functional
+[1A[2K[89/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:369:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 17 - Regression: Analytics tab still functional
+[1A[2K[90/425] [chromium] › tests/e2e/industrial-uiux-analytics-reporting.spec.ts:380:3 › Industrial UI/UX + Analytics + Reporting E2E Suite › 18 - Navigation: All main tabs accessible
+[1A[2K[91/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:25:3 › Industrial UI/UX - New Components Only E2E Suite › 01 - E2E mode CSS is applied (body.e2e-mode class)
+[1A[2K[92/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:32:3 › Industrial UI/UX - New Components Only E2E Suite › 02 - QuickActions strip renders in Options view
+[1A[2K[93/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:45:3 › Industrial UI/UX - New Components Only E2E Suite › 03 - QuickActions Start Demo button clicks successfully
+[1A[2K[94/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:63:3 › Industrial UI/UX - New Components Only E2E Suite › 04 - AnalyzeTab chart testids exist (when run data available)
+[1A[2K[95/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:87:3 › Industrial UI/UX - New Components Only E2E Suite › 05 - Backend export endpoint exists (API)
+[1A[2K[chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:87:3 › Industrial UI/UX - New Components Only E2E Suite › 05 - Backend export endpoint exists (API)
+Export endpoint status: 404
+
+[1A[2K[96/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:111:3 › Industrial UI/UX - New Components Only E2E Suite › 06 - Risk Desk export endpoint exists (API)
+[1A[2K[chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:111:3 › Industrial UI/UX - New Components Only E2E Suite › 06 - Risk Desk export endpoint exists (API)
+Risk Desk export endpoint status: 404
+
+[1A[2K[97/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:130:3 › Industrial UI/UX - New Components Only E2E Suite › 07 - Dashboard still functional (regression)
+[1A[2K[98/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:141:3 › Industrial UI/UX - New Components Only E2E Suite › 08 - Options Analytics still functional (regression)
+[1A[2K[99/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:152:3 › Industrial UI/UX - New Components Only E2E Suite › 09 - Navigation between main tabs works
+[1A[2K[100/425] [chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:175:3 › Industrial UI/UX - New Components Only E2E Suite › 10 - App loads without errors (console check)
+[1A[2K[chromium] › tests/e2e/industrial-uiux-new-components-only.spec.ts:175:3 › Industrial UI/UX - New Components Only E2E Suite › 10 - App loads without errors (console check)
+Console errors: 0
+
+[1A[2K[101/425] [chromium] › tests/e2e/interactions.spec.ts:9:5 › Interactive Elements › buttons should be clickable and show hover states
+[1A[2K[102/425] [chromium] › tests/e2e/interactions.spec.ts:26:5 › Interactive Elements › should handle rapid clicks gracefully
+[1A[2K[103/425] [chromium] › tests/e2e/interactions.spec.ts:38:5 › Interactive Elements › should handle double-click
+[1A[2K[104/425] [chromium] › tests/e2e/interactions.spec.ts:47:5 › Interactive Elements › should handle right-click context menu
+[1A[2K[105/425] [chromium] › tests/e2e/market-data-providers-v1-11.spec.ts:27:3 › Market Data Provider API › P1: List available providers
+[1A[2K[106/425] [chromium] › tests/e2e/market-data-providers-v1-11.spec.ts:45:3 › Market Data Provider API › P2: Get bars with demo provider
+[1A[2K[107/425] [chromium] › tests/e2e/market-data-providers-v1-11.spec.ts:65:3 › Market Data Provider API › P3: Get quote with demo provider
+[1A[2K[108/425] [chromium] › tests/e2e/market-data-providers-v1-11.spec.ts:82:3 › Market Data Provider API › P4: Bars endpoint validates input
+[1A[2K[109/425] [chromium] › tests/e2e/market-data-providers-v1-11.spec.ts:93:3 › Market Data Provider API › P5: Invalid provider returns error
+[1A[2K[110/425] [chromium] › tests/e2e/market-data-providers-v1-11.spec.ts:107:3 › Market Data Provider API › P6: Demo mode does not enable Yahoo provider
+[1A[2K[111/425] [chromium] › tests/e2e/options-wiring.spec.ts:11:5 › Options Wiring › Option Chain Tile displays data
+[1A[2K[112/425] [chromium] › tests/e2e/options-wiring.spec.ts:24:5 › Options Wiring › Options Analytics View displays chain
+[1A[2K[113/425] [chromium] › tests/e2e/options-workstation.spec.ts:21:3 › Options Workstation E2E Verification › Options View Navigation
+[1A[2K[114/425] [chromium] › tests/e2e/options-workstation.spec.ts:32:3 › Options Workstation E2E Verification › Trust UX Component Verification
+[1A[2K[115/425] [chromium] › tests/e2e/options-workstation.spec.ts:41:3 › Options Workstation E2E Verification › Console Error Check
+[1A[2K[116/425] [chromium] › tests/e2e/options-workstation.spec.ts:71:3 › Backend API Endpoints › Backend API Health Check
+[1A[2K[117/425] [chromium] › tests/e2e/options-workstation.spec.ts:76:3 › Backend API Endpoints › Autopilot Reconnect Endpoint
+[1A[2K[118/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:19:3 › v1.9 – Console Error Gate › v1.9-P01 – No console errors on initial page load
+[1A[2K[119/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:39:3 › v1.9 – Console Error Gate › v1.9-P02 – No console errors during Options + Risk Desk load
+[1A[2K[120/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:60:3 › v1.9 – Console Error Gate › v1.9-P03 – No console errors during full demo run
+[1A[2K[121/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:91:3 › v1.9 – Demo Smoke Packaging › v1.9-P04 – App boots in demo mode without API keys
+[1A[2K[122/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:99:3 › v1.9 – Demo Smoke Packaging › v1.9-P05 – Dashboard renders with demo content
+[1A[2K[123/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:108:3 › v1.9 – Demo Smoke Packaging › v1.9-P06 – Risk Desk pipeline is deterministic
+[1A[2K[124/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:145:3 › v1.9 – Feature Inventory Verification › v1.9-P07 – All nav items present
+[1A[2K[125/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:153:3 › v1.9 – Feature Inventory Verification › v1.9-P08 – Ticker disambiguation module loaded (command palette)
+[1A[2K[126/425] [chromium] › tests/e2e/packaging-v1-9.spec.ts:165:3 › v1.9 – Feature Inventory Verification › v1.9-P09 – Data source selector present
+[1A[2K[127/425] [chromium] › tests/e2e/pages.spec.ts:9:5 › Page Navigation and Rendering › Monitor page renders chart
+[1A[2K[128/425] [chromium] › tests/e2e/pages.spec.ts:21:5 › Page Navigation and Rendering › Replay page renders controls
+[1A[2K[129/425] [chromium] › tests/e2e/pages.spec.ts:31:5 › Page Navigation and Rendering › Strategies page renders list
+[1A[2K[130/425] [chromium] › tests/e2e/pages.spec.ts:41:5 › Page Navigation and Rendering › Alerts page renders
+[1A[2K[131/425] [chromium] › tests/e2e/pages.spec.ts:50:5 › Page Navigation and Rendering › Portfolio page renders positions
+[1A[2K[132/425] [chromium] › tests/e2e/pages.spec.ts:60:5 › Page Navigation and Rendering › Runs/Audit page renders
+[1A[2K[133/425] [chromium] › tests/e2e/pages.spec.ts:70:5 › Page Navigation and Rendering › Settings page renders API keys section
+[1A[2K[134/425] [chromium] › tests/e2e/portfolio-enhanced.spec.ts:23:5 › Enhanced Portfolio › displays portfolio summary cards
+[1A[2K[135/425] [chromium] › tests/e2e/portfolio-enhanced.spec.ts:30:5 › Enhanced Portfolio › shows positions tab with position data
+[1A[2K[136/425] [chromium] › tests/e2e/portfolio-enhanced.spec.ts:35:5 › Enhanced Portfolio › can switch between Positions and Orders tabs
+[1A[2K[137/425] [chromium] › tests/e2e/portfolio-enhanced.spec.ts:46:5 › Enhanced Portfolio › takes screenshot of portfolio view
+[1A[2K[138/425] [chromium] › tests/e2e/premium-charts-v1-9.spec.ts:38:3 › v1.9 – Premium Risk Charts › v1.9-C01 – Premium charts container appears after run
+[1A[2K[139/425] [chromium] › tests/e2e/premium-charts-v1-9.spec.ts:44:3 › v1.9 – Premium Risk Charts › v1.9-C02 – Payoff Curve chart renders
+[1A[2K[140/425] [chromium] › tests/e2e/premium-charts-v1-9.spec.ts:54:3 › v1.9 – Premium Risk Charts › v1.9-C03 – Greeks vs Underlying chart renders
+[1A[2K[141/425] [chromium] › tests/e2e/premium-charts-v1-9.spec.ts:63:3 › v1.9 – Premium Risk Charts › v1.9-C04 – Scenario Ladder chart renders
+[1A[2K[142/425] [chromium] › tests/e2e/premium-charts-v1-9.spec.ts:72:3 › v1.9 – Premium Risk Charts › v1.9-C05 – All three charts visible simultaneously
+[1A[2K[143/425] [chromium] › tests/e2e/premium-charts-v1-9.spec.ts:82:3 › v1.9 – Premium Risk Charts › v1.9-C06 – Animation gating via E2E flag
+[1A[2K[144/425] [chromium] › tests/e2e/premium-charts-v1-9.spec.ts:96:3 › v1.9 – Premium Risk Charts › v1.9-C07 – Charts not visible before run
+[1A[2K[145/425] [chromium] › tests/e2e/provenance-v1-13.spec.ts:9:3 › v1.13 Provenance Display › should display provenance in Backtest Analyze tab
+[1A[2K[146/425] [chromium] › tests/e2e/provenance-v1-13.spec.ts:58:3 › v1.13 Provenance Display › should display provenance in Risk Desk
+[1A[2K[147/425] [chromium] › tests/e2e/provider.spec.ts:17:3 › Options Provider Verification › options provider returns data for key symbols
+[1A[2K[148/425] [chromium] › tests/e2e/replay.spec.ts:14:5 › Replay Controls › should display replay mode badge
+[1A[2K[149/425] [chromium] › tests/e2e/replay.spec.ts:20:5 › Replay Controls › should have play/pause button
+[1A[2K[150/425] [chromium] › tests/e2e/replay.spec.ts:30:5 › Replay Controls › should have speed controls
+[1A[2K[151/425] [chromium] › tests/e2e/replay.spec.ts:39:5 › Replay Controls › should have timeline scrubber
+[1A[2K[152/425] [chromium] › tests/e2e/replay.spec.ts:46:5 › Replay Controls › should display current timestamp
+[1A[2K[153/425] [chromium] › tests/e2e/replay.spec.ts:54:5 › Replay Controls › screenshot replay controls bar
+[1A[2K[154/425] [chromium] › tests/e2e/replay.spec.ts:73:5 › Replay Keyboard Shortcuts › Space should toggle play/pause
+[1A[2K[155/425] [chromium] › tests/e2e/replay.spec.ts:81:5 › Replay Keyboard Shortcuts › Arrow keys should step through bars
+[1A[2K[156/425] [chromium] › tests/e2e/risk-desk-w2.spec.ts:58:1 › 1. Navigate to Risk Desk — 3-column layout visible
+[1A[2K[157/425] [chromium] › tests/e2e/risk-desk-w2.spec.ts:79:1 › 2. Load demo → Run pipeline → full results visible
+[1A[2K[158/425] [chromium] › tests/e2e/risk-desk-w2.spec.ts:134:1 › 3. Compliance gate blocks uncovered shorts
+[1A[2K[159/425] [chromium] › tests/e2e/risk-desk-w2.spec.ts:156:1 › 4. Tool trace shows 5 tools with OK status
+[1A[2K[160/425] [chromium] › tests/e2e/risk-desk-w2.spec.ts:179:1 › 5. Build ticket for hedge A
+[1A[2K[161/425] [chromium] › tests/e2e/risk-desk-w2.spec.ts:207:1 › 6. Scenario selector switches stress scenario
+[1A[2K[162/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:67:3 › Risk Desk Week 3 - UI/UX Features › W3-1: Options Main Tab Switcher (Analytics ↔ Risk Desk)
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:67:3 › Risk Desk Week 3 - UI/UX Features › W3-1: Options Main Tab Switcher (Analytics ↔ Risk Desk)
+✅ W3-1: Options main tab switcher verified
+
+[1A[2K[163/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:104:3 › Risk Desk Week 3 - UI/UX Features › W3-2: Risk Desk Subtabs (Run | Runs | Export)
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:104:3 › Risk Desk Week 3 - UI/UX Features › W3-2: Risk Desk Subtabs (Run | Runs | Export)
+✅ W3-2: Risk Desk subtabs navigation verified
+
+[1A[2K[164/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:151:3 › Risk Desk Week 3 - UI/UX Features › W3-3: Run History (Execute → View in Runs → Replay)
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:151:3 › Risk Desk Week 3 - UI/UX Features › W3-3: Run History (Execute → View in Runs → Replay)
+✅ W3-3: Run history execute → view → replay verified
+
+[1A[2K[165/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:194:3 › Risk Desk Week 3 - UI/UX Features › W3-4: Export Tab - Download Buttons
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:194:3 › Risk Desk Week 3 - UI/UX Features › W3-4: Export Tab - Download Buttons
+✅ W3-4: Export tab download buttons verified
+
+[1A[2K[166/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:229:3 › Risk Desk Week 3 - UI/UX Features › W3-5: Compliance Fix-It Workflow (Demo Mode)
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:229:3 › Risk Desk Week 3 - UI/UX Features › W3-5: Compliance Fix-It Workflow (Demo Mode)
+✅ W3-5: Compliance Fix-It workflow verified (fix applied)
+
+[1A[2K[167/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:270:3 › Risk Desk Week 3 - UI/UX Features › W3-6: Before/After Toggle (Stress P&L Comparison)
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:270:3 › Risk Desk Week 3 - UI/UX Features › W3-6: Before/After Toggle (Stress P&L Comparison)
+✅ W3-6: Before/After toggle verified (toggle not shown)
+
+[1A[2K[168/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:317:3 › Risk Desk Week 3 - UI/UX Features › W3-7: Dashboard Quick Action (Navigate to Risk Desk)
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:317:3 › Risk Desk Week 3 - UI/UX Features › W3-7: Dashboard Quick Action (Navigate to Risk Desk)
+✅ W3-7: Dashboard quick action verified
+
+[1A[2K[169/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:340:3 › Risk Desk Week 3 - UI/UX Features › W3-8: Export Tab Empty State
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:340:3 › Risk Desk Week 3 - UI/UX Features › W3-8: Export Tab Empty State
+✅ W3-8: Export tab empty state verified
+
+[1A[2K[170/425] [chromium] › tests/e2e/risk-desk-w3.spec.ts:361:3 › Risk Desk Week 3 - Backend Integration › W3-Backend: Risk Pipeline API Availability
+[1A[2K[chromium] › tests/e2e/risk-desk-w3.spec.ts:361:3 › Risk Desk Week 3 - Backend Integration › W3-Backend: Risk Pipeline API Availability
+✅ W3-Backend: Risk pipeline API available
+
+[1A[2K[171/425] [chromium] › tests/e2e/risk-desk.spec.ts:63:1 › 1. Navigate to Risk Desk tab
+[1A[2K[172/425] [chromium] › tests/e2e/risk-desk.spec.ts:74:1 › 2. Load demo portfolio
+[1A[2K[173/425] [chromium] › tests/e2e/risk-desk.spec.ts:83:1 › 3. Run demo portfolio (happy path)
+[1A[2K[174/425] [chromium] › tests/e2e/risk-desk.spec.ts:102:1 › 4. Invalid expiry shows pipeline error
+[1A[2K[175/425] [chromium] › tests/e2e/risk-desk.spec.ts:125:1 › 5. Missing strike in snapshot — pipeline still runs
+[1A[2K[176/425] [chromium] › tests/e2e/risk-desk.spec.ts:148:1 › 6. Ambiguous ticker (BRK.B) — pipeline handles normalization
+[1A[2K[177/425] [chromium] › tests/e2e/shell.spec.ts:8:5 › Shell Component › should render main shell components
+[1A[2K[178/425] [chromium] › tests/e2e/shell.spec.ts:19:5 › Shell Component › should toggle left nav collapse/expand
+[1A[2K[179/425] [chromium] › tests/e2e/shell.spec.ts:31:5 › Shell Component › should navigate to different views
+[1A[2K[180/425] [chromium] › tests/e2e/shell.spec.ts:44:5 › Shell Component › should capture shell screenshot
+[1A[2K[181/425] [chromium] › tests/e2e/shell.spec.ts:58:5 › TopBar Component › should display mode badge
+[1A[2K[182/425] [chromium] › tests/e2e/shell.spec.ts:64:5 › TopBar Component › should display symbol selector
+[1A[2K[183/425] [chromium] › tests/e2e/shell.spec.ts:71:5 › TopBar Component › should display timeframe selector
+[1A[2K[184/425] [chromium] › tests/e2e/shell.spec.ts:85:5 › Left Navigation › should highlight active nav item
+[1A[2K[185/425] [chromium] › tests/e2e/shell.spec.ts:95:5 › Left Navigation › should show tooltips on collapsed nav
+[1A[2K[186/425] [chromium] › tests/e2e/snapshots.spec.ts:4:5 › Visual Regression - Full Page Snapshots › default view snapshot
+[1A[2K[187/425] [chromium] › tests/e2e/snapshots.spec.ts:15:5 › Visual Regression - Full Page Snapshots › dark theme snapshot
+[1A[2K[188/425] [chromium] › tests/e2e/snapshots.spec.ts:34:5 › Component Snapshots › snapshot top bar
+[1A[2K[189/425] [chromium] › tests/e2e/snapshots.spec.ts:44:5 › Component Snapshots › snapshot left navigation
+[1A[2K[190/425] [chromium] › tests/e2e/snapshots.spec.ts:53:5 › Component Snapshots › snapshot chart canvas
+[1A[2K[191/425] [chromium] › tests/e2e/snapshots.spec.ts:69:5 › State-based Snapshots › loading state
+[1A[2K[192/425] [chromium] › tests/e2e/snapshots.spec.ts:84:5 › State-based Snapshots › empty state when data cleared
+[1A[2K[193/425] [chromium] › tests/e2e/snapshots.spec.ts:102:5 › Responsive Snapshots › desktop 1920x1080
+[1A[2K[194/425] [chromium] › tests/e2e/snapshots.spec.ts:114:5 › Responsive Snapshots › laptop 1366x768
+[1A[2K[195/425] [chromium] › tests/e2e/snapshots.spec.ts:126:5 › Responsive Snapshots › smaller monitor 1280x720
+[1A[2K[196/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:54:3 › Risk Desk Workflows (8 tests) › 01 - Risk Desk: Load Demo + Run Pipeline → Outputs Populated
+[1A[2K[197/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:65:3 › Risk Desk Workflows (8 tests) › 02 - Risk Desk: Scenario Switch Affects Results
+[1A[2K[198/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:87:3 › Risk Desk Workflows (8 tests) › 03 - Risk Desk: Run Subtab Active by Default
+[1A[2K[199/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:93:3 › Risk Desk Workflows (8 tests) › 04 - Risk Desk: Regression → Still Works After Backtest Run
+[1A[2K[200/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:111:3 › Risk Desk Workflows (8 tests) › 05 - Risk Desk: Multiple Runs → Results Update
+[1A[2K[201/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:130:3 › Risk Desk Workflows (8 tests) › 06 - Risk Desk: Error Banner Not Shown on Success
+[1A[2K[202/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:138:3 › Risk Desk Workflows (8 tests) › 07 - Risk Desk: Subtabs Navigate Correctly
+[1A[2K[203/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:152:3 › Risk Desk Workflows (8 tests) › 08 - Risk Desk: Panel Loads Without Errors
+[1A[2K[204/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:178:3 › Strategy Lab Workflows (5 tests) › 09 - Strategy Lab: Builder Renders + Default Strategy Loads
+[1A[2K[205/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:186:3 › Strategy Lab Workflows (5 tests) › 10 - Strategy Lab: Library Shows Demo Items
+[1A[2K[206/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:203:3 › Strategy Lab Workflows (5 tests) › 11 - Strategy Lab: Validate Rejects Invalid JSON
+[1A[2K[207/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:221:3 › Strategy Lab Workflows (5 tests) › 12 - Strategy Lab: Validate Accepts Valid JSON
+[1A[2K[208/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:246:3 › Strategy Lab Workflows (5 tests) › 13 - Strategy Lab: Builder Subtab Active by Default
+[1A[2K[209/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:258:3 › Backtest Comprehensive Workflows (11 tests) › 14 - Backtest: Configure Renders + Demo Config Loads
+[1A[2K[210/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:274:3 › Backtest Comprehensive Workflows (11 tests) › 15 - Backtest: Run Backtest Completes (status=completed)
+[1A[2K[211/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:290:3 › Backtest Comprehensive Workflows (11 tests) › 16 - Backtest: Runs Tab Shows Row 0 and Opens Details
+[1A[2K[212/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:304:3 › Backtest Comprehensive Workflows (11 tests) › 17 - Backtest: Analyze Shows All 5 Charts Visible
+[1A[2K[213/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:320:3 › Backtest Comprehensive Workflows (11 tests) › 18 - Backtest: Analyze Chart Datasets Non-Empty
+[1A[2K[214/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:340:3 › Backtest Comprehensive Workflows (11 tests) › 19 - Backtest: Compare Selects 2 Runs → Delta Metrics Table Visible
+[1A[2K[215/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:371:3 › Backtest Comprehensive Workflows (11 tests) › 20 - Backtest: Export ZIP Downloads with Expected Files
+[1A[2K[216/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:394:3 › Backtest Comprehensive Workflows (11 tests) › 21 - Backtest: report.html Contains Determinism Data + SVG
+[1A[2K[217/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:409:3 › Backtest Comprehensive Workflows (11 tests) › 22 - Backtest: Export Determinism → Same Run Twice → Similar Size
+[1A[2K[218/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:432:3 › Backtest Comprehensive Workflows (11 tests) › 23 - Backtest: QuickActions "Run Backtest" Navigates + Runs Demo
+[1A[2K[219/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:444:3 › Backtest Comprehensive Workflows (11 tests) › 24 - Backtest: Panel Navigation Works Smoothly
+[1A[2K[220/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:460:3 › Cross-Cutting & Integration (2 tests) › 25 - Analytics: Options Chain Visibility
+[1A[2K[221/425] [chromium] › tests/e2e/stability-coverage-v1-3.spec.ts:472:3 › Cross-Cutting & Integration (2 tests) › 26 - Navigation: Full Cycle → Analytics → Risk Desk → Strategy Lab → Backtest → Analytics
+[1A[2K[222/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:19:3 › Strategy Lab + Backtest E2E Suite › 01 - Navigate to Options view
+[1A[2K[223/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:34:3 › Strategy Lab + Backtest E2E Suite › 02 - Strategy Lab tab renders with subtabs
+[1A[2K[224/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:51:3 › Strategy Lab + Backtest E2E Suite › 03 - Strategy Lab Builder tab shows form elements
+[1A[2K[225/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:71:3 › Strategy Lab + Backtest E2E Suite › 04 - Strategy Lab Library shows demo strategies
+[1A[2K[226/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:91:3 › Strategy Lab + Backtest E2E Suite › 05 - Strategy Lab Validate tab has JSON input
+[1A[2K[227/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:108:3 › Strategy Lab + Backtest E2E Suite › 06 - Backtest tab renders with subtabs
+[1A[2K[228/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:124:3 › Strategy Lab + Backtest E2E Suite › 07 - Backtest Configure tab shows form elements
+[1A[2K[229/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:143:3 › Strategy Lab + Backtest E2E Suite › 08 - Backtest Runs tab shows table
+[1A[2K[230/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:157:3 › Strategy Lab + Backtest E2E Suite › 09 - Run a backtest and verify it completes
+[1A[2K[231/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:187:3 › Strategy Lab + Backtest E2E Suite › 10 - Backtest Analyze tab shows metrics
+[1A[2K[232/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:218:3 › Strategy Lab + Backtest E2E Suite › 11 - Backend determinism: same config produces same hash
+[1A[2K[233/425] [chromium] › tests/e2e/strategy-lab-backtest-final.spec.ts:251:3 › Strategy Lab + Backtest E2E Suite › 12 - Regression: Risk Desk still works
+[1A[2K[234/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:26:3 › Strategy Lab + Backtest Core Tests › 01 - Strategy Lab tab is accessible and renders
+[1A[2K[235/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:38:3 › Strategy Lab + Backtest Core Tests › 02 - Backtest tab is accessible and renders
+[1A[2K[236/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:50:3 › Strategy Lab + Backtest Core Tests › 03 - Risk Desk tab still works (regression)
+[1A[2K[237/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:60:3 › Strategy Lab + Backtest Core Tests › 04 - Analytics tab still works (regression)
+[1A[2K[238/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:70:3 › Strategy Lab + Backtest Core Tests › 05 - Backend health check
+[1A[2K[239/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:79:3 › Strategy Lab + Backtest Core Tests › 06 - Backend strategylist returns demo strategies
+[1A[2K[240/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:88:3 › Strategy Lab + Backtest Core Tests › 07 - Backend backtest API returns proper structure
+[1A[2K[241/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:96:3 › Strategy Lab + Backtest Core Tests › 08 - Dashboard navigation works
+[1A[2K[242/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:105:3 › Strategy Lab + Backtest Core Tests › 09 - TypeScript compilation errors check
+[1A[2K[243/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:110:3 › Strategy Lab + Backtest Core Tests › 10 - Backend unit tests passed
+[1A[2K[244/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:115:3 › Strategy Lab + Backtest Core Tests › 11 - Phase 0 prechecks passed
+[1A[2K[245/425] [chromium] › tests/e2e/strategy-lab-backtest-v2.spec.ts:120:3 › Strategy Lab + Backtest Core Tests › 12 - Determinism check - backend returns same hash
+[1A[2K[246/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:27:3 › Strategy Lab + Backtest E2E Suite › 01 - Options → Strategy Lab tab renders
+[1A[2K[247/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:43:3 › Strategy Lab + Backtest E2E Suite › 02 - Strategy Lab Builder → Save button exists
+[1A[2K[248/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:55:3 › Strategy Lab + Backtest E2E Suite › 03 - Strategy Lab Library → shows demo strategies
+[1A[2K[249/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:75:3 › Strategy Lab + Backtest E2E Suite › 04 - Strategy Lab Library → Load strategy → Builder prefilled
+[1A[2K[250/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:97:3 › Strategy Lab + Backtest E2E Suite › 05 - Strategy Lab Validate → upload JSON → validate
+[1A[2K[251/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:126:3 › Strategy Lab + Backtest E2E Suite › 06 - Options → Backtest tab renders
+[1A[2K[252/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:145:3 › Strategy Lab + Backtest E2E Suite › 07 - Backtest Configure → select strategy → run → appears in Runs
+[1A[2K[253/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:184:3 › Strategy Lab + Backtest E2E Suite › 08 - Backtest Runs → table shows run history
+[1A[2K[254/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:204:3 › Strategy Lab + Backtest E2E Suite › 09 - Backtest Analyze → click run → metrics displayed
+[1A[2K[255/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:229:3 › Strategy Lab + Backtest E2E Suite › 10 - Backtest Compare → select 2 runs → delta shown
+[1A[2K[256/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:243:3 › Strategy Lab + Backtest E2E Suite › 11 - Backtest Export → download artifacts
+[1A[2K[257/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:265:3 › Strategy Lab + Backtest E2E Suite › 12 - Determinism check: run same config twice → hashes match
+[1A[2K[258/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:300:3 › Strategy Lab + Backtest E2E Suite › 13 - Navigation regression: Risk Desk still works
+[1A[2K[259/425] [chromium] › tests/e2e/strategy-lab-backtest.spec.ts:312:3 › Strategy Lab + Backtest E2E Suite › 14 - Navigation regression: Dashboard quick action works
+[1A[2K[260/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:31:5 › Supergraph Chart › displays chart canvas
+[1A[2K[261/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:37:5 › Supergraph Chart › displays chart header with symbol and price
+[1A[2K[262/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:43:5 › Supergraph Chart › chart canvas renders candlesticks
+[1A[2K[263/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:54:5 › Supergraph Chart › takes screenshot of chart view
+[1A[2K[264/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:74:5 › Chart Overlay Controls › VWAP toggle button exists and works
+[1A[2K[265/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:88:5 › Chart Overlay Controls › MA20 toggle button exists and works
+[1A[2K[266/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:98:5 › Chart Overlay Controls › MA50 toggle button exists and works
+[1A[2K[267/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:116:5 › Chart Interactions › crosshair shows on mouse move
+[1A[2K[268/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:129:5 › Chart Interactions › chart is responsive to window resize
+[1A[2K[269/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:156:5 › Dashboard with Supergraph › dashboard view loads
+[1A[2K[270/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:161:5 › Dashboard with Supergraph › dashboard displays grid layout
+[1A[2K[271/425] [chromium] › tests/e2e/supergraph-chart.spec.ts:167:5 › Dashboard with Supergraph › takes screenshot of dashboard
+[1A[2K[272/425] [chromium] › tests/e2e/test_full_lifecycle.spec.ts:11:5 › Canonical P1 Contract › should enter deterministic mode and connect websockets
+[1A[2K[chromium] › tests/e2e/test_full_lifecycle.spec.ts:11:5 › Canonical P1 Contract › should enter deterministic mode and connect websockets
+BROWSER: WS State: DISCONNECTED -> CONNECTING
+
+[1A[2KBROWSER: Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2KBROWSER: ENTERED E2E MODE
+
+[1A[2KBROWSER: WS Connected in 169ms
+
+[1A[2KBROWSER: WS State: CONNECTING -> CONNECTED
+
+[1A[2K[273/425] [chromium] › tests/e2e/test_full_lifecycle.spec.ts:21:5 › Canonical P1 Contract › should trigger strategy run
+[1A[2K[chromium] › tests/e2e/test_full_lifecycle.spec.ts:21:5 › Canonical P1 Contract › should trigger strategy run
+BROWSER: WS State: DISCONNECTED -> CONNECTING
+
+[1A[2KBROWSER: Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2KBROWSER: ENTERED E2E MODE
+
+[1A[2KBROWSER: WS Connected in 105ms
+
+[1A[2KBROWSER: WS State: CONNECTING -> CONNECTED
+
+[1A[2K[274/425] [chromium] › tests/e2e/test_full_lifecycle.spec.ts:34:5 › Canonical P1 Contract › should handle websocket disconnect and reconnect
+[1A[2K[chromium] › tests/e2e/test_full_lifecycle.spec.ts:34:5 › Canonical P1 Contract › should handle websocket disconnect and reconnect
+BROWSER: WS State: DISCONNECTED -> CONNECTING
+
+[1A[2KBROWSER: Connecting to ws://127.0.0.1:8000/ws/bars/AAPL/1m
+
+[1A[2KBROWSER: ENTERED E2E MODE
+
+[1A[2KBROWSER: WS Connected in 120ms
+
+[1A[2KBROWSER: WS State: CONNECTING -> CONNECTED
+
+[1A[2KBROWSER: WS Connection Stable - Resetting Backoff
+
+[1A[2KBROWSER: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+
+[1A[2KBROWSER: Trust UX: Failed to fetch health TypeError: Failed to fetch
+    at m (http://127.0.0.1:5100/assets/index-D99mgQZe.js:614:175573)
+
+[1A[2KBROWSER: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+
+[1A[2KBROWSER: Failed to fetch dashboard data: TypeError: Failed to fetch
+    at http://127.0.0.1:5100/assets/index-D99mgQZe.js:498:278430
+    at b (http://127.0.0.1:5100/assets/index-D99mgQZe.js:498:280813)
+
+[1A[2KBROWSER: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+
+[1A[2KBROWSER: Failed to fetch stats: TypeError: Failed to fetch
+    at http://127.0.0.1:5100/assets/index-D99mgQZe.js:511:35771
+    at j (http://127.0.0.1:5100/assets/index-D99mgQZe.js:511:36305)
+
+[1A[2KBROWSER: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+
+[1A[2KBROWSER: WS State: CONNECTED -> DEGRADED
+
+[1A[2KBROWSER: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+
+[1A[2KBROWSER: Trust UX: Failed to fetch health TypeError: Failed to fetch
+    at m (http://127.0.0.1:5100/assets/index-D99mgQZe.js:614:175573)
+
+[1A[2KBROWSER: WS State: DEGRADED -> CONNECTED
+
+[1A[2K[275/425] [chromium] › tests/e2e/ticker-disambiguation-v1-9.spec.ts:23:3 › Ticker Disambiguation (v1.9) › v1.9-disambig-01 - Ambiguous ticker shows disambiguation dialog
+[1A[2K[276/425] [chromium] › tests/e2e/ticker-disambiguation-v1-9.spec.ts:41:3 › Ticker Disambiguation (v1.9) › v1.9-disambig-02 - Confirm disambiguation applies the ticker
+[1A[2K[277/425] [chromium] › tests/e2e/ticker-disambiguation-v1-9.spec.ts:58:3 › Ticker Disambiguation (v1.9) › v1.9-disambig-03 - Cancel disambiguation does not apply ticker
+[1A[2K[278/425] [chromium] › tests/e2e/ticker-disambiguation-v1-9.spec.ts:78:3 › Ticker Disambiguation (v1.9) › v1.9-disambig-04 - Well-known ticker bypasses dialog (AAPL)
+[1A[2K[279/425] [chromium] › tests/e2e/ticker-disambiguation-v1-9.spec.ts:91:3 › Ticker Disambiguation (v1.9) › v1.9-disambig-05 - Dollar-prefix bypasses dialog ($ON)
+[1A[2K[280/425] [chromium] › tests/e2e/ticker-disambiguation-v1-9.spec.ts:104:3 › Ticker Disambiguation (v1.9) › v1.9-disambig-06 - Disambiguation dialog has tip about $ prefix
+[1A[2K[281/425] [chromium] › tests/e2e/ticker-disambiguation-v1-9.spec.ts:120:3 › Ticker Disambiguation (v1.9) › v1.9-disambig-07 - Backdrop click cancels disambiguation
+[1A[2K[282/425] [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:29:3 › Ticker Resolution v1.10 › T1: Ambiguous ticker (ON) returns low confidence with collision warning
+[1A[2K[283/425] [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:54:3 › Ticker Resolution v1.10 › T2: Normalized ticker (BRK-B) resolves to BRK.B with high confidence
+[1A[2K[284/425] [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:84:3 › Ticker Resolution v1.10 › T3: Batch resolution handles mixed confidence inputs
+[1A[2K[285/425] [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:133:3 › Ticker Resolution v1.10 › T4: Unknown ticker returns low confidence
+[1A[2K[286/425] [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:149:3 › Ticker Resolution v1.10 › T5: Whitespace and case handling
+[1A[2K[287/425] [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:169:3 › Ticker Resolution v1.10 › T6: Empty and invalid inputs
+[1A[2K[288/425] [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:186:3 › Ticker Resolution v1.10 › T7: Normalize endpoint provides quick normalization
+[1A[2K[289/425] [chromium] › tests/e2e/ticker-resolution-v1-10.spec.ts:197:3 › Ticker Resolution v1.10 › T8: All collision tickers flagged correctly
+[1A[2K[290/425] [chromium] › tests/e2e/tour-video-v1-12.spec.ts:16:3 › APEX Terminal Tour v1.12 - Full Recording › Complete tour walkthrough with all v1.12 features
+[1A[2K[chromium] › tests/e2e/tour-video-v1-12.spec.ts:16:3 › APEX Terminal Tour v1.12 - Full Recording › Complete tour walkthrough with all v1.12 features
+✓ Tour recording complete
+
+[1A[2K[291/425] [chromium] › tests/e2e/tts.spec.ts:93:5 › ElevenLabs TTS Integration › Voice toggle enables and persists
+[1A[2K[292/425] [chromium] › tests/e2e/tts.spec.ts:108:5 › ElevenLabs TTS Integration › Clicking speak button triggers API and playback
+[1A[2K[293/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:16:3 › UI E2E v1.2 › 01 - Options view loads
+[1A[2K[294/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:23:3 › UI E2E v1.2 › 02 - Tab: Analytics to Risk Desk
+[1A[2K[295/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:31:3 › UI E2E v1.2 › 03 - Tab: Risk Desk to Strategy Lab
+[1A[2K[296/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:39:3 › UI E2E v1.2 › 04 - Tab: Strategy Lab to Analytics
+[1A[2K[297/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:49:3 › UI E2E v1.2 › 05 - Risk Desk: Load Demo visible
+[1A[2K[298/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:57:3 › UI E2E v1.2 › 06 - Risk Desk: Run after Load Demo
+[1A[2K[299/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:69:3 › UI E2E v1.2 › 07 - Risk Desk: Greeks populated
+[1A[2K[300/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:81:3 › UI E2E v1.2 › 08 - Risk Desk: Stress populated
+[1A[2K[301/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:93:3 › UI E2E v1.2 › 09 - Risk Desk: Hedge candidates populated
+[1A[2K[302/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:105:3 › UI E2E v1.2 › 10 - Risk Desk: Runs subtab clickable
+[1A[2K[303/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:115:3 › UI E2E v1.2 › 11 - Risk Desk: Export subtab clickable
+[1A[2K[304/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:125:3 › UI E2E v1.2 › 12 - Strategy Lab: Builder subtab
+[1A[2K[305/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:135:3 › UI E2E v1.2 › 13 - Risk Desk: Run subtab active by default
+[1A[2K[306/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:143:3 › UI E2E v1.2 › 14 - Strategy Lab: Validate subtab
+[1A[2K[307/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:153:3 › UI E2E v1.2 › 15 - QuickActions: Strip visible
+[1A[2K[308/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:159:3 › UI E2E v1.2 › 16 - QuickActions: Start Demo button
+[1A[2K[309/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:165:3 › UI E2E v1.2 › 17 - QuickActions: Start Demo navigates
+[1A[2K[310/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:173:3 › UI E2E v1.2 › 18 - Strategy Lab: Builder subtab active by default
+[1A[2K[311/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:181:3 › UI E2E v1.2 › 19 - Analytics: Tab active on load
+[1A[2K[312/425] [chromium] › tests/e2e/ui-e2e-reconcile-v1-2.spec.ts:187:3 › UI E2E v1.2 › 20 - Analytics: Options Chain visible
+[1A[2K[313/425] [chromium] › tests/e2e/unified-autopilot.spec.ts:11:5 › Unified Autopilot + Forecast Integration › Autopilot view shows tabs and dashboard
+[1A[2K[314/425] [chromium] › tests/e2e/unified-autopilot.spec.ts:36:5 › Unified Autopilot + Forecast Integration › Autopilot tabs are interactive
+[1A[2K[315/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:54:3 › Runs Tab Navigation (3 tests) › v1.5-01 - Runs tab is visible and clickable
+[1A[2K[316/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:63:3 › Runs Tab Navigation (3 tests) › v1.5-02 - Ledger subtab is default active
+[1A[2K[317/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:71:3 › Runs Tab Navigation (3 tests) › v1.5-03 - Compare subtab disabled without selection
+[1A[2K[318/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:85:3 › Ledger Table + Filters (5 tests) › v1.5-04 - Ledger shows demo runs (table or empty state)
+[1A[2K[319/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:94:3 › Ledger Table + Filters (5 tests) › v1.5-05 - Run type filter is present and has options
+[1A[2K[320/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:103:3 › Ledger Table + Filters (5 tests) › v1.5-06 - Date filter is present and has options
+[1A[2K[321/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:111:3 › Ledger Table + Filters (5 tests) › v1.5-07 - Search input is present and typeable
+[1A[2K[322/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:119:3 › Ledger Table + Filters (5 tests) › v1.5-08 - Run count indicator visible
+[1A[2K[323/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:134:3 › Compare Mode (4 tests) › v1.5-09 - Selecting runs updates selection count
+[1A[2K[324/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:152:3 › Compare Mode (4 tests) › v1.5-10 - Compare tab enables after 2+ selections
+[1A[2K[325/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:172:3 › Compare Mode (4 tests) › v1.5-11 - Clear selection button works
+[1A[2K[326/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:193:3 › Compare Mode (4 tests) › v1.5-12 - Compare view renders metrics table when activated
+[1A[2K[327/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:221:3 › Risk Desk Before/After (3 tests) › v1.5-13 - Risk Desk stress card is visible after run
+[1A[2K[328/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:229:3 › Risk Desk Before/After (3 tests) › v1.5-14 - Stress legs table has rows
+[1A[2K[329/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:240:3 › Risk Desk Before/After (3 tests) › v1.5-15 - Before/After toggle buttons exist when result available
+[1A[2K[330/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:260:3 › Formatter Convergence (2 tests) › v1.5-16 - Backtest analyze tab metrics use consistent format
+[1A[2K[331/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:275:3 › Formatter Convergence (2 tests) › v1.5-17 - Runs ledger metric summary uses formatted values
+[1A[2K[332/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:296:3 › Cross-cutting (2 tests) › v1.5-18 - Refresh button fetches runs
+[1A[2K[333/425] [chromium] › tests/e2e/unified-runs-v1-5.spec.ts:305:3 › Cross-cutting (2 tests) › v1.5-19 - Tab switching preserves state
+[1A[2K[334/425] [chromium] › tests/e2e/v1-10-comprehensive.spec.ts:25:3 › v1.10 Comprehensive Verification › C1 - Backtest is standalone top-level nav item
+[1A[2K[335/425] [chromium] › tests/e2e/v1-10-comprehensive.spec.ts:31:3 › v1.10 Comprehensive Verification › C2 - Navigate to Backtest independently of Options
+[1A[2K[336/425] [chromium] › tests/e2e/v1-10-comprehensive.spec.ts:47:3 › v1.10 Comprehensive Verification › C3 - Backtest and Options are separate nav items
+[1A[2K[337/425] [chromium] › tests/e2e/v1-10-comprehensive.spec.ts:71:3 › v1.10 Comprehensive Verification › B1 - Ticker API endpoint resolves BRK-B to BRK.B
+[1A[2K[338/425] [chromium] › tests/e2e/v1-10-comprehensive.spec.ts:90:3 › v1.10 Comprehensive Verification › B2 - Ticker API detects collision for ambiguous ticker
+[1A[2K[339/425] [chromium] › tests/e2e/v1-10-comprehensive.spec.ts:108:3 › v1.10 Comprehensive Verification › B3 - Ticker batch resolution handles mixed inputs
+[1A[2K[340/425] [chromium] › tests/e2e/v1-10-comprehensive.spec.ts:146:3 › v1.10 Comprehensive Verification › B4 - Ticker normalize endpoint provides quick normalization
+[1A[2K[341/425] [chromium] › tests/e2e/v1-terminal.spec.ts:26:9 › V1 Terminal Panel › Terminal Display › V1 Terminal Panel is visible
+[1A[2K[342/425] [chromium] › tests/e2e/v1-terminal.spec.ts:41:9 › V1 Terminal Panel › Terminal Display › displays V1 contract info
+[1A[2K[343/425] [chromium] › tests/e2e/v1-terminal.spec.ts:56:9 › V1 Terminal Panel › Start Day Button › Start Day button is visible when session inactive
+[1A[2K[344/425] [chromium] › tests/e2e/v1-terminal.spec.ts:65:9 › V1 Terminal Panel › Start Day Button › clicking Start Day begins session
+[1A[2K[345/425] [chromium] › tests/e2e/v1-terminal.spec.ts:85:9 › V1 Terminal Panel › Risk Limits Display › shows position and exposure limits
+[1A[2K[346/425] [chromium] › tests/e2e/v1-terminal.spec.ts:102:9 › V1 Terminal Panel › Anti-Thrash Status › shows anti-thrash status panel
+[1A[2K[347/425] [chromium] › tests/e2e/v1-terminal.spec.ts:115:9 › V1 Terminal Panel › P&L Display › shows session P&L
+[1A[2K[348/425] [chromium] › tests/e2e/v1-terminal.spec.ts:126:9 › V1 Terminal Panel › Paper Mode Banner › paper mode banner is always visible
+[1A[2K[349/425] [chromium] › tests/e2e/v1-terminal.spec.ts:142:5 › V1 Contract Enforcement UI › displays V1 template restrictions
+[1A[2K[350/425] [chromium] › tests/e2e/v1-terminal.spec.ts:164:5 › Autopilot Accessibility › all buttons have visible text or aria-labels
+[1A[2K[351/425] [chromium] › tests/e2e/v1-terminal.spec.ts:178:5 › Autopilot Accessibility › color contrast for P&L indicators
+[1A[2K[352/425] [chromium] › tests/e2e/verification.spec.ts:3:1 › check page loads without critical errors
+[1A[2K[353/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:56:3 › Dashboard Visual Regression v1.11 › VR11-01: Dashboard landing page
+[1A[2K[354/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:66:3 › Dashboard Visual Regression v1.11 › VR11-02: Dashboard navigation bar
+[1A[2K[355/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:76:3 › Dashboard Visual Regression v1.11 › VR11-03: Data source selector
+[1A[2K[356/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:91:3 › Options: Analytics Visual Regression v1.11 › VR11-04: Analytics panel default view
+[1A[2K[357/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:101:3 › Options: Analytics Visual Regression v1.11 › VR11-05: Quick actions strip
+[1A[2K[358/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:117:3 › Options: Risk Desk Visual Regression v1.11 › VR11-06: Risk Desk empty state
+[1A[2K[359/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:128:3 › Options: Risk Desk Visual Regression v1.11 › VR11-07: Risk Desk with demo data loaded
+[1A[2K[360/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:140:3 › Options: Risk Desk Visual Regression v1.11 › VR11-08: Risk Desk Greeks card after run
+[1A[2K[361/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:152:3 › Options: Risk Desk Visual Regression v1.11 › VR11-09: Risk Desk chart visualization
+[1A[2K[362/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:174:3 › Options: Strategy Lab Visual Regression v1.11 › VR11-10: Strategy Lab Builder tab
+[1A[2K[363/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:185:3 › Options: Strategy Lab Visual Regression v1.11 › VR11-11: Strategy Lab Library subtab
+[1A[2K[364/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:199:3 › Options: Strategy Lab Visual Regression v1.11 › VR11-12: Strategy Lab Validate subtab
+[1A[2K[365/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:216:3 › Backtest Tool Visual Regression v1.11 › VR11-13: Backtest Configure tab initial
+[1A[2K[366/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:227:3 › Backtest Tool Visual Regression v1.11 › VR11-14: Backtest Configure with strategy selected
+[1A[2K[367/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:238:3 › Backtest Tool Visual Regression v1.11 › VR11-15: Backtest Runs tab after creating run
+[1A[2K[368/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:252:3 › Backtest Tool Visual Regression v1.11 › VR11-16: Backtest Analyze tab equity chart
+[1A[2K[369/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:271:3 › Backtest Tool Visual Regression v1.11 › VR11-17: Backtest Analyze tab drawdown chart
+[1A[2K[370/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:289:3 › Backtest Tool Visual Regression v1.11 › VR11-18: Backtest Compare tab
+[1A[2K[371/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:312:3 › Cross-Cutting Visual Regression v1.11 › VR11-19: Data provider dropdown open
+[1A[2K[372/425] [chromium] › tests/e2e/visual-regression-v1-11.spec.ts:323:3 › Cross-Cutting Visual Regression v1.11 › VR11-20: Full page layout consistency
+[1A[2K[373/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:48:3 › Analytics Visual Regression › VR-01 Analytics Panel Default State
+[1A[2K[374/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:59:3 › Analytics Visual Regression › VR-02 Quick Actions Strip Visible
+[1A[2K[375/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:75:3 › Risk Desk Visual Regression › VR-03 Risk Desk Empty State
+[1A[2K[376/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:86:3 › Risk Desk Visual Regression › VR-04 Risk Desk After Load Demo
+[1A[2K[377/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:99:3 › Risk Desk Visual Regression › VR-05 Risk Desk Greeks Results
+[1A[2K[378/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:118:3 › Strategy Lab Visual Regression › VR-06 Strategy Library Table
+[1A[2K[379/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:132:3 › Strategy Lab Visual Regression › VR-07 Strategy Validate Tab
+[1A[2K[380/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:149:3 › Backtest Visual Regression › VR-08 Backtest Configure Tab
+[1A[2K[381/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:161:3 › Backtest Visual Regression › VR-09 Backtest Runs Table Populated
+[1A[2K[382/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:173:3 › Backtest Visual Regression › VR-10 Backtest Analyze Charts
+[1A[2K[383/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:188:3 › Backtest Visual Regression › VR-11 Backtest Metrics Summary
+[1A[2K[384/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:207:3 › Navigation Visual Regression › VR-12 Full Page Default Load
+[1A[2K[385/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:218:3 › Navigation Visual Regression › VR-13 Options Tab Strip
+[1A[2K[386/425] [chromium] › tests/e2e/visual-regression-v1-4.spec.ts:230:3 › Navigation Visual Regression › VR-14 Risk Desk Stress Card
+[1A[2K[387/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:47:3 › App Shell Screenshots (2 tests) › v1.6-01 - App loads: full shell visible
+[1A[2K[388/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:58:3 › App Shell Screenshots (2 tests) › v1.6-02 - Options view: all main tabs visible
+[1A[2K[389/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:75:3 › Risk Desk Screenshots (4 tests) › v1.6-03 - Risk Desk: initial state (before demo load)
+[1A[2K[390/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:82:3 › Risk Desk Screenshots (4 tests) › v1.6-04 - Risk Desk: after demo load (portfolio loaded)
+[1A[2K[391/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:91:3 › Risk Desk Screenshots (4 tests) › v1.6-05 - Risk Desk: after run complete (outputs visible)
+[1A[2K[392/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:100:3 › Risk Desk Screenshots (4 tests) › v1.6-06 - Risk Desk: compliance card visible
+[1A[2K[393/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:115:3 › Backtest Screenshots (3 tests) › v1.6-07 - Backtest: configure tab
+[1A[2K[394/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:121:3 › Backtest Screenshots (3 tests) › v1.6-08 - Backtest: runs tab after execution
+[1A[2K[395/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:129:3 › Backtest Screenshots (3 tests) › v1.6-09 - Backtest: analyze tab with charts
+[1A[2K[396/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:148:3 › Runs Panel Screenshots (4 tests) › v1.6-10 - Runs: ledger with filters
+[1A[2K[397/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:156:3 › Runs Panel Screenshots (4 tests) › v1.6-11 - Runs: filter by risk type only
+[1A[2K[398/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:166:3 › Runs Panel Screenshots (4 tests) › v1.6-12 - Runs: filter by backtest type only
+[1A[2K[399/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:175:3 › Runs Panel Screenshots (4 tests) › v1.6-13 - Runs: search filter applied
+[1A[2K[400/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:190:3 › Cross-panel Screenshots (2 tests) › v1.6-14 - Strategy Lab panel visible
+[1A[2K[401/425] [chromium] › tests/e2e/visual-regression-v1-6.spec.ts:198:3 › Cross-panel Screenshots (2 tests) › v1.6-15 - Full round-trip: Risk → Backtest → Runs
+[1A[2K[402/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:35:3 › v1.8 - Options Main Tabs Visual Regression › v1.8-01 - Analytics tab default state
+[1A[2K[403/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:42:3 › v1.8 - Options Main Tabs Visual Regression › v1.8-02 - Risk Desk tab with empty state
+[1A[2K[404/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:50:3 › v1.8 - Options Main Tabs Visual Regression › v1.8-03 - Strategy Lab tab visible
+[1A[2K[405/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:57:3 › v1.8 - Options Main Tabs Visual Regression › v1.8-04 - Backtest standalone default state
+[1A[2K[406/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:63:3 › v1.8 - Options Main Tabs Visual Regression › v1.8-05 - Runs tab visible
+[1A[2K[407/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:76:3 › v1.8 - Risk Desk Empty & Guided States › v1.8-06 - Risk Desk empty state has CTA text
+[1A[2K[408/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:85:3 › v1.8 - Risk Desk Empty & Guided States › v1.8-07 - Risk Desk Runs tab empty state
+[1A[2K[409/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:94:3 › v1.8 - Risk Desk Empty & Guided States › v1.8-08 - Risk Desk Export tab no-run state
+[1A[2K[410/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:102:3 › v1.8 - Risk Desk Empty & Guided States › v1.8-09 - Empty state load demo click populates portfolio
+[1A[2K[411/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:117:3 › v1.8 - Risk Desk Run Status Header › v1.8-10 - RunStatusHeader appears after pipeline run
+[1A[2K[412/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:126:3 › v1.8 - Risk Desk Run Status Header › v1.8-11 - RunStatusHeader shows run_id text
+[1A[2K[413/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:134:3 › v1.8 - Risk Desk Run Status Header › v1.8-12 - Full risk run pipeline with greeks visible
+[1A[2K[414/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:148:3 › v1.8 - Backtest Subtabs & Status › v1.8-13 - Backtest configure tab with strategy select
+[1A[2K[415/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:154:3 › v1.8 - Backtest Subtabs & Status › v1.8-14 - Backtest runs tab
+[1A[2K[416/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:161:3 › v1.8 - Backtest Subtabs & Status › v1.8-15 - Backtest export tab
+[1A[2K[417/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:174:3 › v1.8 - Accessibility (ARIA / Keyboard) › v1.8-16 - Main tabs have ARIA role=tab and aria-selected
+[1A[2K[418/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:192:3 › v1.8 - Accessibility (ARIA / Keyboard) › v1.8-17 - Risk Desk subtabs have ARIA tablist
+[1A[2K[419/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:202:3 › v1.8 - Accessibility (ARIA / Keyboard) › v1.8-18 - Backtest subtabs have ARIA tablist
+[1A[2K[420/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:217:3 › v1.8 - Tool Trace & Compliance › v1.8-19 - Tool trace timeline shows after run
+[1A[2K[421/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:224:3 › v1.8 - Tool Trace & Compliance › v1.8-20 - Compliance card visible after run
+[1A[2K[422/425] [chromium] › tests/e2e/visual-regression-v1-8.spec.ts:231:3 › v1.8 - Tool Trace & Compliance › v1.8-21 - Verification card visible after run
+[1A[2K[423/425] [chromium] › tests/e2e/websocket-status.spec.ts:3:1 › AIPanel shows WebSocket Status section
+[1A[2K[424/425] [chromium] › tests/e2e/comprehensive_tour.spec.ts:18:5 › Comprehensive Demo Tour › record full application tour
+[1A[2K[chromium] › tests/e2e/comprehensive_tour.spec.ts:18:5 › Comprehensive Demo Tour › record full application tour
+Step 1: Dashboard / Home
+
+[1A[2KStep 2: Chart/Monitor
+
+[1A[2KStep 3: Options
+
+[1A[2KStep 4: Autopilot
+
+[1A[2KStep 5: Portfolio
+
+[1A[2KStep 6: Orders
+
+[1A[2KStep 7: Runs
+
+[1A[2KStep 8: Strategies
+
+[1A[2KTour Complete
+
+[1A[2K[425/425] [chromium] › tests/e2e/devpost_media.spec.ts:20:5 › Devpost Media Generation › capture screenshots and video for entire demo flow
+[1A[2K[chromium] › tests/e2e/devpost_media.spec.ts:20:5 › Devpost Media Generation › capture screenshots and video for entire demo flow
+Step 1: Loading Dashboard (Deterministic)
+
+[1A[2KSwitching to Chart View
+
+[1A[2KStep 2: Switching Symbol
+
+[1A[2KStep 3: Autopilot Run
+
+[1A[2KStep 4: Trade Execution
+
+[1A[2KStep 5: Monitoring
+
+[1A[2KDemo flow complete.
+
+[1A[2KVideo saved to: /home/aarav/Aarav/Tradingview recreation/frontend/test-results/.playwright-artifacts-1/0e254564726d359d9fd4f5035d0994df.webm
+
+[1A[2K  425 passed (22.0m)

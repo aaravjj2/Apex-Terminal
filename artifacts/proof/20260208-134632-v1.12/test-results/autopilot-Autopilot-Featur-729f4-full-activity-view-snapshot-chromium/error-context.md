@@ -1,0 +1,147 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - text: PAPER MODE — All trades are simulated
+      - img [ref=e8]
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e13]: T
+        - generic [ref=e15]:
+          - generic [ref=e16]: "Broker:"
+          - generic [ref=e17]: Alpaca
+          - generic [ref=e18]: (Paper Trading •••XXXX)
+        - generic [ref=e20]:
+          - button "Autopilot OFF" [disabled] [ref=e21]:
+            - img [ref=e22]
+            - generic [ref=e25]: Autopilot
+            - generic [ref=e26]: "OFF"
+          - button "Kill Switch - Emergency Stop" [disabled] [ref=e27]:
+            - img [ref=e28]
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - 'generic "Alpaca REST: disconnected" [ref=e33]':
+            - generic [ref=e35]: Alpaca REST
+          - 'generic "Alpaca Stream: degraded" [ref=e36]':
+            - generic [ref=e38]: Alpaca Stream
+          - 'generic "Finnhub: connected" [ref=e39]':
+            - generic [ref=e41]: Finnhub
+          - 'generic "yfinance: connected" [ref=e42]':
+            - generic [ref=e44]: yfinance
+          - 'generic "Groq: connected" [ref=e45]':
+            - generic [ref=e47]: Groq
+          - 'generic "Gemini: connected" [ref=e48]':
+            - generic [ref=e50]: Gemini
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - img [ref=e55]
+            - generic [ref=e59]: CONNECTED
+          - button "Force WebSocket Reconnect" [ref=e60]:
+            - img [ref=e61]
+        - button "Demo Fixtures" [ref=e68]:
+          - img [ref=e69]
+          - generic [ref=e73]: Demo Fixtures
+          - img [ref=e74]
+        - button "Search /" [ref=e78]:
+          - img [ref=e79]
+          - generic [ref=e82]: Search
+          - generic [ref=e83]: /
+        - generic [ref=e85]:
+          - img [ref=e86]
+          - generic [ref=e89]: 18:05:51 ET
+        - button "3" [ref=e92]:
+          - img [ref=e93]
+          - generic [ref=e96]: "3"
+  - generic [ref=e97]:
+    - navigation [ref=e98]:
+      - generic [ref=e99]:
+        - generic [ref=e100]: Main
+        - button "Dashboard ⌘D" [ref=e101]:
+          - img [ref=e103]
+        - button "Portfolio ⌘P" [ref=e108]:
+          - img [ref=e110]
+        - button "Orders ⌘O" [ref=e113]:
+          - img [ref=e115]
+        - button "Runs / Audit Log ⌘R" [ref=e118]:
+          - img [ref=e120]
+        - button "Strategies & Rules ⌘S" [ref=e124]:
+          - img [ref=e126]
+      - generic [ref=e131]:
+        - button "Chart ⌘1" [ref=e132]:
+          - img [ref=e134]
+        - button "Options ⌘2" [ref=e136]:
+          - img [ref=e138]
+        - button "Backtests ⌘B" [ref=e141]:
+          - img [ref=e143]
+        - button "Autopilot ⌘A" [ref=e145]:
+          - img [ref=e148]
+        - button "Replay ⌘3" [ref=e151]:
+          - img [ref=e153]
+        - button "Alerts ⌘4" [ref=e156]:
+          - img [ref=e158]
+        - button "Incidents ⌘I" [ref=e160]:
+          - img [ref=e162]
+      - generic [ref=e164]:
+        - button "Settings" [ref=e165]:
+          - img [ref=e167]
+        - button "Expand" [ref=e170]:
+          - img [ref=e171]
+    - main [ref=e173]:
+      - generic [ref=e174]:
+        - generic [ref=e175]:
+          - button "Dashboard" [ref=e176]
+          - button "Positions" [ref=e177]
+          - button "Activity" [active] [ref=e178]
+          - button "Settings" [ref=e179]
+        - generic [ref=e182]:
+          - generic [ref=e183]:
+            - heading "📋 Activity Log" [level=2] [ref=e184]
+            - generic [ref=e185]:
+              - generic [ref=e186]:
+                - button "All" [ref=e187]
+                - button "Trades" [ref=e188]
+                - button "Validation" [ref=e189]
+                - button "Errors" [ref=e190]
+              - combobox [ref=e191]:
+                - option "25 entries"
+                - option "50 entries" [selected]
+                - option "100 entries"
+                - option "200 entries"
+              - button "🔄 Refresh" [ref=e192]
+          - generic [ref=e193]:
+            - generic [ref=e194]: Total Entries:3
+            - generic [ref=e195]: Errors:0
+            - generic [ref=e196]: Warnings:0
+          - generic [ref=e198]:
+            - generic [ref=e199]: 2/10/2026
+            - generic [ref=e201] [cursor=pointer]:
+              - generic [ref=e202]: ℹ️
+              - generic [ref=e203]:
+                - generic [ref=e204]:
+                  - generic [ref=e205]: 6:04:40 PM
+                  - generic [ref=e206]: CYCLE COMPLETE
+                - paragraph [ref=e207]: "Cycle UAC-20260210180440-0001: 2 candidates, 0 filled"
+            - generic [ref=e209] [cursor=pointer]:
+              - generic [ref=e210]: ℹ️
+              - generic [ref=e211]:
+                - generic [ref=e212]:
+                  - generic [ref=e213]: 6:04:46 PM
+                  - generic [ref=e214]: ORDER PLACED
+                  - generic [ref=e215]: AAPL
+                - paragraph [ref=e216]: "Order AAPL: pending @ $inf"
+            - generic [ref=e218] [cursor=pointer]:
+              - generic [ref=e219]: ℹ️
+              - generic [ref=e220]:
+                - generic [ref=e221]:
+                  - generic [ref=e222]: 6:04:46 PM
+                  - generic [ref=e223]: ORDER PLACED
+                  - generic [ref=e224]: AAPL
+                - paragraph [ref=e225]: "Order AAPL: pending @ $inf"
+  - button "PAPER" [ref=e227]:
+    - img [ref=e228]
+    - generic [ref=e230]: PAPER
+    - img [ref=e232]
+```

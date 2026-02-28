@@ -1,0 +1,58 @@
+{
+  "status": 200,
+  "body": {
+    "tools": [
+      {
+        "name": "find_similar_setups",
+        "description": "Find k most similar trading setups by pattern vector (kNN on backtest metrics)",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "run_id": {
+              "type": "string"
+            },
+            "metrics": {
+              "type": "object"
+            },
+            "k": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        },
+        "endpoint": "POST /api/v4/elastihack/knn/similar_backtests"
+      },
+      {
+        "name": "summarize_similarities",
+        "description": "Summarize the common patterns across similar backtest hits",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "hits": {
+              "type": "array"
+            }
+          }
+        },
+        "endpoint": "POST /api/v4/elastihack/agent/summarize"
+      },
+      {
+        "name": "recommend_action",
+        "description": "Recommend trading action based on similar setup historical outcomes",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "similar_hits": {
+              "type": "array"
+            },
+            "current_setup": {
+              "type": "object"
+            }
+          }
+        },
+        "endpoint": "POST /api/v4/elastihack/agent/recommend"
+      }
+    ],
+    "version": "1.0",
+    "contract_version": "5.0"
+  }
+}

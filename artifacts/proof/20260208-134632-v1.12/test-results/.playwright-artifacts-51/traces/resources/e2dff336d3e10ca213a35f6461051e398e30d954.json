@@ -1,0 +1,1 @@
+{"strategy_id":"sample-mean-reversion","symbol":"SPY","start_date":"2023-01-01","end_date":"2023-03-31","initial_capital":100000,"slippage_bps":5,"fee_per_trade":1,"seed":42}

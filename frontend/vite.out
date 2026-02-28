@@ -1,0 +1,19 @@
+nohup: ignoring input
+
+> frontend@0.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 147 ms
+
+  ➜  Local:   http://localhost:5100/
+  ➜  Network: use --host to expose
+9:42:55 PM [vite] http proxy error: /api/v1/portfolio/unified
+Error: connect ECONNREFUSED 127.0.0.1:8000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+9:43:07 PM [vite] http proxy error: /api/v1/portfolio/orders
+Error: connect ECONNREFUSED 127.0.0.1:8000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+9:43:07 PM [vite] http proxy error: /api/v1/portfolio/orders
+Error: connect ECONNREFUSED 127.0.0.1:8000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)

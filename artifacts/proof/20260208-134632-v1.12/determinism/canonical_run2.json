@@ -1,0 +1,120 @@
+{
+  "config": {
+    "end_date": "2023-01-31",
+    "fee_per_trade": 1.0,
+    "initial_capital": 100000.0,
+    "seed": 42,
+    "slippage_bps": 5.0,
+    "start_date": "2023-01-01",
+    "strategy_id": "demo-sma-crossover",
+    "symbol": "SPY"
+  },
+  "config_hash": "7f13341c02ebdc45f673973f45e8e413d59a741b011598cd074aac3f802d8476",
+  "equity_curve": [
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-02T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-03T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-04T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-05T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-06T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-09T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-10T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-11T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-12T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-13T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-16T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-17T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-18T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-19T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-20T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-23T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-24T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-25T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-26T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-27T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-30T00:00:00"
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": "2023-01-31T00:00:00"
+    }
+  ],
+  "error": null,
+  "metrics": {
+    "avg_loss": 0.0,
+    "avg_win": 0.0,
+    "cagr_pct": 0.0,
+    "final_equity": 100000.0,
+    "losing_trades": 0,
+    "max_drawdown_pct": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_ratio": 0.0,
+    "total_return_pct": 0.0,
+    "total_trades": 0,
+    "win_rate_pct": 0.0,
+    "winning_trades": 0
+  },
+  "status": "completed",
+  "trades": []
+}

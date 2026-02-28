@@ -1,0 +1,166 @@
+{
+  "name": "Regime Change Handler",
+  "nodes": [
+    {
+      "id": "schedule_1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        250,
+        300
+      ],
+      "name": "Every 5 Minutes",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http_regime",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        450,
+        300
+      ],
+      "name": "Fetch Regime",
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:8000/api/v1/regime/current",
+        "options": {}
+      }
+    },
+    {
+      "id": "switch_1",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        650,
+        300
+      ],
+      "name": "Route by Regime",
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.regime }}",
+        "rules": {
+          "rules": [
+            {
+              "value": "trending",
+              "output": 0
+            },
+            {
+              "value": "choppy",
+              "output": 1
+            },
+            {
+              "value": "volatile",
+              "output": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "activate_0",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        850,
+        200
+      ],
+      "name": "Activate Trend Following",
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/strategies/trend_following/activate",
+        "options": {}
+      }
+    },
+    {
+      "id": "activate_1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        850,
+        350
+      ],
+      "name": "Activate Mean Reversion",
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/strategies/mean_reversion/activate",
+        "options": {}
+      }
+    },
+    {
+      "id": "activate_2",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        850,
+        500
+      ],
+      "name": "Activate Volatility Capture",
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/v1/strategies/volatility_capture/activate",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "schedule_1": {
+      "main": [
+        [
+          {
+            "node": "http_regime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "http_regime": {
+      "main": [
+        [
+          {
+            "node": "switch_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "switch_1": {
+      "main": [
+        [
+          {
+            "node": "activate_0",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "activate_1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "activate_2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "exportedAt": "2026-01-12T20:28:09.312644Z",
+    "generator": "tradingview-recreation",
+    "version": "1.0.0"
+  }
+}

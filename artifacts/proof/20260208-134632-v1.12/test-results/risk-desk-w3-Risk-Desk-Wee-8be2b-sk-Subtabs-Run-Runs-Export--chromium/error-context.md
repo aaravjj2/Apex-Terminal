@@ -1,0 +1,203 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - text: PAPER MODE — All trades are simulated
+      - img [ref=e8]
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e13]: T
+        - generic [ref=e15]:
+          - generic [ref=e16]: "Broker:"
+          - generic [ref=e17]: Alpaca
+          - generic [ref=e18]: (Paper Trading •••XXXX)
+        - generic [ref=e20]:
+          - button "Autopilot OFF" [disabled] [ref=e21]:
+            - img [ref=e22]
+            - generic [ref=e25]: Autopilot
+            - generic [ref=e26]: "OFF"
+          - button "Kill Switch - Emergency Stop" [disabled] [ref=e27]:
+            - img [ref=e28]
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - 'generic "Alpaca REST: disconnected" [ref=e33]':
+            - generic [ref=e35]: Alpaca REST
+          - 'generic "Alpaca Stream: degraded" [ref=e36]':
+            - generic [ref=e38]: Alpaca Stream
+          - 'generic "Finnhub: connected" [ref=e39]':
+            - generic [ref=e41]: Finnhub
+          - 'generic "yfinance: connected" [ref=e42]':
+            - generic [ref=e44]: yfinance
+          - 'generic "Groq: connected" [ref=e45]':
+            - generic [ref=e47]: Groq
+          - 'generic "Gemini: connected" [ref=e48]':
+            - generic [ref=e50]: Gemini
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - img [ref=e55]
+            - generic [ref=e59]: CONNECTED
+          - button "Force WebSocket Reconnect" [ref=e60]:
+            - img [ref=e61]
+        - button "Demo Fixtures" [ref=e68]:
+          - img [ref=e69]
+          - generic [ref=e73]: Demo Fixtures
+          - img [ref=e74]
+        - button "Search /" [ref=e78]:
+          - img [ref=e79]
+          - generic [ref=e82]: Search
+          - generic [ref=e83]: /
+        - generic [ref=e85]:
+          - img [ref=e86]
+          - generic [ref=e89]: 18:13:57 ET
+        - button "3" [ref=e92]:
+          - img [ref=e93]
+          - generic [ref=e96]: "3"
+  - generic [ref=e97]:
+    - navigation [ref=e98]:
+      - generic [ref=e99]:
+        - generic [ref=e100]: Main
+        - button "Dashboard ⌘D" [ref=e101]:
+          - img [ref=e103]
+        - button "Portfolio ⌘P" [ref=e108]:
+          - img [ref=e110]
+        - button "Orders ⌘O" [ref=e113]:
+          - img [ref=e115]
+        - button "Runs / Audit Log ⌘R" [ref=e118]:
+          - img [ref=e120]
+        - button "Strategies & Rules ⌘S" [ref=e124]:
+          - img [ref=e126]
+      - generic [ref=e131]:
+        - button "Chart ⌘1" [ref=e132]:
+          - img [ref=e134]
+        - button "Options ⌘2" [ref=e136]:
+          - img [ref=e139]
+        - button "Backtests ⌘B" [ref=e142]:
+          - img [ref=e144]
+        - button "Autopilot ⌘A" [ref=e146]:
+          - img [ref=e148]
+        - button "Replay ⌘3" [ref=e151]:
+          - img [ref=e153]
+        - button "Alerts ⌘4" [ref=e156]:
+          - img [ref=e158]
+        - button "Incidents ⌘I" [ref=e160]:
+          - img [ref=e162]
+      - generic [ref=e164]:
+        - button "Settings" [ref=e165]:
+          - img [ref=e167]
+        - button "Expand" [ref=e170]:
+          - img [ref=e171]
+    - main [ref=e173]:
+      - generic [ref=e174]:
+        - generic [ref=e176]:
+          - heading "Options - AAPL" [level=1] [ref=e177]
+          - tablist "Options main tabs" [ref=e178]:
+            - tab "Analytics" [ref=e179]
+            - tab "Risk Desk" [ref=e180]
+            - tab "Strategy Lab" [ref=e181]
+            - tab "Runs" [active] [selected] [ref=e182]
+          - generic [ref=e183]:
+            - generic [ref=e184]: Quick Actions
+            - button "Start Demo" [ref=e185]:
+              - img [ref=e186]
+              - text: Start Demo
+            - button "Run Backtest" [ref=e188]:
+              - img [ref=e189]
+              - text: Run Backtest
+            - button "Export Bundle" [ref=e191]:
+              - img [ref=e192]
+              - text: Export Bundle
+        - generic [ref=e196]:
+          - generic [ref=e197]:
+            - button "Ledger" [ref=e198]
+            - button "Compare" [disabled] [ref=e199]
+          - generic [ref=e201]:
+            - generic [ref=e202]:
+              - combobox [ref=e203]:
+                - option "All Types" [selected]
+                - option "Risk Only"
+                - option "Backtest Only"
+              - combobox [ref=e204]:
+                - option "All Time" [selected]
+                - option "Today"
+                - option "Last 7 Days"
+                - option "Last 30 Days"
+              - textbox "Search by run ID or strategy..." [ref=e205]
+              - button "Refresh" [ref=e206]
+              - generic [ref=e207]: 5 runs
+            - generic [ref=e208]: HTTP 500
+            - table [ref=e210]:
+              - rowgroup [ref=e211]:
+                - row "Select Type Run ID Created Scenario / Strategy Hash Key Metrics Status" [ref=e212]:
+                  - columnheader "Select" [ref=e213]:
+                    - generic [ref=e214]: Select
+                  - columnheader "Type" [ref=e215]
+                  - columnheader "Run ID" [ref=e216]
+                  - columnheader "Created" [ref=e217]
+                  - columnheader "Scenario / Strategy" [ref=e218]
+                  - columnheader "Hash" [ref=e219]
+                  - columnheader "Key Metrics" [ref=e220]
+                  - columnheader "Status" [ref=e221]
+              - rowgroup [ref=e222]:
+                - 'row "RISK risk-demo-00 Feb 10, 06:13 PM SPY -20% Crash a1b2c3d4e5f6 PnL: $-15,420.50 SUCCESS" [ref=e223] [cursor=pointer]':
+                  - cell [ref=e224]:
+                    - checkbox [ref=e225]
+                  - cell "RISK" [ref=e226]
+                  - cell "risk-demo-00" [ref=e227]
+                  - cell "Feb 10, 06:13 PM" [ref=e228]
+                  - cell "SPY -20% Crash" [ref=e229]
+                  - cell "a1b2c3d4e5f6" [ref=e230]
+                  - 'cell "PnL: $-15,420.50" [ref=e231]':
+                    - generic [ref=e232]: "PnL: $-15,420.50"
+                  - cell "SUCCESS" [ref=e233]
+                - 'row "RISK risk-demo-00 Feb 10, 05:13 PM Vol Spike +50% f6e5d4c3b2a1 PnL: $-8,200.00 BLOCKED" [ref=e234] [cursor=pointer]':
+                  - cell [ref=e235]:
+                    - checkbox [ref=e236]
+                  - cell "RISK" [ref=e237]
+                  - cell "risk-demo-00" [ref=e238]
+                  - cell "Feb 10, 05:13 PM" [ref=e239]
+                  - cell "Vol Spike +50%" [ref=e240]
+                  - cell "f6e5d4c3b2a1" [ref=e241]
+                  - 'cell "PnL: $-8,200.00" [ref=e242]':
+                    - generic [ref=e243]: "PnL: $-8,200.00"
+                  - cell "BLOCKED" [ref=e244]
+                - 'row "BACKTEST bt-demo-001 Feb 10, 04:13 PM iron_condor 112233445566 Ret: 12.45% · SR: 1.85 SUCCESS" [ref=e245] [cursor=pointer]':
+                  - cell [ref=e246]:
+                    - checkbox [ref=e247]
+                  - cell "BACKTEST" [ref=e248]
+                  - cell "bt-demo-001" [ref=e249]
+                  - cell "Feb 10, 04:13 PM" [ref=e250]
+                  - cell "iron_condor" [ref=e251]
+                  - cell "112233445566" [ref=e252]
+                  - 'cell "Ret: 12.45% · SR: 1.85" [ref=e253]':
+                    - generic [ref=e254]: "Ret: 12.45% · SR: 1.85"
+                  - cell "SUCCESS" [ref=e255]
+                - 'row "BACKTEST bt-demo-002 Feb 10, 03:13 PM covered_call 665544332211 Ret: 8.30% · SR: 2.10 SUCCESS" [ref=e256] [cursor=pointer]':
+                  - cell [ref=e257]:
+                    - checkbox [ref=e258]
+                  - cell "BACKTEST" [ref=e259]
+                  - cell "bt-demo-002" [ref=e260]
+                  - cell "Feb 10, 03:13 PM" [ref=e261]
+                  - cell "covered_call" [ref=e262]
+                  - cell "665544332211" [ref=e263]
+                  - 'cell "Ret: 8.30% · SR: 2.10" [ref=e264]':
+                    - generic [ref=e265]: "Ret: 8.30% · SR: 2.10"
+                  - cell "SUCCESS" [ref=e266]
+                - 'row "RISK risk-demo-00 Feb 9, 06:13 PM Rates +200bps aabbccddeeff PnL: $-3,580.00 SUCCESS" [ref=e267] [cursor=pointer]':
+                  - cell [ref=e268]:
+                    - checkbox [ref=e269]
+                  - cell "RISK" [ref=e270]
+                  - cell "risk-demo-00" [ref=e271]
+                  - cell "Feb 9, 06:13 PM" [ref=e272]
+                  - cell "Rates +200bps" [ref=e273]
+                  - cell "aabbccddeeff" [ref=e274]
+                  - 'cell "PnL: $-3,580.00" [ref=e275]':
+                    - generic [ref=e276]: "PnL: $-3,580.00"
+                  - cell "SUCCESS" [ref=e277]
+  - button "PAPER" [ref=e279]:
+    - img [ref=e280]
+    - generic [ref=e282]: PAPER
+    - img [ref=e284]
+```

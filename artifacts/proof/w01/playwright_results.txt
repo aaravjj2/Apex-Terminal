@@ -1,0 +1,22 @@
+﻿APEX TERMINAL  W01 PLAYWRIGHT E2E RESULTS
+============================================
+Date: 2026-02-25 01:52:26
+Total Tests: 35
+Passed: 35
+Failed: 0
+Duration: ~1.1m
+Workers: 1
+Retries: 0
+Browser: Chromium (headed)
+
+Sections:
+  Backend Ops Endpoints: 8/8 PASS
+  Command Palette: 6/6 PASS
+  Context Bus: 2/2 PASS
+  Monitor Grid: 5/5 PASS
+  Execution Blotter: 2/2 PASS
+  Ops Health Page: 7/7 PASS
+  Shell & Navigation: 5/5 PASS
+
+All tests use data-testid selectors ONLY.
+No getByRole, no getByText, no waitForTimeout.

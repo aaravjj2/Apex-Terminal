@@ -1,0 +1,67 @@
+{
+  "migration": "Authentic Data Migration",
+  "date": "2026-02-20",
+  "baseline": {
+    "playwright": 169,
+    "vitest": 341,
+    "pytest": 470,
+    "pytest_errors": 6
+  },
+  "final": {
+    "playwright": 171,
+    "playwright_determinism_runs": 2,
+    "vitest": 341,
+    "pytest": 489,
+    "pytest_errors": 6,
+    "tsc_errors": 0
+  },
+  "recording_set": {
+    "name": "core-default",
+    "provider": "Yahoo Finance",
+    "library_version": "yfinance==0.2.58",
+    "symbols": ["AAPL", "MSFT", "SPY", "TSLA"],
+    "date_range": {"start": "2024-01-02", "end": "2024-03-28"},
+    "bars_per_symbol": 60,
+    "timeframe": "1d",
+    "broker_fills": 18,
+    "recording_ts": "2024-01-02T09:30:00Z"
+  },
+  "files_changed": {
+    "created": [
+      "frontend/src/ui2/dataMode/config.ts",
+      "phase1/services/api/config_recording.py",
+      "scripts/record_market_data.py",
+      "scripts/record_broker_ledger.py",
+      "scripts/verify_recording.py",
+      "tests/unit/test_recording_verifier.py",
+      "frontend/tests/e2e/tour/record-tour.spec.ts",
+      "artifacts/proof/2026-02-20-authentic-data-migration/AUDIT_AUTHENTIC_DATA.md",
+      "artifacts/proof/2026-02-20-authentic-data-migration/TOUR.webm"
+    ],
+    "modified": [
+      "frontend/src/ui2/AppShellUI2.tsx",
+      "frontend/src/ui2/stores/autopilotDepthStore.ts",
+      "frontend/src/ui2/stores/backtestDepthStore.ts",
+      "frontend/src/ui2/stores/workflowDepthStore.ts",
+      "frontend/src/ui2/stores/searchDepthStore.ts",
+      "frontend/src/ui2/stores/automationStore.ts",
+      "frontend/src/ui2/stores/exportStore.ts",
+      "frontend/src/ui2/stores/autopilot2Store.ts",
+      "frontend/src/ui2/stores/autopilotV2Store.ts",
+      "frontend/src/ui2/stores/platformHealthStore.ts",
+      "frontend/src/ui2/stores/automationV2Store.ts",
+      "frontend/src/ui2/stores/insightsStore.ts",
+      "phase1/services/api/routes/autopilot_depth.py",
+      "phase1/services/api/routes/backtest_depth.py",
+      "phase1/services/api/routes/workflow_depth.py",
+      "phase1/services/api/routes/search_depth.py",
+      "frontend/tests/e2e/core/regression-smoke.spec.ts",
+      "frontend/tests/e2e/core/autopilot.spec.ts"
+    ]
+  },
+  "tour": {
+    "file": "TOUR.webm",
+    "duration_min": 4.0,
+    "size_mb": 3.7
+  }
+}

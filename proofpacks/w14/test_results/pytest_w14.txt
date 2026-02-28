@@ -1,0 +1,36 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- C:\Tradingview\Tradingview recreation\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Tradingview\Tradingview recreation\phase1
+configfile: pytest.ini
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 25 items
+
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestDatasetStore::test_save_and_get PASSED [  4%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestDatasetStore::test_get_nonexistent PASSED [  8%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestDatasetStore::test_bars_json_roundtrip PASSED [ 12%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestDatasetStore::test_list_all PASSED [ 16%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestDatasetStore::test_list_filter_by_symbol PASSED [ 20%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestDatasetStore::test_find_by_sha256 PASSED [ 24%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestDatasetStore::test_upsert_on_duplicate_key PASSED [ 28%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_create_snapshot_with_mock_data PASSED [ 32%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_sha256_determinism PASSED [ 36%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_dedup_returns_existing PASSED [ 40%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_get_snapshot_not_found PASSED [ 44%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_load_bars_roundtrip PASSED [ 48%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_invalid_date_format PASSED [ 52%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_end_before_start PASSED [ 56%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_no_data_available PASSED [ 60%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestSnapshotService::test_list_snapshots PASSED [ 64%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestW14DatasetAPI::test_list_datasets_empty[asyncio] PASSED [ 68%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestW14DatasetAPI::test_create_snapshot_requires_auth[asyncio] PASSED [ 72%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestW14DatasetAPI::test_create_snapshot_invalid_date[asyncio] PASSED [ 76%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestW14DatasetAPI::test_get_snapshot_auth_gate[asyncio] PASSED [ 80%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestW14DatasetAPI::test_get_snapshot_with_auth[asyncio] PASSED [ 84%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestW14DatasetAPI::test_get_nonexistent_dataset[asyncio] PASSED [ 88%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestW14DatasetAPI::test_create_and_retrieve_snapshot[asyncio] PASSED [ 92%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestW14DatasetAPI::test_dedup_via_api[asyncio] PASSED [ 96%]
+phase1\tests\integration\test_w14_dataset_snapshot.py::TestEngineDatasetBinding::test_run_with_dataset_id PASSED [100%]
+
+============================= 25 passed in 1.46s ==============================

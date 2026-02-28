@@ -1,0 +1,8 @@
+{
+  "status": 200,
+  "body": {
+    "injected": true,
+    "entry_id": "d08aa7d3-bafc-4f0e-b03a-1eb49a1ad542",
+    "vector_dlq_size": 1
+  }
+}

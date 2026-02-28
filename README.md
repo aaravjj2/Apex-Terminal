@@ -3,7 +3,11 @@
 <div align="center">
 
 **A Production-Grade Market Workstation Platform**
-*Combining TradingView-style charting with Bloomberg-terminal analytics and an AI-powered Options Autopilot.*
+*Built with Elastic Agent Builder — Combining TradingView-style charting with Bloomberg-terminal analytics and an ES|QL-powered Autonomous Options Agent.*
+
+[**🏆 ELASTICSEARCH AGENT BUILDER HACKATHON SUBMISSION**](https://elasticsearch.devpost.com/)
+
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/elastic?style=social)](https://x.com/elastic_devs)  *(Official hackathon social post link goes here: [X Post](https://x.com/your_handle/status/id) @elastic_devs @elastic)*
 
 <img src="https://img.shields.io/badge/React-61DAFB.svg?style=flat-square&logo=React&logoColor=black" alt="React">
 <img src="https://img.shields.io/badge/FastAPI-009688.svg?style=flat-square&logo=FastAPI&logoColor=white" alt="FastAPI">
@@ -26,11 +30,17 @@ The platform is heavily built over **Elasticsearch (v8.x)**, storing all core en
 ### Core Workspaces
 - **Chart View (TradingView Clone):** Highly interactive graphical interface rendering OHLCV candles, real-time tick streaming, and a dock housing **35 technical indicators** and **30+ drawing tools**.
 - **Bloomberg-Style Dashboard:** Deep analytics layout running 14 modular drag-and-drop tiles (Orders, Heatmaps, Options Chains, Volatility Surfaces, Scanners, P&L Metrics).
-- **The AI Autopilot System:** A heavily guarded LLM autonomous pipeline. First stage candidate rankings run extremely fast via **Groq**, then pass to **Gemini Pro** for deep analysis, validation, and final order executions. Pre-trade Risk Managers act as safety nets blocking earnings-season violations, margin limits, or illiquid spreads.
+- **The AI Autopilot System (Elastic Agent Builder):** A heavily guarded multi-agent pipeline orchestrated natively using **Elastic Workflows** and **Agent Builder**. By wrapping external LLMs (Groq, Gemini) as Tools within the Elastic ecosystem, the Agent directly queries market data via **ES|QL**, evaluates pre-trade Risk Managers, and triggers execution layers based on dynamic semantic rulesets.
 
 ---
 
 ## ✨ Key Features Breakdown
+
+### 🤖 Elastic Agent Builder Integration
+Apex Terminal leverages the absolute bleeding edge of the Elastic AI stack to drive its autonomous decision systems:
+- **Elastic Workflows:** Chains together distinct Sub-Agents (Risk Evaluator, Market Analyst, Compliance Officer) to process multi-step analysis without hallucination loops.
+- **ES|QL Driven Memory:** Agents natively construct and execute ES|QL queries to rapidly aggregate historical option chains and spot volatility anomalies in runtime.
+- **Hybrid Search (kNN + BM25):** The system stores all historical trades and strategy blueprints across 24 indices utilizing 64-dimensional `dense_vector` fields, ensuring Agents have perfect memory recall via Reciprocal Rank Fusion (RRF).
 
 ### 📊 35 Technical Indicators (Calculated server-side)
 1. **Trend:** SMA, EMA, VWAP, Ichimoku Cloud, Supertrend, Parabolic SAR, ADX, Aroon
@@ -67,14 +77,15 @@ Apex utilizes a multi-engine `FastAPI` back end connected statically directly to
 ┌───────────────────────▼─────────────────────────────────────┐
 │                    BACKEND (FastAPI - phase1)               │
 │  • 27 Engines (Risk, Backtests, Sizing, Pattern Checks)     │
-│  • LLM Selectors (Groq → Gemini)                             │
 │  • Parity & Verification Tracker (HMAC-SHA256 audits)       │
 └───────────────────────┬─────────────────────────────────────┘
                         │
 ┌───────────────────────▼─────────────────────────────────────┐
-│            ELASTICSEARCH (Primary Vector Store)             │
+│               ELASTIC AGENT BUILDER (Core)                  │
+│  • Workflows connecting LLMs as specialized Sub-Agents      │
+│  • ES|QL query generation for advanced runtime analytics    │
 │  • 24 active indices (tickets, workflows, compliance)       │
-│  • dense_vector (64-dim, cosine) & kNN Similarity Searches  │
+│  • dense_vector (64-dim, cosine) & Hybrid (kNN + RRF)       │
 └─────────────────────────────────────────────────────────────┘
 ```
 

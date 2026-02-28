@@ -21,11 +21,11 @@
 
 ---
 
-## 🎯 What is Apex Terminal?
+### 🎯 Problem Statement & Solution Overview
 
-Apex Terminal is a production-grade options trading and market analytics platform constructed for quantitative researchers. Breaking from fragmented retail environments, it seamlessly unites custom deterministic algorithmic backtesting, comprehensive technical analysis, and complete live market workflows inside a single unified Workstation.
+**The Problem:** Financial quant tooling is incredibly fragmented. Retail traders rely on basic charting software, while elite institutional firms leverage massive, bespoke, deterministic systems (like the Bloomberg Terminal). Developing, testing, and dynamically scaling multi-agent AI workflows on massive financial time-series data requires assembling a custom tech stack from scratch, locking innovative but under-resourced traders out of advanced mathematical modeling.
 
-The platform is heavily built over **Elasticsearch (v8.x)**, storing all core entities (Strategies, Workflows, Ledgers) leveraging **64-dimensional dense_vector `kNN` fields** coupled closely alongside `BM25 + kNN` Reciprocal Rank Fusions bridging standard terminology lookups and mathematical performance fingerprints perfectly together.
+**The Solution:** Apex Terminal securely bridges this gap. Breaking from fragmented retail environments, it seamlessly unites custom deterministic algorithmic backtesting, comprehensive technical analysis, and complete live market workflows inside a single unified Workstation natively powered by Elastic Agent Builder.
 
 ### Core Workspaces
 - **Chart View (TradingView Clone):** Highly interactive graphical interface rendering OHLCV candles, real-time tick streaming, and a dock housing **35 technical indicators** and **30+ drawing tools**.
@@ -100,6 +100,7 @@ Tradingview recreation/
 ├── n8n/                  # Dockerized workflow automations (Intraday Scans, Alerts)
 ├── scripts/              # Independent root-level execution and utility scripts
 ├── media/                # Application screenshots and playback videos
+├── devpost_submission_materials/ # Dedicated PDF briefs and Business Plans for Hackathons
 ├── documents/            # Architectural plans, gap analysis, status trackers
 ├── logs/                 # Isolated system execution logs and output traces
 ├── data/                 # Evaluation outputs, cache, SQLite/DuckDB bases
@@ -107,6 +108,25 @@ Tradingview recreation/
 ├── strategies/           # Specialized built-in algorithms (SMA, VWAP, Breakout)
 └── archives/             # Compressed submission bundles and backup artifacts
 ```
+
+---
+
+## 🏗 Future Scope / Roadmap
+
+- **Phase 1 (Current):** Open-source deterministic FastAPI architecture, 35 technical indicators, and full React frontend. Live market tracking (paper trading) via Alpaca.
+- **Phase 2 (Enterprise):** Introduce multi-tenant workspaces, cloud-hosted Elasticsearch clusters, and deep PCA/Monte Carlo backtesting visualizations directly within the UI.
+- **Phase 3 (SaaS Scale):** Establish public LLM Sub-Agent marketplaces allowing users to drag-and-drop proprietary Groq/Gemini logic into rigid Elastic workflows.
+
+---
+
+## 📚 Libraries, Datasets & Tools Used
+
+To maintain rigorous production quality, Apex integrates the following open-source frameworks and API providers:
+- **Core Orchestration:** Elastic Agent Builder, Elasticsearch (v8.x), FastAPI, Uvicorn, n8n.
+- **Frontend Stack:** React 19.2, TypeScript, Vite, Tailwind CSS, Zustand.
+- **Charting Engine:** TradingView Lightweight Charts, Recharts.
+- **Data Providers:** Alpaca (Market Data & Brokerage), Tradier (Live Options Chains), Finnhub, Yahoo Finance.
+- **AI Models:** Groq (Llama 3 8B/70B), Google Gemini 1.5 Pro.
 
 ---
 

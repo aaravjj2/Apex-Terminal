@@ -105,11 +105,8 @@ class AlpacaOptionsBroker(PaperBroker):
         # First, submit to paper broker
         paper_order = super().submit_order(candidate, order_type, limit_price)
         
-        print(f"BROKER DEBUG: _alpaca_enabled={self._alpaca_enabled}, paper_order={paper_order.order_id}")
-        
         # Then attempt Alpaca submission
         if self._alpaca_enabled:
-            print(f"BROKER DEBUG: Attempting Alpaca submission for {paper_order.order_id}")
             try:
                 alpaca_result = self._submit_to_alpaca(candidate, paper_order)
                 
@@ -120,18 +117,13 @@ class AlpacaOptionsBroker(PaperBroker):
                     logger.info(
                         f"Order {paper_order.order_id} -> Alpaca {alpaca_result.alpaca_order_id}"
                     )
-                    print(f"BROKER DEBUG: SUCCESS - {paper_order.order_id} -> {alpaca_result.alpaca_order_id}")
                 else:
                     logger.warning(
                         f"Alpaca submission failed: {alpaca_result.error} "
                         f"(paper order still valid)"
                     )
-                    print(f"BROKER DEBUG: FAILED - {alpaca_result.error}")
             except Exception as e:
                 logger.error(f"Alpaca submission error: {e}")
-                print(f"BROKER DEBUG: EXCEPTION - {e}")
-        else:
-            print(f"BROKER DEBUG: Alpaca disabled - not submitting")
         
         return paper_order
     
@@ -162,11 +154,14 @@ class AlpacaOptionsBroker(PaperBroker):
             return AlpacaOrderResult(success=False, error="Client not initialized")
         
         try:
-            from alpaca.trading.requests import MarketOrderRequest
+            from alpaca.trading.requests import LimitOrderRequest
             from alpaca.trading.enums import OrderSide, TimeInForce
             
             alpaca_ids = []
             errors = []
+            
+            # Limit order cushion: for buys we accept up to premium*1.02, for sells we accept down to premium*0.98
+            LIMIT_CUSHION_PCT = 0.02
             
             # Submit each leg individually
             for leg in candidate.legs:
@@ -180,15 +175,24 @@ class AlpacaOptionsBroker(PaperBroker):
                     
                     side = OrderSide.BUY if leg.side == 'buy' else OrderSide.SELL
                     
+                    # Calculate limit price from leg premium: (bid+ask)/2 equivalent with cushion
+                    premium = leg.premium if leg.premium > 0 else 0.05  # fallback for options
+                    if leg.side == 'sell':
+                        limit_price = round(premium * (1 - LIMIT_CUSHION_PCT), 2)
+                    else:
+                        limit_price = round(premium * (1 + LIMIT_CUSHION_PCT), 2)
+                    limit_price = max(0.01, limit_price)  # Alpaca minimum
+                    
                     # Use client_order_id from candidate if available, otherwise generate one
                     base_client_order_id = candidate.client_order_id if hasattr(candidate, 'client_order_id') and candidate.client_order_id else f"auto_{paper_order.order_id}"
                     leg_client_order_id = f"{base_client_order_id}_{uuid.uuid4().hex[:6]}"
 
-                    request = MarketOrderRequest(
+                    request = LimitOrderRequest(
                         symbol=occ_symbol,
                         qty=leg.quantity,
                         side=side,
                         time_in_force=TimeInForce.DAY,
+                        limit_price=limit_price,
                         client_order_id=leg_client_order_id
                     )
                     

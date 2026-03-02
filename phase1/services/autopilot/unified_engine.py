@@ -567,8 +567,8 @@ class UnifiedAutopilotEngine:
         self._paper_verified = False
         
         # Components
-        from .news_sentiment import SentimentEngine
-        self.sentiment_engine = SentimentEngine()
+        from .news_sentiment import get_ensemble_sentiment_engine
+        self.sentiment_engine = get_ensemble_sentiment_engine()
         
         # History
         self._run_history: List[RunArtifact] = []
@@ -830,6 +830,17 @@ class UnifiedAutopilotEngine:
                 artifact.think_log = think.to_list()
                 return artifact
             
+            # Daily loss limit - auto-activate kill switch per plan
+            from .config import get_autopilot_config
+            _cfg = get_autopilot_config()
+            if self._daily_loss_pct >= _cfg.anti_thrash.daily_loss_limit_pct and not force:
+                think.alert(f"Daily loss limit reached ({self._daily_loss_pct:.1%}) - activating kill switch")
+                await self.activate_kill_switch(close_all=False)
+                artifact.add_no_action_reason(f"Daily loss limit ({self._daily_loss_pct:.1%}) - kill switch activated")
+                artifact.success = False
+                artifact.think_log = think.to_list()
+                return artifact
+            
             if self._is_running:
                 think.alert("Another cycle is already running - aborting")
                 artifact.add_no_action_reason("Another cycle is already running")
@@ -838,6 +849,23 @@ class UnifiedAutopilotEngine:
                 return artifact
             
             self._is_running = True
+
+            # Persist cycle start to v3_store
+            try:
+                from .v3_store import cycle_create as v3_cycle_create
+                from .config import get_autopilot_config
+                config = get_autopilot_config()
+                universe = list(config.universe) if hasattr(config, "universe") else []
+                self._last_universe = universe
+                v3_cycle_create(
+                    universe=universe,
+                    armed=not (self._kill_switch or False),
+                    correlation_id=run_id,
+                    market_open=False,
+                    cycle_id=run_id,
+                )
+            except Exception as e:
+                logger.debug(f"v3 cycle_create: {e}")
             
             # Phase 1: Data Refresh
             self._set_phase(CyclePhase.DATA_REFRESH)
@@ -931,7 +959,8 @@ class UnifiedAutopilotEngine:
             selected = []
             if candidates:
                 think.evaluate("Ranking candidates", "sorting by score and applying selection criteria...")
-                selected = self._select_candidates(candidates)
+                regime = artifact.market_context.regime.lower() if artifact.market_context and artifact.market_context.regime else "neutral"
+                selected = self._select_candidates(candidates, regime=regime)
                 artifact.candidates_selected = len(selected)
                 
                 # Log each candidate's score and selection status
@@ -967,6 +996,23 @@ class UnifiedAutopilotEngine:
             self._set_phase(CyclePhase.VALIDATION)
             validated = []
             if selected:
+                # Phase 4d: Fetch earnings blackout for selected symbols (2 days before, 1 day after)
+                try:
+                    from .news_provider import get_news_provider
+                    provider = get_news_provider()
+                    for c in selected:
+                        sym = c.get("symbol", "")
+                        if not sym:
+                            continue
+                        try:
+                            snap = await provider.get_sentiment(sym)
+                            c["earnings_blackout"] = getattr(snap, "is_blackout", False)
+                        except Exception:
+                            c["earnings_blackout"] = False
+                except Exception as e:
+                    logger.debug(f"Earnings blackout fetch skipped: {e}")
+                    for c in selected:
+                        c["earnings_blackout"] = False
                 think.evaluate("Validation gates", f"checking {len(selected)} selected candidates...")
                 for candidate in selected:
                     valid, gates, errors = self._validate_candidate(
@@ -994,13 +1040,10 @@ class UnifiedAutopilotEngine:
             
             # Phase 7: Execution
             self._set_phase(CyclePhase.EXECUTION)
-            print(f"EXEC DEBUG: validated={len(validated)}, dry_run={dry_run}")
             logger.info(f"⚡ EXECUTION PHASE: validated={len(validated)}, dry_run={dry_run}")
             if validated:
-                print(f"EXEC DEBUG: Have validated candidates")
                 logger.info(f"✅ Have {len(validated)} validated candidates")
                 if not dry_run:
-                    print(f"EXEC DEBUG: DRY_RUN=FALSE - executing trades")
                     logger.info("🚀 DRY_RUN=FALSE - REAL EXECUTION MODE")
                     think.execute(f"Submitting {len(validated)} trades to Alpaca...")
                     orders = await self._execute_trades(validated, run_id)
@@ -1578,19 +1621,43 @@ class UnifiedAutopilotEngine:
 
             scored = []
             provider = get_data_provider()
-            
+            ml_engine = None
+            try:
+                from ..machine_learning_signals_engine import MachineLearningSignalsEngine
+                ml_engine = MachineLearningSignalsEngine()
+            except Exception as _ml:
+                logger.debug(f"ML signals engine unavailable: {_ml}")
+
             for sym_info in symbols:
                 feats = await feature_engine.get_features(sym_info.symbol)
                 if not feats:
                     continue
-                    
-                # Enhanced scoring includes more factors
+                ml_signal = 0.0
+                if ml_engine:
+                    try:
+                        prices = provider.get_price_history(sym_info.symbol, days=60)
+                        volumes = provider.get_volume_history(sym_info.symbol, days=60)
+                        if prices and len(prices) >= 35:
+                            ml_signal = ml_engine.get_live_signal(prices, volumes)
+                    except Exception as _e:
+                        logger.debug(f"ML signal for {sym_info.symbol}: {_e}")
+                ml_component = (ml_signal + 1) / 2.0
                 score = (
-                    feats.trend_strength * 0.30  # Trend importance
-                    + feats.liquidity_score * 0.30  # Liquidity critical for options
-                    + (feats.iv_rank / 100.0) * 0.25  # IV rank for premium selling
-                    + (1 - feats.avg_spread_pct * 10) * 0.15  # Tight spreads preferred
+                    feats.trend_strength * 0.25
+                    + feats.liquidity_score * 0.20
+                    + (feats.iv_rank / 100.0) * 0.20
+                    + max(0, 1 - feats.avg_spread_pct * 10) * 0.10
+                    + ml_component * 0.25
                 )
+                # Phase 5b: Reduce weight for symbols with poor recent performance
+                try:
+                    from .v3_store import strategy_performance_summary
+                    perf = strategy_performance_summary(window=20)
+                    if sym_info.symbol in perf and perf[sym_info.symbol].get("suggest_reduce_weight"):
+                        score *= 0.5
+                        logger.debug(f"Reduced score for {sym_info.symbol} (poor 20-trade Sharpe)")
+                except Exception:
+                    pass
                 scored.append((sym_info.symbol, feats, score))
 
             scored.sort(key=lambda x: x[2], reverse=True)
@@ -1754,22 +1821,29 @@ class UnifiedAutopilotEngine:
         
         return candidates
     
-    def _select_candidates(self, candidates: List[Dict]) -> List[Dict]:
+    def _select_candidates(self, candidates: List[Dict], regime: str = "neutral") -> List[Dict]:
         """
         Select top candidates using V1 priority queue.
         
-        V1 Priority Queue Rules:
-        1. Filter by regime: direction-aligned templates only
-        2. Sort by composite score (deterministic)
-        3. Limit to max per cycle
-        4. No ties - deterministic ordering
+        Phase 4c: Dynamic strategy selection based on regime:
+        - bull/trending_bull -> LONG_CALL preferred
+        - bear/trending_bear -> LONG_PUT preferred
+        - volatile/high_vol -> reduce position size 50% (via regime_sizing_mult)
+        - chaos -> no trade (handled at cycle level)
         """
         from .config import get_autopilot_config, V1_TEMPLATES, StrategyTemplate
 
         config = get_autopilot_config()
+        regime = (regime or "neutral").lower()
+        
+        # Phase 4c: Regime-to-strategy mapping
+        regime_sizing_mult = 1.0
+        if regime in ("volatile", "high_vol"):
+            regime_sizing_mult = 0.5
+        preferred_call = regime in ("bull", "trending_bull", "trend_up")
+        preferred_put = regime in ("bear", "trending_bear", "trend_down")
         
         # V1: Get current regime/direction for filtering
-        # (BULLISH → LONG_CALL preferred, BEARISH → LONG_PUT preferred)
         v1_filtered = []
         for c in candidates:
             template_str = c.get("template", "")
@@ -1783,12 +1857,25 @@ class UnifiedAutopilotEngine:
                 logger.debug(f"V1 queue: Filtered out {template_str} (not V1)")
                 continue
             
-            # Direction alignment filter (optional, for better selection)
+            # Phase 4c: Apply regime sizing
+            c["regime_sizing_mult"] = regime_sizing_mult
+            
+            # Direction alignment: regime + trend
             trend = c.get("trend", "neutral").lower()
-            if template == StrategyTemplate.LONG_CALL and trend == "bearish":
-                c["direction_penalty"] = -10  # Penalize misaligned direction
-            elif template == StrategyTemplate.LONG_PUT and trend == "bullish":
-                c["direction_penalty"] = -10
+            if template == StrategyTemplate.LONG_CALL:
+                if trend == "bearish":
+                    c["direction_penalty"] = -10
+                elif preferred_call:
+                    c["direction_penalty"] = 5
+                else:
+                    c["direction_penalty"] = 0
+            elif template == StrategyTemplate.LONG_PUT:
+                if trend == "bullish":
+                    c["direction_penalty"] = -10
+                elif preferred_put:
+                    c["direction_penalty"] = 5
+                else:
+                    c["direction_penalty"] = 0
             else:
                 c["direction_penalty"] = 0
             
@@ -1837,7 +1924,7 @@ class UnifiedAutopilotEngine:
             remaining = (self._circuit_breaker_until - now).total_seconds()
             return False, f"Circuit breaker active ({remaining:.0f}s remaining)"
         
-        # Gate 2: Daily loss limit
+        # Gate 2: Daily loss limit (caller activates kill switch when this blocks)
         if self._daily_loss_pct >= anti_thrash.daily_loss_limit_pct:
             return False, f"Daily loss limit reached ({self._daily_loss_pct:.1%} >= {anti_thrash.daily_loss_limit_pct:.1%})"
         
@@ -1953,7 +2040,19 @@ class UnifiedAutopilotEngine:
         if underlying_count >= config.risk_limits.max_positions_per_underlying:
             gates.append(ValidationGate.MAX_PER_UNDERLYING)
             errors.append(f"Max positions per underlying reached for {symbol}")
-        
+
+        # Phase 4b: Correlation-aware construction - reject if corr > 0.7 with any existing
+        existing_underlyings = [p.underlying or p.symbol for p in positions if (p.underlying or p.symbol)]
+        try:
+            from .correlation_check import check_correlation
+            corr_ok, corr_reason = check_correlation(symbol, existing_underlyings, threshold=0.7)
+            if not corr_ok:
+                gates.append(ValidationGate.RISK_BUDGET)
+                errors.append(f"Correlation gate: {corr_reason}")
+                return False, gates, errors
+        except Exception:
+            pass
+
         # Check DTE bounds
         dte = candidate.get("dte", 0)
         constraints = config.strategy_constraints
@@ -1962,8 +2061,8 @@ class UnifiedAutopilotEngine:
             errors.append(f"DTE {dte} outside bounds [{constraints.min_dte}, {constraints.max_dte}]")
         
         
-        # Check earnings blackout
-        if hasattr(sentiment, 'is_blackout') and sentiment.is_blackout:
+        # Phase 4d: Earnings blackout (2 days before, 1 day after) - pre-fetched per candidate
+        if candidate.get("earnings_blackout"):
             gates.append(ValidationGate.EARNINGS_BLACKOUT)
             errors.append(f"Earnings blackout for {symbol}")
         
@@ -2128,8 +2227,8 @@ class UnifiedAutopilotEngine:
         return round(credit, 2) if credit > 0 else None
 
     async def _execute_trades(self, candidates: List[Dict], run_id: str) -> List[OrderRecord]:
-        """Execute trades via Alpaca - REAL order submission."""
-        from .alpaca_broker import AlpacaOptionsBroker
+        """Execute trades via ExecutionEngineV2 (Alpaca limit orders only - single execution path)."""
+        from .execution_engine_v2 import get_execution_engine_v2
         from .broker_position_manager import get_broker_position_manager, BrokerExitRule
         from .config import get_autopilot_config, StrategyTemplate
         from .candidates import TradeCandidate, OptionLeg
@@ -2140,56 +2239,56 @@ class UnifiedAutopilotEngine:
         manager = get_broker_position_manager()
         config = get_autopilot_config()
         client = get_alpaca_client()
+        exec_engine = get_execution_engine_v2()
+        correlation_id = f"run-{run_id}-{uuid_mod.uuid4().hex[:8]}"
         
         # Get current Alpaca positions to avoid duplicates
         existing_underlyings = set()
         try:
             alpaca_positions = await client.list_positions()
-            print(f"EXEC DEBUG: Found {len(alpaca_positions)} Alpaca positions")
+            logger.info(f"Found {len(alpaca_positions)} Alpaca positions")
             for pos in alpaca_positions:
-                # Parse underlying from OCC symbol
                 symbol = pos.symbol
                 for i, c in enumerate(symbol):
                     if c.isdigit():
                         existing_underlyings.add(symbol[:i].strip())
                         break
-            print(f"EXEC DEBUG: existing_underlyings={existing_underlyings}")
             logger.info(f"Existing positions for underlyings: {existing_underlyings}")
         except Exception as e:
             logger.warning(f"Could not fetch existing positions: {e}")
         
-        # Initialize broker with Alpaca enabled
-        broker = AlpacaOptionsBroker(alpaca_enabled=True)
-        
         orders = []
-        
-        print(f"EXEC DEBUG: Processing {len(candidates)} candidates")
-        # Write candidates to file for debugging
-        import json
-        with open("/tmp/autopilot_candidates_debug.json", "w") as f:
-            json.dump(candidates, f, indent=2, default=str)
-        print(f"EXEC DEBUG: Wrote candidates to /tmp/autopilot_candidates_debug.json")
         
         for idx, candidate in enumerate(candidates):
             symbol = candidate.get("symbol", "")
             template = candidate.get("template", "put_credit_spread")
             credit = candidate.get("credit", 0)
-            print(f"EXEC DEBUG [{idx}]: symbol={symbol}, template={template}, credit={credit}")
             
-            # Skip if we already have a MANAGED position in this underlying (not just any position)
-            # We only skip if we have a position that's actively being managed by this autopilot
-            # Unmanaged positions from previous runs shouldn't block new trades
-            # TODO: Add proper check for managed positions from broker_position_manager
-            skip_due_to_existing = False  # Disabled for now - position manager handles this
+            skip_due_to_existing = False  # Disabled - position manager handles this
             if skip_due_to_existing and symbol in existing_underlyings:
-                print(f"EXEC DEBUG [{idx}]: SKIPPING - already have managed position")
                 logger.info(f"⏭️ Skipping {symbol} - already have managed position")
                 continue
             
-            print(f"EXEC DEBUG [{idx}]: Generating client_order_id")
             client_order_id = self._generate_client_order_id(run_id, template, symbol)
-            
-            print(f"EXEC DEBUG [{idx}]: Creating order_record")
+
+            # Phase 4a: Adaptive Kelly position sizing (fallback to config)
+            # Phase 4c: Apply regime sizing (volatile/high_vol = 50% size)
+            regime_mult = candidate.get("regime_sizing_mult", 1.0)
+            premium_per_contract = credit if credit > 0 else (candidate.get("bid", 0) + candidate.get("ask", 0)) / 2.0 or 2.0
+            try:
+                from .position_sizing import compute_kelly_contracts
+                contracts = compute_kelly_contracts(
+                    equity=config.paper_equity,
+                    premium_per_contract=premium_per_contract,
+                    risk_scalar=0.5 * regime_mult,
+                    max_position_usd=config.risk_limits.max_single_position_usd,
+                    min_contracts=1,
+                    max_contracts=min(5, config.contracts_per_trade * 2 or 5),
+                    window=30,
+                )
+            except Exception as e:
+                logger.debug(f"Kelly sizing failed, using config: {e}")
+                contracts = max(1, int(config.contracts_per_trade * regime_mult) or 1)
             
             # V1 COMPLIANCE: Use limit orders only with execution ladder
             # Calculate limit price from candidate premium/credit
@@ -2200,20 +2299,16 @@ class UnifiedAutopilotEngine:
                 symbol=symbol,
                 side="sell",  # Credit spreads are sold
                 order_type="limit",  # V1: LIMIT ONLY
-                qty=max(1, int(config.contracts_per_trade)),
+                qty=contracts,
                 limit_price=limit_price,
                 submitted_at=datetime.now(),
             )
             
-            print(f"EXEC DEBUG [{idx}]: Entering try block")
             try:
-                # Build TradeCandidate from dict for broker submission
                 legs_data = candidate.get("legs", [])
-                print(f"EXEC DEBUG [{idx}]: legs_data={legs_data}")
-                logger.info(f"🔍 Processing candidate {symbol}: legs_data={legs_data}")
+                logger.debug(f"Processing candidate {symbol}: legs={len(legs_data)}")
                 if not legs_data:
-                    print(f"EXEC DEBUG [{idx}]: NO LEGS in candidate.get('legs') - attempting to construct from candidate data")
-                    # If no legs, try to construct from candidate data
+                    # Construct legs from candidate data if not present
                     short_strike = candidate.get("short_strike", 0)
                     long_strike = candidate.get("long_strike", 0)
                     expiry_str = candidate.get("expiry", "")
@@ -2233,19 +2328,18 @@ class UnifiedAutopilotEngine:
                         ]
                 
                 if legs_data:
-                    print(f"EXEC DEBUG [{idx}]: Constructing {len(legs_data)} legs from legs_data")
                     legs = []
                     for l in legs_data:
                         leg_expiry = l.get("expiry")
                         if isinstance(leg_expiry, str):
                             leg_expiry = date.fromisoformat(leg_expiry.split("T")[0])
                         
-                        # OptionLeg uses strings for side and option_type
+                        # OptionLeg uses strings for side and option_type (Phase 4a: Kelly-sized qty)
                         legs.append(OptionLeg(
                             side=l.get("side", "sell"),
                             option_type=l.get("option_type", "put"),
                             strike=l.get("strike", 0),
-                            quantity=l.get("quantity", 1),
+                            quantity=contracts,
                             expiry=leg_expiry,
                         ))
                     
@@ -2273,50 +2367,52 @@ class UnifiedAutopilotEngine:
                         client_order_id=client_order_id,
                     )
                     
-                    # Submit order via broker
-                    print(f"EXEC DEBUG [{idx}]: Submitting order with {len(trade_candidate.legs)} legs")
+                    # Submit via ExecutionEngineV2 (limit orders only, Alpaca paper)
                     logger.info(f"🚀 EXECUTING TRADE: {symbol} {template} @ ${credit}")
                     logger.info(f"📦 TradeCandidate: {trade_candidate.id}, legs={len(trade_candidate.legs)}")
-                    paper_order = broker.submit_order(trade_candidate)
-                    print(f"EXEC DEBUG [{idx}]: paper_order returned: {paper_order}")
+                    results = await exec_engine.submit_candidate(trade_candidate, run_id, correlation_id)
                     
-                    if paper_order:
-                        # For Alpaca, submission is enough. We don't manually execute.
-                        # paper_order = broker.execute_order(paper_order.order_id)
-                        
-                        order_record.alpaca_order_id = paper_order.order_id
-                        order_record.status = paper_order.status.value
-                        order_record.filled_qty = paper_order.filled_qty if hasattr(paper_order, 'filled_qty') else 0
-                        order_record.filled_avg_price = paper_order.filled_avg_price if hasattr(paper_order, 'filled_avg_price') else None
+                    if results:
+                        first = results[0]
+                        order_record.alpaca_order_id = first.broker_order_id or ",".join(
+                            r.broker_order_id or "" for r in results if r.broker_order_id
+                        )
+                        order_record.status = first.status.value
+                        order_record.filled_qty = sum(
+                            r.qty for r in results if r.status.value == "filled"
+                        ) or 0
+                        filled_prices = [r.fill_price for r in results if r.fill_price]
+                        order_record.filled_avg_price = sum(filled_prices) / len(filled_prices) if filled_prices else None
                         order_record.filled_at = datetime.now()
+                        if not first.success and first.error:
+                            order_record.error = first.error
                         
-                        # Register position if order is active (filled or pending)
-                        # We need to track metadata even if it's not fully filled yet
-                        valid_statuses = ["filled", "partial_fill", "new", "accepted", "pending_new", "partially_filled"]
-                        if paper_order.status.value in valid_statuses:
-                            status_emoji = "✅" if paper_order.status.value == "filled" else "⏳"
-                            logger.info(f"{status_emoji} ORDER SUBMITTED: {symbol} - ID: {paper_order.order_id} ({paper_order.status.value})")
+                        valid_statuses = ["filled", "accepted", "submitted"]
+                        if first.status.value in valid_statuses:
+                            status_emoji = "✅" if first.status.value == "filled" else "⏳"
+                            logger.info(f"{status_emoji} ORDER SUBMITTED: {symbol} - ID: {first.broker_order_id} ({first.status.value})")
                             
-                            # Register position for monitoring (metadata persistence)
-                            manager.register_position(
-                                symbol=symbol,
-                                run_id=run_id,
-                                strategy_template=template,
-                                entry_credit=credit,
-                                max_loss=candidate.get("max_loss", 0),
-                                exit_rules=BrokerExitRule(),
-                            )
+                            for leg in trade_candidate.legs:
+                                occ = exec_engine._occ_symbol(
+                                    symbol, leg.expiry, leg.option_type, leg.strike
+                                )
+                                manager.register_position(
+                                    contract_symbol=occ,
+                                    underlying=symbol,
+                                    run_id=run_id,
+                                    strategy_template=template,
+                                    entry_credit=credit / len(trade_candidate.legs),
+                                    max_loss=candidate.get("max_loss", 0),
+                                    exit_rules=BrokerExitRule(),
+                                )
                         else:
-                            logger.warning(f"⚠️ ORDER REJECTED/FAILED: {symbol} - Status: {paper_order.status.value}")
+                            logger.warning(f"⚠️ ORDER REJECTED/FAILED: {symbol} - Status: {first.status.value}")
                     else:
                         order_record.status = "rejected"
-                        order_record.error = "Broker returned no order"
+                        order_record.error = "ExecutionEngineV2 returned no results"
                 else:
-                    # No legs - just register as a tracked position
-                    print(f"EXEC DEBUG [{idx}]: ELSE BLOCK - NO LEGS CONSTRUCTED for {symbol}")
                     logger.warning(f"⚠️ NO LEGS CONSTRUCTED for {symbol} {template} - cannot execute trade")
-                    logger.info(f"📝 REGISTERING POSITION (no legs): {symbol} {template}")
-                    manager.register_position(
+                    manager.register_position_legacy(
                         symbol=symbol,
                         run_id=run_id,
                         strategy_template=template,
@@ -2327,32 +2423,98 @@ class UnifiedAutopilotEngine:
                     order_record.status = "registered"
                 
             except Exception as e:
-                print(f"EXEC DEBUG [{idx}]: EXCEPTION in order processing: {e}")
                 logger.error(f"❌ Order failed for {symbol}: {e}", exc_info=True)
                 order_record.status = "rejected"
                 order_record.error = str(e)
             
             orders.append(order_record)
         
-        print(f"EXEC DEBUG: Returning {len(orders)} orders")
         return orders
     
     async def _persist_artifact(self, artifact: RunArtifact):
-        """Persist run artifact to database."""
-        import json
-        import os
-        
-        # Save to file for now (would use DB in production)
-        artifacts_dir = "/tmp/autopilot_artifacts"
-        os.makedirs(artifacts_dir, exist_ok=True)
-        
-        filepath = os.path.join(artifacts_dir, f"{artifact.run_id}.json")
+        """Persist run artifact to v3_store (single source of truth)."""
         try:
-            with open(filepath, "w") as f:
-                json.dump(artifact.to_dict(), f, indent=2)
-            logger.debug(f"Artifact saved: {filepath}")
+            from .v3_store import (
+                cycle_complete,
+                order_create,
+                decision_upsert,
+                init_db,
+            )
+            init_db()
+
+            duration_ms = (datetime.now() - artifact.timestamp).total_seconds() * 1000
+            decisions_count = artifact.candidates_selected
+            rejections_count = len(artifact.gates_triggered) + len(artifact.validation_errors)
+            orders_count = len(artifact.orders_placed)
+
+            # Phase 5a: Structured audit log
+            audit_log = {
+                "correlation_id": artifact.correlation_id,
+                "timestamp": artifact.timestamp.isoformat(),
+                "phase_timings": {},  # TODO: add if we track phase start/end
+                "candidates_considered": artifact.candidates_generated,
+                "candidates_rejected": [
+                    {"symbol": c.symbol, "reasons": c.rejection_reasons}
+                    for c in artifact.candidates if not c.selected
+                ],
+                "orders_submitted": [
+                    {"symbol": o.symbol, "qty": o.qty, "status": o.status}
+                    for o in artifact.orders_placed
+                ],
+                "exits_triggered": artifact.exits_triggered,
+                "portfolio_state": {
+                    "exits_executed": artifact.exits_executed,
+                    "orders_filled": artifact.orders_filled,
+                    "orders_rejected": artifact.orders_rejected,
+                },
+                "risk_metrics": {
+                    "gates_triggered": [g.value for g in artifact.gates_triggered],
+                    "validation_errors": artifact.validation_errors[:20],
+                },
+                "think_log_count": len(artifact.think_log),
+            }
+
+            cycle_complete(
+                cycle_id=artifact.run_id,
+                decisions_count=decisions_count,
+                rejections_count=rejections_count,
+                orders_count=orders_count,
+                duration_ms=duration_ms,
+                status="completed" if not artifact.error else "failed",
+                market_session="open" if (artifact.market_context and artifact.market_context.market_open) else "closed",
+                audit_log=audit_log,
+            )
+
+            for i, cand in enumerate(artifact.candidates):
+                decision_upsert({
+                    "decision_id": f"{artifact.run_id}-dec-{i}",
+                    "cycle_id": artifact.run_id,
+                    "symbol": cand.symbol,
+                    "decision_type": "ACCEPT" if cand.selected else "REJECT",
+                    "score": cand.score,
+                    "will_submit": int(cand.selected),
+                    "rejection_reason": "; ".join(cand.rejection_reasons) if cand.rejection_reasons else None,
+                    "created_at": datetime.now().isoformat(),
+                })
+
+            for order in artifact.orders_placed:
+                order_create({
+                    "order_id": order.client_order_id,
+                    "cycle_id": artifact.run_id,
+                    "decision_id": order.client_order_id,
+                    "symbol": order.symbol,
+                    "side": order.side,
+                    "qty": order.qty,
+                    "order_type": order.order_type or "limit",
+                    "limit_price": order.limit_price,
+                    "broker_order_id": order.alpaca_order_id,
+                    "status": order.status or "submitted",
+                    "submitted_at": order.submitted_at.isoformat() if order.submitted_at else None,
+                })
+
+            logger.debug(f"Artifact persisted to v3_store: {artifact.run_id}")
         except Exception as e:
-            logger.error(f"Failed to persist artifact: {e}")
+            logger.error(f"Failed to persist artifact to v3_store: {e}")
     
     async def _verify_broker_state(self, run_id: str) -> BrokerVerification:
         """Verify broker state matches expectations."""
@@ -2409,6 +2571,7 @@ class UnifiedAutopilotEngine:
                 "exits_triggered": artifact.exits_triggered,
                 "exits_executed": artifact.exits_executed,
                 "timestamp": artifact.timestamp.isoformat(),
+                "phase": "COMPLETE",
             })
             
             # 2. Positions update (if we have positions data)

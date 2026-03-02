@@ -214,7 +214,7 @@ async def start_autopilot():
         raise HTTPException(status_code=400, detail="Autopilot is already running")
     
     try:
-        await service.start_background_loop(interval_seconds=60)
+        await service.start_background_loop()
         config.continuous_run = True
         save_autopilot_config(config)
         return {"status": "started", "timestamp": datetime.now().isoformat()}

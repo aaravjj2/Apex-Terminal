@@ -1,0 +1,15 @@
+# Exit Reasons
+
+`ExitReason` enum in unified_engine.py:
+
+- PROFIT_TARGET
+- STOP_LOSS
+- TIME_STOP
+- DTE_THRESHOLD
+- TRAILING_STOP
+- EARNINGS_SHOCK
+- NEWS_SHOCK
+- EOD_FLATTEN
+- MANUAL_CLOSE
+- KILL_SWITCH
+- RISK_LIMIT

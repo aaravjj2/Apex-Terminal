@@ -26,10 +26,12 @@ import type { IChartApi, ISeriesApi, MouseEventParams, DeepPartial, ChartOptions
 import { IndicatorPicker, type ActiveIndicator } from './IndicatorPicker';
 import { INDICATORS, getIndicatorById, type IndicatorDef } from './IndicatorRegistry';
 import { DrawingToolbar, type DrawingToolType } from './DrawingToolbar';
+import { processChartType, type OHLCV } from '@/lib/ta/chart-types';
+import { SMA, EMA, RSI, MACD, BollingerBands } from '@/lib/ta/indicators-extended';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type ChartType = 'candlestick' | 'heikin_ashi' | 'line' | 'area' | 'bar';
+export type ChartType = 'candlestick' | 'heikin_ashi' | 'line' | 'area' | 'bar' | 'renko' | 'hollow' | 'rangebars' | 'pnf' | 'kagi' | 'linebreak';
 export type Timeframe  = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1D' | '1W' | '1M';
 export type ThemeMode  = 'bloomberg' | 'dark' | 'light';
 
@@ -76,11 +78,17 @@ const TIMEFRAMES: { label: string; value: Timeframe; seconds: number }[] = [
 ];
 
 const CHART_TYPES: { label: string; value: ChartType; icon: string }[] = [
-  { label: 'Candlestick', value: 'candlestick',  icon: '⊞' },
-  { label: 'Heikin Ashi', value: 'heikin_ashi',  icon: '⊟' },
-  { label: 'Line',        value: 'line',          icon: '∕' },
-  { label: 'Area',        value: 'area',          icon: '⊿' },
-  { label: 'Bar',         value: 'bar',           icon: '⎸' },
+  { label: 'Candlestick',   value: 'candlestick', icon: '⊞' },
+  { label: 'Heikin Ashi',   value: 'heikin_ashi', icon: '⊟' },
+  { label: 'Hollow',       value: 'hollow',      icon: '▢' },
+  { label: 'Line',         value: 'line',        icon: '∕' },
+  { label: 'Area',         value: 'area',        icon: '⊿' },
+  { label: 'Bar',          value: 'bar',         icon: '⎸' },
+  { label: 'Renko',        value: 'renko',       icon: '▦' },
+  { label: 'Range Bars',   value: 'rangebars',  icon: '▤' },
+  { label: 'P&F',          value: 'pnf',         icon: '▣' },
+  { label: 'Kagi',         value: 'kagi',       icon: '⌇' },
+  { label: 'Line Break',   value: 'linebreak',   icon: '⊟' },
 ];
 
 // Indicator catalog now lives in IndicatorRegistry.ts — see INDICATORS import
@@ -315,11 +323,37 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
             indicators: [{ name: indicatorName, params }],
           }),
         });
-        if (!res.ok) return null;
+        if (!res.ok) throw new Error('API error');
         const data = await res.json();
-        return data.results?.[indicatorName] ?? data.results?.[indicatorId] ?? null;
+        const out = data.results?.[indicatorName] ?? data.results?.[indicatorId] ?? null;
+        if (out) return out;
+        throw new Error('No data');
       } catch {
-        return null;
+        // Client-side fallback when API unavailable
+        const closes = rawBars.map(b => b.close);
+        const period = (params?.period as number) ?? 20;
+        const fast = (params?.fast as number) ?? 12;
+        const slow = (params?.slow as number) ?? 26;
+        const signal = (params?.signal as number) ?? 9;
+        try {
+          switch (indicatorName) {
+            case 'SMA':
+              return SMA(closes, { period });
+            case 'EMA':
+              return EMA(closes, { period });
+            case 'RSI':
+              return RSI(closes, { period });
+            case 'MACD':
+              return MACD(closes, { fast, slow, signal });
+            case 'BBANDS':
+            case 'BB':
+              return BollingerBands(closes, { period, stdDev: (params?.stdDev as number) ?? 2 });
+            default:
+              return null;
+          }
+        } catch {
+          return null;
+        }
       }
     }, []);
 
@@ -408,12 +442,69 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
         volumeSeriesRef.current = null;
       }
 
-      const displayBars = chartType === 'heikin_ashi' ? toHeikinAshi(rawBars) : rawBars;
+      const ohlcv: OHLCV[] = rawBars.map(b => ({
+        time: b.time, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume,
+      }));
+      let displayBars: OHLCVBar[];
+      if (chartType === 'heikin_ashi') {
+        displayBars = toHeikinAshi(rawBars);
+      } else if (chartType === 'renko') {
+        const bricks = processChartType('Renko', ohlcv, { brickSize: 1, useATR: true, atrPeriod: 14 }) as Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>;
+        displayBars = bricks.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume }));
+      } else if (chartType === 'hollow') {
+        const candles = processChartType('HollowCandles', ohlcv) as Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>;
+        displayBars = candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume }));
+      } else if (chartType === 'rangebars') {
+        const rangeBars = processChartType('RangeBars', ohlcv, { rangeSize: 'atr', atrPeriod: 14 }) as Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>;
+        displayBars = rangeBars.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume }));
+      } else if (chartType === 'pnf') {
+        const pnfColumns = processChartType('PointAndFigure', ohlcv, { boxSize: 1, reversal: 3, method: 'close' }) as Array<{ startPrice: number; endPrice: number; startTime: number; endTime: number; volume: number }>;
+        displayBars = pnfColumns.map(c => ({
+          time: c.endTime,
+          open: c.startPrice,
+          close: c.endPrice,
+          high: Math.max(c.startPrice, c.endPrice),
+          low: Math.min(c.startPrice, c.endPrice),
+          volume: c.volume ?? 0,
+        }));
+      } else if (chartType === 'kagi') {
+        const kagiSegments = processChartType('Kagi', ohlcv, { reversalAmount: 4, reversalMode: 'percentage' }) as Array<{ startPrice: number; endPrice: number; startTime: number; endTime: number }>;
+        const linePoints = kagiSegments.flatMap(s => [
+          { time: s.startTime, value: s.startPrice },
+          { time: s.endTime, value: s.endPrice },
+        ]).filter((p, i, arr) => i === 0 || p.time !== arr[i - 1]?.time || p.value !== arr[i - 1]?.value);
+        displayBars = linePoints.map(p => ({
+          time: p.time,
+          open: p.value,
+          high: p.value,
+          low: p.value,
+          close: p.value,
+          volume: 0,
+        })) as OHLCVBar[];
+        (displayBars as unknown as { _isKagi?: boolean })._isKagi = true;
+      } else if (chartType === 'linebreak') {
+        const lineBreakBlocks = processChartType('LineBreak', ohlcv, { lineCount: 3 }) as Array<{ open: number; close: number; high: number; low: number; time: number; volume?: number }>;
+        displayBars = lineBreakBlocks.map(b => ({
+          time: b.time,
+          open: b.open,
+          high: b.high,
+          low: b.low,
+          close: b.close,
+          volume: b.volume ?? 0,
+        }));
+      } else {
+        displayBars = rawBars;
+      }
 
       const upColor   = currentTheme === 'bloomberg' ? '#f5a623' : '#26a69a';
       const downColor = currentTheme === 'bloomberg' ? '#e53935' : '#ef5350';
 
-      if (chartType === 'candlestick' || chartType === 'heikin_ashi') {
+      const isKagiLine = chartType === 'kagi' && (displayBars as unknown as { _isKagi?: boolean })._isKagi;
+      if (chartType === 'kagi' && isKagiLine) {
+        const ls = chart.addSeries(LineSeries, { color: upColor, lineWidth: 2 });
+        ls.setData(displayBars.map(b => ({ time: b.time as number, value: b.close })));
+        mainSeriesRef.current = ls;
+      } else if (chartType === 'candlestick' || chartType === 'heikin_ashi' || chartType === 'renko' || chartType === 'hollow' || chartType === 'rangebars' || chartType === 'pnf' || chartType === 'linebreak') {
         const cs = chart.addSeries(CandlestickSeries, {
           upColor, downColor, borderVisible: false,
           wickUpColor: upColor, wickDownColor: downColor,
@@ -434,7 +525,9 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
         mainSeriesRef.current = bs;
       }
 
-      // Volume sub-series on main pane (scaled to 15% of chart height)
+      // Volume sub-series on main pane (skip for Kagi/P&F/LineBreak which have reduced volume semantics)
+      const skipVolume = chartType === 'kagi' || chartType === 'pnf';
+      if (!skipVolume) {
       const volSeries = chart.addSeries(HistogramSeries, {
         priceFormat: { type: 'volume' },
         priceScaleId: 'volume',
@@ -448,6 +541,7 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
           : (currentTheme === 'bloomberg' ? '#e5393544' : '#ef535044'),
       })));
       volumeSeriesRef.current = volSeries;
+      }
 
       chart.timeScale().fitContent();
     }, [chartType, currentTheme]);

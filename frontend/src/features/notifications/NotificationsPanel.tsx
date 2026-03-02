@@ -1,4 +1,4 @@
-﻿// Bloomberg palette
+// Bloomberg palette
 const BG = '#0a0a0a';
 const PANEL = '#111111';
 const BORDER = '#1e1e1e';
@@ -64,7 +64,7 @@ const NotifRow: React.FC<{
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
         <span style={{ fontSize: 12, color: sevCol }}>{icon}</span>
-        <span style={{ fontSize: 11, color: sevCol, letterSpacing: 0.5, textTransform: 'uppercase', fontSize: 9 }}>
+        <span style={{ fontSize: 9, color: sevCol, letterSpacing: 0.5, textTransform: 'uppercase' }}>
           {notif.severity}
         </span>
         <span style={{ fontSize: 9, color: SUBTLE, marginLeft: 2 }}>{notif.type}</span>

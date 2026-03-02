@@ -54,6 +54,15 @@ const WORKSPACES: WorkspaceConfig[] = [
     keywords: ['chart', 'trade', 'order', 'execution']
   },
   { 
+    id: 'trading-multi', 
+    label: 'Multi Chart', 
+    icon: '📊', 
+    path: '/ui2/trading-multi', 
+    section: 'main',
+    description: 'Multi-pane chart grid',
+    keywords: ['multi', 'chart', 'grid', 'compare']
+  },
+  { 
     id: 'portfolio', 
     label: 'Portfolio', 
     icon: '💼', 
@@ -1252,11 +1261,444 @@ const WORKSPACES: WorkspaceConfig[] = [
     description: 'Global readiness certification',
     keywords: ['global', 'readiness']
   },
+  // New UI2 Pages — demo/index.html parity
+  {
+    id: 'heatmap',
+    label: 'Heatmap',
+    icon: '🗺️',
+    path: '/ui2/heatmap',
+    section: 'main',
+    description: 'Market heatmap with sector treemap',
+    keywords: ['heatmap', 'sector', 'treemap', 'market', 'heat']
+  },
+  {
+    id: 'fixed-income',
+    label: 'Fixed Income',
+    icon: '🏛️',
+    path: '/ui2/fixed-income',
+    section: 'main',
+    description: 'Yield curves, bond search, credit spreads',
+    keywords: ['bonds', 'yield', 'curve', 'fixed', 'income', 'credit']
+  },
+  {
+    id: 'fx-dashboard',
+    label: 'FX',
+    icon: '💱',
+    path: '/ui2/fx-dashboard',
+    section: 'main',
+    description: 'FX cross rates, forwards, vol surface',
+    keywords: ['fx', 'forex', 'currency', 'cross', 'rates']
+  },
+  {
+    id: 'commodities',
+    label: 'Commodities',
+    icon: '🛢️',
+    path: '/ui2/commodities',
+    section: 'main',
+    description: 'Energy, metals, agriculture futures',
+    keywords: ['commodities', 'oil', 'gold', 'futures', 'energy']
+  },
+  {
+    id: 'crypto',
+    label: 'Crypto',
+    icon: '₿',
+    path: '/ui2/crypto',
+    section: 'main',
+    description: 'Crypto markets, on-chain, DeFi, derivatives',
+    keywords: ['crypto', 'bitcoin', 'ethereum', 'defi', 'blockchain']
+  },
+  {
+    id: 'social',
+    label: 'Social',
+    icon: '💬',
+    path: '/ui2/social',
+    section: 'main',
+    description: 'Trading ideas, sentiment, community',
+    keywords: ['social', 'ideas', 'sentiment', 'community', 'chat']
+  },
+  {
+    id: 'macro',
+    label: 'Macro',
+    icon: '🌐',
+    path: '/ui2/macro',
+    section: 'main',
+    description: 'Economic calendar, central banks, global markets',
+    keywords: ['macro', 'economic', 'calendar', 'central', 'bank', 'gdp']
+  },
+  {
+    id: 'stock-screener',
+    label: 'Screener',
+    icon: '🔍',
+    path: '/ui2/stock-screener',
+    section: 'main',
+    description: 'Advanced stock screening with 50+ filters',
+    keywords: ['screener', 'filter', 'scan', 'stocks', 'screen']
+  },
+  {
+    id: 'watchlist-manager',
+    label: 'Watchlists',
+    icon: '👁️',
+    path: '/ui2/watchlist-manager',
+    section: 'main',
+    description: 'Multi-watchlist manager with heatmaps',
+    keywords: ['watchlist', 'watch', 'list', 'track', 'monitor']
+  },
+  {
+    id: 'news-terminal',
+    label: 'News',
+    icon: '📰',
+    path: '/ui2/news-terminal',
+    section: 'main',
+    description: 'Real-time news feed with sentiment analysis',
+    keywords: ['news', 'feed', 'headline', 'sentiment', 'article']
+  },
+  {
+    id: 'alerts-manager',
+    label: 'Alerts',
+    icon: '🔔',
+    path: '/ui2/alerts-manager',
+    section: 'main',
+    description: 'Price alerts, conditions, and notifications',
+    keywords: ['alert', 'notification', 'trigger', 'condition', 'price']
+  },
+  {
+    id: 'options-chain',
+    label: 'Options',
+    icon: '⚡',
+    path: '/ui2/options-chain',
+    section: 'main',
+    description: 'Options chain, vol surface, Greeks, strategies',
+    keywords: ['options', 'chain', 'greeks', 'volatility', 'calls', 'puts']
+  },
+  {
+    id: 'ml-dashboard',
+    label: 'ML/AI',
+    icon: '🤖',
+    path: '/ui2/ml-dashboard',
+    section: 'main',
+    description: 'ML model training, predictions, feature analysis',
+    keywords: ['ml', 'ai', 'machine', 'learning', 'model', 'prediction']
+  },
+  {
+    id: 'portfolio-analytics',
+    label: 'Analytics',
+    icon: '📊',
+    path: '/ui2/portfolio-analytics',
+    section: 'main',
+    description: 'Portfolio allocation, drawdown, attribution',
+    keywords: ['portfolio', 'analytics', 'allocation', 'drawdown', 'attribution']
+  },
+  {
+    id: 'risk-dashboard',
+    label: 'Risk Mgmt',
+    icon: '🛡️',
+    path: '/ui2/risk-dashboard',
+    section: 'main',
+    description: 'VaR, stress tests, correlation, exposure analysis',
+    keywords: ['risk', 'var', 'stress', 'test', 'correlation', 'exposure']
+  },
+  {
+    id: 'order-book-depth',
+    label: 'Order Book',
+    icon: '📗',
+    path: '/ui2/order-book-depth',
+    section: 'main',
+    description: 'Level 2 DOM, time & sales, order flow, volume profile',
+    keywords: ['order', 'book', 'depth', 'level2', 'dom', 'flow']
+  },
+  {
+    id: 'algo-execution',
+    label: 'Algo Exec',
+    icon: '⚡',
+    path: '/ui2/algo-execution',
+    section: 'main',
+    description: 'Algo execution, TCA, venue distribution, basket trading',
+    keywords: ['algo', 'execution', 'twap', 'vwap', 'tca', 'basket']
+  },
+  {
+    id: 'bloomberg-terminal',
+    label: 'Bloomberg',
+    icon: '🖥️',
+    path: '/ui2/bloomberg-terminal',
+    section: 'main',
+    description: 'Bloomberg-style command line, security finder, launchpad',
+    keywords: ['bloomberg', 'terminal', 'command', 'bbg', 'security']
+  },
+  {
+    id: 'monte-carlo-sim',
+    label: 'Monte Carlo',
+    icon: '🎲',
+    path: '/ui2/monte-carlo-sim',
+    section: 'main',
+    description: 'Monte Carlo simulation, fan chart, distributions',
+    keywords: ['monte', 'carlo', 'simulation', 'random', 'probability']
+  },
+  {
+    id: 'strategy-builder-pro',
+    label: 'Strategy Pro',
+    icon: '🏗️',
+    path: '/ui2/strategy-builder-pro',
+    section: 'main',
+    description: 'Visual strategy builder, indicators, Pine Script',
+    keywords: ['strategy', 'builder', 'indicators', 'pine', 'script']
+  },
+  {
+    id: 'multi-chart-layout',
+    label: 'Multi Chart',
+    icon: '📈',
+    path: '/ui2/multi-chart-layout',
+    section: 'main',
+    description: 'Multi-panel workspace, 8 layouts, drawing tools',
+    keywords: ['multi', 'chart', 'layout', 'panel', 'workspace']
+  },
+  {
+    id: 'portfolio-optimizer-pro',
+    label: 'Optimizer',
+    icon: '🎯',
+    path: '/ui2/portfolio-optimizer-pro',
+    section: 'main',
+    description: 'Mean-Variance, Black-Litterman, efficient frontier',
+    keywords: ['portfolio', 'optimizer', 'frontier', 'sharpe', 'allocation']
+  },
+  {
+    id: 'volatility-surface',
+    label: 'Vol Surface',
+    icon: '🌊',
+    path: '/ui2/volatility-surface',
+    section: 'main',
+    description: '3D vol surface, smile, term structure, Greeks',
+    keywords: ['volatility', 'surface', 'smile', 'skew', 'greeks']
+  },
+  {
+    id: 'backtest-engine',
+    label: 'Backtest',
+    icon: '⏪',
+    path: '/ui2/backtest-engine',
+    section: 'main',
+    description: 'Backtest engine, equity curve, walk-forward analysis',
+    keywords: ['backtest', 'engine', 'equity', 'curve', 'optimization']
+  },
+  {
+    id: 'trading-journal',
+    label: 'Journal',
+    icon: '📓',
+    path: '/ui2/trading-journal',
+    section: 'main',
+    description: 'Trade journal, P/L calendar, emotion tracking',
+    keywords: ['journal', 'diary', 'trade', 'log', 'emotion', 'review']
+  },
+  {
+    id: 'sector-analysis',
+    label: 'Sectors',
+    icon: '🏭',
+    path: '/ui2/sector-analysis',
+    section: 'main',
+    description: 'Sector rotation, relative strength, GICS analysis',
+    keywords: ['sector', 'rotation', 'gics', 'industry', 'relative']
+  },
+  {
+    id: 'dark-pool',
+    label: 'Dark Pool',
+    icon: '🌑',
+    path: '/ui2/dark-pool',
+    section: 'main',
+    description: 'Dark pool activity, block trades, hidden liquidity',
+    keywords: ['dark', 'pool', 'block', 'hidden', 'finra', 'otc']
+  },
+  {
+    id: 'market-maker',
+    label: 'Market Maker',
+    icon: '🏦',
+    path: '/ui2/market-maker',
+    section: 'main',
+    description: 'Market making simulation, spread, inventory risk',
+    keywords: ['market', 'maker', 'spread', 'inventory', 'quoting']
+  },
+  {
+    id: 'correlation-matrix',
+    label: 'Correlation',
+    icon: '🔗',
+    path: '/ui2/correlation-matrix',
+    section: 'main',
+    description: 'Cross-asset correlation heatmap, PCA, regime detection',
+    keywords: ['correlation', 'matrix', 'pca', 'regime', 'covariance']
+  },
+  {
+    id: 'earnings-calendar',
+    label: 'Earnings',
+    icon: '📅',
+    path: '/ui2/earnings-calendar',
+    section: 'main',
+    description: 'Earnings calendar, estimates, surprises, whisper numbers',
+    keywords: ['earnings', 'calendar', 'eps', 'revenue', 'surprise']
+  },
+  {
+    id: 'yield-curve',
+    label: 'Yield Curve',
+    icon: '📈',
+    path: '/ui2/yield-curve',
+    section: 'main',
+    description: 'Interactive yield curve builder, Nelson-Siegel, forward rates',
+    keywords: ['yield', 'curve', 'treasury', 'rates', 'spread']
+  },
+  {
+    id: 'real-time-scanner',
+    label: 'Scanner',
+    icon: '📡',
+    path: '/ui2/real-time-scanner',
+    section: 'main',
+    description: 'Live streaming scanner, volume heatmap, pattern recognition',
+    keywords: ['scanner', 'screener', 'volume', 'pattern', 'filter']
+  },
+  {
+    id: 'economic-indicators',
+    label: 'Economics',
+    icon: '🏛️',
+    path: '/ui2/economic-indicators',
+    section: 'main',
+    description: 'Macro indicators, economic calendar, GDP, CPI, employment',
+    keywords: ['economics', 'gdp', 'cpi', 'employment', 'indicators']
+  },
+  {
+    id: 'market-overview',
+    label: 'Mkt Overview',
+    icon: '🌍',
+    path: '/ui2/market-overview',
+    section: 'main',
+    description: 'Global indices, sector performance, top movers',
+    keywords: ['market', 'overview', 'indices', 'sectors', 'movers']
+  },
+  {
+    id: 'report-builder',
+    label: 'Reports',
+    icon: '📊',
+    path: '/ui2/report-builder',
+    section: 'main',
+    description: 'Drag-and-drop report builder, templates, export',
+    keywords: ['report', 'builder', 'export', 'template', 'pdf']
+  },
+  {
+    id: 'financial-analysis',
+    label: 'Financials',
+    icon: '💰',
+    path: '/ui2/financial-analysis',
+    section: 'main',
+    description: 'Income statement, balance sheet, cash flow, DCF model',
+    keywords: ['financial', 'analysis', 'income', 'balance', 'dcf']
+  },
+  {
+    id: 'comparable-companies',
+    label: 'Comps',
+    icon: '⚖️',
+    path: '/ui2/comparable-companies',
+    section: 'main',
+    description: 'Peer groups, scatter plot, waterfall, football field',
+    keywords: ['comparable', 'companies', 'peers', 'valuation', 'multiples']
+  },
+  {
+    id: 'security-finder',
+    label: 'SecFinder',
+    icon: '🔎',
+    path: '/ui2/security-finder',
+    section: 'main',
+    description: 'Multi-asset security search with filters',
+    keywords: ['security', 'finder', 'search', 'lookup', 'secf']
+  },
+  {
+    id: 'transaction-cost-analysis',
+    label: 'TCA',
+    icon: '💱',
+    path: '/ui2/transaction-cost-analysis',
+    section: 'main',
+    description: 'Best execution TCA, slippage distribution, venue analysis',
+    keywords: ['tca', 'transaction', 'cost', 'execution', 'slippage']
+  },
+  {
+    id: 'alert-delivery',
+    label: 'Alert Delivery',
+    icon: '🔔',
+    path: '/ui2/alert-delivery',
+    section: 'main',
+    description: 'Alert delivery management, channels, templates, escalation',
+    keywords: ['alert', 'delivery', 'notification', 'channel', 'escalation']
+  },
+  {
+    id: 'credit-risk',
+    label: 'Credit Risk',
+    icon: '🏦',
+    path: '/ui2/credit-risk',
+    section: 'main',
+    description: 'CDS spreads, transition matrix, CVA/DVA, credit analytics',
+    keywords: ['credit', 'risk', 'cds', 'default', 'rating']
+  },
+  {
+    id: 'workspace-manager',
+    label: 'Workspaces',
+    icon: '🗂️',
+    path: '/ui2/workspace-manager',
+    section: 'main',
+    description: 'Workspace management, layouts, themes, keybindings',
+    keywords: ['workspace', 'layout', 'theme', 'keybinding', 'manager']
+  },
+  {
+    id: 'chart-replay',
+    label: 'Replay',
+    icon: '⏪',
+    path: '/ui2/chart-replay',
+    section: 'main',
+    description: 'Historical market replay, speed control, candle stepping',
+    keywords: ['chart', 'replay', 'playback', 'historical', 'practice']
+  },
+  {
+    id: 'options-pricing-lab',
+    label: 'Pricing Lab',
+    icon: '🧪',
+    path: '/ui2/options-pricing-lab',
+    section: 'main',
+    description: 'BSM calculator, binomial tree, Monte Carlo, exotic options',
+    keywords: ['options', 'pricing', 'bsm', 'greeks', 'monte carlo']
+  },
+  {
+    id: 'market-breadth',
+    label: 'Breadth',
+    icon: '📶',
+    path: '/ui2/market-breadth',
+    section: 'main',
+    description: 'McClellan Oscillator, TRIN, advance/decline, breadth thrust',
+    keywords: ['breadth', 'mcclellan', 'trin', 'advance', 'decline']
+  },
+  {
+    id: 'autopilot-position-sizing',
+    label: 'Position Size',
+    icon: '📐',
+    path: '/ui2/autopilot-position-sizing',
+    section: 'main',
+    description: 'Kelly criterion, regime-aware sizing, risk budgeting',
+    keywords: ['position', 'sizing', 'kelly', 'risk', 'budget']
+  },
+  {
+    id: 'autopilot-audit-trail',
+    label: 'Audit Trail',
+    icon: '📋',
+    path: '/ui2/autopilot-audit-trail',
+    section: 'main',
+    description: 'Autopilot audit log, decision trail, compliance checks',
+    keywords: ['audit', 'trail', 'compliance', 'log', 'decision']
+  },
+  {
+    id: 'drawing-tool-manager',
+    label: 'Drawings',
+    icon: '✏️',
+    path: '/ui2/drawing-tool-manager',
+    section: 'main',
+    description: '41 drawing tools, templates, properties, sync & share',
+    keywords: ['drawing', 'tools', 'fibonacci', 'trendline', 'annotation']
+  },
 ];
 
 // Core Correctness Track — Autopilot, Strategies/Backtester, Workflows/Agents, Search, Ops/Settings
 // All other workspaces are still routable but hidden from the left rail.
-const CORE_NAV_IDS = new Set(['autopilot', 'search', 'workflow-builder', 'backtester-v3', 'broker-v2', 'runs', 'settings', 'observability-v2', 'productization', 'dataset-snapshots', 'execution-cockpit', 'control-tower', 'options-matrix', 'derivatives-oms', 'marketplace', 'global-readiness']);
+const CORE_NAV_IDS = new Set(['autopilot', 'search', 'workflow-builder', 'backtester-v3', 'broker-v2', 'runs', 'settings', 'observability-v2', 'productization', 'dataset-snapshots', 'execution-cockpit', 'control-tower', 'options-matrix', 'derivatives-oms', 'marketplace', 'global-readiness', 'heatmap', 'fixed-income', 'fx-dashboard', 'commodities', 'crypto', 'social', 'macro', 'stock-screener', 'watchlist-manager', 'news-terminal', 'alerts-manager', 'options-chain', 'ml-dashboard', 'portfolio-analytics', 'risk-dashboard', 'order-book-depth', 'algo-execution', 'bloomberg-terminal', 'monte-carlo-sim', 'strategy-builder-pro', 'multi-chart-layout', 'portfolio-optimizer-pro', 'volatility-surface', 'backtest-engine', 'trading-journal', 'sector-analysis', 'dark-pool', 'market-maker', 'correlation-matrix', 'earnings-calendar', 'yield-curve', 'real-time-scanner', 'economic-indicators', 'market-overview', 'report-builder', 'financial-analysis', 'comparable-companies', 'security-finder', 'transaction-cost-analysis', 'alert-delivery', 'credit-risk', 'workspace-manager', 'chart-replay', 'options-pricing-lab', 'market-breadth', 'autopilot-position-sizing', 'autopilot-audit-trail', 'drawing-tool-manager']);
 const VISIBLE_WORKSPACES = WORKSPACES.filter(w => CORE_NAV_IDS.has(w.id));
 
 export function AppShellUI2() {
@@ -1599,6 +2041,30 @@ export function AppShellUI2() {
             <span>{marketOpen ? '●' : '○'}</span>
             <span>{marketOpen ? 'Market Open' : marketSession === 'pre' ? 'Pre-Market' : marketSession === 'post' ? 'After Hours' : 'Market Closed'}</span>
           </div>
+
+          {/* Theme Toggle — accessible for E2E and a11y */}
+          <button
+            type="button"
+            className="ui2-theme-toggle theme-toggle"
+            aria-label="Toggle theme"
+            title="Toggle theme"
+            onClick={() => {
+              const root = document.documentElement;
+              const mode = root.getAttribute('data-theme-mode') || 'dark';
+              const next = mode === 'dark' ? 'light' : 'dark';
+              root.setAttribute('data-theme-mode', next);
+              root.setAttribute('data-theme', next === 'dark' ? 'tradingview-dark' : 'tradingview-light');
+              try { localStorage.setItem('platform_theme', next === 'dark' ? 'tradingview-dark' : 'tradingview-light'); } catch { /* noop */ }
+            }}
+            style={{
+              width: '28px', height: '28px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)',
+              borderRadius: '0', cursor: 'pointer', fontSize: '12px',
+            }}
+          >
+            <span aria-hidden>🌓</span>
+          </button>
 
           {/* Connectivity (v1.94: Real status from tradingStore) */}
           <div 

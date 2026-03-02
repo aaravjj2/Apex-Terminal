@@ -246,6 +246,64 @@ class ExecutionEngineV2:
         self.lifecycle = OrderLifecycleManager()
         self._reconciliation_lock = asyncio.Lock()
 
+    def _occ_symbol(self, underlying: str, expiry, option_type: str, strike: float) -> str:
+        """Generate OCC option symbol."""
+        from datetime import date
+        if isinstance(expiry, str):
+            d = date.fromisoformat(expiry.split("T")[0])
+        else:
+            d = expiry
+        yymmdd = d.strftime("%y%m%d")
+        tc = "C" if str(option_type).lower() == "call" else "P"
+        strike_int = int(strike * 1000)
+        return f"{underlying}{yymmdd}{tc}{strike_int:08d}"
+
+    async def submit_candidate(
+        self,
+        candidate: "TradeCandidate",
+        run_id: str,
+        correlation_id: str,
+    ) -> List[OrderResult]:
+        """
+        Submit a TradeCandidate (single or multi-leg) via Alpaca.
+        For multi-leg, submits each leg as a separate order (Phase 1c will add atomic MLEG).
+        """
+        from .candidates import TradeCandidate
+        from datetime import date
+
+        results: List[OrderResult] = []
+        for i, leg in enumerate(candidate.legs):
+            expiry = leg.expiry
+            expiry_str = expiry.isoformat() if isinstance(expiry, date) else str(expiry)
+            dte = (date.fromisoformat(expiry_str.split("T")[0]) - date.today()).days if expiry else 0
+            occ = self._occ_symbol(candidate.symbol, expiry, leg.option_type, leg.strike)
+            premium = max(leg.premium, 0.05)
+            limit_price = round(premium * (1 - 0.02), 2) if leg.side == "sell" else round(premium * (1 + 0.02), 2)
+            limit_price = max(0.01, limit_price)
+
+            side = OrderSide.BUY_TO_OPEN if leg.side == "buy" else OrderSide.SELL_TO_CLOSE
+            intent_id = f"{candidate.id}-leg{i}"
+            intent = OrderIntent(
+                intent_id=intent_id,
+                cycle_id=run_id,
+                correlation_id=correlation_id,
+                symbol=candidate.symbol,
+                contract_symbol=occ,
+                side=side,
+                qty=leg.quantity,
+                limit_price=limit_price,
+                limit_price_basis="mid_cushion",
+                option_type=leg.option_type,
+                strike=leg.strike,
+                expiry=expiry_str.split("T")[0],
+                dte=max(0, dte),
+                premium_cost_usd=premium * leg.quantity * 100,
+                intent_source="unified_engine",
+            )
+            result = await self.submit_order(intent)
+            results.append(result)
+        return results
+
     async def submit_order(self, intent: OrderIntent) -> OrderResult:
         """
         Submit an options order to Alpaca paper.

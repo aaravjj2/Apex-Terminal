@@ -4,7 +4,7 @@
  */
 
 export type OrderSide = 'buy' | 'sell';
-export type OrderType = 'market' | 'limit' | 'stop';
+export type OrderType = 'market' | 'limit' | 'stop' | 'stop_limit';
 export type OrderTIF = 'day' | 'gtc' | 'ioc' | 'fok';
 export type OrderStatus = 'preview' | 'pending' | 'working' | 'filled' | 'rejected' | 'canceled';
 
@@ -54,6 +54,10 @@ export function validateOrder(ticket: Partial<OrderTicket>): OrderValidationErro
   if (ticket.type === 'stop' && (!ticket.stopPrice || ticket.stopPrice <= 0)) {
     errors.push({ field: 'stopPrice', message: 'Stop price required for stop orders' });
   }
+  if (ticket.type === 'stop_limit') {
+    if (!ticket.stopPrice || ticket.stopPrice <= 0) errors.push({ field: 'stopPrice', message: 'Stop price required' });
+    if (!ticket.limitPrice || ticket.limitPrice <= 0) errors.push({ field: 'limitPrice', message: 'Limit price required' });
+  }
   return errors;
 }
 
@@ -83,13 +87,16 @@ export function placeOrder(preview: OrderTicket): OrderTicket {
 
   // Deterministic fill simulation (no random)  
   if (order.type === 'market') {
-    // Market orders fill instantly
     order.status = 'filled';
     order.filledQty = order.quantity;
-    order.avgFillPrice = order.type === 'market' ? getBasePrice(order.symbol) : order.limitPrice;
+    order.avgFillPrice = getBasePrice(order.symbol);
     order.updatedAt = Date.now() + 500;
     notify();
-  } else if (order.type === 'limit') {
+  } else if (order.type === 'limit' || order.type === 'stop_limit') {
+    order.status = 'working';
+    order.updatedAt = Date.now() + 200;
+    notify();
+  } else if (order.type === 'stop') {
     order.status = 'working';
     order.updatedAt = Date.now() + 200;
     notify();

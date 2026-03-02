@@ -1,4 +1,4 @@
-﻿// Bloomberg Palette
+// Bloomberg Palette
 const BG = '#0a0a0a';
 const PANEL = '#111111';
 const BORDER = '#1e1e1e';
@@ -201,10 +201,4 @@ export function AuditTrail({ onClose }: { onClose: () => void }) {
             </div>
         </div>
     );
-}
-    id: string;
-    timestamp: string;
-    type: 'signal' | 'order' | 'fill' | 'portfolio' | 'risk';
-    symbol?: string;
-    details: Record<string, unknown>;
 }

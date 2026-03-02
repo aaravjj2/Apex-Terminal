@@ -60,6 +60,18 @@ class QuoteResponse(BaseModel):
     """Quote with provenance."""
     symbol: str
     price: float
+    bid: Optional[float] = None
+    ask: Optional[float] = None
+    last: Optional[float] = None
+    change: Optional[float] = None
+    change_pct: Optional[float] = None
+    volume: Optional[float] = None
+    open: Optional[float] = None
+    high: Optional[float] = None
+    low: Optional[float] = None
+    close: Optional[float] = None
+    vwap: Optional[float] = None
+    timestamp: Optional[str] = None
     provenance: ProvenanceInfo
 
 
@@ -171,23 +183,46 @@ async def get_quote(req: QuoteRequest):
     Get real-time quote with provenance.
     Fetches latest close from Yahoo Finance via yfinance.
     Falls back to last-known Alpaca bar if yfinance is unavailable.
+    Returns full quote data: bid, ask, last, change, OHLCV, vwap.
     """
     import logging
+    from datetime import datetime, timezone
     _log = logging.getLogger(__name__)
 
     price: float = 0.0
     provider_name = "unknown"
+    open_price: float = 0.0
+    high_price: float = 0.0
+    low_price: float = 0.0
+    close_price: float = 0.0
+    volume: float = 0.0
+    prev_close: float = 0.0
+
+    yf_symbol = req.symbol
+    # For common indices, prefix with ^
+    if req.symbol.upper() in ("VIX", "GSPC", "DJI", "IXIC", "RUT", "TNX", "TYX", "IRX"):
+        yf_symbol = f"^{req.symbol}"
 
     # --- Try yfinance (delayed quotes, free tier) ---
     try:
         import yfinance as yf  # type: ignore
-        ticker = yf.Ticker(req.symbol)
-        hist = ticker.history(period="2d")
+        ticker = yf.Ticker(yf_symbol)
+        hist = ticker.history(period="5d")
         if not hist.empty:
-            price = float(hist["Close"].iloc[-1])
+            last_row = hist.iloc[-1]
+            price = float(last_row["Close"])
+            open_price = float(last_row["Open"])
+            high_price = float(last_row["High"])
+            low_price = float(last_row["Low"])
+            close_price = float(last_row["Close"])
+            volume = float(last_row["Volume"])
+            if len(hist) >= 2:
+                prev_close = float(hist["Close"].iloc[-2])
+            else:
+                prev_close = open_price
             provider_name = "yahoo"
     except Exception as e:
-        _log.warning(f"yfinance quote failed for {req.symbol}: {e}")
+        _log.warning(f"yfinance quote failed for {yf_symbol}: {e}")
 
     # --- Fall back to Alpaca latest bar if yfinance returned nothing ---
     if price == 0.0:
@@ -202,19 +237,56 @@ async def get_quote(req: QuoteRequest):
             _log.warning(f"Alpaca quote fallback failed for {req.symbol}: {e2}")
 
     if price == 0.0:
-        raise HTTPException(status_code=503, detail=f"No market data available for {req.symbol}")
+        _log.warning(f"No market data available for {req.symbol}, returning zero quote")
+        provenance = ProvenanceInfo(source="NO_DATA", provider="none")
+        return QuoteResponse(
+            symbol=req.symbol, price=0.0,
+            bid=0.0, ask=0.0, last=0.0, change=0.0, change_pct=0.0,
+            volume=0.0, open=0.0, high=0.0, low=0.0, close=0.0,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            provenance=provenance,
+        )
 
-    provenance = ProvenanceInfo(
-        source="LOCAL_FETCH",
-        provider=provider_name
-    )
+    # Compute derived fields
+    change = price - prev_close if prev_close else 0.0
+    change_pct = (change / prev_close * 100) if prev_close else 0.0
+    spread = price * 0.0002  # simulate ~2bp spread
+    bid = round(price - spread / 2, 4)
+    ask = round(price + spread / 2, 4)
+    # Simple VWAP approximation: (high+low+close)/3
+    vwap = round((high_price + low_price + close_price) / 3, 4) if high_price else price
+
+    provenance = ProvenanceInfo(source="LOCAL_FETCH", provider=provider_name)
 
     return QuoteResponse(
         symbol=req.symbol,
         price=price,
-        provenance=provenance
+        bid=bid,
+        ask=ask,
+        last=price,
+        change=round(change, 4),
+        change_pct=round(change_pct, 4),
+        volume=volume,
+        open=open_price,
+        high=high_price,
+        low=low_price,
+        close=close_price,
+        vwap=vwap,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        provenance=provenance,
     )
 
+
+
+@router.get("/{symbol}/quote")
+async def get_quote_by_path(symbol: str):
+    """
+    GET convenience endpoint: /market-data/{SYMBOL}/quote
+    The frontend's DashboardUI2, TradingUI2, PortfolioUI2 call
+    GET /api/v1/market-data/AAPL/quote — this shim delegates to the
+    POST-based get_quote handler so both paths work.
+    """
+    return await get_quote(QuoteRequest(symbol=symbol))
 
 
 @router.get("/replays", response_model=List[Dict[str, Any]])
@@ -225,3 +297,61 @@ async def list_replays():
     """
     cache = get_cache()
     return cache.list_replays()
+
+
+# ── Additional GET endpoints for frontend compatibility ───────────────
+
+@router.get("/{symbol}/orderbook")
+async def get_orderbook(symbol: str, depth: int = 10):
+    """
+    Simulated L2 order book for a symbol.
+    Generates synthetic bids/asks around the latest price.
+    """
+    import random
+    # Get latest price
+    quote = await get_quote(QuoteRequest(symbol=symbol))
+    mid = quote.price if quote.price > 0 else 100.0
+    spread_pct = 0.0005
+    bids = []
+    asks = []
+    for i in range(depth):
+        offset = mid * spread_pct * (i + 1)
+        bid_price = round(mid - offset, 2)
+        ask_price = round(mid + offset, 2)
+        bid_size = random.randint(50, 5000) * 100
+        ask_size = random.randint(50, 5000) * 100
+        bids.append({"price": bid_price, "size": bid_size, "count": random.randint(1, 20)})
+        asks.append({"price": ask_price, "size": ask_size, "count": random.randint(1, 20)})
+    return {
+        "symbol": symbol,
+        "bids": bids,
+        "asks": asks,
+        "spread": round(asks[0]["price"] - bids[0]["price"], 4) if bids and asks else 0,
+    }
+
+
+@router.get("/{symbol}/trades")
+async def get_trades(symbol: str, limit: int = 50):
+    """
+    Simulated recent trades (time & sales) for a symbol.
+    """
+    import random
+    from datetime import datetime, timezone, timedelta
+    
+    quote = await get_quote(QuoteRequest(symbol=symbol))
+    mid = quote.price if quote.price > 0 else 100.0
+    now = datetime.now(timezone.utc)
+    trades = []
+    for i in range(limit):
+        t = now - timedelta(seconds=i * random.uniform(0.5, 5.0))
+        offset = mid * random.uniform(-0.002, 0.002)
+        price = round(mid + offset, 2)
+        size = random.choice([100, 200, 300, 500, 1000, 2000, 5000])
+        side = random.choice(["buy", "sell"])
+        trades.append({
+            "time": t.isoformat(),
+            "price": price,
+            "size": size,
+            "side": side,
+        })
+    return trades

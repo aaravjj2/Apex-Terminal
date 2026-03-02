@@ -1,4 +1,4 @@
-﻿/**
+/**
  * OrderTicket â€” Bloomberg Terminal Edition
  * Full order entry with market/limit/stop, validation, preview, and placement
  */
@@ -9,6 +9,17 @@ const SUBTLE='#555',TEXT='#d1d4dc'
 const MONO='"Roboto Mono","Courier New",monospace'
 
 import { useState, useCallback } from 'react';
+import {
+  OrderType as OmsOrderType,
+  OrderSide as OmsOrderSide,
+  TimeInForce,
+  createMarketOrder,
+  createLimitOrder,
+  createStopOrder,
+  createStopLimitOrder,
+  validateOrderSpec,
+  type OrderSpec,
+} from '@/lib/oms/order-types';
 import {
   validateOrder, previewOrder, placeOrder,
   type OrderTicket as OrderTicketType,
@@ -33,6 +44,7 @@ export function OrderTicket({ testId='ui2-order-ticket', onOrderPlaced }: OrderT
   const [symbol, setSymbol] = useState('SPY');
   const [side, setSide] = useState<OrderSide>('buy');
   const [type, setType] = useState<OrderType>('market');
+  const [stopLimitPrice, setStopLimitPrice] = useState(0);
   const [quantity, setQuantity] = useState(100);
   const [limitPrice, setLimitPrice] = useState(0);
   const [stopPrice, setStopPrice] = useState(0);
@@ -42,13 +54,31 @@ export function OrderTicket({ testId='ui2-order-ticket', onOrderPlaced }: OrderT
   const [lastPlaced, setLastPlaced] = useState<OrderTicketType|null>(null);
 
   const handlePreview = useCallback(() => {
-    const ticket={symbol,side,type,quantity,
-      limitPrice:type==='limit'?limitPrice:undefined,
-      stopPrice:type==='stop'?stopPrice:undefined,tif};
-    const errs=validateOrder(ticket);
+    const omsSide = side === 'buy' ? OmsOrderSide.BUY : OmsOrderSide.SELL;
+    const tifMap = { day: TimeInForce.DAY, gtc: TimeInForce.GTC, ioc: TimeInForce.IOC, fok: TimeInForce.FOK } as const;
+    let spec: OrderSpec | null = null;
+    if (type === 'market') {
+      spec = { type: OmsOrderType.MARKET, symbol, side: omsSide, quantity, timeInForce: tifMap[tif] };
+    } else if (type === 'limit') {
+      spec = { type: OmsOrderType.LIMIT, symbol, side: omsSide, quantity, limitPrice, timeInForce: tifMap[tif] };
+    } else if (type === 'stop') {
+      spec = { type: OmsOrderType.STOP, symbol, side: omsSide, quantity, stopPrice, timeInForce: tifMap[tif] };
+    } else if (type === 'stop_limit') {
+      spec = { type: OmsOrderType.STOP_LIMIT, symbol, side: omsSide, quantity, stopPrice, limitPrice: stopLimitPrice, timeInForce: tifMap[tif] };
+    }
+    if (spec) {
+      const vr = validateOrderSpec(spec);
+      if (!vr.valid) {
+        setErrors(vr.errors.map(m => ({ field: 'order', message: m })));
+        setPreview(null);
+        return;
+      }
+    }
+    const ticket = { symbol, side, type, quantity, limitPrice: type === 'limit' ? limitPrice : type === 'stop_limit' ? stopLimitPrice : undefined, stopPrice: type === 'stop' || type === 'stop_limit' ? stopPrice : undefined, tif };
+    const errs = validateOrder(ticket);
     setErrors(errs);
-    if(errs.length===0){setPreview(previewOrder(ticket));}else{setPreview(null);}
-  },[symbol,side,type,quantity,limitPrice,stopPrice,tif]);
+    if (errs.length === 0) { setPreview(previewOrder(ticket)); } else { setPreview(null); }
+  }, [symbol, side, type, quantity, limitPrice, stopPrice, stopLimitPrice, tif]);
 
   const handlePlace = useCallback(() => {
     if(!preview) return;
@@ -60,7 +90,7 @@ export function OrderTicket({ testId='ui2-order-ticket', onOrderPlaced }: OrderT
   const handleCancel = useCallback(() => {setPreview(null);setErrors([]);},[]);
 
   const sideColor=(s:OrderSide)=>s==='buy'?GREEN:RED;
-  const typeColor=(t:OrderType)=>t==='market'?AMBER:t==='limit'?BLUE:RED;
+  const typeColor=(t:OrderType)=>t==='market'?AMBER:t==='limit'?BLUE:t==='stop_limit'?RED:RED;
 
   return (
     <div data-testid={testId}
@@ -124,9 +154,10 @@ export function OrderTicket({ testId='ui2-order-ticket', onOrderPlaced }: OrderT
               <span style={LBL}>TYPE</span>
               <select data-testid={`${testId}-type`} aria-label="Order type" value={type}
                 onChange={e=>setType(e.target.value as OrderType)} style={SEL}>
-                <option value="market">MARKET</option>
-                <option value="limit">LIMIT</option>
-                <option value="stop">STOP</option>
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
+                <option value="stop">Stop</option>
+                <option value="stop_limit">Stop-Limit</option>
               </select>
               <span style={{fontSize:9,padding:'2px 6px',border:`1px solid ${typeColor(type)}`,
                 color:typeColor(type),borderRadius:2}}>{type.toUpperCase()}</span>
@@ -147,11 +178,19 @@ export function OrderTicket({ testId='ui2-order-ticket', onOrderPlaced }: OrderT
               </div>
             )}
             {/* Stop Price */}
-            {type==='stop'&&(
+            {(type==='stop'||type==='stop_limit')&&(
               <div style={FLD}>
                 <span style={LBL}>STOP $</span>
                 <input data-testid={`${testId}-stop-price`} type="number" step="0.01" value={stopPrice}
                   onChange={e=>setStopPrice(parseFloat(e.target.value)||0)} style={INP}/>
+              </div>
+            )}
+            {/* Limit Price for Stop-Limit */}
+            {type==='stop_limit'&&(
+              <div style={FLD}>
+                <span style={LBL}>LIMIT $</span>
+                <input data-testid={`${testId}-stop-limit-price`} type="number" step="0.01" value={stopLimitPrice}
+                  onChange={e=>setStopLimitPrice(parseFloat(e.target.value)||0)} style={INP}/>
               </div>
             )}
             {/* TIF */}
@@ -166,11 +205,11 @@ export function OrderTicket({ testId='ui2-order-ticket', onOrderPlaced }: OrderT
               </select>
             </div>
             {/* Cost Estimate */}
-            {type!=='market'&&(type==='limit'?limitPrice:stopPrice)>0&&quantity>0&&(
+            {type!=='market'&&((type==='limit'?limitPrice:type==='stop_limit'?stopLimitPrice:stopPrice)||0)>0&&quantity>0&&(
               <div style={{padding:'6px 10px',marginBottom:8,background:BG,border:`1px solid ${BORDER}`,borderRadius:2}}>
                 <div style={{fontSize:9,color:SUBTLE,marginBottom:2}}>EST. COST</div>
                 <div style={{fontSize:13,color:TEXT,fontFamily:MONO,fontWeight:700}}>
-                  ${((type==='limit'?limitPrice:stopPrice)*quantity).toLocaleString('en-US',{minimumFractionDigits:2})}
+                  ${(((type==='limit'?limitPrice:type==='stop_limit'?stopLimitPrice:stopPrice)||0)*quantity).toLocaleString('en-US',{minimumFractionDigits:2})}
                 </div>
               </div>
             )}
@@ -220,10 +259,5 @@ export function OrderTicket({ testId='ui2-order-ticket', onOrderPlaced }: OrderT
       </div>
     </div>
   );
-}
-
-interface OrderTicketProps {
-  testId?: string;
-  onOrderPlaced?: (order: OrderTicketType) => void;
 }
 

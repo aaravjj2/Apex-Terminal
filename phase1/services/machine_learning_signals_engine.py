@@ -595,6 +595,47 @@ class MachineLearningSignalsEngine:
         result = self.ensemble.predict(features)
         return result.to_dict()
 
+    def get_live_signal(self, prices: list[float], volumes: list[float] | None = None) -> float:
+        """
+        Generate ML signal from price history. Returns value in [-1, 1]:
+        strong_sell=-1, neutral=0, strong_buy=+1.
+        """
+        features = self.generate_features(prices, volumes)
+        if len(features) < 20:
+            return 0.0
+        normed = self.normalize(features)
+        train_f = normed[:-1]
+        if len(train_f) < 10:
+            return 0.0
+        targets = []
+        labels = []
+        for f in train_f:
+            idx = f.get("_index", len(targets) + 30)
+            if idx + 1 < len(prices) and prices[idx] > 0:
+                ret = (prices[idx + 1] - prices[idx]) / prices[idx]
+                targets.append(ret)
+                labels.append(1 if ret > 0 else 0)
+            else:
+                targets.append(0.0)
+                labels.append(0)
+        if len(train_f) != len(targets):
+            train_f = train_f[:len(targets)]
+            labels = labels[:len(train_f)]
+            targets = targets[:len(train_f)]
+        if len(train_f) < 10:
+            return 0.0
+        try:
+            self.train_ensemble(train_f, targets, labels)
+            result = self.ensemble.predict(normed[-1])
+            sig_map = {
+                "strong_buy": 1.0, "buy": 0.6, "weak_buy": 0.2,
+                "neutral": 0.0,
+                "weak_sell": -0.2, "sell": -0.6, "strong_sell": -1.0,
+            }
+            return sig_map.get(result.signal, (result.prediction - 0.5) * 2 if result.prediction else 0)
+        except Exception:
+            return 0.0
+
     def walk_forward_validate(self, features: list[dict], targets: list[float], labels: list[int], **kwargs) -> dict:
         return self.validator.validate(features, targets, labels, **kwargs)
 

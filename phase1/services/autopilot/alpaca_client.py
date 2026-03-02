@@ -362,6 +362,81 @@ class AlpacaBrokerClient:
     # Orders
     # -------------------------------------------------------------------------
     
+    async def place_order(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Submit an order from a payload dict (ExecutionEngineV2 compatibility).
+        Payload: symbol, qty, side, type, limit_price, time_in_force, asset_class (optional).
+        Returns dict with id, status, filled_qty, filled_avg_price, reject_reason.
+        """
+        if not self._api:
+            return None
+        try:
+            from alpaca.trading.requests import LimitOrderRequest
+            from alpaca.trading.enums import OrderSide, TimeInForce
+
+            symbol = payload.get("symbol", "")
+            qty = int(payload.get("qty", 1))
+            side_str = str(payload.get("side", "buy")).lower()
+            limit_price = float(payload.get("limit_price", 0))
+            time_in_force = str(payload.get("time_in_force", "day")).lower()
+
+            side_enum = OrderSide.BUY if side_str in ("buy", "buy_to_open") else OrderSide.SELL
+            tif = TimeInForce.DAY if time_in_force == "day" else TimeInForce.GTC
+
+            request = LimitOrderRequest(
+                symbol=symbol,
+                qty=qty,
+                side=side_enum,
+                time_in_force=tif,
+                limit_price=round(limit_price, 2),
+            )
+            result = self._api.submit_order(request)
+            return {
+                "id": str(result.id),
+                "status": result.status.value if hasattr(result.status, "value") else str(result.status),
+                "filled_qty": float(result.filled_qty) if result.filled_qty else 0,
+                "filled_avg_price": float(result.filled_avg_price) if result.filled_avg_price else None,
+                "reject_reason": getattr(result, "reject_reason", None),
+            }
+        except Exception as e:
+            logger.error(f"place_order failed: {e}")
+            return {"id": "", "status": "rejected", "reject_reason": str(e)[:200]}
+
+    async def get_positions(self) -> List[Dict[str, Any]]:
+        """Get all positions as dicts (ExecutionEngineV2 / PositionJournal compatibility)."""
+        positions = await self.list_positions()
+        return [p.to_dict() for p in positions]
+
+    async def get_orders(self, status: str = "all", limit: int = 50) -> List[Dict[str, Any]]:
+        """Get orders as dicts (ExecutionEngineV2 compatibility)."""
+        orders = await self.list_orders(status=status, limit=limit)
+        return [
+            {
+                "id": str(o.id),
+                "symbol": o.symbol or "",
+                "status": o.status.value if hasattr(o.status, "value") else str(o.status),
+                "filled_qty": float(o.filled_qty) if o.filled_qty else 0,
+                "filled_avg_price": float(o.filled_avg_price) if o.filled_avg_price else None,
+            }
+            for o in orders
+        ]
+
+    async def get_order(self, order_id: str) -> Optional[Dict[str, Any]]:
+        """Get a single order by ID."""
+        if not self._api:
+            return None
+        try:
+            order = self._api.get_order_by_id(order_id)
+            return {
+                "id": str(order.id),
+                "status": order.status.value if hasattr(order.status, "value") else str(order.status),
+                "filled_qty": float(order.filled_qty) if order.filled_qty else 0,
+                "filled_avg_price": float(order.filled_avg_price) if order.filled_avg_price else None,
+            }
+        except Exception as e:
+            logger.debug(f"get_order {order_id}: {e}")
+            return None
+
     async def list_orders(
         self,
         status: str = "open",
@@ -495,35 +570,85 @@ class AlpacaBrokerClient:
             logger.error(f"Failed to submit order: {e}")
             return None
 
+    def _get_occ_symbol(self, underlying: str, expiry, option_type: str, strike: float) -> str:
+        """Generate OCC option symbol."""
+        if isinstance(expiry, str):
+            d = date.fromisoformat(expiry.split("T")[0])
+        else:
+            d = expiry
+        yymmdd = d.strftime("%y%m%d")
+        tc = "C" if str(option_type).lower() == "call" else "P"
+        strike_int = int(strike * 1000)
+        return f"{underlying}{yymmdd}{tc}{strike_int:08d}"
+
     async def _submit_multileg_order(self, candidate: Any) -> Optional[AlpacaOrder]:
-        """Submit a multi-leg option order (spread)."""
+        """Submit a multi-leg option order (atomic MLEG) with limit price."""
         try:
-            from alpaca.trading.requests import OrderRequest
-            from alpaca.trading.enums import OrderSide, TimeInForce, OrderType
-            
-            # Build legs
-            alpaca_legs = []
+            from alpaca.trading.requests import OrderRequest, OptionLegRequest
+            from alpaca.trading.enums import OrderSide, TimeInForce, OrderType, OrderClass
+
+            legs_config = []
+            total_premium = 0.0
+
             for leg in candidate.legs:
-                # leg is OptionLeg(side, option_type, strike, quantity, expiry)
-                # We need to format the Option Symbol (OCC) for each leg
-                # Or does Alpaca accept structured legs? 
-                # Alpaca API expects 'symbol' (OCC) for each leg in the 'legs' array
-                
-                # We need a helper to generate OCC symbol from leg data
-                # But wait, TradeCandidate legs might not have the full symbol computed yet?
-                # The UnifiedEngine logic seemed to parse candidate dicts.
-                
-                pass 
-                # TODO: Implement OCC symbol generation if not present
-                # For now, assuming we can't easily do it without helpers.
-                # Actually, earlier in UnifiedEngine we saw it constructing legs.
-                
-            # If we can't reliably build OCC symbols here without more helpers, 
-            # maybe we should look at how UnifiedEngine was doing it or if it provided them.
-            
-            logger.warning("Multi-leg submission not fully implemented yet in _submit_multileg_order")
-            return None
-            
+                expiry = leg.expiry
+                occ_symbol = self._get_occ_symbol(
+                    candidate.symbol, expiry, leg.option_type, leg.strike
+                )
+                alpaca_side = OrderSide.BUY if leg.side == "buy" else OrderSide.SELL
+                leg_sign = 1 if leg.side == "sell" else -1
+                total_premium += leg.premium * leg.quantity * leg_sign
+
+                leg_req = OptionLegRequest(
+                    symbol=occ_symbol,
+                    ratio_qty=1,
+                    side=alpaca_side,
+                )
+                legs_config.append(leg_req)
+
+            if not legs_config:
+                return None
+
+            primary_symbol = self._get_occ_symbol(
+                candidate.symbol, candidate.legs[0].expiry,
+                candidate.legs[0].option_type, candidate.legs[0].strike
+            )
+            SLIPPAGE_TOLERANCE = 0.05
+            base_price = abs(total_premium) or 0.01
+            if total_premium > 0:
+                limit_price = round(base_price * (1 - SLIPPAGE_TOLERANCE), 2)
+            else:
+                limit_price = round(base_price * (1 + SLIPPAGE_TOLERANCE), 2)
+            limit_price = max(0.01, limit_price)
+
+            order_qty = candidate.legs[0].quantity if candidate.legs else 1
+
+            req = OrderRequest(
+                symbol=primary_symbol,
+                qty=order_qty,
+                side=legs_config[0].side,
+                type=OrderType.LIMIT,
+                limit_price=limit_price,
+                time_in_force=TimeInForce.DAY,
+                order_class=OrderClass.MLEG,
+                legs=legs_config,
+            )
+
+            result = self._api.submit_order(req)
+            logger.info(f"Atomic MLEG submitted: {result.id} @ ${limit_price}")
+
+            return AlpacaOrder(
+                id=str(result.id),
+                client_order_id=result.client_order_id,
+                symbol=result.symbol,
+                side=result.side.value if hasattr(result.side, "value") else str(result.side),
+                order_type=result.order_type.value if hasattr(result.order_type, "value") else str(result.order_type),
+                qty=int(result.qty) if result.qty else 0,
+                filled_qty=int(result.filled_qty) if result.filled_qty else 0,
+                status=result.status.value if hasattr(result.status, "value") else str(result.status),
+                created_at=result.created_at,
+                limit_price=float(result.limit_price) if result.limit_price else None,
+            )
         except Exception as e:
             logger.error(f"Failed to submit multileg order: {e}")
             return None
@@ -703,114 +828,3 @@ def get_alpaca_client() -> AlpacaBrokerClient:
     if _client is None:
         _client = AlpacaBrokerClient()
     return _client
-
-    def _map_order_result(self, result: Any) -> AlpacaOrder:
-        """Helper to map Alpaca order result to our model."""
-        return AlpacaOrder(
-            id=str(result.id),
-            client_order_id=result.client_order_id,
-            symbol=result.symbol,
-            side=result.side.value if hasattr(result.side, 'value') else str(result.side),
-            order_type=result.order_type.value if hasattr(result.order_type, 'value') else str(result.order_type),
-            qty=int(result.qty) if result.qty else 0,
-            filled_qty=int(result.filled_qty) if result.filled_qty else 0,
-            status=result.status.value if hasattr(result.status, 'value') else str(result.status),
-            created_at=result.created_at,
-            limit_price=float(result.limit_price) if result.limit_price else None,
-        )
-
-    def _get_occ_symbol(self, underlying: str, expiry: date, option_type: str, strike: float) -> str:
-        """Generate OCC option symbol."""
-        # Format date YYMMDD
-        yrmod = expiry.strftime("%y%m%d")
-        type_char = "C" if option_type.lower() == "call" else "P"
-        
-        # Strike * 1000, padded to 8 digits
-        strike_int = int(strike * 1000)
-        strike_str = f"{strike_int:08d}"
-        
-        # Standard OCC: Underlying (up to 6 chars), Date(6), Type(1), Strike(8)
-        # Alpaca often accepts the raw concat string.
-        # Ensure underlying is trimmed.
-        return f"{underlying}{yrmod}{type_char}{strike_str}" 
-        
-    async def _submit_multileg_order(self, candidate: Any) -> Optional[AlpacaOrder]:
-        """Submit a multi-leg option order (Atomic MLEG) with Slippage Protection."""
-        try:
-            from alpaca.trading.requests import OrderRequest, OptionLegRequest
-            from alpaca.trading.enums import OrderSide, TimeInForce, OrderType, OrderClass
-            
-            legs_config = []
-            primary_symbol = None
-            total_premium = 0.0
-            
-            for i, leg in enumerate(candidate.legs):
-                occ_symbol = self._get_occ_symbol(
-                    candidate.symbol, 
-                    leg.expiry, 
-                    leg.option_type, 
-                    leg.strike
-                )
-                
-                # Map side
-                alpaca_side = OrderSide.BUY if leg.side == "buy" else OrderSide.SELL
-                
-                # Calculate premium contribution (Sell = +, Buy = -)
-                # Note: leg.premium is per share usually? or per contract? 
-                # candidates.py says 'premium' (e.g. 0.50). 
-                # Net premium sum should be unit price (e.g. 0.20 credit).
-                leg_sign = 1 if leg.side == "sell" else -1
-                total_premium += (leg.premium * leg.quantity * leg_sign)
-                
-                leg_req = OptionLegRequest(
-                    symbol=occ_symbol,
-                    ratio_qty=1, 
-                    side=alpaca_side
-                )
-                legs_config.append(leg_req)
-                
-                if i == 0:
-                    primary_symbol = occ_symbol
-
-            if not legs_config or not primary_symbol:
-                return None
-            
-            # Slippage Calculation (5% tolerance)
-            # Credit (Positive) -> Sell Limit: Min Acceptable Credit = Premium * 0.95
-            # Debit (Negative)  -> Buy Limit: Max Acceptable Debit = Premium * 1.05
-            SLIPPAGE_TOLERANCE = 0.05
-            
-            is_credit = total_premium > 0
-            base_price = abs(total_premium)
-            
-            if is_credit:
-                limit_price = base_price * (1 - SLIPPAGE_TOLERANCE)
-            else:
-                limit_price = base_price * (1 + SLIPPAGE_TOLERANCE)
-                
-            # Round to 2 decimals
-            limit_price = round(max(0.01, limit_price), 2)
-            
-            logger.info(f"Submitting ATOMIC MLEG order for {candidate.symbol}. Net Premium: ${total_premium:.2f}, Limit: ${limit_price:.2f}")
-            
-            order_qty = candidate.legs[0].quantity if candidate.legs else 1
-            
-            req = OrderRequest(
-                symbol=primary_symbol,
-                qty=order_qty,
-                side=legs_config[0].side, 
-                type=OrderType.LIMIT, # PROMOTED TO LIMIT
-                limit_price=limit_price,
-                time_in_force=TimeInForce.DAY,
-                order_class=OrderClass.MLEG,
-                legs=legs_config
-            )
-            
-            res = self._api.submit_order(req)
-            logger.info(f"Atomic MLEG Limit Order Submitted: {res.id} @ ${limit_price}")
-            
-            return self._map_order_result(res)
-            
-        except Exception as e:
-            logger.error(f"Failed to submit atomic multileg order: {e}")
-            return None

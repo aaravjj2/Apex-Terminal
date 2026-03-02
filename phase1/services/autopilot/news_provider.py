@@ -320,14 +320,13 @@ class FinnhubProvider(NewsProviderBase):
         else:
             avg_score = 0.0
         
-        # Check for earnings blackout (within 3 days)
+        # Check for earnings blackout (Phase 4d: 2 days before, 1 day after)
         earnings_within = None
         is_blackout = False
         if earnings:
             days_until = (earnings.date - date.today()).days
-            if days_until >= 0:
-                earnings_within = days_until
-                is_blackout = days_until <= 3
+            earnings_within = days_until
+            is_blackout = -1 <= days_until <= 2  # 2 days before through 1 day after
         
         return SentimentSnapshot(
             symbol=symbol,
@@ -476,9 +475,8 @@ class YFinanceProvider(NewsProviderBase):
         is_blackout = False
         if earnings:
             days = (earnings.date - date.today()).days
-            if days >= 0:
-                earnings_within = days
-                is_blackout = days <= 3
+            earnings_within = days
+            is_blackout = -1 <= days <= 2  # Phase 4d: 2 days before, 1 day after
         
         return SentimentSnapshot(
             symbol=symbol,

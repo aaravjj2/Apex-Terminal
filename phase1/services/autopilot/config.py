@@ -274,6 +274,7 @@ class AutopilotConfig:
 
     # Continuous run control
     continuous_run: bool = True  # Keep running cycles until stopped
+    cycle_interval_minutes: int = 15  # Run cycle every N minutes (5-30)
 
     # Focus controls (single underlying)
     focus_symbol: Optional[str] = None  # If set, only trade this underlying
@@ -358,6 +359,7 @@ class AutopilotConfig:
             "auto_execute": self.auto_execute,
             "paper_equity": self.paper_equity,
             "continuous_run": self.continuous_run,
+            "cycle_interval_minutes": self.cycle_interval_minutes,
             "focus_symbol": self.focus_symbol,
             "max_symbols_per_cycle": self.max_symbols_per_cycle,
             "contracts_per_trade": self.contracts_per_trade,
@@ -417,6 +419,8 @@ class AutopilotConfig:
 
         if "continuous_run" in data:
             config.continuous_run = bool(data["continuous_run"])
+        if "cycle_interval_minutes" in data:
+            config.cycle_interval_minutes = max(5, min(30, int(data["cycle_interval_minutes"])))
         if "focus_symbol" in data:
             focus = data["focus_symbol"]
             config.focus_symbol = focus.upper() if isinstance(focus, str) and focus.strip() else None

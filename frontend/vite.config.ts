@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { execSync } from 'child_process'
+import path from 'path'
 
 // Backend port — single source of truth for dev/preview proxy
 // Backend runs on :8000, frontend dev server on :5100
@@ -17,6 +18,9 @@ const BUILD_TIME = new Date().toISOString()
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
+  resolve: {
+    alias: { '@': path.resolve(__dirname, './src') },
+  },
   plugins: [react()],
   define: {
     '__GIT_SHA__': JSON.stringify(GIT_SHA),

@@ -7,6 +7,7 @@ import { AppShellUI2 } from './AppShellUI2';
 import {
   DashboardUI2,
   TradingUI2,
+  TradingMultiUI2,
   ResearchUI2,
   RiskUI2,
   PortfolioUI2,
@@ -197,6 +198,55 @@ import {
   PlatformDebtUI2,
   OperatorEnableUI2,
   GlobalReadinessUI2,
+  // New UI2 Pages — demo/index.html parity
+  HeatmapUI2,
+  FixedIncomeUI2,
+  FXDashboardUI2,
+  CommoditiesUI2,
+  CryptoUI2,
+  SocialUI2,
+  MacroUI2,
+  StockScreenerUI2,
+  WatchlistManagerUI2,
+  NewsTerminalUI2,
+  AlertsManagerUI2,
+  OptionsChainUI2,
+  MLDashboardUI2,
+  PortfolioAnalyticsUI2,
+  RiskDashboardUI2,
+  OrderBookDepthUI2,
+  AlgoExecutionUI2,
+  BloombergTerminalUI2,
+  MonteCarloSimUI2,
+  StrategyBuilderProUI2,
+  MultiChartLayoutUI2,
+  PortfolioOptimizerProUI2,
+  VolatilitySurfaceUI2,
+  BacktestEngineUI2,
+  TradingJournalUI2,
+  SectorAnalysisUI2,
+  DarkPoolUI2,
+  MarketMakerUI2,
+  CorrelationMatrixUI2,
+  EarningsCalendarUI2,
+  YieldCurveUI2,
+  RealTimeScannerUI2,
+  EconomicIndicatorsUI2,
+  MarketOverviewUI2,
+  ReportBuilderUI2,
+  FinancialAnalysisUI2,
+  ComparableCompaniesUI2,
+  SecurityFinderUI2,
+  TransactionCostAnalysisUI2,
+  AlertDeliveryUI2,
+  CreditRiskUI2,
+  WorkspaceManagerUI2,
+  ChartReplayUI2,
+  OptionsPricingLabUI2,
+  MarketBreadthUI2,
+  AutopilotPositionSizingUI2,
+  AutopilotAuditTrailUI2,
+  DrawingToolManagerUI2,
   // Husk preview components
   TradingUI2Husk,
   PortfolioUI2Husk,
@@ -215,6 +265,7 @@ export function UI2Routes() {
         <Route path="husk/trading" element={<TradingUI2Husk />} />
         <Route path="husk/portfolio" element={<PortfolioUI2Husk />} />
         <Route path="trading" element={<TradingUI2 />} />
+        <Route path="trading-multi" element={<TradingMultiUI2 />} />
         <Route path="research" element={<ResearchUI2 />} />
         <Route path="risk" element={<RiskUI2 />} />
         <Route path="portfolio" element={<PortfolioUI2 />} />
@@ -438,6 +489,55 @@ export function UI2Routes() {
         <Route path="platform-debt" element={<PlatformDebtUI2 />} />
         <Route path="operator-enable" element={<OperatorEnableUI2 />} />
         <Route path="global-readiness" element={<GlobalReadinessUI2 />} />
+        {/* New UI2 Pages — demo/index.html parity */}
+        <Route path="heatmap" element={<HeatmapUI2 />} />
+        <Route path="fixed-income" element={<FixedIncomeUI2 />} />
+        <Route path="fx-dashboard" element={<FXDashboardUI2 />} />
+        <Route path="commodities" element={<CommoditiesUI2 />} />
+        <Route path="crypto" element={<CryptoUI2 />} />
+        <Route path="social" element={<SocialUI2 />} />
+        <Route path="macro" element={<MacroUI2 />} />
+        <Route path="stock-screener" element={<StockScreenerUI2 />} />
+        <Route path="watchlist-manager" element={<WatchlistManagerUI2 />} />
+        <Route path="news-terminal" element={<NewsTerminalUI2 />} />
+        <Route path="alerts-manager" element={<AlertsManagerUI2 />} />
+        <Route path="options-chain" element={<OptionsChainUI2 />} />
+        <Route path="ml-dashboard" element={<MLDashboardUI2 />} />
+        <Route path="portfolio-analytics" element={<PortfolioAnalyticsUI2 />} />
+        <Route path="risk-dashboard" element={<RiskDashboardUI2 />} />
+        <Route path="order-book-depth" element={<OrderBookDepthUI2 />} />
+        <Route path="algo-execution" element={<AlgoExecutionUI2 />} />
+        <Route path="bloomberg-terminal" element={<BloombergTerminalUI2 />} />
+        <Route path="monte-carlo-sim" element={<MonteCarloSimUI2 />} />
+        <Route path="strategy-builder-pro" element={<StrategyBuilderProUI2 />} />
+        <Route path="multi-chart-layout" element={<MultiChartLayoutUI2 />} />
+        <Route path="portfolio-optimizer-pro" element={<PortfolioOptimizerProUI2 />} />
+        <Route path="volatility-surface" element={<VolatilitySurfaceUI2 />} />
+        <Route path="backtest-engine" element={<BacktestEngineUI2 />} />
+        <Route path="trading-journal" element={<TradingJournalUI2 />} />
+        <Route path="sector-analysis" element={<SectorAnalysisUI2 />} />
+        <Route path="dark-pool" element={<DarkPoolUI2 />} />
+        <Route path="market-maker" element={<MarketMakerUI2 />} />
+        <Route path="correlation-matrix" element={<CorrelationMatrixUI2 />} />
+        <Route path="earnings-calendar" element={<EarningsCalendarUI2 />} />
+        <Route path="yield-curve" element={<YieldCurveUI2 />} />
+        <Route path="real-time-scanner" element={<RealTimeScannerUI2 />} />
+        <Route path="economic-indicators" element={<EconomicIndicatorsUI2 />} />
+        <Route path="market-overview" element={<MarketOverviewUI2 />} />
+        <Route path="report-builder" element={<ReportBuilderUI2 />} />
+        <Route path="financial-analysis" element={<FinancialAnalysisUI2 />} />
+        <Route path="comparable-companies" element={<ComparableCompaniesUI2 />} />
+        <Route path="security-finder" element={<SecurityFinderUI2 />} />
+        <Route path="transaction-cost-analysis" element={<TransactionCostAnalysisUI2 />} />
+        <Route path="alert-delivery" element={<AlertDeliveryUI2 />} />
+        <Route path="credit-risk" element={<CreditRiskUI2 />} />
+        <Route path="workspace-manager" element={<WorkspaceManagerUI2 />} />
+        <Route path="chart-replay" element={<ChartReplayUI2 />} />
+        <Route path="options-pricing-lab" element={<OptionsPricingLabUI2 />} />
+        <Route path="market-breadth" element={<MarketBreadthUI2 />} />
+        <Route path="autopilot-position-sizing" element={<AutopilotPositionSizingUI2 />} />
+        <Route path="autopilot-audit-trail" element={<AutopilotAuditTrailUI2 />} />
+        <Route path="drawing-tool-manager" element={<DrawingToolManagerUI2 />} />
         <Route path="judge" element={<TerraCodeJudge />} />
 
       </Route>

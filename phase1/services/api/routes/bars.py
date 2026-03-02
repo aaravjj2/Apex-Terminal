@@ -211,3 +211,102 @@ def _parse_timestamp(value) -> Optional[int]:
             return int(float(value) * 1000)
     
     return None
+
+
+# ── Query-param based GET /bars?symbol=&timeframe=&limit= ────────────
+# The frontend AdvancedChartEngine calls:
+#   GET /api/v1/bars?symbol=AAPL&timeframe=1D&limit=500
+# This endpoint fetches from yfinance when the tiered store has no data.
+
+_TIMEFRAME_MAP = {
+    "1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m",
+    "1h": "1h", "1H": "1h", "4h": "4h", "4H": "4h",
+    "1D": "1d", "1d": "1d", "D": "1d",
+    "1W": "1wk", "1w": "1wk", "W": "1wk",
+    "1M": "1mo", "M": "1mo",
+}
+
+_PERIOD_MAP = {
+    "1m": "7d", "5m": "60d", "15m": "60d", "30m": "60d",
+    "1h": "730d", "4h": "730d",
+    "1d": "2y", "1wk": "5y", "1mo": "10y",
+}
+
+
+@router.get("/", tags=["bars"])
+@router.get("", tags=["bars"])
+async def get_bars_query(
+    symbol: str = Query(..., description="Stock symbol"),
+    timeframe: str = Query("1D", description="Candlestick timeframe"),
+    limit: int = Query(500, le=5000, description="Max bars"),
+):
+    """
+    Fetch OHLCV bars using query params.
+    Tries tiered store first, falls back to yfinance.
+    """
+    symbol = symbol.upper()
+    yf_tf = _TIMEFRAME_MAP.get(timeframe, "1d")
+    yf_period = _PERIOD_MAP.get(yf_tf, "2y")
+
+    # ── First try tiered store ──
+    try:
+        store = get_store()
+        bars_list = await store.get_bars(
+            symbol=symbol, timeframe=timeframe, limit=limit,
+        )
+        if bars_list:
+            return {
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "count": len(bars_list),
+                "bars": [
+                    {
+                        "time": b.ts_start_ms,
+                        "open": b.open,
+                        "high": b.high,
+                        "low": b.low,
+                        "close": b.close,
+                        "volume": b.volume,
+                    }
+                    for b in bars_list
+                ],
+            }
+    except Exception as e:
+        logger.warning("tiered_store_fallthrough", error=str(e), symbol=symbol)
+
+    # ── Fallback: yfinance ──
+    try:
+        import yfinance as yf  # type: ignore
+
+        # For common indices, prefix with ^
+        yf_sym = symbol
+        if symbol in ("VIX", "GSPC", "DJI", "IXIC", "RUT", "TNX", "TYX", "IRX"):
+            yf_sym = f"^{symbol}"
+
+        ticker = yf.Ticker(yf_sym)
+        hist = ticker.history(period=yf_period, interval=yf_tf)
+        if hist.empty:
+            return {"symbol": symbol, "timeframe": timeframe, "count": 0, "bars": []}
+
+        # tail to limit
+        hist = hist.tail(limit)
+        bars_out = []
+        for idx, row in hist.iterrows():
+            ts = int(idx.timestamp())
+            bars_out.append({
+                "time": ts,
+                "open": round(float(row["Open"]), 4),
+                "high": round(float(row["High"]), 4),
+                "low": round(float(row["Low"]), 4),
+                "close": round(float(row["Close"]), 4),
+                "volume": int(row["Volume"]),
+            })
+        return {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "count": len(bars_out),
+            "bars": bars_out,
+        }
+    except Exception as e:
+        logger.error("yfinance_bars_error", error=str(e), symbol=symbol)
+        raise HTTPException(status_code=503, detail=f"Cannot fetch bars for {symbol}: {e}")

@@ -131,24 +131,24 @@ function QuoteBar({ symbol }: { symbol: string }) {
       {quote ? (
         <>
           <span style={{ color: TEXT }}>
-            <span style={{ color: SUBTLE }}>BID </span>{quote.bid.toFixed(2)}
+            <span style={{ color: SUBTLE }}>BID </span>{(quote.bid ?? 0).toFixed(2)}
           </span>
           <span style={{ color: TEXT }}>
-            <span style={{ color: SUBTLE }}>ASK </span>{quote.ask.toFixed(2)}
+            <span style={{ color: SUBTLE }}>ASK </span>{(quote.ask ?? 0).toFixed(2)}
           </span>
-          <span style={{ color: col, fontWeight: 700, fontSize: 14 }}>{quote.last.toFixed(2)}</span>
+          <span style={{ color: col, fontWeight: 700, fontSize: 14 }}>{(quote.last ?? quote.bid ?? 0).toFixed(2)}</span>
           <span style={{ color: col, fontWeight: 700 }}>
-            {up ? '▲' : '▼'} {Math.abs(quote.change).toFixed(2)} ({Math.abs(quote.change_pct).toFixed(2)}%)
+            {up ? '▲' : '▼'} {Math.abs(quote.change ?? 0).toFixed(2)} ({Math.abs(quote.change_pct ?? 0).toFixed(2)}%)
           </span>
           <span style={{ color: SUBTLE }}>
-            O <span style={{ color: TEXT }}>{quote.open.toFixed(2)}</span>
-            {'  '}H <span style={{ color: TEXT }}>{quote.high.toFixed(2)}</span>
-            {'  '}L <span style={{ color: TEXT }}>{quote.low.toFixed(2)}</span>
+            O <span style={{ color: TEXT }}>{(quote.open ?? 0).toFixed(2)}</span>
+            {'  '}H <span style={{ color: TEXT }}>{(quote.high ?? 0).toFixed(2)}</span>
+            {'  '}L <span style={{ color: TEXT }}>{(quote.low ?? 0).toFixed(2)}</span>
           </span>
           <span style={{ color: SUBTLE }}>
-            VOL <span style={{ color: TEXT }}>{(quote.volume / 1e6).toFixed(2)}M</span>
+            VOL <span style={{ color: TEXT }}>{((quote.volume ?? 0) / 1e6).toFixed(2)}M</span>
           </span>
-          {quote.vwap && (
+          {quote.vwap != null && (
             <span style={{ color: SUBTLE }}>
               VWAP <span style={{ color: TEXT }}>{quote.vwap.toFixed(2)}</span>
             </span>

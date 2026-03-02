@@ -405,21 +405,47 @@ class TradeUpdateHandler:
             self._on_any(update)
     
     async def _polling_loop(self):
-        """Fallback polling loop when websocket is disconnected."""
+        """Fallback REST polling when WebSocket is disconnected."""
+        self._polling_interval = 5.0
         while self._polling_enabled:
             try:
-                # Only poll if websocket is not connected
-                if not self._stream or not self._stream.is_connected:
-                    logger.debug("Polling for order updates (websocket disconnected)")
-                    # TODO: Implement REST API polling
-                    
-                await asyncio.sleep(self._polling_interval)
-                
+                if self._stream and not self._stream.is_connected:
+                    try:
+                        from .alpaca_client import get_alpaca_client
+                        client = get_alpaca_client()
+                        orders = await client.get_orders(status="all", limit=50)
+                        for o in orders:
+                            od = o if isinstance(o, dict) else o
+                            order_id = od.get("id", "")
+                            status = od.get("status", "")
+                            if status in ("filled", "partially_filled", "cancelled", "rejected"):
+                                update = TradeUpdate(
+                                    event_type=TradeUpdateType.FILL if status == "filled" else TradeUpdateType.PARTIAL_FILL if status == "partially_filled" else TradeUpdateType.CANCELED,
+                                    timestamp=datetime.utcnow(),
+                                    order_id=order_id,
+                                    client_order_id=od.get("client_order_id"),
+                                    symbol=od.get("symbol", ""),
+                                    side=od.get("side", ""),
+                                    qty=float(od.get("qty", 0)),
+                                    filled_qty=float(od.get("filled_qty", 0)),
+                                    avg_fill_price=float(od.get("filled_avg_price", 0)) if od.get("filled_avg_price") else None,
+                                    order_type=od.get("type", "limit"),
+                                    time_in_force=od.get("time_in_force", "day"),
+                                    status=status,
+                                    raw_data=od,
+                                )
+                                if self._stream:
+                                    self._stream._updates.append(update)
+                                    self._stream._last_update = update.timestamp
+                                if self._on_fill and status in ("filled", "partially_filled"):
+                                    self._on_fill(update)
+                    except Exception as poll_err:
+                        logger.debug(f"REST polling: {poll_err}")
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Polling error: {e}")
-                await asyncio.sleep(self._polling_interval)
+            await asyncio.sleep(self._polling_interval)
     
     def set_callbacks(
         self,

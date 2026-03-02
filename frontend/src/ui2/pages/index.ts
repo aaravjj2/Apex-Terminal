@@ -4,6 +4,7 @@
 
 export { DashboardUI2 } from './DashboardUI2';
 export { TradingUI2 } from './TradingUI2';
+export { TradingMultiUI2 } from './TradingMultiUI2';
 export { ResearchUI2 } from './ResearchUI2';
 export { RiskUI2 } from './RiskUI2';
 export { PortfolioUI2 } from './PortfolioUI2';
@@ -231,6 +232,54 @@ export { CapacityPlanUI2 } from './CapacityPlanUI2'; // W101
 export { PlatformDebtUI2 } from './PlatformDebtUI2'; // W102
 export { OperatorEnableUI2 } from './OperatorEnableUI2'; // W103
 export { GlobalReadinessUI2 } from './GlobalReadinessUI2'; // W104
+export { default as HeatmapUI2 } from './HeatmapUI2'; // Market Heatmap
+export { default as FixedIncomeUI2 } from './FixedIncomeUI2'; // Fixed Income
+export { default as FXDashboardUI2 } from './FXDashboardUI2'; // FX Dashboard
+export { default as CommoditiesUI2 } from './CommoditiesUI2'; // Commodities
+export { default as CryptoUI2 } from './CryptoUI2'; // Crypto
+export { default as SocialUI2 } from './SocialUI2'; // Social
+export { default as MacroUI2 } from './MacroUI2'; // Macro
+export { default as StockScreenerUI2 } from './StockScreenerUI2'; // Stock Screener
+export { default as WatchlistManagerUI2 } from './WatchlistManagerUI2'; // Watchlist Manager
+export { default as NewsTerminalUI2 } from './NewsTerminalUI2'; // News Terminal
+export { default as AlertsManagerUI2 } from './AlertsManagerUI2'; // Alerts Manager
+export { default as OptionsChainUI2 } from './OptionsChainUI2'; // Options Chain
+export { default as MLDashboardUI2 } from './MLDashboardUI2'; // ML Dashboard
+export { default as PortfolioAnalyticsUI2 } from './PortfolioAnalyticsUI2'; // Portfolio Analytics
+export { default as RiskDashboardUI2 } from './RiskDashboardUI2'; // Risk Dashboard
+export { default as OrderBookDepthUI2 } from './OrderBookDepthUI2'; // Order Book Depth
+export { default as AlgoExecutionUI2 } from './AlgoExecutionUI2'; // Algo Execution
+export { default as BloombergTerminalUI2 } from './BloombergTerminalUI2'; // Bloomberg Terminal
+export { default as MonteCarloSimUI2 } from './MonteCarloSimUI2'; // Monte Carlo Sim
+export { default as StrategyBuilderProUI2 } from './StrategyBuilderProUI2'; // Strategy Builder Pro
+export { default as MultiChartLayoutUI2 } from './MultiChartLayoutUI2'; // Multi Chart Layout
+export { default as PortfolioOptimizerProUI2 } from './PortfolioOptimizerProUI2'; // Portfolio Optimizer Pro
+export { default as VolatilitySurfaceUI2 } from './VolatilitySurfaceUI2'; // Volatility Surface
+export { default as BacktestEngineUI2 } from './BacktestEngineUI2'; // Backtest Engine
+export { default as TradingJournalUI2 } from './TradingJournalUI2'; // Trading Journal
+export { default as SectorAnalysisUI2 } from './SectorAnalysisUI2'; // Sector Analysis
+export { default as DarkPoolUI2 } from './DarkPoolUI2'; // Dark Pool
+export { default as MarketMakerUI2 } from './MarketMakerUI2'; // Market Maker
+export { default as CorrelationMatrixUI2 } from './CorrelationMatrixUI2'; // Correlation Matrix
+export { default as EarningsCalendarUI2 } from './EarningsCalendarUI2'; // Earnings Calendar
+export { default as YieldCurveUI2 } from './YieldCurveUI2'; // Yield Curve
+export { default as RealTimeScannerUI2 } from './RealTimeScannerUI2'; // Real-Time Scanner
+export { default as EconomicIndicatorsUI2 } from './EconomicIndicatorsUI2'; // Economic Indicators
+export { default as MarketOverviewUI2 } from './MarketOverviewUI2'; // Market Overview
+export { default as ReportBuilderUI2 } from './ReportBuilderUI2'; // Report Builder
+export { default as FinancialAnalysisUI2 } from './FinancialAnalysisUI2'; // Financial Analysis
+export { default as ComparableCompaniesUI2 } from './ComparableCompaniesUI2'; // Comparable Companies
+export { default as SecurityFinderUI2 } from './SecurityFinderUI2'; // Security Finder
+export { default as TransactionCostAnalysisUI2 } from './TransactionCostAnalysisUI2'; // Transaction Cost Analysis
+export { default as AlertDeliveryUI2 } from './AlertDeliveryUI2'; // Alert Delivery
+export { default as CreditRiskUI2 } from './CreditRiskUI2'; // Credit Risk
+export { default as WorkspaceManagerUI2 } from './WorkspaceManagerUI2'; // Workspace Manager
+export { default as ChartReplayUI2 } from './ChartReplayUI2'; // Chart Replay
+export { default as OptionsPricingLabUI2 } from './OptionsPricingLabUI2'; // Options Pricing Lab
+export { default as MarketBreadthUI2 } from './MarketBreadthUI2'; // Market Breadth
+export { default as AutopilotPositionSizingUI2 } from './AutopilotPositionSizingUI2'; // Autopilot Position Sizing
+export { default as AutopilotAuditTrailUI2 } from './AutopilotAuditTrailUI2'; // Autopilot Audit Trail
+export { default as DrawingToolManagerUI2 } from './DrawingToolManagerUI2'; // Drawing Tool Manager
 
 // Husk placeholders (for development / previews)
 export { TradingUI2Husk } from '../husks/TradingUI2Husk';

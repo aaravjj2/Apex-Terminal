@@ -532,21 +532,24 @@ export function OptionsMatrixUI2() {
           </select>
         ) : null}
 
-        {/* Strike range */}
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: SUBTLE }}>
-          ±<input
+        {/* Strike range — keep label+input together */}
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: SUBTLE, whiteSpace: 'nowrap' }}>
+          <span>±</span>
+          <input
             type="number" min={5} max={50} value={strikePct}
             onChange={e => setStrikePct(Number(e.target.value))}
-            style={{ width: 40, background: P_, border: `1px solid ${B_}`, color: TEXT, padding: '2px 4px', borderRadius: 4, fontFamily: MONO, fontSize: 11 }}
-          />% strikes
+            style={{ width: 36, background: P_, border: `1px solid ${B_}`, color: TEXT, padding: '2px 4px', borderRadius: 4, fontFamily: MONO, fontSize: 11 }}
+          />
+          <span>% strikes</span>
         </label>
 
-        {/* rf */}
-        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: SUBTLE }}>
-          r%<input
+        {/* rf — keep label+input together */}
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: SUBTLE, whiteSpace: 'nowrap' }}>
+          <span>r%</span>
+          <input
             type="number" min={0} max={20} step={0.1} value={(rf * 100).toFixed(1)}
             onChange={e => setRf(Number(e.target.value) / 100)}
-            style={{ width: 40, background: P_, border: `1px solid ${B_}`, color: TEXT, padding: '2px 4px', borderRadius: 4, fontFamily: MONO, fontSize: 11 }}
+            style={{ width: 36, background: P_, border: `1px solid ${B_}`, color: TEXT, padding: '2px 4px', borderRadius: 4, fontFamily: MONO, fontSize: 11 }}
           />
         </label>
 

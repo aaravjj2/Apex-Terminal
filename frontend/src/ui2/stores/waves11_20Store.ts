@@ -23,6 +23,19 @@ async function safeJson<T = any>(r: Response): Promise<T> {
   return JSON.parse(text) as T;
 }
 
+/** Safe JSON parse — returns defaultValue on any failure (404, empty body, parse error) */
+async function safeJsonOrDefault<T>(r: Response, defaultValue: T): Promise<T> {
+  try {
+    const text = await r.text().catch(() => '');
+    if (!r.ok || !text?.trim()) return defaultValue;
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('json')) return defaultValue;
+    return JSON.parse(text) as T;
+  } catch {
+    return defaultValue;
+  }
+}
+
 // Generic store factory
 function createStore<T extends object>(initialState: T) {
   let state = { ...initialState };
@@ -259,21 +272,24 @@ export const performanceV2Store = (() => {
     async fetchAll() {
       store.setState({ loading: true, error: '' });
       try {
+        const safeFetch = (url: string) => fetch(url).catch(() => new Response('', { status: 404 }));
         const [metricsR, lbR, eventsR] = await Promise.all([
-          fetch(`${API}/performance/metrics`),
-          fetch(`${API}/performance/leaderboard`),
-          fetch(`${API}/performance/auto-disable/events`),
+          safeFetch(`${API}/performance/metrics`),
+          safeFetch(`${API}/performance/leaderboard`),
+          safeFetch(`${API}/performance/auto-disable/events`),
         ]);
-        const metrics = await metricsR.json();
-        const lb = await lbR.json();
-        const events = await eventsR.json();
+        const [metrics, lb, events] = await Promise.all([
+          safeJsonOrDefault<{ strategies?: PerformanceV2State['strategies'] }>(metricsR, {}),
+          safeJsonOrDefault<{ leaderboard?: PerformanceV2State['leaderboard'] }>(lbR, {}),
+          safeJsonOrDefault<{ events?: PerformanceV2State['disableEvents'] }>(eventsR, {}),
+        ]);
         store.setState({
-          strategies: metrics.strategies || [],
-          leaderboard: lb.leaderboard || [],
-          disableEvents: events.events || [],
+          strategies: metrics?.strategies ?? [],
+          leaderboard: lb?.leaderboard ?? [],
+          disableEvents: events?.events ?? [],
           loading: false,
         });
-      } catch (e: any) { store.setState({ error: e.message, loading: false }); }
+      } catch (e: any) { store.setState({ error: e?.message || 'Failed to load', loading: false }); }
     },
   };
 })();
@@ -528,20 +544,27 @@ export const observabilityV2Store = (() => {
     async fetchAll() {
       store.setState({ loading: true, error: '' });
       try {
+        const safeFetch = (url: string) => fetch(url).catch(() => new Response('', { status: 404 }));
         const [healthR, alertsR, queryR, ilmR] = await Promise.all([
-          fetch(`${API}/observability/health`),
-          fetch(`${API}/observability/alerts`),
-          fetch(`${API}/observability/queries/stats`),
-          fetch(`${API}/observability/ilm`),
+          safeFetch(`${API}/observability/health`),
+          safeFetch(`${API}/observability/alerts`),
+          safeFetch(`${API}/observability/queries/stats`),
+          safeFetch(`${API}/observability/ilm`),
+        ]);
+        const [health, alertsData, queryStats, ilm] = await Promise.all([
+          safeJsonOrDefault<ObservabilityV2State['health']>(healthR, null),
+          safeJsonOrDefault<{ alerts?: ObservabilityV2State['alerts'] }>(alertsR, {}),
+          safeJsonOrDefault<ObservabilityV2State['queryStats']>(queryR, null),
+          safeJsonOrDefault<ObservabilityV2State['ilm']>(ilmR, null),
         ]);
         store.setState({
-          health: await healthR.json(),
-          alerts: (await alertsR.json()).alerts || [],
-          queryStats: await queryR.json(),
-          ilm: await ilmR.json(),
+          health,
+          alerts: alertsData?.alerts ?? [],
+          queryStats,
+          ilm,
           loading: false,
         });
-      } catch (e: any) { store.setState({ error: e.message, loading: false }); }
+      } catch (e: any) { store.setState({ error: e?.message || 'Failed to load', loading: false }); }
     },
     async ackAlert(alertId: string) {
       try {
@@ -574,26 +597,36 @@ export const productizationStore = (() => {
     async fetchAll() {
       store.setState({ loading: true, error: '' });
       try {
+        const safeFetch = (url: string) => fetch(url).catch(() => new Response('', { status: 404 }));
         const [uniR, statsR, profR, activeR, bkR, rbR, relR] = await Promise.all([
-          fetch(`${API}/productization/universe`),
-          fetch(`${API}/productization/universe/stats`),
-          fetch(`${API}/productization/profiles`),
-          fetch(`${API}/productization/profiles/active`),
-          fetch(`${API}/productization/backups`),
-          fetch(`${API}/productization/runbooks`),
-          fetch(`${API}/productization/release`),
+          safeFetch(`${API}/productization/universe`),
+          safeFetch(`${API}/productization/universe/stats`),
+          safeFetch(`${API}/productization/profiles`),
+          safeFetch(`${API}/productization/profiles/active`),
+          safeFetch(`${API}/productization/backups`),
+          safeFetch(`${API}/productization/runbooks`),
+          safeFetch(`${API}/productization/release`),
+        ]);
+        const [uniData, universeStats, profData, activeProfile, bkData, rbData, releaseInfo] = await Promise.all([
+          safeJsonOrDefault<{ universe?: ProductizationState['universe'] }>(uniR, {}),
+          safeJsonOrDefault<ProductizationState['universeStats']>(statsR, null),
+          safeJsonOrDefault<{ profiles?: ProductizationState['profiles'] }>(profR, {}),
+          safeJsonOrDefault<ProductizationState['activeProfile']>(activeR, null),
+          safeJsonOrDefault<{ backups?: ProductizationState['backups'] }>(bkR, {}),
+          safeJsonOrDefault<{ runbooks?: ProductizationState['runbooks'] }>(rbR, {}),
+          safeJsonOrDefault<ProductizationState['releaseInfo']>(relR, null),
         ]);
         store.setState({
-          universe: (await uniR.json()).universe || [],
-          universeStats: await statsR.json(),
-          profiles: (await profR.json()).profiles || [],
-          activeProfile: await activeR.json(),
-          backups: (await bkR.json()).backups || [],
-          runbooks: (await rbR.json()).runbooks || [],
-          releaseInfo: await relR.json(),
+          universe: uniData?.universe ?? [],
+          universeStats,
+          profiles: profData?.profiles ?? [],
+          activeProfile,
+          backups: bkData?.backups ?? [],
+          runbooks: rbData?.runbooks ?? [],
+          releaseInfo,
           loading: false,
         });
-      } catch (e: any) { store.setState({ error: e.message, loading: false }); }
+      } catch (e: any) { store.setState({ error: e?.message || 'Failed to load', loading: false }); }
     },
     async activateProfile(profileId: string) {
       try {

@@ -1,0 +1,178 @@
+export {
+  OptionType,
+  ExerciseStyle,
+  BarrierType,
+  AveragingType,
+  LookbackStrikeType,
+} from './types';
+
+export type {
+  OptionContract,
+  DiscreteDividend,
+  Greeks,
+  PricingResult,
+  OptionChainEntry,
+  VolSurfacePoint,
+  SABRParams,
+  SVIParams,
+  VolSurface,
+  StrategyLeg,
+  StrategyDefinition,
+  StrategyPayoff,
+  ScenarioResult,
+  ConvergenceResult,
+  MonteCarloResult,
+  BinomialTreeNode,
+  PortfolioPosition,
+  DeltaHedgeResult,
+  GammaScalpResult,
+} from './types';
+
+export {
+  normalPDF,
+  normalCDF,
+  normalInvCDF,
+  calcD1,
+  calcD2,
+  bsCallPrice,
+  bsPutPrice,
+  bsPrice,
+  bsDelta,
+  bsGamma,
+  bsTheta,
+  bsVega,
+  bsRho,
+  bsVanna,
+  bsVolga,
+  bsCharm,
+  bsVeta,
+  bsSpeed,
+  bsZomma,
+  bsColor,
+  bsAllGreeks,
+  bsPriceAndGreeks,
+  impliedVolatility,
+  putCallParityDeviation,
+  putCallParityHolds,
+  syntheticCallFromPut,
+  syntheticPutFromCall,
+  adjustForDiscreteDividends,
+  bsPriceDiscreteDividends,
+} from './blackScholes';
+
+export {
+  binomialPrice,
+  binomialGreeks,
+  binomialPriceAndGreeks,
+  earlyExerciseBoundary,
+  convergenceAnalysis,
+  binomialRichardsonExtrapolation,
+} from './binomial';
+
+export type { BinomialModel, BinomialConfig } from './binomial';
+
+export {
+  monteCarloPrice,
+  monteCarloAntithetic,
+  monteCarloControlVariate,
+  monteCarloImportanceSampling,
+  asianGeometricClosedForm,
+  asianArithmeticMC,
+  barrierOptionMC,
+  lookbackOptionMC,
+  basketOptionMC,
+  monteCarloGreeks,
+} from './monteCarlo';
+
+export type { MCConfig, BasketAsset } from './monteCarlo';
+
+export {
+  sabrImpliedVol,
+  calibrateSABR,
+  sviTotalVariance,
+  sviImpliedVol,
+  calibrateSVI,
+  dupireLocalVol,
+  fitPolynomialSmile,
+  fitSplineSmile,
+  buildTermStructure,
+  interpolateByDelta,
+  interpolateByMoneyness,
+  checkButterflyArbitrage,
+  checkCalendarArbitrage,
+  buildVolSurface,
+  computeSurfaceMetrics,
+} from './volatilitySurface';
+
+export type { VolSurfaceMetrics } from './volatilitySurface';
+
+export {
+  coveredCall,
+  protectivePut,
+  bullCallSpread,
+  bearPutSpread,
+  bullPutSpread,
+  bearCallSpread,
+  longStraddle,
+  shortStraddle,
+  longStrangle,
+  shortStrangle,
+  ironCondor,
+  ironButterfly,
+  calendarSpread,
+  diagonalSpread,
+  ratioCallSpread,
+  ratioPutSpread,
+  collar,
+  jadeLizard,
+  brokenWingButterfly,
+  christmasTree,
+  boxSpread,
+  conversion,
+  reversal,
+  syntheticLong,
+  syntheticShort,
+  riskReversal,
+  gutSpread,
+  ladder,
+  calculatePayoffAtExpiry,
+  calculatePnLBeforeExpiry,
+  pnlSurface,
+  findBreakEvenPrices,
+  strategyGreeks,
+  strategyMaxProfit,
+  strategyMaxLoss,
+  rollStrategy,
+  compareStrategies,
+  scenarioAnalysis,
+  whatIfMatrix,
+} from './strategies';
+
+export type { ScenarioParams, StrategyComparison } from './strategies';
+
+export {
+  emptyGreeks,
+  addGreeks,
+  scaleGreeks,
+  portfolioGreeks,
+  greeksOverTime,
+  greeksOverPrice,
+  deltaHedge,
+  simulateDeltaHedge,
+  gammaScalpEstimate,
+  thetaDecayCurve,
+  analyzeVegaExposure,
+  pinRiskAssessment,
+  assessAssignmentRisk,
+  constructDeltaNeutral,
+  constructDeltaGammaNeutral,
+} from './greeks';
+
+export type {
+  GreeksTimeSeries,
+  GreeksPriceSeries,
+  ThetaDecayCurve,
+  VegaExposure,
+  AssignmentRisk,
+  DeltaNeutralResult,
+} from './greeks';

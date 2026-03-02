@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Single source of truth for port configuration
-const backendPort = process.env.APEX_BACKEND_PORT || '8090';
+const backendPort = process.env.APEX_BACKEND_PORT || '8000';
 const frontendPort = process.env.APEX_FRONTEND_PORT || '5100';
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${frontendPort}`;
 const isCI = !!process.env.CI;

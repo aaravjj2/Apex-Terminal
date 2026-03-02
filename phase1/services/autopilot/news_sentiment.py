@@ -815,6 +815,28 @@ class EnsembleSentimentEngine:
         )
         
         return result
+
+    async def get_market_sentiment(self) -> SentimentScore:
+        """Get market sentiment with Finnhub + FinBERT blend (0.6 finnhub, 0.4 finbert)."""
+        articles = await self._news_provider.get_market_news()
+        finnhub_score = await self._base_engine.get_market_sentiment()
+        finbert_score = 0.0
+        self._ensure_providers()
+        if self._finbert and self._finbert.is_available and articles:
+            try:
+                headlines = [a.headline for a in articles[:15]]
+                results = self._finbert.analyze_batch(headlines)
+                valid = [r for r in results if r is not None]
+                if valid:
+                    finbert_score = sum(r.normalized_score for r in valid) / len(valid)
+            except Exception as e:
+                logger.debug(f"FinBERT market sentiment: {e}")
+        blended = 0.6 * finnhub_score.sentiment_score + 0.4 * finbert_score
+        return SentimentScore.from_score(
+            blended,
+            confidence=(finnhub_score.confidence + (0.8 if finbert_score != 0 else 0)) / 2,
+            article_count=len(articles),
+        )
     
     def get_provider_status(self) -> Dict[str, Any]:
         """Get status of all sentiment providers."""

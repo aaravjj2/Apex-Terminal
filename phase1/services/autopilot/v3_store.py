@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS autopilot_cycles (
     decisions_count INTEGER DEFAULT 0,
     rejections_count INTEGER DEFAULT 0,
     orders_count    INTEGER DEFAULT 0,
-    duration_ms     REAL DEFAULT 0
+    duration_ms     REAL DEFAULT 0,
+    audit_log       TEXT            -- Phase 5a: JSON structured audit (phase_timings, candidates_rejected, etc.)
 );
 
 CREATE TABLE IF NOT EXISTS autopilot_decisions (
@@ -241,6 +242,11 @@ def init_db() -> None:
         conn = _connect()
         try:
             conn.executescript(SCHEMA)
+            # Phase 5a: Add audit_log column if missing (migration)
+            try:
+                conn.execute("ALTER TABLE autopilot_cycles ADD COLUMN audit_log TEXT")
+            except Exception:
+                pass  # Column already exists
             conn.commit()
             logger.info(f"autopilot_v3 DB initialized at {_get_db_path()}")
         finally:
@@ -270,7 +276,7 @@ def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
     d = dict(row)
     # Deserialize JSON fields
     for k in ("universe", "score_breakdown", "risk_checks", "feature_contributions",
-              "old_values", "new_values", "thresholds_snapshot"):
+              "old_values", "new_values", "thresholds_snapshot", "audit_log"):
         if k in d and isinstance(d[k], str):
             d[k] = _jload(d[k])
     return d
@@ -287,9 +293,10 @@ def cycle_create(
     armed: bool,
     correlation_id: str,
     market_open: bool = False,
+    cycle_id: Optional[str] = None,
 ) -> str:
     """Insert a new cycle row and return cycle_id."""
-    cid = _new_id("cyc-")
+    cid = cycle_id or _new_id("cyc-")
     now = _now()
     with _LOCK:
         conn = _connect()
@@ -314,17 +321,20 @@ def cycle_complete(
     duration_ms: float,
     status: str = "completed",
     market_session: str = "unknown",
+    audit_log: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """Mark cycle as completed."""
+    """Mark cycle as completed. Phase 5a: Optional structured audit log."""
+    audit_json = _jdump(audit_log) if audit_log else None
     with _LOCK:
         conn = _connect()
         try:
             conn.execute(
                 """UPDATE autopilot_cycles
                    SET ended_at=?, status=?, market_session=?,
-                       decisions_count=?, rejections_count=?, orders_count=?, duration_ms=?
+                       decisions_count=?, rejections_count=?, orders_count=?, duration_ms=?,
+                       audit_log=?
                    WHERE cycle_id=?""",
-                (_now(), status, market_session, decisions_count, rejections_count, orders_count, duration_ms, cycle_id)
+                (_now(), status, market_session, decisions_count, rejections_count, orders_count, duration_ms, audit_json, cycle_id)
             )
             conn.commit()
         finally:
@@ -655,6 +665,34 @@ def exits_list(limit: int = 50) -> List[Dict[str, Any]]:
             conn.close()
 
 
+def trades_for_kelly(limit: int = 30) -> List[Dict[str, Any]]:
+    """
+    Fetch recent closed trades for Kelly criterion position sizing.
+    Returns list with realized_pnl, realized_pnl_pct, symbol per exit.
+    """
+    with _LOCK:
+        conn = _connect()
+        try:
+            rows = conn.execute(
+                """SELECT symbol, realized_pnl, realized_pnl_pct, entry_price, exit_price, qty
+                   FROM autopilot_exits ORDER BY created_at DESC LIMIT ?""",
+                (limit,),
+            ).fetchall()
+            return [
+                {
+                    "symbol": r["symbol"],
+                    "realized_pnl": float(r["realized_pnl"] or 0),
+                    "realized_pnl_pct": float(r["realized_pnl_pct"] or 0) / 100.0 if r["realized_pnl_pct"] else 0,
+                    "entry_price": float(r["entry_price"] or 0),
+                    "exit_price": float(r["exit_price"] or 0),
+                    "qty": int(r["qty"] or 1),
+                }
+                for r in rows
+            ]
+        finally:
+            conn.close()
+
+
 # ── Evaluation CRUD ───────────────────────────────────────────────────────────
 
 def evaluation_create(d: Dict[str, Any]) -> str:
@@ -888,6 +926,47 @@ def get_summary_stats() -> Dict[str, Any]:
         "total_realized_pnl": round(total_pnl, 2),
         "unresolved_incidents": unresolved_incidents,
     }
+
+
+def strategy_performance_summary(window: int = 20) -> Dict[str, Any]:
+    """
+    Phase 5b: Per-symbol performance over rolling window.
+    Returns win_rate, avg_return_pct, and suggest_reduce_weight (True if Sharpe proxy < 0).
+    """
+    with _LOCK:
+        conn = _connect()
+        try:
+            rows = conn.execute(
+                """SELECT symbol, realized_pnl_pct FROM autopilot_exits
+                   ORDER BY created_at DESC LIMIT ?""",
+                (window * 5,),  # Get more to allow per-symbol filter
+            ).fetchall()
+            by_sym: Dict[str, List[float]] = {}
+            for r in rows:
+                sym = r["symbol"]
+                pct = float(r["realized_pnl_pct"] or 0)
+                if sym not in by_sym:
+                    by_sym[sym] = []
+                if len(by_sym[sym]) < window:
+                    by_sym[sym].append(pct)
+            result = {}
+            for sym, rets in by_sym.items():
+                if len(rets) < 5:
+                    continue
+                wins = sum(1 for r in rets if r > 0)
+                win_rate = wins / len(rets)
+                avg_ret = sum(rets) / len(rets)
+                vol = (sum((r - avg_ret) ** 2 for r in rets) / len(rets)) ** 0.5 if len(rets) > 1 else 0.01
+                sharpe_proxy = avg_ret / vol if vol > 0 else 0
+                result[sym] = {
+                    "win_rate": round(win_rate, 3),
+                    "avg_return_pct": round(avg_ret, 3),
+                    "n_trades": len(rets),
+                    "suggest_reduce_weight": sharpe_proxy < 0,
+                }
+            return result
+        finally:
+            conn.close()
 
 
 # ── Initialize on import ──────────────────────────────────────────────────────

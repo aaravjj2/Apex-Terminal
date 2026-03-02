@@ -43,6 +43,9 @@ class AutopilotService:
         self.is_running = False
         self._loop_task: Optional[asyncio.Task] = None
         self._monitoring_task: Optional[asyncio.Task] = None
+        self._last_cycle_at: Optional[datetime] = None
+        self._consecutive_failures: int = 0
+        self._broker_disconnected_since: Optional[datetime] = None
         self._initialized = True
         
         # Registry of active agents: symbol -> PositionAgent
@@ -60,7 +63,7 @@ class AutopilotService:
         self.engine = get_unified_engine()
         logger.info("Unified Autopilot Engine initialized")
             
-    async def start_background_loop(self, interval_seconds: int = 60):
+    async def start_background_loop(self, interval_seconds: Optional[int] = None):
         """
         Start the background cycle loop.
         
@@ -73,7 +76,10 @@ class AutopilotService:
         if self.is_running:
             logger.warning("Autopilot loop already running")
             return
-            
+        if interval_seconds is None:
+            from .config import get_autopilot_config
+            cfg = get_autopilot_config()
+            interval_seconds = cfg.cycle_interval_minutes * 60
         self.initialize()
         
         # RESTART SAFETY CHECK: If we're starting after cutoff, flatten immediately
@@ -161,22 +167,66 @@ class AutopilotService:
                     await asyncio.sleep(interval)
                     continue
                 
-                # Normal cycle execution (within trading window)
+                if client and not client.is_connected:
+                    self._broker_disconnected_since = self._broker_disconnected_since or datetime.utcnow()
+                else:
+                    self._broker_disconnected_since = None
+
+                if self._broker_disconnected_since:
+                    from datetime import timedelta
+                    if (datetime.utcnow() - self._broker_disconnected_since) > timedelta(minutes=2):
+                        logger.warning("Broker disconnected >2 min - pausing autopilot")
+                        self._consecutive_failures += 1
+                        try:
+                            from ..api.autopilot_websocket import get_autopilot_ws_manager
+                            await get_autopilot_ws_manager().broadcast("INCIDENT", {
+                                "type": "broker_disconnected",
+                                "message": "Alpaca disconnected for >2 minutes - autopilot paused",
+                            })
+                        except Exception:
+                            pass
+                        await asyncio.sleep(interval)
+                        continue
+
                 if self.engine:
                     from .config import get_autopilot_config
                     config = get_autopilot_config()
                     if not config.continuous_run:
                         await asyncio.sleep(interval)
                         continue
+                    if self._consecutive_failures >= 3:
+                        logger.warning("3 consecutive failures - auto-pausing autopilot")
+                        config.continuous_run = False
+                        try:
+                            from ..api.autopilot_websocket import get_autopilot_ws_manager
+                            await get_autopilot_ws_manager().broadcast("INCIDENT", {
+                                "type": "auto_pause",
+                                "message": "3 consecutive cycle failures - autopilot paused",
+                            })
+                        except Exception:
+                            pass
+                        await asyncio.sleep(interval)
+                        continue
                     logger.info("Running scheduled autopilot cycle (Unified Engine)...")
-                    # Use the unified engine's run_cycle method (async)
-                    result = await self.engine.run_cycle()
-                    logger.debug(f"Cycle result: {result}")
+                    try:
+                        result = await self.engine.run_cycle()
+                        self._last_cycle_at = datetime.utcnow()
+                        self._consecutive_failures = 0
+                        logger.debug(f"Cycle result: {result}")
+                    except Exception as cycle_err:
+                        self._consecutive_failures += 1
+                        logger.error(f"Cycle failed ({self._consecutive_failures}/3): {cycle_err}", exc_info=True)
                     
             except Exception as e:
+                self._consecutive_failures += 1
                 logger.error(f"Error in autopilot background loop: {e}", exc_info=True)
-                
-            await asyncio.sleep(interval)
+
+            # Exponential backoff on failures (plan 3c)
+            backoff_mult = min(2 ** min(self._consecutive_failures, 4), 16)
+            sleep_secs = min(interval * backoff_mult, interval * 16)
+            if self._consecutive_failures > 0 and sleep_secs > interval:
+                logger.info(f"Backoff: sleeping {sleep_secs}s (failure #{self._consecutive_failures})")
+            await asyncio.sleep(sleep_secs)
     
     async def _execute_flatten(self, alpaca_clock, reason: str):
         """
@@ -335,6 +385,13 @@ class AutopilotService:
         except Exception as e:
             trading_window = {"error": str(e)}
         
+        last_cycle = getattr(self, "_last_cycle_at", None)
+        next_scheduled = None
+        if self.is_running and self.engine and last_cycle:
+            from .config import get_autopilot_config
+            cfg = get_autopilot_config()
+            from datetime import timedelta
+            next_scheduled = (last_cycle + timedelta(minutes=cfg.cycle_interval_minutes)).isoformat()
         return {
             "status": "running" if self.is_running else "stopped",
             "running": self.is_running,
@@ -343,6 +400,13 @@ class AutopilotService:
             "monitoring_active": self._monitoring_task is not None and not self._monitoring_task.done(),
             "active_agents": list(self.active_agents.keys()),
             "trading_window": trading_window,
+            "last_cycle_at": last_cycle.isoformat() if last_cycle else None,
+            "next_scheduled": next_scheduled,
+            "consecutive_failures": getattr(self, "_consecutive_failures", 0),
+            "broker_disconnected_since": (
+                self._broker_disconnected_since.isoformat()
+                if getattr(self, "_broker_disconnected_since", None) else None
+            ),
         }
 
 # Global singleton accessor

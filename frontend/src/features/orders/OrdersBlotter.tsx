@@ -52,14 +52,16 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
     const [sortField, setSortField] = useState<'submitted_at' | 'symbol'>('submitted_at');
     const [sortAsc, setSortAsc] = useState(false);
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (signal?: AbortSignal) => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/portfolio/orders`);
+            const res = await fetch(`${API_BASE}/portfolio/orders`, { signal });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             setOrders(Array.isArray(data)?data:data.orders||[]);
         } catch (e) {
+            if (e instanceof DOMException && e.name === 'AbortError') return; // unmount
+            if (e instanceof TypeError && String(e).includes('Failed to fetch')) return; // transient
             console.error('Failed to fetch orders:', e);
         } finally {
             setLoading(false);
@@ -68,9 +70,10 @@ export function OrdersBlotter({ embedded }: { embedded?: boolean }) {
 
     useEffect(() => {
         if (isOpen || embedded) {
-            fetchOrders();
-            const interval = setInterval(fetchOrders, 5000);
-            return () => clearInterval(interval);
+            const controller = new AbortController();
+            fetchOrders(controller.signal);
+            const interval = setInterval(() => fetchOrders(controller.signal), 5000);
+            return () => { controller.abort(); clearInterval(interval); };
         }
     }, [isOpen, embedded]);
 

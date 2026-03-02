@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { useStore } from '../../state/store';
 import type { Drawing } from '../../core/types';
 import type { IChartApi, ISeriesApi, Time } from 'lightweight-charts';
+import { getDrawingTool } from '@/lib/ta/drawing-tools';
 
 interface DrawingLayerProps {
     chart: IChartApi;
@@ -53,13 +54,56 @@ export const DrawingLayer = ({ chart, series }: DrawingLayerProps) => {
         // Resolution correction
         // Assuming canvas width/height set by resize observer
 
+        // Map our ToolType to drawing-tools id (where they match)
+        const typeToToolId: Record<string, string> = {
+            line: 'trend_line',
+            ray: 'ray',
+            extended_line: 'extended_line',
+            rect: 'rectangle',
+            hline: 'horizontal_line',
+            vline: 'vertical_line',
+            text: 'text',
+            fib: 'fib_retracement',
+            fib_channel: 'fib_channel',
+            fib_time: 'fib_time_zone',
+            fib_circle: 'fib_circle',
+            pitchfork: 'andrews_pitchfork',
+            schiff_pitchfork: 'schiff_pitchfork',
+            modified_schiff: 'modified_schiff_pitchfork',
+            price_range: 'price_range',
+            date_range: 'date_range',
+            parallel_channel: 'parallel_channel',
+            regression_channel: 'regression_trend',
+        };
+
         // Helper to draw
         const drawShape = (d: Drawing | Partial<Drawing>, isPreview = false) => {
             if (!d.points || d.points.length === 0) return;
             const points = d.points;
+            const toolId = d.type ? typeToToolId[d.type] ?? d.type : null;
+            const tool = toolId ? getDrawingTool(toolId) : null;
+
+            if (tool) {
+                const state = { points: points.map(p => ({ time: p.time, price: p.price })), params: d as Record<string, unknown> };
+                const t0 = chart.timeScale().coordinateToTime(0) as number;
+                const t1 = chart.timeScale().coordinateToTime(canvas.width) as number;
+                const priceHi = series.coordinateToPrice(0) as number;
+                const priceLo = series.coordinateToPrice(canvas.height) as number;
+                const viewport = {
+                    timeRange: [t0, t1] as [number, number],
+                    priceRange: [priceLo, priceHi] as [number, number],
+                    width: canvas.width,
+                    height: canvas.height,
+                };
+                ctx.strokeStyle = isPreview ? '#3b82f6' : (d.color || '#2962FF');
+                ctx.lineWidth = (d.lineWidth as number) ?? 2;
+                if (d.fillColor) ctx.fillStyle = d.fillColor;
+                tool.render(state, { ctx, viewport, style: { color: d.color, lineWidth: d.lineWidth } });
+                return;
+            }
 
             ctx.strokeStyle = isPreview ? '#3b82f6' : (d.color || '#3b82f6');
-            ctx.lineWidth = 2; // Fixed width for now
+            ctx.lineWidth = 2;
             ctx.beginPath();
 
             const startX = timeToX(points[0].time);
@@ -74,9 +118,7 @@ export const DrawingLayer = ({ chart, series }: DrawingLayerProps) => {
                 ctx.lineTo(endX, endY);
                 ctx.stroke();
 
-                // Ray extension (simplistic)
                 if (d.type === 'ray') {
-                    // extended line beyond end
                     const angle = Math.atan2(endY - startY, endX - startX);
                     const dist = 5000;
                     ctx.lineTo(endX + Math.cos(angle) * dist, endY + Math.sin(angle) * dist);
@@ -94,12 +136,10 @@ export const DrawingLayer = ({ chart, series }: DrawingLayerProps) => {
                 ctx.fillRect(startX, startY, w, h);
                 ctx.strokeRect(startX, startY, w, h);
             } else if (d.type === 'hline') {
-                // Price line
                 ctx.moveTo(0, startY);
                 ctx.lineTo(canvas.width, startY);
                 ctx.stroke();
             } else if (d.type === 'vline') {
-                // Time line
                 ctx.moveTo(startX, 0);
                 ctx.lineTo(startX, canvas.height);
                 ctx.stroke();
@@ -117,7 +157,7 @@ export const DrawingLayer = ({ chart, series }: DrawingLayerProps) => {
         if (currentDrawing) {
             drawShape(currentDrawing, true);
         }
-    }, [drawings, currentDrawing, timeToX, priceToY]);
+    }, [drawings, currentDrawing, timeToX, priceToY, chart, series]);
 
     // Event Loop
     useEffect(() => {

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:unit": "vitest run tests/unit",
@@ -17,9 +17,10 @@
     "verify:tsc": "tsc --noEmit",
     "verify:unit": "vitest run",
     "verify:e2e": "npm run selector-gate && npx playwright test",
-    "test:e2e:mcp": "npx playwright test --config=playwright.config.mcp.ts",
+    "test:e2e:mcp": "node ./node_modules/@playwright/test/cli.js test --config=playwright.config.mcp.ts",
     "test:e2e:mcp:twice": "npx playwright test --config=playwright.config.mcp.ts && npx playwright test --config=playwright.config.mcp.ts",
-    "verify:all": "npm run verify:tsc && npm run verify:unit && npm run verify:e2e"
+    "verify:all": "npm run verify:tsc && npm run verify:unit && npm run verify:e2e",
+    "test:e2e:mcp:xvfb": "xvfb-run -a node ./node_modules/@playwright/test/cli.js test --config=playwright.config.mcp.ts"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

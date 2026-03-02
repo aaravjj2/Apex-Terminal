@@ -350,6 +350,8 @@ def create_app() -> FastAPI:
     app.include_router(drawings.router, prefix="/api/v1/drawings", tags=["drawings"])
     app.include_router(strategies.router, prefix="/api/v1/strategies", tags=["strategies"])
     app.include_router(portfolio.router, prefix="/api/v1/portfolio", tags=["portfolio"])
+    # ── Compat: expose /api/v1/positions and /api/v1/orders (legacy shortcuts) ──
+    app.include_router(portfolio.router, prefix="/api/v1", tags=["portfolio-compat"])
     app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["alerts"])
     app.include_router(versions.router, prefix="/api/v1", tags=["versions"])
     app.include_router(runs.router, prefix="/api/v1", tags=["runs"])
@@ -805,6 +807,14 @@ def create_app() -> FastAPI:
     except Exception as _hm_err:
         import logging as _logging
         _logging.getLogger(__name__).warning(f"Heat map routes not loaded: {_hm_err}")
+
+    # ── UI2 Heatmap + Fixed-Income compat routes ──
+    try:
+        from .routes import heatmap_compat
+        app.include_router(heatmap_compat.router, tags=["ui2-compat"])
+    except Exception as _hc_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"UI2 compat routes not loaded: {_hc_err}")
 
     # ── Volatility Surface: BS pricing, IV, hist vol, surface, Greeks, regime ──
     try:

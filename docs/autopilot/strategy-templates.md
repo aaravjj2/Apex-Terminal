@@ -1,0 +1,7 @@
+# Strategy Templates
+
+From config.py:
+
+- LONG_CALL, LONG_PUT (V1 only)
+- PUT_CREDIT_SPREAD, CALL_CREDIT_SPREAD (V2+)
+- IRON_CONDOR, CALL_DEBIT_SPREAD, PUT_DEBIT_SPREAD (V2+)

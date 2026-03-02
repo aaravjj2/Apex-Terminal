@@ -1,4 +1,4 @@
-﻿// Bloomberg palette
+// Bloomberg palette
 const BG = '#0a0a0a';
 const PANEL = '#111111';
 const BORDER = '#1e1e1e';
@@ -54,9 +54,17 @@ export function AlertsPanel({ embedded }: { embedded?: boolean }) {
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/alerts`);
-      if (!res.ok) throw new Error('err');
-      setAlerts(await res.json());
+      const res = await fetch(`${API_BASE}/alerts`).catch(() => new Response('', { status: 404 }));
+      if (!res.ok) { setAlerts(MOCK_ALERTS); return; }
+      const text = await res.text();
+      if (!text?.trim()) { setAlerts(MOCK_ALERTS); return; }
+      try {
+        const data = JSON.parse(text);
+        const arr = Array.isArray(data) ? data : (data as { alerts?: Alert[] })?.alerts;
+        setAlerts(arr ?? []);
+      } catch {
+        setAlerts(MOCK_ALERTS);
+      }
     } catch {
       setAlerts(MOCK_ALERTS);
     } finally {

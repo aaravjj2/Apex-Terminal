@@ -205,15 +205,22 @@ class UniverseManager:
         blackout_days: int = 7
     ) -> bool:
         """Check if a symbol is in earnings blackout period."""
+        return self.is_in_earnings_blackout_plan(symbol, days_before=blackout_days, days_after=0)
+
+    def is_in_earnings_blackout_plan(
+        self,
+        symbol: str,
+        days_before: int = 2,
+        days_after: int = 1,
+    ) -> bool:
+        """Phase 4d: Blackout 2 days before and 1 day after earnings."""
         if symbol not in self.symbols:
             return False
-        
         sym = self.symbols[symbol]
         if not sym.next_earnings:
             return False
-        
         days_to_earnings = (sym.next_earnings - date.today()).days
-        return 0 <= days_to_earnings <= blackout_days
+        return -days_after <= days_to_earnings <= days_before
     
     def get_symbols_with_upcoming_earnings(
         self,

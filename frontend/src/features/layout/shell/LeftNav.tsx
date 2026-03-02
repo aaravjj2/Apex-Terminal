@@ -1,4 +1,4 @@
-﻿// Bloomberg palette
+// Bloomberg palette
 const BG = '#0a0a0a';
 const PANEL = '#111111';
 const BORDER = '#1e1e1e';
@@ -170,3 +170,4 @@ export function LeftNav({ activeView, onViewChange }: LeftNavProps) {
       </div>
     </nav>
   );
+}

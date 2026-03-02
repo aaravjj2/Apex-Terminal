@@ -77,9 +77,12 @@ class BrokerExitRule:
 class BrokerPositionMeta:
     """
     Internal metadata for a position (enrichment data).
-    NOT the source of truth - links to Alpaca by symbol.
+    NOT the source of truth - links to Alpaca by contract_symbol (OCC).
+    Uses OCC contract symbol as primary key to avoid collisions when holding
+    multiple options on the same underlying.
     """
-    symbol: str
+    symbol: str  # underlying e.g. AAPL
+    contract_symbol: str  # OCC e.g. AAPL250117P00200000 - primary key for options
     run_id: str
     strategy_id: Optional[str] = None
     strategy_template: str = "unknown"
@@ -94,6 +97,7 @@ class BrokerPositionMeta:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol,
+            "contract_symbol": self.contract_symbol,
             "run_id": self.run_id,
             "strategy_id": self.strategy_id,
             "strategy_template": self.strategy_template,
@@ -110,6 +114,7 @@ class BrokerPositionMeta:
     def from_dict(cls, d: Dict[str, Any]) -> "BrokerPositionMeta":
         return cls(
             symbol=d["symbol"],
+            contract_symbol=d.get("contract_symbol", d["symbol"]),
             run_id=d["run_id"],
             strategy_id=d.get("strategy_id"),
             strategy_template=d.get("strategy_template", "unknown"),
@@ -265,48 +270,45 @@ class BrokerMetaStore:
         except Exception as e:
             logger.error(f"Failed to save highest profits: {e}")
     
-    def get(self, symbol: str) -> Optional[BrokerPositionMeta]:
-        return self._data.get(symbol)
+    def get(self, contract_symbol: str) -> Optional[BrokerPositionMeta]:
+        """Look up by OCC contract symbol (primary key)."""
+        return self._data.get(contract_symbol)
     
     def set(self, meta: BrokerPositionMeta):
-        self._data[meta.symbol] = meta
+        """Store by contract_symbol (OCC) as primary key."""
+        key = meta.contract_symbol
+        self._data[key] = meta
         self._save()
     
-    def remove(self, symbol: str):
-        if symbol in self._data:
-            del self._data[symbol]
+    def remove(self, contract_symbol: str):
+        if contract_symbol in self._data:
+            del self._data[contract_symbol]
             self._save()
-        # Also clean up highest profit tracking
-        if symbol in self._highest_profits:
-            del self._highest_profits[symbol]
+        if contract_symbol in self._highest_profits:
+            del self._highest_profits[contract_symbol]
             self._save_highest_profits()
     
     def all(self) -> List[BrokerPositionMeta]:
         return list(self._data.values())
     
-    def update_highest_profit(self, symbol: str, pct: float):
+    def update_highest_profit(self, contract_symbol: str, pct: float):
         """Track highest profit for ANY position (managed or unmanaged)."""
-        # Update managed position metadata if exists
-        meta = self._data.get(symbol)
+        meta = self._data.get(contract_symbol)
         if meta and pct > meta.highest_profit_pct:
             meta.highest_profit_pct = pct
             self._save()
-        
-        # Also track in separate store for ALL positions (including unmanaged)
-        current_highest = self._highest_profits.get(symbol, 0.0)
+        current_highest = self._highest_profits.get(contract_symbol, 0.0)
         if pct > current_highest:
-            self._highest_profits[symbol] = pct
+            self._highest_profits[contract_symbol] = pct
             self._save_highest_profits()
-            logger.debug(f"Updated highest profit for {symbol}: {current_highest:.1f}% -> {pct:.1f}%")
+            logger.debug(f"Updated highest profit for {contract_symbol}: {current_highest:.1f}% -> {pct:.1f}%")
     
-    def get_highest_profit(self, symbol: str) -> float:
-        """Get highest profit seen for a symbol (works for all positions)."""
-        # Check managed position first
-        meta = self._data.get(symbol)
+    def get_highest_profit(self, contract_symbol: str) -> float:
+        """Get highest profit seen for a contract (works for all positions)."""
+        meta = self._data.get(contract_symbol)
         if meta:
             return meta.highest_profit_pct
-        # Fall back to separate tracker
-        return self._highest_profits.get(symbol, 0.0)
+        return self._highest_profits.get(contract_symbol, 0.0)
 
 
 # ============================================================================
@@ -378,16 +380,18 @@ class BrokerPositionManager:
     
     def register_position(
         self,
-        symbol: str,
+        contract_symbol: str,
+        underlying: str,
         run_id: str,
         strategy_template: str,
         entry_credit: float,
         max_loss: float,
         exit_rules: Optional[BrokerExitRule] = None,
     ) -> BrokerPositionMeta:
-        """Register a new bot-opened position."""
+        """Register a new bot-opened position by OCC contract symbol."""
         meta = BrokerPositionMeta(
-            symbol=symbol,
+            symbol=underlying,
+            contract_symbol=contract_symbol,
             run_id=run_id,
             strategy_template=strategy_template,
             entry_credit=entry_credit,
@@ -397,13 +401,33 @@ class BrokerPositionManager:
             managed=True,
         )
         self._store.set(meta)
-        logger.info(f"Registered position: {symbol} from run {run_id}")
+        logger.info(f"Registered position: {contract_symbol} (underlying {underlying}) from run {run_id}")
         return meta
+
+    def register_position_legacy(
+        self,
+        symbol: str,
+        run_id: str,
+        strategy_template: str,
+        entry_credit: float,
+        max_loss: float,
+        exit_rules: Optional[BrokerExitRule] = None,
+    ) -> BrokerPositionMeta:
+        """Legacy: register by underlying (uses symbol as contract_symbol for stocks)."""
+        return self.register_position(
+            contract_symbol=symbol,
+            underlying=symbol,
+            run_id=run_id,
+            strategy_template=strategy_template,
+            entry_credit=entry_credit,
+            max_loss=max_loss,
+            exit_rules=exit_rules,
+        )
     
-    def unregister_position(self, symbol: str):
-        """Unregister a closed position."""
-        self._store.remove(symbol)
-        logger.info(f"Unregistered position: {symbol}")
+    def unregister_position(self, contract_symbol: str):
+        """Unregister a closed position by OCC contract symbol."""
+        self._store.remove(contract_symbol)
+        logger.info(f"Unregistered position: {contract_symbol}")
     
     # -------------------------------------------------------------------------
     # Alpaca Integration

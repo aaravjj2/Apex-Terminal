@@ -757,7 +757,7 @@ const InflationTab: React.FC<InflationTabProps> = ({ data }) => {
           <h3 className="panel-title">Market Implications</h3>
           {data.market_implications.map((imp, i) => (
             <div key={i} className="implication-card">
-              <span className="implication-num">{i + 1:&gt;</span>
+              <span className="implication-num">{i + 1}</span>
               <span className="implication-text">{imp}</span>
             </div>
           ))}

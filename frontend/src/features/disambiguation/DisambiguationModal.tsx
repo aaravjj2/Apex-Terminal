@@ -1,4 +1,4 @@
-﻿// Bloomberg Palette
+// Bloomberg Palette
 const BG = '#0a0a0a';
 const PANEL = '#111111';
 const BORDER = '#1e1e1e';
@@ -158,12 +158,5 @@ export function DisambiguationModal({
       </div>
     </div>
   );
-}
-  token: string;
-  ticker: string;
-  company?: string | null;
-  onChooseTicker: () => void;
-  onChooseWord: () => void;
-  onCancel: () => void;
 }
 

@@ -244,9 +244,9 @@ export function ControlTowerUI2() {
             <HealthDot status={sysStatus.overall} />{sysStatus.overall.toUpperCase()} â€” {sysStatus.uptimePct.toFixed(3)}% UPTIME
           </span>
         )}
-        {critAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {critAlerts} CRITICAL UNACK</span>}
-        {pendingCount > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {pendingCount} PENDING INTERVENTIONS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {critAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {critAlerts} CRITICAL UNACK</span>}
+        {pendingCount > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {pendingCount} PENDING INTERVENTIONS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
 
       {/* STATS */}

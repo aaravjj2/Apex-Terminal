@@ -241,7 +241,7 @@ export function AnomaliesUI2() {
   const allTypes = [...new Set(anomalies.map(a => a.type))]
 
   const TABS = [
-    { id: 'feed' as const, label: `LIVE FEED${critCount > 0 ? ` âš ${critCount}` : ''}` },
+    { id: 'feed' as const, label: `LIVE FEED${critCount > 0 ? ` ⚠ ${critCount}` : ''}` },
     { id: 'heatmap' as const, label: 'HEATMAP' },
     { id: 'patterns' as const, label: 'PATTERNS' },
     { id: 'stats' as const, label: 'STATISTICS' },
@@ -254,7 +254,7 @@ export function AnomaliesUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>ANOM</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>ANOMALY DETECTION â€” STATISTICAL DEVIATION MONITORING</span>
-        {critCount > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700, animation: 'none' }}>âš¡ {critCount} CRITICAL</span>}
+        {critCount > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700, animation: 'none' }}>⚠¡ {critCount} CRITICAL</span>}
       </div>
 
       {/* STATS STRIP */}

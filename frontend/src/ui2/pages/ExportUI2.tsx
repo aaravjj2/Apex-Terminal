@@ -207,7 +207,7 @@ export function ExportUI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>EXPORT BUNDLE V3 â€” JUDGE BUNDLE BUILDER + MANIFEST + ARTIFACT REGISTRY + INTEGRITY</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           {buildMsg && <span style={{ fontSize: 10, color: GREEN }}>{buildMsg}</span>}
           <button onClick={handleBuild} disabled={building}

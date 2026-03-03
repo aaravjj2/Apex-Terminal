@@ -237,8 +237,8 @@ export function BrokerScoringUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>BRKR</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>BROKER SCORING â€” EXEC BENCHMARKING + COMMISSION TRACKING + COUNTERPARTY RISK + SLA</span>
-        {restrictedBrokers > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš  {restrictedBrokers} RESTRICTED</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {restrictedBrokers > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {restrictedBrokers} RESTRICTED</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         {loading && <span style={{ fontSize: 10, color: SUBTLE }}>Loading...</span>}
       </div>
 

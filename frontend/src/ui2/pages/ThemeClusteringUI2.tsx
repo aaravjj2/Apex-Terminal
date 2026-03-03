@@ -234,8 +234,8 @@ export function ThemeClusteringUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>THEME CLUSTERING â€” ML THEMATIC SECTOR + NARRATIVE MOMENTUM + EXPOSURE ANALYTICS</span>
-        {unstableClusters > 0 && <span style={{ fontSize: 10, color: AMBER }}>âš‘ {unstableClusters} UNSTABLE CLUSTERS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {unstableClusters > 0 && <span style={{ fontSize: 10, color: AMBER }}>⚠‘ {unstableClusters} UNSTABLE CLUSTERS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Total Clusters" value={clusters.length} col={BLUE} />

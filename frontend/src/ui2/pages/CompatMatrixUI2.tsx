@@ -217,9 +217,9 @@ export function CompatMatrixUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CMPX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>COMPATIBILITY MATRIX â€” API VERSIONS + BREAKING CHANGES + EOL + CLIENT TRACKING + MIGRATION PATHS</span>
-        {criticalBreaking > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalBreaking} CRITICAL BREAKING</span>}
-        {criticalClients > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalClients} INCOMPATIBLE CLIENTS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {criticalBreaking > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalBreaking} CRITICAL BREAKING</span>}
+        {criticalClients > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalClients} INCOMPATIBLE CLIENTS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Components" value={matrix.length} />

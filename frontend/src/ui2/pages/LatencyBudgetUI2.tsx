@@ -232,10 +232,10 @@ export function LatencyBudgetUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>LATB</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>LATENCY BUDGET ENGINE â€” SLO TRACKING + HOT PATH IDENTIFICATION + VIOLATION MONITORING</span>
-        {breaching > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {breaching} BREACHING</span>}
-        {sloBreached > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {sloBreached} SLO BREACHED</span>}
-        {activeViolations > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {activeViolations} ACTIVE VIOLATIONS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {breaching > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {breaching} BREACHING</span>}
+        {sloBreached > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {sloBreached} SLO BREACHED</span>}
+        {activeViolations > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeViolations} ACTIVE VIOLATIONS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Services" value={new Set(budgets.map(b => b.service)).size} col={BLUE} />
@@ -301,7 +301,7 @@ export function LatencyBudgetUI2() {
                     <Td right mono col={s.errorBudgetRemaining < 10 ? RED : s.errorBudgetRemaining < 30 ? AMBER : GREEN}>{s.errorBudgetRemaining.toFixed(1)}%</Td>
                     <Td><BurnBar rate={s.burnRate} /></Td>
                     <Td right mono col={SUBTLE}>{s.windowDays}d</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.alert ? RED : SUBTLE }}>{s.alert ? 'âš‘ FIRING' : 'OK'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.alert ? RED : SUBTLE }}>{s.alert ? '⚠‘ FIRING' : 'OK'}</span></Td>
                     <Td mono col={SUBTLE}>{s.owner}</Td>
                   </tr>
                 ))}
@@ -320,7 +320,7 @@ export function LatencyBudgetUI2() {
                   <tr key={i} style={{ background: h.critical && !h.optimizationApplied ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{h.service}</Td>
                     <Td mono col={BLUE}>{h.pathName}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: h.critical ? RED : GREEN }}>{h.critical ? 'âš  YES' : 'NO'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: h.critical ? RED : GREEN }}>{h.critical ? '⚠  YES' : 'NO'}</span></Td>
                     <Td right mono col={SUBTLE}>{h.avgMs.toFixed(2)}</Td>
                     <Td right mono col={h.p99Ms > 500 ? RED : h.p99Ms > 200 ? AMBER : SUBTLE}>{h.p99Ms.toFixed(2)}</Td>
                     <Td right mono col={h.callsPerMin > 1000 ? ORANGE : SUBTLE}>{h.callsPerMin.toFixed(0)}</Td>

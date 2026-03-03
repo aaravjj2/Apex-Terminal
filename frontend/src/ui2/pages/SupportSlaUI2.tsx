@@ -229,9 +229,9 @@ export function SupportSlaUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>SUPPORT SLA â€” TRIAGE AUTOMATION + ESCALATION TRACKING + COMPLIANCE</span>
-        {slaBreached > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {slaBreached} SLA BREACH</span>}
-        {p1Open > 0 && <span style={{ fontSize: 10, color: RED }}>âš‘ {p1Open} P1 OPEN</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {slaBreached > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {slaBreached} SLA BREACH</span>}
+        {p1Open > 0 && <span style={{ fontSize: 10, color: RED }}>⚠‘ {p1Open} P1 OPEN</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Open Tickets" value={tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length} col={BLUE} />

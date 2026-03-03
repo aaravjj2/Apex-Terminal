@@ -482,7 +482,7 @@ export function FuturesCurveUI2() {
             {/* upcoming rolls */}
             {rollDates.filter(r => r.daysToRoll <= 30).length > 0 && (
               <div style={{ background: '#0d1a0d', border: `1px solid ${AMBER}44`, borderRadius: 4, padding: '8px 14px', marginBottom: 12 }}>
-                <span style={{ fontSize: 10, color: AMBER, fontFamily: MONO }}>âš  UPCOMING ROLLS (â‰¤30 days): </span>
+                <span style={{ fontSize: 10, color: AMBER, fontFamily: MONO }}>⚠  UPCOMING ROLLS (â‰¤30 days): </span>
                 {rollDates.filter(r => r.daysToRoll <= 30).map(r => (
                   <span key={r.fromContract} style={{ fontSize: 10, color: TEXT, marginLeft: 12 }}>{r.fromContract}â†’{r.toContract} in {r.daysToRoll}d (cost {r.rollCostBps.toFixed(1)} bps)</span>
                 ))}

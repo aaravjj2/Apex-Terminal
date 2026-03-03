@@ -27,7 +27,17 @@ import { IndicatorPicker, type ActiveIndicator } from './IndicatorPicker';
 import { INDICATORS, getIndicatorById, type IndicatorDef } from './IndicatorRegistry';
 import { DrawingToolbar, type DrawingToolType } from './DrawingToolbar';
 import { processChartType, type OHLCV } from '@/lib/ta/chart-types';
-import { SMA, EMA, RSI, MACD, BollingerBands } from '@/lib/ta/indicators-extended';
+import {
+  SMA, EMA, RSI, MACD, BollingerBands,
+  WMA, DEMA, TEMA, HullMA, VWMA, KAMA, ALMA,
+  ATR, ADX, Stochastic, CCI, WilliamsR, ROC, Momentum,
+  OBV, ADLine, CMF, MFI, VWAP,
+  KeltnerChannel, DonchianChannel,
+  ParabolicSAR, Supertrend, IchimokuCloud, ZigZag,
+  AwesomeOscillator, TSI, CMO, Aroon,
+  StochRSI, TRIX as TRIXfn, BBPercentB, BBWidth,
+  ZLEMA, RMA,
+} from '@/lib/ta/indicators-extended';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -348,6 +358,87 @@ export const AdvancedChartEngine = forwardRef<{ fitContent: () => void }, Advanc
             case 'BBANDS':
             case 'BB':
               return BollingerBands(closes, { period, stdDev: (params?.stdDev as number) ?? 2 });
+            case 'WMA':
+              return WMA(closes, { period });
+            case 'DEMA':
+              return DEMA(closes, { period });
+            case 'TEMA':
+              return TEMA(closes, { period });
+            case 'HullMA':
+            case 'HMA':
+              return HullMA(closes, { period });
+            case 'VWMA':
+              return VWMA(closes, { period });
+            case 'KAMA':
+              return KAMA(closes, { period });
+            case 'ALMA':
+              return ALMA(closes, { period });
+            case 'ATR':
+              return ATR(closes, { period });
+            case 'ADX':
+              return ADX(closes, { period });
+            case 'Stochastic':
+            case 'STOCH':
+              return Stochastic(closes, { period });
+            case 'CCI':
+              return CCI(closes, { period });
+            case 'WilliamsR':
+            case 'WILLR':
+              return WilliamsR(closes, { period });
+            case 'ROC':
+              return ROC(closes, { period });
+            case 'Momentum':
+            case 'MOM':
+              return Momentum(closes, { period });
+            case 'OBV':
+              return OBV(closes, { period });
+            case 'ADLine':
+            case 'AD':
+              return ADLine(closes, { period });
+            case 'CMF':
+              return CMF(closes, { period });
+            case 'MFI':
+              return MFI(closes, { period });
+            case 'VWAP':
+              return VWAP(closes, { period });
+            case 'KeltnerChannel':
+            case 'KC':
+              return KeltnerChannel(closes, { period });
+            case 'DonchianChannel':
+            case 'DC':
+              return DonchianChannel(closes, { period });
+            case 'ParabolicSAR':
+            case 'PSAR':
+              return ParabolicSAR(closes, { step: 0.02, max: 0.2 });
+            case 'Supertrend':
+              return Supertrend(closes, { period, multiplier: (params?.multiplier as number) ?? 3 });
+            case 'IchimokuCloud':
+            case 'ICHIMOKU':
+              return IchimokuCloud(closes, { tenkan: 9, kijun: 26, senkou: 52 });
+            case 'ZigZag':
+              return ZigZag(closes, { threshold: (params?.threshold as number) ?? 5 });
+            case 'AwesomeOscillator':
+            case 'AO':
+              return AwesomeOscillator(closes, {});
+            case 'TSI':
+              return TSI(closes, { period });
+            case 'CMO':
+              return CMO(closes, { period });
+            case 'Aroon':
+              return Aroon(closes, { period });
+            case 'StochRSI':
+              return StochRSI(closes, { period });
+            case 'TRIX':
+              return TRIXfn(closes, { period });
+            case 'BBPercentB':
+            case 'BB%B':
+              return BBPercentB(closes, { period });
+            case 'BBWidth':
+              return BBWidth(closes, { period });
+            case 'ZLEMA':
+              return ZLEMA(closes, { period });
+            case 'RMA':
+              return RMA(closes, { period });
             default:
               return null;
           }

@@ -230,10 +230,10 @@ export function HotPathUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>HPTH</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>HOT PATH â€” FLAME GRAPH + BOTTLENECK DETECTION + CPU PROFILES + OPTIMIZATION GUIDES</span>
-        {criticalBottlenecks > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalBottlenecks} CRITICAL BOTTLENECKS</span>}
-        {hotNodes > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {hotNodes} HOT NODES</span>}
-        {openGuides > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {openGuides} OPEN â€” est. {totalSavings.toFixed(0)}% savings</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {criticalBottlenecks > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalBottlenecks} CRITICAL BOTTLENECKS</span>}
+        {hotNodes > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {hotNodes} HOT NODES</span>}
+        {openGuides > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {openGuides} OPEN â€” est. {totalSavings.toFixed(0)}% savings</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Flame Nodes" value={flame.length} col={BLUE} />

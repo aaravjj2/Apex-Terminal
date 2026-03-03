@@ -1,928 +1,464 @@
 /**
- * OptionsChainUI2.tsx — Bloomberg OMON / TradingView Options Chain
- * ================================================================
- * Full-featured options chain with:
- * - Call/Put chain with greeks (Delta, Gamma, Theta, Vega, Rho)
- * - Multiple expiry selection
- * - Volatility surface canvas chart (3D-like)
- * - Put-Call ratio indicator
- * - Options strategy builder (spreads, straddles, etc.)
- * - P&L diagram canvas chart
- * - Open interest analysis
- * - Bloomberg dark theme
+ * ┌───────────────────────────────────────────────────────────────────────┐
+ * │ APEX TERMINAL — OPTIONS CHAIN & ANALYTICS (UI2)                      │
+ * │                                                                       │
+ * │ Full options analytics platform — tasks.md §4                        │
+ * │                                                                       │
+ * │ Features:                                                             │
+ * │ • Full options chain grid with calls/puts                            │
+ * │ • Greeks (Delta, Gamma, Theta, Vega, Rho) per strike                │
+ * │ • Implied volatility surface (3D heatmap)                            │
+ * │ • Options strategy builder (spreads, straddles, butterflies, etc.)   │
+ * │ • P&L payoff diagram (at expiry + time-value)                        │
+ * │ • Greeks profile charts                                              │
+ * │ • Unusual activity scanner                                           │
+ * │ • Volatility smile / term structure                                  │
+ * │ • Risk metrics: portfolio Greeks, VaR                                │
+ * │ • Probability of profit calculator                                   │
+ * │ • Black-Scholes / Binomial pricing                                   │
+ * └───────────────────────────────────────────────────────────────────────┘
  */
-
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useOptions } from '@/ui2/hooks';
 
-const BG = '#0a0a0a';
-const PANEL = '#111111';
-const BORDER = '#1e1e1e';
-const AMBER = '#f5a623';
-const GREEN = '#26a69a';
-const RED = '#ef5350';
-const BLUE = '#42a5f5';
-const PURPLE = '#ab47bc';
-const TEXT = '#d4d4d4';
-const MUTED = '#888888';
+const T = {
+  brand: '#2962FF', bg0: '#0C0E12', bg1: '#131722', bg2: '#1E222D', bg3: '#2A2E39', bg4: '#363A45',
+  border0: '#1E222D', border1: '#2A2E39', text0: '#FFF', text1: '#D1D4DC', text2: '#787B86', text3: '#50535E',
+  up: '#26A69A', dn: '#EF5350', upBg: 'rgba(38,166,154,0.12)', dnBg: 'rgba(239,83,80,0.12)',
+  warn: '#FF9800', info: '#42A5F5', purple: '#AB47BC',
+  fontSans: "'Inter','Segoe UI',system-ui,sans-serif", fontMono: "'JetBrains Mono','Fira Code',monospace", radius: '4px',
+};
+const fmt2 = (n: number) => n.toFixed(2); const fmt3 = (n: number) => n.toFixed(3); const fmt4 = (n: number) => n.toFixed(4);
+const fmtUsd = (n: number) => `$${n.toFixed(2)}`; const fmtPct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+const fmtK = (n: number) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(0)}K` : n.toString();
+const clr = (n: number) => n >= 0 ? T.up : T.dn;
 
-// ── Option data structures ───────────────────────────────────────────────────
-interface OptionContract {
-  strike: number;
-  bid: number;
-  ask: number;
-  last: number;
-  change: number;
-  volume: number;
-  openInterest: number;
-  impliedVol: number;
-  delta: number;
-  gamma: number;
-  theta: number;
-  vega: number;
-  rho: number;
-  inTheMoney: boolean;
+const panelStyle: React.CSSProperties = { background: T.bg1, border: `1px solid ${T.border0}`, borderRadius: T.radius, overflow: 'hidden', display: 'flex', flexDirection: 'column' };
+const panelHdr: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: `1px solid ${T.border0}`, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: T.text2, fontFamily: T.fontSans };
+
+/* ── Types ── */
+interface OptionStrike {
+  strike: number; callBid: number; callAsk: number; callLast: number; callChange: number; callVolume: number; callOI: number;
+  callDelta: number; callGamma: number; callTheta: number; callVega: number; callIV: number;
+  putBid: number; putAsk: number; putLast: number; putChange: number; putVolume: number; putOI: number;
+  putDelta: number; putGamma: number; putTheta: number; putVega: number; putIV: number;
+  itm: 'call' | 'put' | 'atm';
 }
 
-interface OptionExpiry {
-  date: string;
-  daysToExpiry: number;
-  calls: OptionContract[];
-  puts: OptionContract[];
+interface StrategyLeg { type: 'CALL' | 'PUT'; side: 'BUY' | 'SELL'; strike: number; expiry: string; qty: number; premium: number; }
+
+/* ── Black-Scholes ── */
+function normalCDF(x: number) { const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911; const sign = x < 0 ? -1 : 1; x = Math.abs(x) / Math.SQRT2; const t = 1 / (1 + p * x); const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x); return 0.5 * (1 + sign * y); }
+function bsPrice(S: number, K: number, T_y: number, r: number, sigma: number, type: 'CALL' | 'PUT') {
+  if (T_y <= 0) return Math.max(type === 'CALL' ? S - K : K - S, 0);
+  const d1 = (Math.log(S / K) + (r + sigma * sigma / 2) * T_y) / (sigma * Math.sqrt(T_y));
+  const d2 = d1 - sigma * Math.sqrt(T_y);
+  return type === 'CALL' ? S * normalCDF(d1) - K * Math.exp(-r * T_y) * normalCDF(d2) : K * Math.exp(-r * T_y) * normalCDF(-d2) - S * normalCDF(-d1);
 }
 
-// ── Mock data generation ─────────────────────────────────────────────────────
-function normalCDF(x: number): number {
-  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
-  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
-  const sign = x < 0 ? -1 : 1;
-  x = Math.abs(x) / Math.sqrt(2);
-  const t = 1 / (1 + p * x);
-  const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
-  return 0.5 * (1 + sign * y);
-}
+/* ── Data Generator ── */
+function generateChain(spot: number, expiry: string): OptionStrike[] {
+  const strikes: number[] = [];
+  const step = spot > 500 ? 5 : spot > 100 ? 2.5 : 1;
+  const start = Math.floor((spot * 0.85) / step) * step;
+  for (let s = start; s <= spot * 1.15; s += step) strikes.push(+s.toFixed(2));
 
-function blackScholes(S: number, K: number, T: number, r: number, sigma: number, isCall: boolean) {
-  if (T <= 0) return { price: Math.max(isCall ? S - K : K - S, 0), delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
-  const d1 = (Math.log(S / K) + (r + sigma * sigma / 2) * T) / (sigma * Math.sqrt(T));
-  const d2 = d1 - sigma * Math.sqrt(T);
-  const nd1 = normalCDF(d1);
-  const nd2 = normalCDF(d2);
-  const nnd1 = normalCDF(-d1);
-  const nnd2 = normalCDF(-d2);
-  const pdf_d1 = Math.exp(-d1 * d1 / 2) / Math.sqrt(2 * Math.PI);
+  const dte = Math.max(1, Math.floor((new Date(expiry).getTime() - Date.now()) / 86400000));
+  const T_y = dte / 365; const r = 0.05;
 
-  const delta = isCall ? nd1 : nd1 - 1;
-  const gamma = pdf_d1 / (S * sigma * Math.sqrt(T));
-  const theta = isCall
-    ? -(S * pdf_d1 * sigma) / (2 * Math.sqrt(T)) - r * K * Math.exp(-r * T) * nd2
-    : -(S * pdf_d1 * sigma) / (2 * Math.sqrt(T)) + r * K * Math.exp(-r * T) * nnd2;
-  const vega = S * Math.sqrt(T) * pdf_d1;
-  const rho = isCall ? K * T * Math.exp(-r * T) * nd2 : -K * T * Math.exp(-r * T) * nnd2;
-  const price = isCall
-    ? S * nd1 - K * Math.exp(-r * T) * nd2
-    : K * Math.exp(-r * T) * nnd2 - S * nnd1;
+  return strikes.map(K => {
+    const baseIV = 0.25 + 0.08 * Math.abs(K - spot) / spot; // volatility smile
+    const callIV = baseIV + (Math.random() - 0.5) * 0.03;
+    const putIV = callIV + 0.02; // put-call IV skew
+    const callPrice = bsPrice(spot, K, T_y, r, callIV, 'CALL');
+    const putPrice = bsPrice(spot, K, T_y, r, putIV, 'PUT');
+    const sqrtT = Math.sqrt(T_y); const sigma = callIV;
+    const d1 = (Math.log(spot / K) + (r + sigma * sigma / 2) * T_y) / (sigma * sqrtT);
+    const nd1 = Math.exp(-d1 * d1 / 2) / Math.sqrt(2 * Math.PI);
+    const delta = normalCDF(d1); const gamma = nd1 / (spot * sigma * sqrtT);
+    const theta = -(spot * nd1 * sigma) / (2 * sqrtT) / 365; const vega = spot * nd1 * sqrtT / 100;
+    const spread = Math.max(0.01, callPrice * 0.03);
 
-  return { price: Math.max(price, 0.01), delta, gamma, theta: theta / 365, vega: vega / 100, rho: rho / 100 };
-}
-
-function generateOptionChain(spotPrice: number): OptionExpiry[] {
-  const expiries = [
-    { date: '2024-07-19', dte: 7 },
-    { date: '2024-07-26', dte: 14 },
-    { date: '2024-08-02', dte: 21 },
-    { date: '2024-08-16', dte: 35 },
-    { date: '2024-09-20', dte: 70 },
-    { date: '2024-10-18', dte: 98 },
-    { date: '2024-12-20', dte: 161 },
-    { date: '2025-01-17', dte: 189 },
-    { date: '2025-03-21', dte: 252 },
-    { date: '2025-06-20', dte: 343 },
-  ];
-
-  const r = 0.053; // risk-free rate
-  const baseIV = 0.25 + Math.random() * 0.1;
-
-  return expiries.map(exp => {
-    const T = exp.dte / 365;
-    const strikes: number[] = [];
-    const step = spotPrice > 200 ? 5 : spotPrice > 50 ? 2.5 : 1;
-    const atm = Math.round(spotPrice / step) * step;
-    for (let k = atm - step * 12; k <= atm + step * 12; k += step) {
-      if (k > 0) strikes.push(k);
-    }
-
-    const calls: OptionContract[] = [];
-    const puts: OptionContract[] = [];
-
-    strikes.forEach(K => {
-      const moneyness = Math.abs(K - spotPrice) / spotPrice;
-      const skew = 0.1 * moneyness * (K < spotPrice ? 1.2 : 0.8);
-      const iv = baseIV + skew + (Math.random() - 0.5) * 0.02;
-
-      const callBS = blackScholes(spotPrice, K, T, r, iv, true);
-      const putBS = blackScholes(spotPrice, K, T, r, iv, false);
-
-      const spread = Math.max(0.01, callBS.price * 0.02 + 0.01);
-      const vol = Math.floor(Math.random() * 5000 * Math.exp(-moneyness * 5));
-      const oi = Math.floor(Math.random() * 20000 * Math.exp(-moneyness * 3));
-
-      calls.push({
-        strike: K,
-        bid: +Math.max(callBS.price - spread, 0.01).toFixed(2),
-        ask: +(callBS.price + spread).toFixed(2),
-        last: +callBS.price.toFixed(2),
-        change: +((Math.random() - 0.45) * callBS.price * 0.15).toFixed(2),
-        volume: vol,
-        openInterest: oi,
-        impliedVol: +(iv * 100).toFixed(1),
-        delta: +callBS.delta.toFixed(4),
-        gamma: +callBS.gamma.toFixed(4),
-        theta: +callBS.theta.toFixed(4),
-        vega: +callBS.vega.toFixed(4),
-        rho: +callBS.rho.toFixed(4),
-        inTheMoney: K < spotPrice,
-      });
-
-      puts.push({
-        strike: K,
-        bid: +Math.max(putBS.price - spread, 0.01).toFixed(2),
-        ask: +(putBS.price + spread).toFixed(2),
-        last: +putBS.price.toFixed(2),
-        change: +((Math.random() - 0.5) * putBS.price * 0.15).toFixed(2),
-        volume: Math.floor(vol * (0.6 + Math.random() * 0.8)),
-        openInterest: Math.floor(oi * (0.5 + Math.random())),
-        impliedVol: +(iv * 100).toFixed(1),
-        delta: +putBS.delta.toFixed(4),
-        gamma: +putBS.gamma.toFixed(4),
-        theta: +putBS.theta.toFixed(4),
-        vega: +putBS.vega.toFixed(4),
-        rho: +putBS.rho.toFixed(4),
-        inTheMoney: K > spotPrice,
-      });
-    });
-
-    return { date: exp.date, daysToExpiry: exp.dte, calls, puts };
+    return {
+      strike: K,
+      callBid: +Math.max(0.01, callPrice - spread / 2).toFixed(2), callAsk: +(callPrice + spread / 2).toFixed(2), callLast: +callPrice.toFixed(2),
+      callChange: +((Math.random() - 0.4) * callPrice * 0.15).toFixed(2), callVolume: Math.floor(Math.random() * 5000), callOI: Math.floor(1000 + Math.random() * 20000),
+      callDelta: +delta.toFixed(4), callGamma: +gamma.toFixed(4), callTheta: +theta.toFixed(4), callVega: +vega.toFixed(4), callIV: +(callIV * 100).toFixed(1),
+      putBid: +Math.max(0.01, putPrice - spread / 2).toFixed(2), putAsk: +(putPrice + spread / 2).toFixed(2), putLast: +putPrice.toFixed(2),
+      putChange: +((Math.random() - 0.45) * putPrice * 0.15).toFixed(2), putVolume: Math.floor(Math.random() * 4000), putOI: Math.floor(800 + Math.random() * 15000),
+      putDelta: +(-1 + delta).toFixed(4), putGamma: +gamma.toFixed(4), putTheta: +theta.toFixed(4), putVega: +vega.toFixed(4), putIV: +(putIV * 100).toFixed(1),
+      itm: K < spot ? 'call' as const : K > spot ? 'put' as const : 'atm' as const,
+    };
   });
 }
 
-// ── Vol Surface chart ────────────────────────────────────────────────────────
-function VolSurface({ expiries, spotPrice, width = 600, height = 250 }: {
-  expiries: OptionExpiry[]; spotPrice: number; width?: number; height?: number;
-}) {
-  const ref = useRef<HTMLCanvasElement>(null);
+/* ═════════════════════════════════════════════════════════════════════ */
 
-  useEffect(() => {
-    const cv = ref.current;
-    if (!cv) return;
-    const ctx = cv.getContext('2d');
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    cv.width = width * dpr;
-    cv.height = height * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, width, height);
-
-    const margin = { top: 20, right: 30, bottom: 30, left: 50 };
-    const w = width - margin.left - margin.right;
-    const h = height - margin.top - margin.bottom;
-
-    // Draw grid
-    ctx.strokeStyle = BORDER;
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 5; i++) {
-      const y = margin.top + (i / 5) * h;
-      ctx.beginPath();
-      ctx.moveTo(margin.left, y);
-      ctx.lineTo(margin.left + w, y);
-      ctx.stroke();
-    }
-
-    // Labels
-    ctx.fillStyle = MUTED;
-    ctx.font = '9px monospace';
-    ctx.textAlign = 'right';
-    const ivMax = 60, ivMin = 15;
-    for (let i = 0; i <= 4; i++) {
-      const v = ivMax - i * (ivMax - ivMin) / 4;
-      const y = margin.top + (i / 4) * h;
-      ctx.fillText(`${v.toFixed(0)}%`, margin.left - 4, y + 3);
-    }
-
-    ctx.textAlign = 'center';
-    ctx.fillText('IV', margin.left - 30, margin.top + h / 2);
-
-    // Plot IV smile for each expiry
-    const colors = ['#f5a623', '#42a5f5', '#26a69a', '#ef5350', '#ab47bc', '#69f0ae'];
-
-    expiries.slice(0, 6).forEach((exp, ei) => {
-      const color = colors[ei % colors.length];
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
-      ctx.globalAlpha = 0.8;
-
-      exp.calls.forEach((c, ci) => {
-        const x = margin.left + (ci / (exp.calls.length - 1)) * w;
-        const iv = c.impliedVol;
-        const y = margin.top + ((ivMax - iv) / (ivMax - ivMin)) * h;
-
-        if (ci === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      // Legend
-      ctx.fillStyle = color;
-      ctx.font = '8px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(`${exp.daysToExpiry}DTE`, width - margin.right - 60, margin.top + 12 + ei * 12);
-    });
-
-    // ATM line
-    const atmX = margin.left + w / 2;
-    ctx.strokeStyle = AMBER;
-    ctx.setLineDash([3, 3]);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(atmX, margin.top);
-    ctx.lineTo(atmX, margin.top + h);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = AMBER;
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(`ATM $${spotPrice.toFixed(0)}`, atmX, margin.top + h + 14);
-
-    // X-axis
-    ctx.fillStyle = MUTED;
-    ctx.fillText('OTM Puts', margin.left + w * 0.15, height - 4);
-    ctx.fillText('OTM Calls', margin.left + w * 0.85, height - 4);
-  }, [expiries, spotPrice, width, height]);
-
-  return <canvas ref={ref} style={{ width, height }} />;
-}
-
-// ── P&L diagram ──────────────────────────────────────────────────────────────
-function PnLDiagram({ legs, spotPrice, width = 500, height = 200 }: {
-  legs: Array<{ strike: number; premium: number; type: 'call' | 'put'; side: 'buy' | 'sell' }>;
-  spotPrice: number;
-  width?: number;
-  height?: number;
-}) {
-  const ref = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const cv = ref.current;
-    if (!cv || legs.length === 0) return;
-    const ctx = cv.getContext('2d');
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    cv.width = width * dpr;
-    cv.height = height * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, width, height);
-
-    const margin = { top: 10, right: 10, bottom: 20, left: 50 };
-    const w = width - margin.left - margin.right;
-    const h = height - margin.top - margin.bottom;
-
-    const allStrikes = legs.map(l => l.strike);
-    const minPrice = Math.min(...allStrikes) * 0.85;
-    const maxPrice = Math.max(...allStrikes) * 1.15;
-
-    // Calculate P&L at expiry
-    const points: Array<{ price: number; pnl: number }> = [];
-    for (let p = minPrice; p <= maxPrice; p += (maxPrice - minPrice) / 200) {
-      let pnl = 0;
-      legs.forEach(leg => {
-        const intrinsic = leg.type === 'call'
-          ? Math.max(p - leg.strike, 0)
-          : Math.max(leg.strike - p, 0);
-        const mult = leg.side === 'buy' ? 1 : -1;
-        pnl += mult * (intrinsic - leg.premium) * 100;
-      });
-      points.push({ price: p, pnl });
-    }
-
-    const pnlMin = Math.min(...points.map(p => p.pnl));
-    const pnlMax = Math.max(...points.map(p => p.pnl));
-    const pnlRange = pnlMax - pnlMin || 1;
-
-    // Zero line
-    const zeroY = margin.top + ((pnlMax) / pnlRange) * h;
-    ctx.strokeStyle = MUTED;
-    ctx.setLineDash([4, 4]);
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(margin.left, zeroY);
-    ctx.lineTo(margin.left + w, zeroY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = MUTED;
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText('$0', margin.left - 4, zeroY + 3);
-
-    // Plot P&L
-    ctx.beginPath();
-    points.forEach((pt, i) => {
-      const x = margin.left + ((pt.price - minPrice) / (maxPrice - minPrice)) * w;
-      const y = margin.top + ((pnlMax - pt.pnl) / pnlRange) * h;
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Fill positive green, negative red
-    points.forEach((pt, i) => {
-      if (i === 0) return;
-      const prev = points[i - 1];
-      const x1 = margin.left + ((prev.price - minPrice) / (maxPrice - minPrice)) * w;
-      const x2 = margin.left + ((pt.price - minPrice) / (maxPrice - minPrice)) * w;
-      const y1 = margin.top + ((pnlMax - prev.pnl) / pnlRange) * h;
-      const y2 = margin.top + ((pnlMax - pt.pnl) / pnlRange) * h;
-
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineTo(x2, zeroY);
-      ctx.lineTo(x1, zeroY);
-      ctx.closePath();
-      ctx.fillStyle = pt.pnl >= 0 ? 'rgba(38,166,154,0.15)' : 'rgba(239,83,80,0.15)';
-      ctx.fill();
-    });
-
-    // Spot price line
-    const spotX = margin.left + ((spotPrice - minPrice) / (maxPrice - minPrice)) * w;
-    ctx.strokeStyle = BLUE;
-    ctx.setLineDash([2, 2]);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(spotX, margin.top);
-    ctx.lineTo(spotX, margin.top + h);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = BLUE;
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(`Spot $${spotPrice.toFixed(0)}`, spotX, margin.top + h + 14);
-
-    // Max profit/loss labels
-    ctx.fillStyle = GREEN;
-    ctx.textAlign = 'right';
-    ctx.fillText(`Max: $${pnlMax.toFixed(0)}`, margin.left - 4, margin.top + 10);
-    ctx.fillStyle = RED;
-    ctx.fillText(`Min: $${pnlMin.toFixed(0)}`, margin.left - 4, margin.top + h);
-  }, [legs, spotPrice, width, height]);
-
-  return <canvas ref={ref} style={{ width, height }} />;
-}
-
-// ── Strategy types ───────────────────────────────────────────────────────────
-type Strategy = 'long_call' | 'long_put' | 'covered_call' | 'bull_spread' | 'bear_spread' | 'straddle' | 'strangle' | 'iron_condor' | 'butterfly' | 'custom';
-
-const STRATEGIES: Array<{ id: Strategy; name: string; icon: string; description: string }> = [
-  { id: 'long_call', name: 'Long Call', icon: '📈', description: 'Bullish directional' },
-  { id: 'long_put', name: 'Long Put', icon: '📉', description: 'Bearish directional' },
-  { id: 'covered_call', name: 'Covered Call', icon: '🛡️', description: 'Income on holdings' },
-  { id: 'bull_spread', name: 'Bull Call Spread', icon: '🐂', description: 'Limited risk bullish' },
-  { id: 'bear_spread', name: 'Bear Put Spread', icon: '🐻', description: 'Limited risk bearish' },
-  { id: 'straddle', name: 'Straddle', icon: '↕️', description: 'Volatility play' },
-  { id: 'strangle', name: 'Strangle', icon: '⬆️', description: 'Wide volatility' },
-  { id: 'iron_condor', name: 'Iron Condor', icon: '🦅', description: 'Range-bound' },
-  { id: 'butterfly', name: 'Butterfly', icon: '🦋', description: 'Pinned price' },
-  { id: 'custom', name: 'Custom', icon: '⚙️', description: 'Build your own' },
-];
-
-// ── Component ────────────────────────────────────────────────────────────────
-type Tab = 'chain' | 'surface' | 'strategies' | 'analysis';
-type ChainView = 'all' | 'calls' | 'puts';
-
-export default function OptionsChainUI2() {
-  const spotPrice = useMemo(() => 185 + Math.random() * 10, []);
-  const [chain] = useState<OptionExpiry[]>(() => generateOptionChain(spotPrice));
-  const [selectedExpiry, setSelectedExpiry] = useState(0);
-  const [activeTab, setActiveTab] = useState<Tab>('chain');
-  const [chainView, setChainView] = useState<ChainView>('all');
-  const [selectedStrategy, setSelectedStrategy] = useState<Strategy>('long_call');
+/* Options Chain Grid */
+function OptionsChainGrid({ chain, spot, onAddLeg }: { chain: OptionStrike[]; spot: number; onAddLeg: (leg: StrategyLeg) => void }) {
   const [showGreeks, setShowGreeks] = useState(true);
-  const [symbol] = useState('AAPL');
-
-  const expiry = chain[selectedExpiry];
-
-  // ── Strategy legs ──
-  const strategyLegs = useMemo(() => {
-    if (!expiry) return [];
-    const atm = expiry.calls.reduce((best, c) => Math.abs(c.strike - spotPrice) < Math.abs(best.strike - spotPrice) ? c : best).strike;
-    const step = expiry.calls.length > 1 ? expiry.calls[1].strike - expiry.calls[0].strike : 5;
-
-    switch (selectedStrategy) {
-      case 'long_call': {
-        const c = expiry.calls.find(x => x.strike === atm);
-        return c ? [{ strike: atm, premium: c.ask, type: 'call' as const, side: 'buy' as const }] : [];
-      }
-      case 'long_put': {
-        const p = expiry.puts.find(x => x.strike === atm);
-        return p ? [{ strike: atm, premium: p.ask, type: 'put' as const, side: 'buy' as const }] : [];
-      }
-      case 'bull_spread': {
-        const c1 = expiry.calls.find(x => x.strike === atm);
-        const c2 = expiry.calls.find(x => x.strike === atm + step * 2);
-        if (!c1 || !c2) return [];
-        return [
-          { strike: atm, premium: c1.ask, type: 'call' as const, side: 'buy' as const },
-          { strike: atm + step * 2, premium: c2.bid, type: 'call' as const, side: 'sell' as const },
-        ];
-      }
-      case 'bear_spread': {
-        const p1 = expiry.puts.find(x => x.strike === atm);
-        const p2 = expiry.puts.find(x => x.strike === atm - step * 2);
-        if (!p1 || !p2) return [];
-        return [
-          { strike: atm, premium: p1.ask, type: 'put' as const, side: 'buy' as const },
-          { strike: atm - step * 2, premium: p2.bid, type: 'put' as const, side: 'sell' as const },
-        ];
-      }
-      case 'straddle': {
-        const c = expiry.calls.find(x => x.strike === atm);
-        const p = expiry.puts.find(x => x.strike === atm);
-        if (!c || !p) return [];
-        return [
-          { strike: atm, premium: c.ask, type: 'call' as const, side: 'buy' as const },
-          { strike: atm, premium: p.ask, type: 'put' as const, side: 'buy' as const },
-        ];
-      }
-      case 'iron_condor': {
-        const c1 = expiry.calls.find(x => x.strike === atm + step);
-        const c2 = expiry.calls.find(x => x.strike === atm + step * 3);
-        const p1 = expiry.puts.find(x => x.strike === atm - step);
-        const p2 = expiry.puts.find(x => x.strike === atm - step * 3);
-        if (!c1 || !c2 || !p1 || !p2) return [];
-        return [
-          { strike: atm - step * 3, premium: p2.ask, type: 'put' as const, side: 'buy' as const },
-          { strike: atm - step, premium: p1.bid, type: 'put' as const, side: 'sell' as const },
-          { strike: atm + step, premium: c1.bid, type: 'call' as const, side: 'sell' as const },
-          { strike: atm + step * 3, premium: c2.ask, type: 'call' as const, side: 'buy' as const },
-        ];
-      }
-      default: return [];
-    }
-  }, [expiry, selectedStrategy, spotPrice]);
-
-  // ── Put-Call ratio ──
-  const pcRatio = useMemo(() => {
-    if (!expiry) return 0;
-    const callVol = expiry.calls.reduce((a, c) => a + c.volume, 0);
-    const putVol = expiry.puts.reduce((a, p) => a + p.volume, 0);
-    return callVol > 0 ? putVol / callVol : 0;
-  }, [expiry]);
-
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'chain', label: 'OPTIONS CHAIN' },
-    { key: 'surface', label: 'VOL SURFACE' },
-    { key: 'strategies', label: 'STRATEGIES' },
-    { key: 'analysis', label: 'ANALYSIS' },
-  ];
+  const thS: React.CSSProperties = { padding: '3px 6px', textAlign: 'right', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', color: T.text3, borderBottom: `1px solid ${T.border0}`, fontFamily: T.fontSans, position: 'sticky', top: 0, background: T.bg1, zIndex: 1, whiteSpace: 'nowrap' };
+  const tdS: React.CSSProperties = { padding: '2px 6px', fontSize: '11px', fontFamily: T.fontMono, color: T.text1, borderBottom: `1px solid ${T.border0}`, textAlign: 'right', whiteSpace: 'nowrap' };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      background: BG,
-      fontFamily: '"Roboto Mono", "Cascadia Code", monospace',
-      fontSize: 11,
-      color: TEXT,
-    }}>
-      {/* ── Header ── */}
-      <div style={{
-        background: PANEL,
-        borderBottom: `1px solid ${BORDER}`,
-        padding: '8px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-      }}>
-        <span style={{ color: AMBER, fontWeight: 700, letterSpacing: 1.5, fontSize: 11 }}>
-          OPTIONS — {symbol}
-        </span>
-        <span style={{ color: TEXT, fontSize: 12, fontWeight: 600 }}>${spotPrice.toFixed(2)}</span>
-
-        {/* P/C Ratio */}
-        <div style={{
-          padding: '2px 8px',
-          borderRadius: 3,
-          border: `1px solid ${pcRatio > 1 ? RED : GREEN}`,
-          fontSize: 9,
-        }}>
-          <span style={{ color: MUTED }}>P/C: </span>
-          <span style={{ color: pcRatio > 1 ? RED : GREEN }}>{pcRatio.toFixed(2)}</span>
-        </div>
-
-        {/* Tabs */}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 2 }}>
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              style={{
-                background: activeTab === t.key ? 'rgba(245,166,35,0.15)' : 'transparent',
-                border: `1px solid ${activeTab === t.key ? AMBER : 'transparent'}`,
-                color: activeTab === t.key ? AMBER : MUTED,
-                padding: '4px 10px',
-                borderRadius: 3,
-                cursor: 'pointer',
-                fontSize: 9,
-                fontFamily: '"Roboto Mono", monospace',
-              }}
-              onClick={() => setActiveTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
+    <div data-testid="options-chain" style={panelStyle}>
+      <div style={panelHdr}>
+        <span>OPTIONS CHAIN</span>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={showGreeks} onChange={e => setShowGreeks(e.target.checked)} style={{ accentColor: T.brand }} />
+            <span style={{ fontSize: '9px', color: T.text2 }}>Greeks</span>
+          </label>
+          <span style={{ fontSize: '11px', fontFamily: T.fontMono, color: T.text0 }}>Spot: {fmt2(spot)}</span>
         </div>
       </div>
-
-      {/* ── Expiry selector ── */}
-      <div style={{
-        background: PANEL,
-        borderBottom: `1px solid ${BORDER}`,
-        padding: '4px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        overflowX: 'auto',
-      }}>
-        <span style={{ color: MUTED, fontSize: 9, marginRight: 4 }}>EXPIRY:</span>
-        {chain.map((exp, i) => (
-          <button
-            key={exp.date}
-            style={{
-              background: selectedExpiry === i ? 'rgba(245,166,35,0.12)' : 'transparent',
-              border: `1px solid ${selectedExpiry === i ? AMBER : BORDER}`,
-              color: selectedExpiry === i ? AMBER : MUTED,
-              padding: '3px 8px',
-              borderRadius: 3,
-              cursor: 'pointer',
-              fontSize: 9,
-              fontFamily: '"Roboto Mono", monospace',
-              whiteSpace: 'nowrap',
-            }}
-            onClick={() => setSelectedExpiry(i)}
-          >
-            {exp.date} ({exp.daysToExpiry}d)
-          </button>
-        ))}
-
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-          {(['all', 'calls', 'puts'] as ChainView[]).map(v => (
-            <button
-              key={v}
-              style={{
-                background: chainView === v ? 'rgba(245,166,35,0.12)' : 'transparent',
-                border: `1px solid ${chainView === v ? AMBER : BORDER}`,
-                color: chainView === v ? AMBER : MUTED,
-                padding: '3px 6px',
-                borderRadius: 3,
-                cursor: 'pointer',
-                fontSize: 9,
-                fontFamily: '"Roboto Mono", monospace',
-                textTransform: 'uppercase',
-              }}
-              onClick={() => setChainView(v)}
-            >
-              {v}
-            </button>
-          ))}
-          <button
-            style={{
-              background: showGreeks ? 'rgba(245,166,35,0.12)' : 'transparent',
-              border: `1px solid ${showGreeks ? AMBER : BORDER}`,
-              color: showGreeks ? AMBER : MUTED,
-              padding: '3px 6px',
-              borderRadius: 3,
-              cursor: 'pointer',
-              fontSize: 9,
-              fontFamily: '"Roboto Mono", monospace',
-            }}
-            onClick={() => setShowGreeks(!showGreeks)}
-          >
-            GREEKS
-          </button>
-        </div>
-      </div>
-
-      {/* ── Content ── */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        {activeTab === 'chain' && expiry && (
-          <div>
-            {/* Chain table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
-              <thead>
-                <tr style={{ borderBottom: `2px solid ${BORDER}`, position: 'sticky', top: 0, background: BG, zIndex: 1 }}>
-                  {(chainView === 'all' || chainView === 'calls') && (
-                    <>
-                      {showGreeks && (
-                        <>
-                          <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>DELTA</th>
-                          <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>GAMMA</th>
-                          <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>THETA</th>
-                          <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>VEGA</th>
-                        </>
-                      )}
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>IV%</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>OI</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>VOL</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>CHG</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>LAST</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>ASK</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'right' }}>BID</th>
-                      <th style={{ padding: '5px 4px', color: GREEN, fontSize: 8, textAlign: 'center' }}>CALLS</th>
-                    </>
-                  )}
-                  <th style={{ padding: '5px 6px', color: AMBER, fontSize: 9, textAlign: 'center', borderLeft: `2px solid ${AMBER}`, borderRight: `2px solid ${AMBER}` }}>STRIKE</th>
-                  {(chainView === 'all' || chainView === 'puts') && (
-                    <>
-                      <th style={{ padding: '5px 4px', color: RED, fontSize: 8, textAlign: 'center' }}>PUTS</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>BID</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>ASK</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>LAST</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>CHG</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>VOL</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>OI</th>
-                      <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>IV%</th>
-                      {showGreeks && (
-                        <>
-                          <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>DELTA</th>
-                          <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>GAMMA</th>
-                          <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>THETA</th>
-                          <th style={{ padding: '5px 4px', color: MUTED, fontSize: 8, textAlign: 'left' }}>VEGA</th>
-                        </>
-                      )}
-                    </>
-                  )}
+      <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th colSpan={showGreeks ? 11 : 7} style={{ ...thS, textAlign: 'center', background: T.upBg, color: T.up, fontSize: '10px' }}>CALLS</th>
+              <th style={{ ...thS, textAlign: 'center', background: T.bg3, color: T.text0 }}>STRIKE</th>
+              <th colSpan={showGreeks ? 11 : 7} style={{ ...thS, textAlign: 'center', background: T.dnBg, color: T.dn, fontSize: '10px' }}>PUTS</th>
+            </tr>
+            <tr>
+              <th style={thS}>BID</th><th style={thS}>ASK</th><th style={thS}>LAST</th><th style={thS}>CHG</th><th style={thS}>VOL</th><th style={thS}>OI</th><th style={thS}>IV</th>
+              {showGreeks && <><th style={thS}>Δ</th><th style={thS}>Γ</th><th style={thS}>Θ</th><th style={thS}>ν</th></>}
+              <th style={{ ...thS, textAlign: 'center', background: T.bg3, fontWeight: 800 }}>STRIKE</th>
+              <th style={thS}>BID</th><th style={thS}>ASK</th><th style={thS}>LAST</th><th style={thS}>CHG</th><th style={thS}>VOL</th><th style={thS}>OI</th><th style={thS}>IV</th>
+              {showGreeks && <><th style={thS}>Δ</th><th style={thS}>Γ</th><th style={thS}>Θ</th><th style={thS}>ν</th></>}
+            </tr>
+          </thead>
+          <tbody>
+            {chain.map(row => {
+              const isITMCall = row.strike < spot, isITMPut = row.strike > spot, isATM = Math.abs(row.strike - spot) < (spot > 100 ? 2.5 : 1);
+              return (
+                <tr key={row.strike} style={{ background: isATM ? `${T.brand}11` : '' }} onMouseEnter={e => { if (!isATM) e.currentTarget.style.background = T.bg2; }} onMouseLeave={e => { if (!isATM) e.currentTarget.style.background = ''; }}>
+                  <td style={{ ...tdS, color: T.up, cursor: 'pointer', background: isITMCall ? T.upBg : '' }} onClick={() => onAddLeg({ type: 'CALL', side: 'BUY', strike: row.strike, expiry: '', qty: 1, premium: row.callAsk })}>{fmt2(row.callBid)}</td>
+                  <td style={{ ...tdS, color: T.up, background: isITMCall ? T.upBg : '' }}>{fmt2(row.callAsk)}</td>
+                  <td style={{ ...tdS, fontWeight: 600, background: isITMCall ? T.upBg : '' }}>{fmt2(row.callLast)}</td>
+                  <td style={{ ...tdS, color: clr(row.callChange), background: isITMCall ? T.upBg : '' }}>{row.callChange >= 0 ? '+' : ''}{fmt2(row.callChange)}</td>
+                  <td style={{ ...tdS, color: row.callVolume > 1000 ? T.text0 : T.text2, fontWeight: row.callVolume > 2000 ? 700 : 400, background: isITMCall ? T.upBg : '' }}>{fmtK(row.callVolume)}</td>
+                  <td style={{ ...tdS, color: T.text2, background: isITMCall ? T.upBg : '' }}>{fmtK(row.callOI)}</td>
+                  <td style={{ ...tdS, color: row.callIV > 35 ? T.warn : T.text2, background: isITMCall ? T.upBg : '' }}>{row.callIV}%</td>
+                  {showGreeks && <>
+                    <td style={{ ...tdS, color: T.info, fontSize: '10px', background: isITMCall ? T.upBg : '' }}>{fmt3(row.callDelta)}</td>
+                    <td style={{ ...tdS, color: T.purple, fontSize: '10px', background: isITMCall ? T.upBg : '' }}>{fmt4(row.callGamma)}</td>
+                    <td style={{ ...tdS, color: T.dn, fontSize: '10px', background: isITMCall ? T.upBg : '' }}>{fmt4(row.callTheta)}</td>
+                    <td style={{ ...tdS, color: T.up, fontSize: '10px', background: isITMCall ? T.upBg : '' }}>{fmt3(row.callVega)}</td>
+                  </>}
+                  <td style={{ ...tdS, textAlign: 'center', fontWeight: 800, color: isATM ? T.brand : T.text0, background: T.bg3, fontSize: '12px' }}>{fmt2(row.strike)}</td>
+                  <td style={{ ...tdS, color: T.dn, cursor: 'pointer', background: isITMPut ? T.dnBg : '' }} onClick={() => onAddLeg({ type: 'PUT', side: 'BUY', strike: row.strike, expiry: '', qty: 1, premium: row.putAsk })}>{fmt2(row.putBid)}</td>
+                  <td style={{ ...tdS, color: T.dn, background: isITMPut ? T.dnBg : '' }}>{fmt2(row.putAsk)}</td>
+                  <td style={{ ...tdS, fontWeight: 600, background: isITMPut ? T.dnBg : '' }}>{fmt2(row.putLast)}</td>
+                  <td style={{ ...tdS, color: clr(row.putChange), background: isITMPut ? T.dnBg : '' }}>{row.putChange >= 0 ? '+' : ''}{fmt2(row.putChange)}</td>
+                  <td style={{ ...tdS, color: row.putVolume > 1000 ? T.text0 : T.text2, fontWeight: row.putVolume > 2000 ? 700 : 400, background: isITMPut ? T.dnBg : '' }}>{fmtK(row.putVolume)}</td>
+                  <td style={{ ...tdS, color: T.text2, background: isITMPut ? T.dnBg : '' }}>{fmtK(row.putOI)}</td>
+                  <td style={{ ...tdS, color: row.putIV > 35 ? T.warn : T.text2, background: isITMPut ? T.dnBg : '' }}>{row.putIV}%</td>
+                  {showGreeks && <>
+                    <td style={{ ...tdS, color: T.info, fontSize: '10px', background: isITMPut ? T.dnBg : '' }}>{fmt3(row.putDelta)}</td>
+                    <td style={{ ...tdS, color: T.purple, fontSize: '10px', background: isITMPut ? T.dnBg : '' }}>{fmt4(row.putGamma)}</td>
+                    <td style={{ ...tdS, color: T.dn, fontSize: '10px', background: isITMPut ? T.dnBg : '' }}>{fmt4(row.putTheta)}</td>
+                    <td style={{ ...tdS, color: T.up, fontSize: '10px', background: isITMPut ? T.dnBg : '' }}>{fmt3(row.putVega)}</td>
+                  </>}
                 </tr>
-              </thead>
-              <tbody>
-                {expiry.calls.map((call, i) => {
-                  const put = expiry.puts[i];
-                  const isATM = Math.abs(call.strike - spotPrice) < (expiry.calls[1]?.strike - expiry.calls[0]?.strike || 5) / 2;
-                  return (
-                    <tr
-                      key={call.strike}
-                      style={{
-                        borderBottom: `1px solid ${BORDER}`,
-                        background: isATM ? 'rgba(245,166,35,0.06)' : i % 2 === 0 ? PANEL : BG,
-                      }}
-                    >
-                      {(chainView === 'all' || chainView === 'calls') && (
-                        <>
-                          {showGreeks && (
-                            <>
-                              <td style={{ padding: '4px', textAlign: 'right', color: MUTED, fontSize: 9 }}>{call.delta.toFixed(3)}</td>
-                              <td style={{ padding: '4px', textAlign: 'right', color: MUTED, fontSize: 9 }}>{call.gamma.toFixed(4)}</td>
-                              <td style={{ padding: '4px', textAlign: 'right', color: RED, fontSize: 9 }}>{call.theta.toFixed(4)}</td>
-                              <td style={{ padding: '4px', textAlign: 'right', color: MUTED, fontSize: 9 }}>{call.vega.toFixed(4)}</td>
-                            </>
-                          )}
-                          <td style={{ padding: '4px', textAlign: 'right', fontSize: 9, color: PURPLE }}>{call.impliedVol}%</td>
-                          <td style={{ padding: '4px', textAlign: 'right', color: MUTED, fontSize: 9 }}>{call.openInterest.toLocaleString()}</td>
-                          <td style={{ padding: '4px', textAlign: 'right', color: MUTED, fontSize: 9 }}>{call.volume.toLocaleString()}</td>
-                          <td style={{ padding: '4px', textAlign: 'right', color: call.change >= 0 ? GREEN : RED, fontSize: 9 }}>
-                            {call.change >= 0 ? '+' : ''}{call.change.toFixed(2)}
-                          </td>
-                          <td style={{ padding: '4px', textAlign: 'right', fontWeight: 600, fontSize: 9 }}>{call.last.toFixed(2)}</td>
-                          <td style={{ padding: '4px', textAlign: 'right', color: RED, fontSize: 9 }}>{call.ask.toFixed(2)}</td>
-                          <td style={{ padding: '4px', textAlign: 'right', color: GREEN, fontSize: 9 }}>{call.bid.toFixed(2)}</td>
-                          <td style={{
-                            padding: '4px',
-                            textAlign: 'center',
-                            background: call.inTheMoney ? 'rgba(38,166,154,0.06)' : 'transparent',
-                            fontSize: 8,
-                            color: GREEN,
-                          }}>
-                            {call.inTheMoney ? 'ITM' : ''}
-                          </td>
-                        </>
-                      )}
-                      <td style={{
-                        padding: '4px 6px',
-                        textAlign: 'center',
-                        color: AMBER,
-                        fontWeight: 700,
-                        fontSize: 10,
-                        borderLeft: `2px solid ${AMBER}`,
-                        borderRight: `2px solid ${AMBER}`,
-                        background: isATM ? 'rgba(245,166,35,0.1)' : 'transparent',
-                      }}>
-                        {call.strike.toFixed(call.strike % 1 ? 1 : 0)}
-                      </td>
-                      {(chainView === 'all' || chainView === 'puts') && put && (
-                        <>
-                          <td style={{
-                            padding: '4px',
-                            textAlign: 'center',
-                            background: put.inTheMoney ? 'rgba(239,83,80,0.06)' : 'transparent',
-                            fontSize: 8,
-                            color: RED,
-                          }}>
-                            {put.inTheMoney ? 'ITM' : ''}
-                          </td>
-                          <td style={{ padding: '4px', textAlign: 'left', color: GREEN, fontSize: 9 }}>{put.bid.toFixed(2)}</td>
-                          <td style={{ padding: '4px', textAlign: 'left', color: RED, fontSize: 9 }}>{put.ask.toFixed(2)}</td>
-                          <td style={{ padding: '4px', textAlign: 'left', fontWeight: 600, fontSize: 9 }}>{put.last.toFixed(2)}</td>
-                          <td style={{ padding: '4px', textAlign: 'left', color: put.change >= 0 ? GREEN : RED, fontSize: 9 }}>
-                            {put.change >= 0 ? '+' : ''}{put.change.toFixed(2)}
-                          </td>
-                          <td style={{ padding: '4px', textAlign: 'left', color: MUTED, fontSize: 9 }}>{put.volume.toLocaleString()}</td>
-                          <td style={{ padding: '4px', textAlign: 'left', color: MUTED, fontSize: 9 }}>{put.openInterest.toLocaleString()}</td>
-                          <td style={{ padding: '4px', textAlign: 'left', fontSize: 9, color: PURPLE }}>{put.impliedVol}%</td>
-                          {showGreeks && (
-                            <>
-                              <td style={{ padding: '4px', textAlign: 'left', color: MUTED, fontSize: 9 }}>{put.delta.toFixed(3)}</td>
-                              <td style={{ padding: '4px', textAlign: 'left', color: MUTED, fontSize: 9 }}>{put.gamma.toFixed(4)}</td>
-                              <td style={{ padding: '4px', textAlign: 'left', color: RED, fontSize: 9 }}>{put.theta.toFixed(4)}</td>
-                              <td style={{ padding: '4px', textAlign: 'left', color: MUTED, fontSize: 9 }}>{put.vega.toFixed(4)}</td>
-                            </>
-                          )}
-                        </>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
-        {activeTab === 'surface' && (
-          <div style={{ padding: 16 }}>
-            <div style={{
-              background: PANEL,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 4,
-              padding: 16,
-            }}>
-              <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 8 }}>
-                IMPLIED VOLATILITY SURFACE — {symbol}
-              </div>
-              <VolSurface expiries={chain} spotPrice={spotPrice} width={800} height={300} />
+/* Strategy Builder */
+function StrategyBuilder({ legs, onRemove, spot }: { legs: StrategyLeg[]; onRemove: (i: number) => void; spot: number }) {
+  const netDebit = useMemo(() => legs.reduce((s, l) => s + (l.side === 'BUY' ? -l.premium : l.premium) * l.qty * 100, 0), [legs]);
+  const netDelta = useMemo(() => legs.reduce((s, l) => { const d = l.type === 'CALL' ? 0.5 : -0.5; return s + (l.side === 'BUY' ? d : -d) * l.qty; }, 0), [legs]);
+
+  return (
+    <div data-testid="strategy-builder" style={panelStyle}>
+      <div style={panelHdr}>
+        <span>STRATEGY BUILDER ({legs.length} legs)</span>
+        <div style={{ display: 'flex', gap: '8px', fontSize: '10px', fontFamily: T.fontMono }}>
+          <span style={{ color: T.text2 }}>Net: <span style={{ color: netDebit >= 0 ? T.up : T.dn, fontWeight: 700 }}>{fmtUsd(netDebit)}</span></span>
+          <span style={{ color: T.text2 }}>Δ: <span style={{ color: T.info }}>{netDelta.toFixed(2)}</span></span>
+        </div>
+      </div>
+      {legs.length === 0 ? (
+        <div style={{ padding: '20px', textAlign: 'center', color: T.text3, fontSize: '11px' }}>Click on bid/ask prices in the chain to add legs</div>
+      ) : (
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Type', 'Side', 'Strike', 'Qty', 'Premium', 'Total', ''].map(h => <th key={h} style={{ padding: '3px 8px', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', color: T.text3, borderBottom: `1px solid ${T.border0}`, fontFamily: T.fontSans }}>{h}</th>)}</tr></thead>
+            <tbody>{legs.map((l, i) => (
+              <tr key={i}><td style={{ padding: '3px 8px', fontSize: '11px', fontFamily: T.fontMono, color: l.type === 'CALL' ? T.up : T.dn, fontWeight: 600 }}>{l.type}</td>
+                <td style={{ padding: '3px 8px', fontSize: '11px', fontFamily: T.fontMono, color: l.side === 'BUY' ? T.up : T.dn }}>{l.side}</td>
+                <td style={{ padding: '3px 8px', fontSize: '11px', fontFamily: T.fontMono, color: T.text0 }}>{fmt2(l.strike)}</td>
+                <td style={{ padding: '3px 8px', fontSize: '11px', fontFamily: T.fontMono }}>{l.qty}</td>
+                <td style={{ padding: '3px 8px', fontSize: '11px', fontFamily: T.fontMono }}>{fmtUsd(l.premium)}</td>
+                <td style={{ padding: '3px 8px', fontSize: '11px', fontFamily: T.fontMono, color: clr(l.side === 'BUY' ? -l.premium * l.qty * 100 : l.premium * l.qty * 100) }}>{fmtUsd((l.side === 'BUY' ? -1 : 1) * l.premium * l.qty * 100)}</td>
+                <td style={{ padding: '3px 8px' }}><button onClick={() => onRemove(i)} style={{ background: `${T.dn}33`, color: T.dn, border: 'none', borderRadius: '2px', padding: '2px 6px', fontSize: '9px', cursor: 'pointer' }}>✕</button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
+      {/* Quick Strategy Templates */}
+      <div style={{ display: 'flex', gap: '3px', padding: '6px 8px', borderTop: `1px solid ${T.border0}`, flexWrap: 'wrap' }}>
+        {['Straddle', 'Strangle', 'Bull Call Spread', 'Bear Put Spread', 'Iron Condor', 'Iron Butterfly', 'Calendar Spread', 'Covered Call'].map(s => (
+          <button key={s} style={{ padding: '2px 6px', background: T.bg3, color: T.text2, border: 'none', borderRadius: '2px', fontSize: '9px', cursor: 'pointer', fontFamily: T.fontSans }}>{s}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Payoff Diagram (Canvas) */
+function PayoffDiagram({ legs, spot }: { legs: StrategyLeg[]; spot: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 400, h: 200 });
+
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    const obs = new ResizeObserver(entries => { const { width, height } = entries[0].contentRect; setDims({ w: Math.floor(width), h: Math.floor(height) }); });
+    obs.observe(el); return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext('2d'); if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1; c.width = dims.w * dpr; c.height = dims.h * dpr; ctx.scale(dpr, dpr);
+    const { w, h } = dims; const mt = 15, mb = 25, ml = 55, mr = 10;
+    const cW = w - ml - mr, cH = h - mt - mb;
+
+    ctx.fillStyle = T.bg2; ctx.fillRect(0, 0, w, h);
+
+    if (legs.length === 0) { ctx.fillStyle = T.text3; ctx.font = '11px Inter'; ctx.textAlign = 'center'; ctx.fillText('Add legs to see payoff diagram', w / 2, h / 2); return; }
+
+    const priceRange = spot * 0.3; const minP = spot - priceRange, maxP = spot + priceRange;
+    const payoffs: number[] = [];
+    for (let i = 0; i <= 200; i++) {
+      const price = minP + (i / 200) * priceRange * 2;
+      let pnl = 0;
+      legs.forEach(l => {
+        const intrinsic = l.type === 'CALL' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
+        const profit = (intrinsic - l.premium) * l.qty * 100;
+        pnl += l.side === 'BUY' ? profit : -profit;
+      });
+      payoffs.push(pnl);
+    }
+
+    const minPnl = Math.min(...payoffs, 0), maxPnl = Math.max(...payoffs, 0);
+    const pnlRange = maxPnl - minPnl || 1;
+    const toX = (i: number) => ml + (i / 200) * cW;
+    const toY = (v: number) => mt + cH - ((v - minPnl) / pnlRange) * cH;
+
+    // Zero line
+    const zeroY = toY(0);
+    ctx.strokeStyle = T.text3; ctx.lineWidth = 0.5; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(ml, zeroY); ctx.lineTo(w - mr, zeroY); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = T.text3; ctx.font = '9px Inter'; ctx.textAlign = 'right'; ctx.fillText('$0', ml - 5, zeroY + 3);
+
+    // Fill profit/loss regions
+    ctx.save();
+    // Profit fill
+    ctx.fillStyle = 'rgba(38,166,154,0.15)'; ctx.beginPath(); ctx.moveTo(toX(0), zeroY);
+    payoffs.forEach((pnl, i) => { ctx.lineTo(toX(i), Math.min(toY(pnl), zeroY)); }); ctx.lineTo(toX(200), zeroY); ctx.fill();
+    // Loss fill
+    ctx.fillStyle = 'rgba(239,83,80,0.15)'; ctx.beginPath(); ctx.moveTo(toX(0), zeroY);
+    payoffs.forEach((pnl, i) => { ctx.lineTo(toX(i), Math.max(toY(pnl), zeroY)); }); ctx.lineTo(toX(200), zeroY); ctx.fill();
+    ctx.restore();
+
+    // Payoff line
+    ctx.strokeStyle = T.brand; ctx.lineWidth = 2; ctx.beginPath();
+    payoffs.forEach((pnl, i) => { i === 0 ? ctx.moveTo(toX(i), toY(pnl)) : ctx.lineTo(toX(i), toY(pnl)); }); ctx.stroke();
+
+    // Spot price line
+    const spotX = ml + ((spot - minP) / (priceRange * 2)) * cW;
+    ctx.strokeStyle = T.warn; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(spotX, mt); ctx.lineTo(spotX, mt + cH); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = T.warn; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'center'; ctx.fillText(`Spot: ${fmt2(spot)}`, spotX, mt + cH + 15);
+
+    // Max profit / loss labels
+    ctx.fillStyle = T.up; ctx.font = '9px Inter'; ctx.textAlign = 'left'; ctx.fillText(`Max Profit: ${fmtUsd(maxPnl)}`, ml + 5, mt + 10);
+    ctx.fillStyle = T.dn; ctx.fillText(`Max Loss: ${fmtUsd(minPnl)}`, ml + 5, mt + 22);
+
+    // Breakeven points
+    for (let i = 1; i < payoffs.length; i++) {
+      if ((payoffs[i - 1] < 0 && payoffs[i] >= 0) || (payoffs[i - 1] >= 0 && payoffs[i] < 0)) {
+        const bePrice = minP + (i / 200) * priceRange * 2;
+        const bx = toX(i);
+        ctx.fillStyle = T.info; ctx.beginPath(); ctx.arc(bx, zeroY, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = T.info; ctx.font = '8px JetBrains Mono'; ctx.textAlign = 'center'; ctx.fillText(`BE: ${fmt2(bePrice)}`, bx, zeroY - 8);
+      }
+    }
+  }, [legs, spot, dims]);
+
+  return (
+    <div ref={containerRef} data-testid="payoff-diagram" style={panelStyle}>
+      <div style={panelHdr}><span>P&L PAYOFF DIAGRAM</span></div>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
+}
+
+/* IV Surface */
+function IVSurface({ chain }: { chain: OptionStrike[] }) {
+  const [viewType, setViewType] = useState<'smile' | 'surface'>('smile');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 400, h: 200 });
+
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    const obs = new ResizeObserver(entries => { const { width, height } = entries[0].contentRect; setDims({ w: Math.floor(width), h: Math.floor(height) }); });
+    obs.observe(el); return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext('2d'); if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1; c.width = dims.w * dpr; c.height = dims.h * dpr; ctx.scale(dpr, dpr);
+    const { w, h } = dims; const mt = 15, mb = 25, ml = 45, mr = 10;
+    const cW = w - ml - mr, cH = h - mt - mb;
+    ctx.fillStyle = T.bg2; ctx.fillRect(0, 0, w, h);
+
+    const ivs = chain.map(r => ({ strike: r.strike, callIV: r.callIV, putIV: r.putIV }));
+    const minIV = Math.min(...ivs.flatMap(r => [r.callIV, r.putIV])) * 0.9;
+    const maxIV = Math.max(...ivs.flatMap(r => [r.callIV, r.putIV])) * 1.1;
+    const ivRange = maxIV - minIV || 1;
+    const toX = (i: number) => ml + (i / (ivs.length - 1)) * cW;
+    const toY = (iv: number) => mt + cH - ((iv - minIV) / ivRange) * cH;
+
+    // Grid
+    for (let i = 0; i <= 4; i++) { const iv = minIV + (ivRange * i) / 4; const y = toY(iv); ctx.strokeStyle = T.border0; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(w - mr, y); ctx.stroke(); ctx.fillStyle = T.text3; ctx.font = '9px Inter'; ctx.textAlign = 'right'; ctx.fillText(`${iv.toFixed(0)}%`, ml - 5, y + 3); }
+    // Call IV
+    ctx.strokeStyle = T.up; ctx.lineWidth = 2; ctx.beginPath(); ivs.forEach((r, i) => { i === 0 ? ctx.moveTo(toX(i), toY(r.callIV)) : ctx.lineTo(toX(i), toY(r.callIV)); }); ctx.stroke();
+    // Put IV
+    ctx.strokeStyle = T.dn; ctx.lineWidth = 2; ctx.beginPath(); ivs.forEach((r, i) => { i === 0 ? ctx.moveTo(toX(i), toY(r.putIV)) : ctx.lineTo(toX(i), toY(r.putIV)); }); ctx.stroke();
+    // Labels
+    ctx.fillStyle = T.up; ctx.font = '10px Inter'; ctx.fillText('Call IV', ml + 10, mt + 12);
+    ctx.fillStyle = T.dn; ctx.fillText('Put IV', ml + 10, mt + 24);
+    // X-axis labels
+    for (let i = 0; i < ivs.length; i += Math.max(1, Math.floor(ivs.length / 8))) {
+      ctx.fillStyle = T.text3; ctx.font = '8px JetBrains Mono'; ctx.textAlign = 'center'; ctx.fillText(fmt2(ivs[i].strike), toX(i), mt + cH + 15);
+    }
+  }, [chain, dims]);
+
+  return (
+    <div ref={containerRef} data-testid="iv-surface" style={panelStyle}>
+      <div style={panelHdr}>
+        <span>IMPLIED VOLATILITY</span>
+        <div style={{ display: 'flex', gap: '3px' }}>
+          {(['smile', 'surface'] as const).map(v => (
+            <button key={v} onClick={() => setViewType(v)} style={{ padding: '2px 6px', border: 'none', borderRadius: '2px', fontSize: '9px', cursor: 'pointer', background: viewType === v ? T.brand : T.bg3, color: viewType === v ? '#fff' : T.text3 }}>{v.toUpperCase()}</button>
+          ))}
+        </div>
+      </div>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
+}
+
+/* Unusual Activity Scanner */
+function UnusualActivity({ chain }: { chain: OptionStrike[] }) {
+  const unusual = useMemo(() => {
+    const items = chain.flatMap(r => {
+      const results = [];
+      if (r.callVolume > r.callOI * 0.3) results.push({ strike: r.strike, type: 'CALL' as const, volume: r.callVolume, oi: r.callOI, ratio: +(r.callVolume / r.callOI).toFixed(2), premium: r.callLast, iv: r.callIV });
+      if (r.putVolume > r.putOI * 0.3) results.push({ strike: r.strike, type: 'PUT' as const, volume: r.putVolume, oi: r.putOI, ratio: +(r.putVolume / r.putOI).toFixed(2), premium: r.putLast, iv: r.putIV });
+      return results;
+    });
+    return items.sort((a, b) => b.ratio - a.ratio).slice(0, 15);
+  }, [chain]);
+
+  return (
+    <div data-testid="unusual-activity" style={panelStyle}>
+      <div style={panelHdr}><span>UNUSUAL ACTIVITY</span></div>
+      <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin' }}>
+        {unusual.map((u, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', borderBottom: `1px solid ${T.border0}`, gap: '8px', fontSize: '11px', fontFamily: T.fontMono }}>
+            <span style={{ color: u.type === 'CALL' ? T.up : T.dn, fontWeight: 700, width: '35px' }}>{u.type}</span>
+            <span style={{ color: T.text0, width: '50px' }}>{fmt2(u.strike)}</span>
+            <span style={{ color: T.text2, width: '50px' }}>Vol: {fmtK(u.volume)}</span>
+            <span style={{ color: T.text3, width: '50px' }}>OI: {fmtK(u.oi)}</span>
+            <span style={{ color: u.ratio > 1 ? T.warn : T.text2, fontWeight: u.ratio > 1 ? 700 : 400 }}>{u.ratio}x</span>
+            <span style={{ color: T.text2, marginLeft: 'auto' }}>IV: {u.iv}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════ */
+/* ══  MAIN                                                          ══ */
+/* ═════════════════════════════════════════════════════════════════════ */
+
+export default function OptionsChainUI2() {
+  // ── Hook integration ──
+  const [optionsState, optionsActions] = useOptions();
+
+  const [symbol] = useState('AAPL');
+  const [spot, setSpot] = useState(192.53);
+  const [expirations] = useState(['2024-07-19', '2024-08-16', '2024-09-20', '2024-10-18', '2024-11-15', '2024-12-20', '2025-01-17', '2025-03-21', '2025-06-20', '2025-12-19']);
+  const [selectedExpiry, setSelectedExpiry] = useState(expirations[2]);
+  const [chain, setChain] = useState<OptionStrike[]>([]);
+  const [legs, setLegs] = useState<StrategyLeg[]>([]);
+  const [activeTab, setActiveTab] = useState<'CHAIN' | 'STRATEGY' | 'IV' | 'UNUSUAL'>('CHAIN');
+
+  useEffect(() => { setChain(generateChain(spot, selectedExpiry)); }, [spot, selectedExpiry]);
+  useEffect(() => { const interval = setInterval(() => setSpot(p => +(p + (Math.random() - 0.49) * 0.15).toFixed(2)), 3000); return () => clearInterval(interval); }, []);
+
+  const handleAddLeg = useCallback((leg: StrategyLeg) => setLegs(prev => [...prev, { ...leg, expiry: selectedExpiry }]), [selectedExpiry]);
+  const handleRemoveLeg = useCallback((i: number) => setLegs(prev => prev.filter((_, idx) => idx !== i)), []);
+
+  const dte = Math.max(0, Math.floor((new Date(selectedExpiry).getTime() - Date.now()) / 86400000));
+
+  return (
+    <div data-testid="options-page" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px', background: T.bg1, borderRadius: T.radius, border: `1px solid ${T.border0}` }}>
+        <span style={{ fontSize: '14px', fontWeight: 800, color: T.text0, fontFamily: T.fontMono }}>{symbol}</span>
+        <span style={{ fontSize: '14px', fontWeight: 700, color: T.text0, fontFamily: T.fontMono }}>{fmt2(spot)}</span>
+        <span style={{ fontSize: '11px', color: clr(0.45), fontWeight: 600, fontFamily: T.fontMono }}>+0.45%</span>
+        <span style={{ color: T.text3, fontSize: '10px' }}>|</span>
+        <div style={{ display: 'flex', gap: '3px', overflow: 'auto', flex: 1 }}>
+          {expirations.map(exp => (
+            <button key={exp} onClick={() => setSelectedExpiry(exp)} style={{ padding: '3px 8px', border: 'none', borderRadius: '2px', fontSize: '10px', cursor: 'pointer', fontFamily: T.fontMono, background: selectedExpiry === exp ? T.brand : T.bg3, color: selectedExpiry === exp ? '#fff' : T.text2, whiteSpace: 'nowrap' }}>{exp.slice(5)} ({Math.max(0, Math.floor((new Date(exp).getTime() - Date.now()) / 86400000))}d)</button>
+          ))}
+        </div>
+        <span style={{ fontSize: '10px', color: T.text2, fontFamily: T.fontSans }}>DTE: <span style={{ color: T.text0, fontWeight: 700 }}>{dte}</span></span>
+      </div>
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '1px', background: T.border0, borderRadius: T.radius }}>
+        {(['CHAIN', 'STRATEGY', 'IV', 'UNUSUAL'] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '5px', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 700, fontFamily: T.fontSans, background: activeTab === tab ? T.bg1 : T.bg2, color: activeTab === tab ? T.brand : T.text3, borderBottom: activeTab === tab ? `2px solid ${T.brand}` : '2px solid transparent' }}>{tab}</button>
+        ))}
+      </div>
+      {/* Content */}
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {activeTab === 'CHAIN' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '6px', flex: 1, minHeight: 0 }}>
+            <OptionsChainGrid chain={chain} spot={spot} onAddLeg={handleAddLeg} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <StrategyBuilder legs={legs} onRemove={handleRemoveLeg} spot={spot} />
+              <PayoffDiagram legs={legs} spot={spot} />
             </div>
           </div>
         )}
-
-        {activeTab === 'strategies' && (
-          <div style={{ padding: 16 }}>
-            <div style={{ display: 'flex', gap: 16 }}>
-              {/* Strategy selector */}
-              <div style={{ width: 200 }}>
-                <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 8 }}>SELECT STRATEGY</div>
-                {STRATEGIES.map(s => (
-                  <div
-                    key={s.id}
-                    style={{
-                      padding: '8px 10px',
-                      borderBottom: `1px solid ${BORDER}`,
-                      background: selectedStrategy === s.id ? 'rgba(245,166,35,0.08)' : 'transparent',
-                      cursor: 'pointer',
-                      borderLeft: `3px solid ${selectedStrategy === s.id ? AMBER : 'transparent'}`,
-                    }}
-                    onClick={() => setSelectedStrategy(s.id)}
-                  >
-                    <div style={{ color: selectedStrategy === s.id ? AMBER : TEXT, fontSize: 10 }}>
-                      {s.icon} {s.name}
-                    </div>
-                    <div style={{ color: MUTED, fontSize: 8 }}>{s.description}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* P&L diagram */}
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  background: PANEL,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 4,
-                  padding: 16,
-                  marginBottom: 16,
-                }}>
-                  <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 8 }}>
-                    P&L AT EXPIRY — {STRATEGIES.find(s => s.id === selectedStrategy)?.name}
-                  </div>
-                  <PnLDiagram legs={strategyLegs} spotPrice={spotPrice} width={600} height={250} />
-                </div>
-
-                {/* Legs detail */}
-                <div style={{
-                  background: PANEL,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 4,
-                  padding: 12,
-                }}>
-                  <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 8 }}>LEGS</div>
-                  {strategyLegs.map((leg, i) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      gap: 12,
-                      padding: '6px 0',
-                      borderBottom: `1px solid ${BORDER}`,
-                      fontSize: 10,
-                    }}>
-                      <span style={{
-                        color: leg.side === 'buy' ? GREEN : RED,
-                        fontWeight: 600,
-                        width: 40,
-                      }}>
-                        {leg.side.toUpperCase()}
-                      </span>
-                      <span style={{ color: leg.type === 'call' ? GREEN : RED, width: 40 }}>
-                        {leg.type.toUpperCase()}
-                      </span>
-                      <span style={{ color: AMBER, width: 60 }}>Strike: ${leg.strike}</span>
-                      <span style={{ color: TEXT }}>Premium: ${leg.premium.toFixed(2)}</span>
-                      <span style={{ color: MUTED }}>
-                        Cost: ${(leg.premium * 100 * (leg.side === 'buy' ? -1 : 1)).toFixed(0)}
-                      </span>
-                    </div>
-                  ))}
-                  {strategyLegs.length > 0 && (
-                    <div style={{ marginTop: 8, fontSize: 10 }}>
-                      <span style={{ color: MUTED }}>Net Premium: </span>
-                      <span style={{
-                        color: strategyLegs.reduce((a, l) => a + l.premium * (l.side === 'buy' ? -1 : 1), 0) >= 0 ? GREEN : RED,
-                        fontWeight: 700,
-                      }}>
-                        ${(strategyLegs.reduce((a, l) => a + l.premium * (l.side === 'buy' ? -1 : 1), 0) * 100).toFixed(0)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+        {activeTab === 'STRATEGY' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', flex: 1 }}>
+            <StrategyBuilder legs={legs} onRemove={handleRemoveLeg} spot={spot} />
+            <PayoffDiagram legs={legs} spot={spot} />
           </div>
         )}
-
-        {activeTab === 'analysis' && expiry && (
-          <div style={{ padding: 16 }}>
-            {/* Open Interest Analysis */}
-            <div style={{
-              background: PANEL,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 4,
-              padding: 16,
-              marginBottom: 16,
-            }}>
-              <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 12 }}>
-                OPEN INTEREST BY STRIKE
-              </div>
-              {expiry.calls.filter((_, i) => i % 2 === 0).map((call, i) => {
-                const put = expiry.puts[i * 2];
-                const maxOI = Math.max(...expiry.calls.map(c => c.openInterest), ...expiry.puts.map(p => p.openInterest));
-                return (
-                  <div key={call.strike} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 0' }}>
-                    <div style={{ width: 200, display: 'flex', justifyContent: 'flex-end' }}>
-                      <div style={{
-                        height: 10,
-                        width: `${(call.openInterest / maxOI) * 100}%`,
-                        background: GREEN,
-                        opacity: 0.6,
-                        borderRadius: '2px 0 0 2px',
-                      }} />
-                    </div>
-                    <span style={{ color: MUTED, fontSize: 8, width: 35, textAlign: 'right' }}>
-                      {(call.openInterest / 1000).toFixed(1)}K
-                    </span>
-                    <span style={{ color: AMBER, fontSize: 9, width: 40, textAlign: 'center', fontWeight: 600 }}>
-                      {call.strike}
-                    </span>
-                    <span style={{ color: MUTED, fontSize: 8, width: 35 }}>
-                      {put ? `${(put.openInterest / 1000).toFixed(1)}K` : ''}
-                    </span>
-                    <div style={{ width: 200 }}>
-                      <div style={{
-                        height: 10,
-                        width: put ? `${(put.openInterest / maxOI) * 100}%` : '0%',
-                        background: RED,
-                        opacity: 0.6,
-                        borderRadius: '0 2px 2px 0',
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 8, fontSize: 9, color: MUTED }}>
-                <span><span style={{ color: GREEN }}>■</span> Call OI</span>
-                <span><span style={{ color: RED }}>■</span> Put OI</span>
-              </div>
-            </div>
+        {activeTab === 'IV' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', flex: 1 }}>
+            <IVSurface chain={chain} />
+            <UnusualActivity chain={chain} />
           </div>
         )}
+        {activeTab === 'UNUSUAL' && <UnusualActivity chain={chain} />}
       </div>
     </div>
   );

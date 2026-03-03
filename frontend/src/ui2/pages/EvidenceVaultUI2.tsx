@@ -217,10 +217,10 @@ export function EvidenceVaultUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>EVID</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>EVIDENCE VAULT â€” IMMUTABLE REGULATORY STORAGE + CHAIN OF CUSTODY + REVIEW WORKFLOW</span>
-        {expiredItems > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {expiredItems} EXPIRED</span>}
-        {highPriorityReviews > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {highPriorityReviews} HIGH PRIORITY REVIEWS</span>}
-        {legalHolds > 0 && <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>âš‘ {legalHolds} LEGAL HOLDS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {expiredItems > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {expiredItems} EXPIRED</span>}
+        {highPriorityReviews > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {highPriorityReviews} HIGH PRIORITY REVIEWS</span>}
+        {legalHolds > 0 && <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>⚠‘ {legalHolds} LEGAL HOLDS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Total Evidence" value={vault.length} col={BLUE} />

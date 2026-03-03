@@ -191,7 +191,7 @@ export function AutopilotExplainUI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>AUTOPILOT EXPLAINABILITY â€” DECISION STREAM + REJECTION ANALYSIS + EXPLANATION ENGINE + RISK SCORING</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
           {(['all', 'shadow', 'live'] as const).map(m => (
             <button key={m} onClick={() => setMode(m)}

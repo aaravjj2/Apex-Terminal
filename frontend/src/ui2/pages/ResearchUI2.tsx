@@ -196,7 +196,7 @@ export function ResearchUI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH â€” STRATEGY ARTIFACTS + VALIDATION + BACKTEST DIFF + ARTIFACT REGISTRY</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           {btMsg && <span style={{ fontSize: 10, color: GREEN }}>{btMsg}</span>}
           <button onClick={handleRunBacktest} disabled={backtesting || !selectedStrategy}

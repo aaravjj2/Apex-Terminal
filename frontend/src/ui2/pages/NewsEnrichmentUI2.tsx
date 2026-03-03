@@ -228,10 +228,10 @@ export function NewsEnrichmentUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>NEWS</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>NLP-ENRICHED NEWS FEED â€” ENTITY EXTRACTION + SENTIMENT SCORING + ALERT TRIGGERS</span>
-        {breakingCount > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {breakingCount} BREAKING</span>}
-        {activeAlerts > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {activeAlerts} ALERTS</span>}
-        {negativeCount > 5 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {negativeCount} NEGATIVE</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {breakingCount > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {breakingCount} BREAKING</span>}
+        {activeAlerts > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeAlerts} ALERTS</span>}
+        {negativeCount > 5 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {negativeCount} NEGATIVE</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Articles" value={feed.length} col={BLUE} />
@@ -266,7 +266,7 @@ export function NewsEnrichmentUI2() {
                     <Td right mono col={n.relevanceScore > 0.8 ? GREEN : SUBTLE}>{n.relevanceScore.toFixed(2)}</Td>
                     <Td mono col={AMBER}>{n.tickers.join(', ') || 'â€”'}</Td>
                     <Td right mono col={n.entityCount > 5 ? ORANGE : SUBTLE}>{n.entityCount}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.breaking ? RED : SUBTLE }}>{n.breaking ? 'âš‘ BREAKING' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.breaking ? RED : SUBTLE }}>{n.breaking ? '⚠‘ BREAKING' : 'â€”'}</span></Td>
                     <Td mono col={SUBTLE}>{n.publishedAt}</Td>
                   </tr>
                 ))}

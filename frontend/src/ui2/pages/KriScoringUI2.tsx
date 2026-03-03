@@ -244,10 +244,10 @@ export function KriScoringUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>KRIS</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>KEY RISK INDICATORS â€” SCORING + CONTROL EFFECTIVENESS + BREACH ALERTS + TREND ANALYSIS</span>
-        {redIndicators > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {redIndicators} RED KRIs</span>}
-        {amberIndicators > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {amberIndicators} AMBER KRIs</span>}
-        {ineffectiveControls > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {ineffectiveControls} INEFFECTIVE CONTROLS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {redIndicators > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {redIndicators} RED KRIs</span>}
+        {amberIndicators > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {amberIndicators} AMBER KRIs</span>}
+        {ineffectiveControls > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {ineffectiveControls} INEFFECTIVE CONTROLS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Total KRIs" value={indicators.length} col={BLUE} />

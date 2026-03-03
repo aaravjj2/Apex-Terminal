@@ -224,10 +224,10 @@ export function ControlFrameworkUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CTFW</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>CONTROL FRAMEWORK â€” CONTROLS + MATURITY + GAP ANALYSIS + EVIDENCE + SIGNOFFS</span>
-        {ineffective > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {ineffective} INEFFECTIVE CONTROLS</span>}
-        {critGaps > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {critGaps} CRITICAL GAPS</span>}
-        {pendingSignoffs > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {pendingSignoffs} PENDING SIGNOFFS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {ineffective > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {ineffective} INEFFECTIVE CONTROLS</span>}
+        {critGaps > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {critGaps} CRITICAL GAPS</span>}
+        {pendingSignoffs > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingSignoffs} PENDING SIGNOFFS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Controls" value={controls.length} col={BLUE} />

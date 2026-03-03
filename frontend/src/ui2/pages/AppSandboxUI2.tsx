@@ -223,10 +223,10 @@ export function AppSandboxUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>APP SANDBOX â€” ISOLATION + RESOURCE LIMITS + SECURITY BOUNDARIES + VIOLATION MONITORING</span>
-        {errorSandboxes > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {errorSandboxes} ERROR</span>}
-        {criticalViolations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalViolations} CRITICAL VIOLATIONS</span>}
-        {overloadedBoxes > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {overloadedBoxes} OVERLOADED</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {errorSandboxes > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {errorSandboxes} ERROR</span>}
+        {criticalViolations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalViolations} CRITICAL VIOLATIONS</span>}
+        {overloadedBoxes > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {overloadedBoxes} OVERLOADED</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Sandboxes" value={sandboxes.length} col={BLUE} />

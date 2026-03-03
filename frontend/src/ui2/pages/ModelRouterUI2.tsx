@@ -134,11 +134,11 @@ export function ModelRouterUI2() {
   const fetchAll = useCallback(async () => {
     try {
       const [rR, rB, rF, rC, rA] = await Promise.allSettled([
-        fetch('/api/v4/model-router/routes').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/model-router/balancing').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/model-router/fallbacks').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/model-router/cost').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/model-router/audit').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/model-router/routing-table').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/model-router/models').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/model-router/latency').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/model-router/costs').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/model-router/route').then(r => r.ok ? r.json() : []).catch(() => []),
       ])
       if (rR.status === 'fulfilled') {
         const raw = Array.isArray(rR.value) ? rR.value : rR.value.routes ?? rR.value.data ?? []
@@ -221,10 +221,10 @@ export function ModelRouterUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>MLRT</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>AI MODEL ROUTER â€” LOAD BALANCING + FALLBACK CHAINS + COST OPTIMIZATION</span>
-        {degraded > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {degraded} DEGRADED</span>}
-        {overloaded > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {overloaded} OVERLOADED</span>}
-        {activeFailovers > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {activeFailovers} ACTIVE FAILOVER</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {degraded > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {degraded} DEGRADED</span>}
+        {overloaded > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {overloaded} OVERLOADED</span>}
+        {activeFailovers > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeFailovers} ACTIVE FAILOVER</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Routes" value={routes.length} col={BLUE} />

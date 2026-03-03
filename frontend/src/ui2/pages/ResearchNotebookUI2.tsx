@@ -215,9 +215,9 @@ export function ResearchNotebookUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH NOTEBOOKS â€” CODE CELLS + EXECUTION + COLLABORATION + VERSION CONTROL</span>
-        {runningNbs > 0 && <span style={{ fontSize: 10, color: AMBER }}>âš‘ {runningNbs} RUNNING</span>}
-        {errorNbs > 0 && <span style={{ fontSize: 10, color: RED }}>âš‘ {errorNbs} ERROR</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {runningNbs > 0 && <span style={{ fontSize: 10, color: AMBER }}>⚠‘ {runningNbs} RUNNING</span>}
+        {errorNbs > 0 && <span style={{ fontSize: 10, color: RED }}>⚠‘ {errorNbs} ERROR</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Notebooks" value={notebooks.length} col={BLUE} />

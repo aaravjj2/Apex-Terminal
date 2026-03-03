@@ -135,10 +135,10 @@ export function CrossAccountUI2() {
     try {
       const [rA, rP, rE, rM, rR] = await Promise.allSettled([
         fetch('/api/v4/cross-account/accounts').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/cross-account/positions').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/cross-account/exposure').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/cross-account/margin').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/cross-account/reconciliation').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/cross-account/positions/aggregated').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/cross-account/limits').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/cross-margin/requirements').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/reconciliation/status').then(r => r.ok ? r.json() : []),
       ])
       if (rA.status === 'fulfilled') {
         const raw = Array.isArray(rA.value) ? rA.value : rA.value.accounts ?? rA.value.data ?? []
@@ -217,10 +217,10 @@ export function CrossAccountUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CXAC</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>CROSS-ACCOUNT â€” ACCOUNTS + AGGREGATED POSITIONS + EXPOSURE + MARGIN + RECONCILIATION</span>
-        {expBreaches > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {expBreaches} EXPOSURE BREACHES</span>}
-        {marginAlerts > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {marginAlerts} MARGIN ALERTS</span>}
-        {reconBreaks > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {reconBreaks} RECON BREAKS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {expBreaches > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {expBreaches} EXPOSURE BREACHES</span>}
+        {marginAlerts > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {marginAlerts} MARGIN ALERTS</span>}
+        {reconBreaks > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {reconBreaks} RECON BREAKS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Accounts" value={accounts.length} col={BLUE} />

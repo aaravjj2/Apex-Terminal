@@ -218,10 +218,10 @@ export function DevPortalUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DEVP</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>DEVELOPER PORTAL â€” API CATALOG + KEYS + USAGE ANALYTICS + DOCS + CHANGELOG</span>
-        {highErrorApis > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {highErrorApis} HIGH ERROR RATE</span>}
-        {deprecatedApis > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {deprecatedApis} DEPRECATED</span>}
-        {breakingChanges > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {breakingChanges} BREAKING CHANGES</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {highErrorApis > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {highErrorApis} HIGH ERROR RATE</span>}
+        {deprecatedApis > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {deprecatedApis} DEPRECATED</span>}
+        {breakingChanges > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {breakingChanges} BREAKING CHANGES</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Total APIs" value={totalApis} col={BLUE} />

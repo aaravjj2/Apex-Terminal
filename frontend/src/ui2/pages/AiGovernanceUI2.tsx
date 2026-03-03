@@ -234,10 +234,10 @@ export function AiGovernanceUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>AIGV</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>AI GOVERNANCE â€” MODEL REVIEW + APPROVAL GATES + DEPLOYMENT CONTROLS + POLICY ENFORCEMENT</span>
-        {criticalModels > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalModels} CRITICAL</span>}
-        {pendingApprovals > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {pendingApprovals} PENDING APPROVALS</span>}
-        {closedGates > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {closedGates} GATES CLOSED</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {criticalModels > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalModels} CRITICAL</span>}
+        {pendingApprovals > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingApprovals} PENDING APPROVALS</span>}
+        {closedGates > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {closedGates} GATES CLOSED</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Models" value={models.length} col={BLUE} />

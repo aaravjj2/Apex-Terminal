@@ -60,7 +60,7 @@ async function loadDemoPortfolio(page: Page) {
 
 test.describe('Risk Desk Week 3 - UI/UX Features', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/legacy/');
     await page.waitForLoadState('domcontentloaded');
   });
 

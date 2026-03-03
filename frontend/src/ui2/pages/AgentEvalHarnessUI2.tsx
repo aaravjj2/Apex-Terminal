@@ -224,8 +224,8 @@ export function AgentEvalHarnessUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>AGENT EVAL HARNESS â€” CITATION RECALL + KEYWORD SCORING + REGRESSION TRACKING</span>
-        {openRegressions > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {openRegressions} REGRESSIONS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {openRegressions > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {openRegressions} REGRESSIONS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <button onClick={handleRun} disabled={runStatus === 'running'} style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 11, fontWeight: 700, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, borderRadius: 3, padding: '5px 14px', cursor: runStatus === 'running' ? 'wait' : 'pointer' }}>
           {runStatus === 'running' ? 'RUNNINGâ€¦' : runStatus === 'done' ? 'RUN DONE âœ“' : runStatus === 'error' ? 'ERROR' : 'RUN EVAL'}
         </button>

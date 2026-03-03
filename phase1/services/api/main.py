@@ -398,7 +398,6 @@ def create_app() -> FastAPI:
     app.include_router(ws_router, prefix="/ws", tags=["websocket"])
     from .autopilot_websocket import router as autopilot_ws_router
     app.include_router(autopilot_ws_router, prefix="/ws", tags=["autopilot-websocket"])
-    app.include_router(autopilot_ws_router, prefix="/ws", tags=["autopilot-websocket"])
     app.include_router(verification_router, tags=["verification"])
     # v1.37: Provider Registry
     app.include_router(provider_registry.router, tags=["provider-registry"])

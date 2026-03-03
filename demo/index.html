@@ -9,7 +9,8 @@
 <style>
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;user-select:none}
+html,body{height:100%;overflow:hidden}
+.tbl-wrap,.code-area,.wl-row,.alert-row,.idea-body,.eco-row,.fund-row,.think-text,.check-desc,.svc-name,td,th,.cmd-in,.news-body,.research-text{user-select:text}
 button{background:none;border:none;cursor:pointer;font:inherit;color:inherit}
 input,select,textarea{font:inherit;color:inherit}
 :root{
@@ -2860,7 +2861,19 @@ function toggleNavGroup(grp) {
 
 function openSettings(){document.getElementById('settings-overlay').classList.add('open')}
 function closeSettings(){document.getElementById('settings-overlay').classList.remove('open')}
-function setTheme(t){document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));document.querySelector('.theme-btn[data-theme="'+t+'"]')?.classList.add('active');showToast('Theme','Theme set to '+t,'info')}
+function setTheme(t){
+  var THEMES = {
+    dark:  {'--bg0':'#0C0E12','--bg1':'#131722','--bg2':'#1E222D','--bg3':'#181C27','--bg4':'#242836','--bdr':'#2A2E39','--bdr-a':'#434651','--tx':'#D1D4DC','--tx2':'#787B86','--tx3':'#5D606B'},
+    light: {'--bg0':'#FFFFFF','--bg1':'#F8F9FD','--bg2':'#F0F3FA','--bg3':'#E8EBF0','--bg4':'#DDE0E6','--bdr':'#E0E3EB','--bdr-a':'#C8CBD4','--tx':'#131722','--tx2':'#5D606B','--tx3':'#787B86'}
+  };
+  var vars = t==='system'
+    ? (window.matchMedia('(prefers-color-scheme:light)').matches ? THEMES.light : THEMES.dark)
+    : THEMES[t] || THEMES.dark;
+  Object.entries(vars).forEach(function(kv){ document.documentElement.style.setProperty(kv[0],kv[1]); });
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.theme-btn[data-theme="'+t+'"]')?.classList.add('active');
+  showToast('Theme','Theme set to '+t,'info');
+}
 function exportChart(){const c=document.getElementById('chart-main');if(!c){showToast('Export','No chart to export','warn');return}const url=c.toDataURL('image/png');const a=document.createElement('a');a.href=url;a.download='apex-chart-'+new Date().toISOString().slice(0,10)+'.png';a.click();showToast('Export','Chart exported as PNG','success')}
 function switchScrTab(el,id){document.querySelectorAll('.scr-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.scr-panel').forEach(p=>p.classList.remove('active'));el.classList.add('active');const p=document.getElementById(id);if(p)p.classList.add('active');if(id==='scr-scanner')initScanner()}
 function runScan(el,type){document.querySelectorAll('.scr-scanner-presets .filter-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');initScanner(type)}
@@ -3169,6 +3182,9 @@ document.addEventListener('DOMContentLoaded', () => {
 /* Wider nav */
 #leftnav { width: 60px; }
 #layout { grid-template-columns: 60px 1fr 292px; }
+@media (max-width: 1200px) { #layout { grid-template-columns: 60px 1fr 240px; } }
+@media (max-width: 900px) { #layout { grid-template-columns: 60px 1fr; } #rightsidebar { display: none; } }
+@media (max-width: 600px) { #layout { grid-template-columns: 1fr; } #leftnav { display: none; } }
 
 /* Chart: more space from drawing strip */
 #cmw { padding-left: 30px; }
@@ -3190,7 +3206,8 @@ document.addEventListener('DOMContentLoaded', () => {
 .depth-row { height: 21px; }
 
 /* All canvases: crisp */
-canvas { image-rendering: pixelated; }
+canvas { image-rendering: auto; }
+@media (prefers-reduced-motion: reduce) { .sb-tape { animation: none; } }
 
 /* Section group separator line */
 .nav-group { border-bottom: 1px solid rgba(42,46,57,0.5); }
@@ -4739,14 +4756,48 @@ function enhanceChartToolbar() {
 }
 
 function setChartTypeAdv(type) {
-  chartType = ['candles','heikin-ashi','hollow','bar'].includes(type) ? 'candles' : 'line';
-  if (type === 'area') chartType = 'area';
+  const supported = ['candles','line','area','bar','heikin-ashi','hollow'];
+  if (!supported.includes(type)) {
+    showToast('Chart Type', type + ' chart — coming soon','warn');
+    return;
+  }
+  if (type === 'heikin-ashi' || type === 'hollow') chartType = 'candles';
+  else if (type === 'area') chartType = 'area';
+  else if (type === 'bar') chartType = 'candles';
+  else chartType = type;
+  chartTypeAdv = type;
   setTimeout(initCharts, 10);
   showToast('Chart Type', type + ' chart', 'info');
 }
 
 function openIndicatorPanel() {
-  showToast('Indicators', 'EMA(12), EMA(26), RSI(14), BB(20,2), Volume active', 'info');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center';
+  overlay.setAttribute('role','dialog');
+  overlay.setAttribute('aria-modal','true');
+  overlay.setAttribute('aria-label','Indicator Panel');
+  const indicators = [
+    {id:'ema12',name:'EMA(12)',active:true},{id:'ema26',name:'EMA(26)',active:true},
+    {id:'rsi14',name:'RSI(14)',active:true},{id:'bb20',name:'BB(20,2)',active:true},
+    {id:'volume',name:'Volume',active:true},{id:'macd',name:'MACD(12,26,9)',active:false},
+    {id:'stoch',name:'Stochastic(14)',active:false},{id:'atr',name:'ATR(14)',active:false},
+    {id:'vwap',name:'VWAP',active:false},{id:'ichimoku',name:'Ichimoku',active:false},
+    {id:'obv',name:'OBV',active:false},{id:'adx',name:'ADX(14)',active:false},
+  ];
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--bg1);border:1px solid var(--bdr);border-radius:8px;padding:16px;width:360px;max-height:80vh;overflow:auto';
+  box.innerHTML = '<div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--tx)">Indicators</div>'
+    + indicators.map(ind => '<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:12px;color:var(--tx)">'
+      + '<input type="checkbox" '+(ind.active?'checked':'')+' style="accent-color:var(--brand)" data-ind="'+ind.id+'">'
+      + ind.name + '</label>').join('')
+    + '<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">'
+    + '<button onclick="this.closest(\"div[role=dialog]\").remove()" style="background:var(--bg3);color:var(--tx);padding:6px 16px;border-radius:4px;font-size:12px;border:1px solid var(--bdr)">Close</button>'
+    + '<button onclick="var n=this.closest(\"div[role=dialog]\").querySelectorAll(\"input:checked\").length;document.getElementById(\"ind-count\").textContent=n;showToast(\"Indicators\",n+\" indicators active\",\"success\");this.closest(\"div[role=dialog]\").remove()" style="background:var(--brand);color:#fff;padding:6px 16px;border-radius:4px;font-size:12px;border:none">Apply</button>'
+    + '</div>';
+  overlay.appendChild(box);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  box.querySelector('input')?.focus();
 }
 
 // ============================================================

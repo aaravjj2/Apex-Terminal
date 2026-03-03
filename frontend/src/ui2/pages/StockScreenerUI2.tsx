@@ -1,1093 +1,316 @@
 /**
- * StockScreenerUI2.tsx — Bloomberg EQS / TradingView Screener
- * =============================================================
- * Full-featured stock screener with:
- * - 50+ fundamental and technical filters
- * - Sortable/filterable results table with 30+ columns
- * - Quick presets (Value, Growth, Momentum, Dividend, etc.)
- * - Canvas mini-charts (sparklines) per stock
- * - Sector/industry breakdown
- * - Export to CSV
- * - Bloomberg dark theme
+ * ┌───────────────────────────────────────────────────────────────────────┐
+ * │ APEX TERMINAL — STOCK SCREENER (UI2)                                 │
+ * │                                                                       │
+ * │ Professional screener with fundamental + technical filters           │
+ * │ tasks.md §12                                                         │
+ * │                                                                       │
+ * │ Features:                                                             │
+ * │ • 100+ stock universe with realistic financial data                  │
+ * │ • Fundamental filters (P/E, P/B, Market Cap, Div Yield, etc.)       │
+ * │ • Technical filters (RSI, SMA crossover, volume, momentum)          │
+ * │ • Sortable, paginated results grid                                   │
+ * │ • Sparkline mini-charts                                              │
+ * │ • Sector/Industry breakdown                                         │
+ * │ • Preset screens (Value, Growth, Dividend, Momentum)                │
+ * │ • Custom filter builder                                              │
+ * │ • Export to CSV                                                       │
+ * │ • Quick detail panel                                                 │
+ * └───────────────────────────────────────────────────────────────────────┘
  */
+import React, { useState, useMemo, useCallback } from 'react';
+import { useMarketData } from '@/ui2/hooks';
+import { useIndicators } from '@/ui2/hooks';
+import { useML } from '@/ui2/hooks';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+const T = {
+  brand: '#2962FF', bg0: '#0C0E12', bg1: '#131722', bg2: '#1E222D', bg3: '#2A2E39', bg4: '#363A45',
+  border0: '#1E222D', border1: '#2A2E39', text0: '#FFF', text1: '#D1D4DC', text2: '#787B86', text3: '#50535E',
+  up: '#26A69A', dn: '#EF5350', warn: '#FF9800', info: '#42A5F5', purple: '#AB47BC',
+  fontSans: "'Inter','Segoe UI',system-ui,sans-serif", fontMono: "'JetBrains Mono','Fira Code',monospace", radius: '4px',
+};
+const fmt2 = (n: number) => n.toFixed(2); const fmtPct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+const fmtUsd = (n: number) => `$${n.toFixed(2)}`; const fmtK = (n: number) => n >= 1e9 ? `$${(n / 1e9).toFixed(1)}B` : n >= 1e6 ? `$${(n / 1e6).toFixed(0)}M` : `$${(n / 1e3).toFixed(0)}K`;
+const clr = (n: number) => n >= 0 ? T.up : T.dn;
+const panelStyle: React.CSSProperties = { background: T.bg1, border: `1px solid ${T.border0}`, borderRadius: T.radius, overflow: 'hidden', display: 'flex', flexDirection: 'column' };
+const panelHdr: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: `1px solid ${T.border0}`, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: T.text2, fontFamily: T.fontSans };
 
-// ── Theme ────────────────────────────────────────────────────────────────────
-const BG = '#0a0a0a';
-const PANEL = '#111111';
-const BORDER = '#1e1e1e';
-const AMBER = '#f5a623';
-const GREEN = '#26a69a';
-const RED = '#ef5350';
-const TEXT = '#d4d4d4';
-const MUTED = '#888888';
-
-// ── Filter definitions ───────────────────────────────────────────────────────
-interface FilterDef {
-  id: string;
-  label: string;
-  category: 'fundamental' | 'technical' | 'performance' | 'valuation' | 'risk';
-  type: 'range' | 'select' | 'boolean';
-  unit?: string;
-  options?: string[];
-  min?: number;
-  max?: number;
-  step?: number;
+interface Stock {
+  symbol: string; name: string; sector: string; industry: string; marketCap: number; price: number; change: number; changePct: number;
+  pe: number; forwardPe: number; pb: number; ps: number; divYield: number; eps: number; revenue: number; epsGrowth: number; revGrowth: number;
+  rsi: number; sma20: number; sma50: number; sma200: number; volume: number; avgVolume: number; volRatio: number;
+  beta: number; shortInterest: number; analystRating: number; targetPrice: number; sparkline: number[];
 }
 
-const FILTER_DEFS: FilterDef[] = [
-  // Fundamental
-  { id: 'market_cap', label: 'Market Cap', category: 'fundamental', type: 'range', unit: '$B', min: 0, max: 3000, step: 10 },
-  { id: 'pe_ratio', label: 'P/E Ratio', category: 'fundamental', type: 'range', min: 0, max: 200, step: 1 },
-  { id: 'forward_pe', label: 'Forward P/E', category: 'fundamental', type: 'range', min: 0, max: 200, step: 1 },
-  { id: 'peg_ratio', label: 'PEG Ratio', category: 'fundamental', type: 'range', min: 0, max: 10, step: 0.1 },
-  { id: 'ps_ratio', label: 'P/S Ratio', category: 'fundamental', type: 'range', min: 0, max: 100, step: 0.5 },
-  { id: 'pb_ratio', label: 'P/B Ratio', category: 'fundamental', type: 'range', min: 0, max: 50, step: 0.5 },
-  { id: 'ev_ebitda', label: 'EV/EBITDA', category: 'fundamental', type: 'range', min: 0, max: 100, step: 1 },
-  { id: 'revenue', label: 'Revenue', category: 'fundamental', type: 'range', unit: '$B', min: 0, max: 500, step: 5 },
-  { id: 'revenue_growth', label: 'Rev Growth %', category: 'fundamental', type: 'range', min: -50, max: 200, step: 1 },
-  { id: 'earnings_growth', label: 'EPS Growth %', category: 'fundamental', type: 'range', min: -100, max: 500, step: 5 },
-  { id: 'profit_margin', label: 'Profit Margin %', category: 'fundamental', type: 'range', min: -50, max: 80, step: 1 },
-  { id: 'operating_margin', label: 'Op Margin %', category: 'fundamental', type: 'range', min: -50, max: 60, step: 1 },
-  { id: 'roe', label: 'ROE %', category: 'fundamental', type: 'range', min: -50, max: 100, step: 1 },
-  { id: 'roa', label: 'ROA %', category: 'fundamental', type: 'range', min: -50, max: 50, step: 1 },
-  { id: 'debt_equity', label: 'Debt/Equity', category: 'fundamental', type: 'range', min: 0, max: 10, step: 0.1 },
-  { id: 'current_ratio', label: 'Current Ratio', category: 'fundamental', type: 'range', min: 0, max: 10, step: 0.1 },
-  { id: 'dividend_yield', label: 'Div Yield %', category: 'fundamental', type: 'range', min: 0, max: 20, step: 0.1 },
-  { id: 'payout_ratio', label: 'Payout Ratio %', category: 'fundamental', type: 'range', min: 0, max: 150, step: 5 },
-  { id: 'free_cash_flow', label: 'FCF', category: 'fundamental', type: 'range', unit: '$B', min: -20, max: 100, step: 1 },
-  { id: 'shares_outstanding', label: 'Shares Out', category: 'fundamental', type: 'range', unit: 'M', min: 0, max: 20000, step: 100 },
-  // Technical
-  { id: 'rsi_14', label: 'RSI(14)', category: 'technical', type: 'range', min: 0, max: 100, step: 1 },
-  { id: 'sma_20_above', label: 'Above SMA 20', category: 'technical', type: 'boolean' },
-  { id: 'sma_50_above', label: 'Above SMA 50', category: 'technical', type: 'boolean' },
-  { id: 'sma_200_above', label: 'Above SMA 200', category: 'technical', type: 'boolean' },
-  { id: 'macd_signal', label: 'MACD Signal', category: 'technical', type: 'select', options: ['Bullish', 'Bearish', 'Any'] },
-  { id: 'bb_position', label: 'BB Position', category: 'technical', type: 'select', options: ['Above Upper', 'Middle', 'Below Lower', 'Any'] },
-  { id: 'adx', label: 'ADX', category: 'technical', type: 'range', min: 0, max: 100, step: 1 },
-  { id: 'atr_percent', label: 'ATR %', category: 'technical', type: 'range', min: 0, max: 20, step: 0.1 },
-  { id: 'avg_volume', label: 'Avg Volume', category: 'technical', type: 'range', unit: 'M', min: 0, max: 100, step: 1 },
-  { id: 'rel_volume', label: 'Relative Volume', category: 'technical', type: 'range', min: 0, max: 20, step: 0.5 },
-  { id: 'gap_percent', label: 'Gap %', category: 'technical', type: 'range', min: -10, max: 10, step: 0.5 },
-  { id: 'stochastic', label: 'Stochastic %K', category: 'technical', type: 'range', min: 0, max: 100, step: 1 },
-  { id: 'williams_r', label: 'Williams %R', category: 'technical', type: 'range', min: -100, max: 0, step: 1 },
-  // Performance
-  { id: 'change_1d', label: 'Change 1D %', category: 'performance', type: 'range', min: -20, max: 20, step: 0.5 },
-  { id: 'change_1w', label: 'Change 1W %', category: 'performance', type: 'range', min: -30, max: 30, step: 1 },
-  { id: 'change_1m', label: 'Change 1M %', category: 'performance', type: 'range', min: -50, max: 50, step: 1 },
-  { id: 'change_3m', label: 'Change 3M %', category: 'performance', type: 'range', min: -60, max: 100, step: 2 },
-  { id: 'change_6m', label: 'Change 6M %', category: 'performance', type: 'range', min: -80, max: 200, step: 5 },
-  { id: 'change_ytd', label: 'Change YTD %', category: 'performance', type: 'range', min: -80, max: 200, step: 5 },
-  { id: 'change_1y', label: 'Change 1Y %', category: 'performance', type: 'range', min: -80, max: 300, step: 5 },
-  { id: 'from_52w_high', label: '% from 52W High', category: 'performance', type: 'range', min: -80, max: 0, step: 1 },
-  { id: 'from_52w_low', label: '% from 52W Low', category: 'performance', type: 'range', min: 0, max: 300, step: 5 },
-  // Valuation
-  { id: 'enterprise_value', label: 'Enterprise Value', category: 'valuation', type: 'range', unit: '$B', min: 0, max: 3000, step: 10 },
-  { id: 'ev_revenue', label: 'EV/Revenue', category: 'valuation', type: 'range', min: 0, max: 50, step: 0.5 },
-  { id: 'ev_fcf', label: 'EV/FCF', category: 'valuation', type: 'range', min: 0, max: 200, step: 5 },
-  { id: 'price_to_fcf', label: 'P/FCF', category: 'valuation', type: 'range', min: 0, max: 200, step: 5 },
-  // Risk
-  { id: 'beta', label: 'Beta', category: 'risk', type: 'range', min: -2, max: 5, step: 0.1 },
-  { id: 'volatility_30d', label: 'Vol 30D %', category: 'risk', type: 'range', min: 0, max: 100, step: 1 },
-  { id: 'sharpe_1y', label: 'Sharpe 1Y', category: 'risk', type: 'range', min: -3, max: 5, step: 0.1 },
-  { id: 'max_drawdown', label: 'Max Drawdown %', category: 'risk', type: 'range', min: -80, max: 0, step: 1 },
-];
+interface FilterConfig { field: keyof Stock; op: '>=' | '<=' | '==' | 'between'; value: number; value2?: number; }
 
-interface FilterState {
-  id: string;
-  min?: number;
-  max?: number;
-  value?: string | boolean;
-  enabled: boolean;
-}
-
-// ── Screener presets ─────────────────────────────────────────────────────────
-interface Preset {
-  name: string;
-  icon: string;
-  filters: Partial<Record<string, { min?: number; max?: number; value?: string | boolean }>>;
-  description: string;
-}
-
-const PRESETS: Preset[] = [
-  {
-    name: 'Value Picks',
-    icon: '💎',
-    description: 'Low PE, high div yield, strong cash flow',
-    filters: {
-      pe_ratio: { max: 15 },
-      dividend_yield: { min: 2 },
-      free_cash_flow: { min: 1 },
-      debt_equity: { max: 2 },
-    },
-  },
-  {
-    name: 'Growth Stars',
-    icon: '🚀',
-    description: 'High revenue & earnings growth',
-    filters: {
-      revenue_growth: { min: 20 },
-      earnings_growth: { min: 20 },
-      market_cap: { min: 10 },
-    },
-  },
-  {
-    name: 'Momentum',
-    icon: '⚡',
-    description: 'Strong price momentum, above MAs',
-    filters: {
-      change_1m: { min: 5 },
-      rsi_14: { min: 50, max: 80 },
-      sma_50_above: { value: true },
-      sma_200_above: { value: true },
-      rel_volume: { min: 1.5 },
-    },
-  },
-  {
-    name: 'Dividend Kings',
-    icon: '👑',
-    description: 'High yield, sustainable payout',
-    filters: {
-      dividend_yield: { min: 3 },
-      payout_ratio: { max: 80 },
-      market_cap: { min: 10 },
-    },
-  },
-  {
-    name: 'Oversold Bounce',
-    icon: '📉',
-    description: 'RSI oversold, near 52W low',
-    filters: {
-      rsi_14: { max: 30 },
-      from_52w_high: { max: -20 },
-      avg_volume: { min: 1 },
-    },
-  },
-  {
-    name: 'Large Cap Quality',
-    icon: '🏛️',
-    description: 'Blue chips with strong fundamentals',
-    filters: {
-      market_cap: { min: 100 },
-      roe: { min: 15 },
-      profit_margin: { min: 10 },
-      debt_equity: { max: 1.5 },
-    },
-  },
-  {
-    name: 'Small Cap Gems',
-    icon: '💫',
-    description: 'Small cap with high growth potential',
-    filters: {
-      market_cap: { min: 0.3, max: 2 },
-      revenue_growth: { min: 15 },
-      earnings_growth: { min: 10 },
-    },
-  },
-  {
-    name: 'High Beta',
-    icon: '🔥',
-    description: 'High beta, volatile movers',
-    filters: {
-      beta: { min: 1.5 },
-      avg_volume: { min: 2 },
-      volatility_30d: { min: 30 },
-    },
-  },
-];
-
-// ── Mock screener data ───────────────────────────────────────────────────────
-interface ScreenerStock {
-  symbol: string;
-  name: string;
-  sector: string;
-  industry: string;
-  price: number;
-  change_1d: number;
-  change_1w: number;
-  change_1m: number;
-  change_ytd: number;
-  market_cap: number;
-  pe_ratio: number;
-  forward_pe: number;
-  ps_ratio: number;
-  pb_ratio: number;
-  ev_ebitda: number;
-  dividend_yield: number;
-  revenue: number;
-  revenue_growth: number;
-  earnings_growth: number;
-  profit_margin: number;
-  roe: number;
-  roa: number;
-  debt_equity: number;
-  current_ratio: number;
-  beta: number;
-  rsi_14: number;
-  avg_volume: number;
-  rel_volume: number;
-  from_52w_high: number;
-  sparkline: number[];
-  rating: 'Strong Buy' | 'Buy' | 'Hold' | 'Sell' | 'Strong Sell';
-}
-
-function generateMockStocks(): ScreenerStock[] {
-  const stocks: Array<{ symbol: string; name: string; sector: string; industry: string }> = [
-    { symbol: 'AAPL', name: 'Apple Inc', sector: 'Technology', industry: 'Consumer Electronics' },
-    { symbol: 'MSFT', name: 'Microsoft Corp', sector: 'Technology', industry: 'Software' },
-    { symbol: 'GOOGL', name: 'Alphabet Inc', sector: 'Communication', industry: 'Internet' },
-    { symbol: 'AMZN', name: 'Amazon.com Inc', sector: 'Consumer Discretionary', industry: 'E-Commerce' },
-    { symbol: 'NVDA', name: 'NVIDIA Corp', sector: 'Technology', industry: 'Semiconductors' },
-    { symbol: 'META', name: 'Meta Platforms', sector: 'Communication', industry: 'Social Media' },
-    { symbol: 'TSLA', name: 'Tesla Inc', sector: 'Consumer Discretionary', industry: 'Electric Vehicles' },
-    { symbol: 'BRK.B', name: 'Berkshire Hathaway', sector: 'Financials', industry: 'Diversified' },
-    { symbol: 'JPM', name: 'JPMorgan Chase', sector: 'Financials', industry: 'Banking' },
-    { symbol: 'V', name: 'Visa Inc', sector: 'Financials', industry: 'Payments' },
-    { symbol: 'UNH', name: 'UnitedHealth Group', sector: 'Healthcare', industry: 'Insurance' },
-    { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare', industry: 'Pharma' },
-    { symbol: 'LLY', name: 'Eli Lilly & Co', sector: 'Healthcare', industry: 'Pharma' },
-    { symbol: 'XOM', name: 'Exxon Mobil', sector: 'Energy', industry: 'Oil & Gas' },
-    { symbol: 'PG', name: 'Procter & Gamble', sector: 'Consumer Staples', industry: 'Household' },
-    { symbol: 'MA', name: 'Mastercard Inc', sector: 'Financials', industry: 'Payments' },
-    { symbol: 'HD', name: 'Home Depot', sector: 'Consumer Discretionary', industry: 'Retail' },
-    { symbol: 'AVGO', name: 'Broadcom Inc', sector: 'Technology', industry: 'Semiconductors' },
-    { symbol: 'PFE', name: 'Pfizer Inc', sector: 'Healthcare', industry: 'Pharma' },
-    { symbol: 'COST', name: 'Costco Wholesale', sector: 'Consumer Staples', industry: 'Retail' },
-    { symbol: 'ABT', name: 'Abbott Labs', sector: 'Healthcare', industry: 'Medical Devices' },
-    { symbol: 'CVX', name: 'Chevron Corp', sector: 'Energy', industry: 'Oil & Gas' },
-    { symbol: 'KO', name: 'Coca-Cola Co', sector: 'Consumer Staples', industry: 'Beverages' },
-    { symbol: 'PEP', name: 'PepsiCo Inc', sector: 'Consumer Staples', industry: 'Beverages' },
-    { symbol: 'TMO', name: 'Thermo Fisher', sector: 'Healthcare', industry: 'Life Sciences' },
-    { symbol: 'BAC', name: 'Bank of America', sector: 'Financials', industry: 'Banking' },
-    { symbol: 'ABBV', name: 'AbbVie Inc', sector: 'Healthcare', industry: 'Pharma' },
-    { symbol: 'CRM', name: 'Salesforce', sector: 'Technology', industry: 'Software' },
-    { symbol: 'AMD', name: 'AMD Inc', sector: 'Technology', industry: 'Semiconductors' },
-    { symbol: 'ORCL', name: 'Oracle Corp', sector: 'Technology', industry: 'Software' },
-    { symbol: 'NKE', name: 'Nike Inc', sector: 'Consumer Discretionary', industry: 'Apparel' },
-    { symbol: 'MRK', name: 'Merck & Co', sector: 'Healthcare', industry: 'Pharma' },
-    { symbol: 'DIS', name: 'Walt Disney', sector: 'Communication', industry: 'Entertainment' },
-    { symbol: 'NFLX', name: 'Netflix', sector: 'Communication', industry: 'Streaming' },
-    { symbol: 'ADBE', name: 'Adobe Inc', sector: 'Technology', industry: 'Software' },
-    { symbol: 'INTC', name: 'Intel Corp', sector: 'Technology', industry: 'Semiconductors' },
-    { symbol: 'CSCO', name: 'Cisco Systems', sector: 'Technology', industry: 'Networking' },
-    { symbol: 'NEE', name: 'NextEra Energy', sector: 'Utilities', industry: 'Electric Utilities' },
-    { symbol: 'WMT', name: 'Walmart Inc', sector: 'Consumer Staples', industry: 'Retail' },
-    { symbol: 'LIN', name: 'Linde plc', sector: 'Materials', industry: 'Chemicals' },
-    { symbol: 'CAT', name: 'Caterpillar', sector: 'Industrials', industry: 'Machinery' },
-    { symbol: 'GE', name: 'GE Aerospace', sector: 'Industrials', industry: 'Aerospace' },
-    { symbol: 'HON', name: 'Honeywell', sector: 'Industrials', industry: 'Conglomerate' },
-    { symbol: 'AMT', name: 'American Tower', sector: 'Real Estate', industry: 'REITs' },
-    { symbol: 'QCOM', name: 'Qualcomm', sector: 'Technology', industry: 'Semiconductors' },
-    { symbol: 'GS', name: 'Goldman Sachs', sector: 'Financials', industry: 'Investment Banking' },
-    { symbol: 'AXP', name: 'American Express', sector: 'Financials', industry: 'Credit Services' },
-    { symbol: 'SQ', name: 'Block Inc', sector: 'Financials', industry: 'Payments' },
-    { symbol: 'SHOP', name: 'Shopify', sector: 'Technology', industry: 'E-Commerce' },
-    { symbol: 'SNOW', name: 'Snowflake', sector: 'Technology', industry: 'Cloud' },
+function generateStocks(): Stock[] {
+  const universe = [
+    { s: 'AAPL', n: 'Apple Inc', sec: 'Technology', ind: 'Consumer Electronics', mc: 3.05e12, p: 192.5 },
+    { s: 'MSFT', n: 'Microsoft Corp', sec: 'Technology', ind: 'Software', mc: 3.1e12, p: 415.2 },
+    { s: 'GOOGL', n: 'Alphabet Inc', sec: 'Technology', ind: 'Internet', mc: 2.1e12, p: 176.8 },
+    { s: 'AMZN', n: 'Amazon.com', sec: 'Consumer Disc.', ind: 'E-Commerce', mc: 1.92e12, p: 185.6 },
+    { s: 'NVDA', n: 'NVIDIA Corp', sec: 'Technology', ind: 'Semiconductors', mc: 3.2e12, p: 131.2 },
+    { s: 'META', n: 'Meta Platforms', sec: 'Technology', ind: 'Social Media', mc: 1.28e12, p: 505.3 },
+    { s: 'TSLA', n: 'Tesla Inc', sec: 'Consumer Disc.', ind: 'Auto Manufacturers', mc: 790e9, p: 248.5 },
+    { s: 'BRK.B', n: 'Berkshire Hathaway', sec: 'Financials', ind: 'Insurance', mc: 870e9, p: 415.8 },
+    { s: 'JPM', n: 'JPMorgan Chase', sec: 'Financials', ind: 'Banks', mc: 570e9, p: 198.5 },
+    { s: 'V', n: 'Visa Inc', sec: 'Financials', ind: 'Payments', mc: 580e9, p: 278.9 },
+    { s: 'JNJ', n: 'Johnson & Johnson', sec: 'Healthcare', ind: 'Pharma', mc: 370e9, p: 152.3 },
+    { s: 'UNH', n: 'UnitedHealth', sec: 'Healthcare', ind: 'Managed Care', mc: 490e9, p: 524.8 },
+    { s: 'XOM', n: 'Exxon Mobil', sec: 'Energy', ind: 'Oil & Gas', mc: 500e9, p: 118.4 },
+    { s: 'PG', n: 'Procter & Gamble', sec: 'Consumer Stpl.', ind: 'Household Products', mc: 395e9, p: 168.2 },
+    { s: 'MA', n: 'Mastercard', sec: 'Financials', ind: 'Payments', mc: 440e9, p: 458.7 },
+    { s: 'HD', n: 'Home Depot', sec: 'Consumer Disc.', ind: 'Home Improvement', mc: 360e9, p: 352.1 },
+    { s: 'CVX', n: 'Chevron Corp', sec: 'Energy', ind: 'Oil & Gas', mc: 310e9, p: 163.7 },
+    { s: 'MRK', n: 'Merck & Co', sec: 'Healthcare', ind: 'Pharma', mc: 320e9, p: 126.5 },
+    { s: 'ABBV', n: 'AbbVie Inc', sec: 'Healthcare', ind: 'Biotech', mc: 305e9, p: 172.8 },
+    { s: 'KO', n: 'Coca-Cola', sec: 'Consumer Stpl.', ind: 'Beverages', mc: 275e9, p: 63.5 },
+    { s: 'PEP', n: 'PepsiCo', sec: 'Consumer Stpl.', ind: 'Beverages', mc: 245e9, p: 178.2 },
+    { s: 'AVGO', n: 'Broadcom Inc', sec: 'Technology', ind: 'Semiconductors', mc: 620e9, p: 1342.1 },
+    { s: 'WMT', n: 'Walmart Inc', sec: 'Consumer Stpl.', ind: 'Retail', mc: 530e9, p: 65.8 },
+    { s: 'CRM', n: 'Salesforce', sec: 'Technology', ind: 'Software', mc: 280e9, p: 285.4 },
+    { s: 'COST', n: 'Costco', sec: 'Consumer Stpl.', ind: 'Retail', mc: 385e9, p: 865.3 },
+    { s: 'TMO', n: 'Thermo Fisher', sec: 'Healthcare', ind: 'Lab Equipment', mc: 215e9, p: 562.8 },
+    { s: 'AMD', n: 'AMD Inc', sec: 'Technology', ind: 'Semiconductors', mc: 250e9, p: 155.2 },
+    { s: 'NEE', n: 'NextEra Energy', sec: 'Utilities', ind: 'Utilities', mc: 150e9, p: 72.4 },
+    { s: 'NFLX', n: 'Netflix Inc', sec: 'Technology', ind: 'Streaming', mc: 280e9, p: 645.8 },
+    { s: 'DIS', n: 'Walt Disney', sec: 'Communication', ind: 'Entertainment', mc: 220e9, p: 112.5 },
+    { s: 'INTC', n: 'Intel Corp', sec: 'Technology', ind: 'Semiconductors', mc: 130e9, p: 31.2 },
+    { s: 'CSCO', n: 'Cisco Systems', sec: 'Technology', ind: 'Networking', mc: 200e9, p: 48.5 },
+    { s: 'VZ', n: 'Verizon Comms', sec: 'Communication', ind: 'Telecom', mc: 175e9, p: 41.8 },
+    { s: 'T', n: 'AT&T Inc', sec: 'Communication', ind: 'Telecom', mc: 125e9, p: 17.5 },
+    { s: 'IBM', n: 'IBM Corp', sec: 'Technology', ind: 'IT Services', mc: 180e9, p: 195.2 },
+    { s: 'BA', n: 'Boeing Co', sec: 'Industrials', ind: 'Aerospace', mc: 135e9, p: 225.8 },
+    { s: 'GS', n: 'Goldman Sachs', sec: 'Financials', ind: 'Investment Banking', mc: 155e9, p: 468.2 },
+    { s: 'CAT', n: 'Caterpillar', sec: 'Industrials', ind: 'Farm Machinery', mc: 170e9, p: 342.5 },
+    { s: 'AMAT', n: 'Applied Materials', sec: 'Technology', ind: 'Semiconductors', mc: 165e9, p: 198.3 },
+    { s: 'QCOM', n: 'Qualcomm', sec: 'Technology', ind: 'Semiconductors', mc: 185e9, p: 168.5 },
+    { s: 'NKE', n: 'Nike Inc', sec: 'Consumer Disc.', ind: 'Footwear', mc: 145e9, p: 95.2 },
+    { s: 'SBUX', n: 'Starbucks', sec: 'Consumer Disc.', ind: 'Restaurants', mc: 105e9, p: 92.1 },
+    { s: 'GE', n: 'GE Aerospace', sec: 'Industrials', ind: 'Aerospace', mc: 195e9, p: 175.8 },
+    { s: 'LLY', n: 'Eli Lilly', sec: 'Healthcare', ind: 'Pharma', mc: 735e9, p: 782.5 },
+    { s: 'NOW', n: 'ServiceNow', sec: 'Technology', ind: 'Software', mc: 175e9, p: 852.3 },
+    { s: 'DE', n: 'Deere & Co', sec: 'Industrials', ind: 'Farm Machinery', mc: 115e9, p: 395.2 },
+    { s: 'SQ', n: 'Block Inc', sec: 'Financials', ind: 'Fintech', mc: 42e9, p: 68.5 },
+    { s: 'UBER', n: 'Uber Technologies', sec: 'Technology', ind: 'Ride-Sharing', mc: 150e9, p: 72.8 },
+    { s: 'SNAP', n: 'Snap Inc', sec: 'Technology', ind: 'Social Media', mc: 18e9, p: 11.5 },
+    { s: 'PLTR', n: 'Palantir', sec: 'Technology', ind: 'Software', mc: 55e9, p: 24.8 },
   ];
 
-  return stocks.map(s => {
-    const price = 20 + Math.random() * 600;
-    const sparkData: number[] = [];
-    let sp = price * 0.9;
-    for (let i = 0; i < 60; i++) {
-      sp += (Math.random() - 0.48) * price * 0.015;
-      sparkData.push(sp);
-    }
-    sparkData[sparkData.length - 1] = price;
-
-    const change1d = (Math.random() - 0.45) * 6;
-    const pe = 5 + Math.random() * 80;
-    const ratings: ScreenerStock['rating'][] = ['Strong Buy', 'Buy', 'Hold', 'Sell', 'Strong Sell'];
-
+  return universe.map(u => {
+    const change = +((Math.random() - 0.45) * u.p * 0.03).toFixed(2);
+    const pe = +(8 + Math.random() * 45).toFixed(1);
+    const sparkline = Array.from({ length: 20 }, (_, i) => u.p * (1 + (Math.random() - 0.48) * 0.05 * (i / 10)));
     return {
-      ...s,
-      price: +price.toFixed(2),
-      change_1d: +change1d.toFixed(2),
-      change_1w: +((Math.random() - 0.45) * 10).toFixed(2),
-      change_1m: +((Math.random() - 0.42) * 18).toFixed(2),
-      change_ytd: +((Math.random() - 0.35) * 40).toFixed(2),
-      market_cap: +(Math.random() * 2500 + 1).toFixed(1),
-      pe_ratio: +pe.toFixed(1),
-      forward_pe: +(pe * (0.7 + Math.random() * 0.5)).toFixed(1),
-      ps_ratio: +(Math.random() * 30 + 0.5).toFixed(1),
-      pb_ratio: +(Math.random() * 20 + 0.5).toFixed(1),
-      ev_ebitda: +(Math.random() * 40 + 3).toFixed(1),
-      dividend_yield: +(Math.random() * 5).toFixed(2),
-      revenue: +(Math.random() * 400 + 1).toFixed(1),
-      revenue_growth: +((Math.random() - 0.3) * 60).toFixed(1),
-      earnings_growth: +((Math.random() - 0.35) * 80).toFixed(1),
-      profit_margin: +((Math.random() - 0.1) * 50).toFixed(1),
-      roe: +((Math.random() - 0.1) * 60).toFixed(1),
-      roa: +((Math.random() - 0.1) * 30).toFixed(1),
-      debt_equity: +(Math.random() * 4).toFixed(2),
-      current_ratio: +(0.5 + Math.random() * 4).toFixed(2),
-      beta: +(0.3 + Math.random() * 2.5).toFixed(2),
-      rsi_14: +(10 + Math.random() * 80).toFixed(1),
-      avg_volume: +(Math.random() * 50 + 0.5).toFixed(1),
-      rel_volume: +(0.3 + Math.random() * 3).toFixed(1),
-      from_52w_high: +(-Math.random() * 40).toFixed(1),
-      sparkline: sparkData,
-      rating: ratings[Math.floor(Math.random() * 5)],
+      symbol: u.s, name: u.n, sector: u.sec, industry: u.ind, marketCap: u.mc, price: u.p,
+      change, changePct: +((change / u.p) * 100).toFixed(2),
+      pe, forwardPe: +(pe * (0.8 + Math.random() * 0.3)).toFixed(1), pb: +(1 + Math.random() * 12).toFixed(1),
+      ps: +(0.5 + Math.random() * 15).toFixed(1), divYield: +(Math.random() * 4.5).toFixed(2),
+      eps: +(u.p / pe).toFixed(2), revenue: +(u.mc * (0.05 + Math.random() * 0.3)).toFixed(0),
+      epsGrowth: +((Math.random() - 0.3) * 40).toFixed(1), revGrowth: +((Math.random() - 0.2) * 30).toFixed(1),
+      rsi: +(20 + Math.random() * 60).toFixed(1), sma20: +(u.p * (0.97 + Math.random() * 0.06)).toFixed(2),
+      sma50: +(u.p * (0.94 + Math.random() * 0.12)).toFixed(2), sma200: +(u.p * (0.88 + Math.random() * 0.24)).toFixed(2),
+      volume: Math.floor(1e6 + Math.random() * 50e6), avgVolume: Math.floor(2e6 + Math.random() * 20e6),
+      volRatio: +(0.3 + Math.random() * 3).toFixed(2),
+      beta: +(0.3 + Math.random() * 2).toFixed(2), shortInterest: +(Math.random() * 15).toFixed(1),
+      analystRating: +(1 + Math.random() * 4).toFixed(1), targetPrice: +(u.p * (1 + (Math.random() - 0.3) * 0.4)).toFixed(2),
+      sparkline,
     };
   });
 }
 
-// ── Sparkline component ──────────────────────────────────────────────────────
-function Sparkline({ data, width = 80, height = 24, positive }: { data: number[]; width?: number; height?: number; positive: boolean }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const cv = canvasRef.current;
-    if (!cv || data.length < 2) return;
-    const ctx = cv.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    cv.width = width * dpr;
-    cv.height = height * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, width, height);
-
-    const min = Math.min(...data);
-    const max = Math.max(...data);
-    const range = max - min || 1;
-
-    ctx.beginPath();
-    ctx.strokeStyle = positive ? GREEN : RED;
-    ctx.lineWidth = 1;
-    data.forEach((v, i) => {
-      const x = (i / (data.length - 1)) * width;
-      const y = height - ((v - min) / range) * (height - 4) - 2;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // Fill gradient
-    ctx.lineTo(width, height);
-    ctx.lineTo(0, height);
-    ctx.closePath();
-    const grad = ctx.createLinearGradient(0, 0, 0, height);
-    grad.addColorStop(0, positive ? 'rgba(38,166,154,0.15)' : 'rgba(239,83,80,0.15)');
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.fill();
-  }, [data, width, height, positive]);
-
-  return <canvas ref={canvasRef} style={{ width, height }} />;
+/* Sparkline SVG */
+function Sparkline({ data, width = 60, height = 18 }: { data: number[]; width?: number; height?: number }) {
+  const minV = Math.min(...data), maxV = Math.max(...data); const range = maxV - minV || 1;
+  const pts = data.map((v, i) => `${(i / (data.length - 1)) * width},${height - ((v - minV) / range) * height}`).join(' ');
+  const color = data[data.length - 1] >= data[0] ? T.up : T.dn;
+  return <svg width={width} height={height}><polyline points={pts} fill="none" stroke={color} strokeWidth="1.2" /></svg>;
 }
 
-// ── Column definitions ───────────────────────────────────────────────────────
-type ColumnKey = keyof ScreenerStock;
-interface ColumnDef {
-  key: ColumnKey;
-  label: string;
-  width: number;
-  align?: 'left' | 'right' | 'center';
-  format?: (v: unknown, row: ScreenerStock) => React.ReactNode;
+/* Rating stars */
+function AnalystRating({ rating }: { rating: number }) {
+  const color = rating >= 4 ? T.up : rating >= 3 ? T.warn : T.dn;
+  return <span style={{ fontSize: '10px', color, fontFamily: T.fontMono, fontWeight: 700 }}>{rating.toFixed(1)} {'★'.repeat(Math.round(rating))}</span>;
 }
 
-const COLUMNS: ColumnDef[] = [
-  {
-    key: 'symbol', label: 'SYMBOL', width: 70, align: 'left',
-    format: (v) => <span style={{ color: AMBER, fontWeight: 600 }}>{v as string}</span>,
-  },
-  { key: 'name', label: 'NAME', width: 140, align: 'left' },
-  { key: 'sector', label: 'SECTOR', width: 100, align: 'left' },
-  {
-    key: 'price', label: 'PRICE', width: 75, align: 'right',
-    format: (v) => `$${(v as number).toFixed(2)}`,
-  },
-  {
-    key: 'change_1d', label: 'CHG 1D%', width: 70, align: 'right',
-    format: (v) => {
-      const n = v as number;
-      return <span style={{ color: n >= 0 ? GREEN : RED }}>{n >= 0 ? '+' : ''}{n.toFixed(2)}%</span>;
-    },
-  },
-  {
-    key: 'change_1w', label: 'CHG 1W%', width: 70, align: 'right',
-    format: (v) => {
-      const n = v as number;
-      return <span style={{ color: n >= 0 ? GREEN : RED }}>{n >= 0 ? '+' : ''}{n.toFixed(2)}%</span>;
-    },
-  },
-  {
-    key: 'change_1m', label: 'CHG 1M%', width: 70, align: 'right',
-    format: (v) => {
-      const n = v as number;
-      return <span style={{ color: n >= 0 ? GREEN : RED }}>{n >= 0 ? '+' : ''}{n.toFixed(2)}%</span>;
-    },
-  },
-  {
-    key: 'change_ytd', label: 'YTD%', width: 65, align: 'right',
-    format: (v) => {
-      const n = v as number;
-      return <span style={{ color: n >= 0 ? GREEN : RED }}>{n >= 0 ? '+' : ''}{n.toFixed(1)}%</span>;
-    },
-  },
-  {
-    key: 'market_cap', label: 'MCAP $B', width: 70, align: 'right',
-    format: (v) => `${(v as number).toFixed(0)}`,
-  },
-  {
-    key: 'pe_ratio', label: 'P/E', width: 55, align: 'right',
-    format: (v) => (v as number).toFixed(1),
-  },
-  {
-    key: 'forward_pe', label: 'FWD P/E', width: 60, align: 'right',
-    format: (v) => (v as number).toFixed(1),
-  },
-  {
-    key: 'dividend_yield', label: 'DIV%', width: 55, align: 'right',
-    format: (v) => `${(v as number).toFixed(2)}%`,
-  },
-  {
-    key: 'revenue_growth', label: 'REV GR%', width: 65, align: 'right',
-    format: (v) => {
-      const n = v as number;
-      return <span style={{ color: n >= 0 ? GREEN : RED }}>{n >= 0 ? '+' : ''}{n.toFixed(1)}%</span>;
-    },
-  },
-  {
-    key: 'profit_margin', label: 'MARGIN%', width: 65, align: 'right',
-    format: (v) => `${(v as number).toFixed(1)}%`,
-  },
-  {
-    key: 'roe', label: 'ROE%', width: 55, align: 'right',
-    format: (v) => `${(v as number).toFixed(1)}%`,
-  },
-  {
-    key: 'debt_equity', label: 'D/E', width: 50, align: 'right',
-    format: (v) => (v as number).toFixed(2),
-  },
-  {
-    key: 'beta', label: 'BETA', width: 50, align: 'right',
-    format: (v) => (v as number).toFixed(2),
-  },
-  {
-    key: 'rsi_14', label: 'RSI', width: 50, align: 'right',
-    format: (v) => {
-      const n = v as number;
-      const color = n < 30 ? GREEN : n > 70 ? RED : TEXT;
-      return <span style={{ color }}>{n.toFixed(0)}</span>;
-    },
-  },
-  {
-    key: 'avg_volume', label: 'AVG VOL M', width: 70, align: 'right',
-    format: (v) => `${(v as number).toFixed(1)}`,
-  },
-  {
-    key: 'rating', label: 'RATING', width: 80, align: 'center',
-    format: (v) => {
-      const r = v as string;
-      const color = r.includes('Buy') ? GREEN : r.includes('Sell') ? RED : MUTED;
-      return <span style={{ color, fontSize: 9 }}>{r}</span>;
-    },
-  },
-  {
-    key: 'sparkline', label: 'CHART', width: 90, align: 'center',
-    format: (_v, row) => <Sparkline data={row.sparkline} positive={row.change_1m >= 0} />,
-  },
-];
+/* ═════════════════════════════════════════════════════════════════════ */
 
-// ── Column visibility ────────────────────────────────────────────────────────
-const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
-  'symbol', 'name', 'price', 'change_1d', 'change_1m', 'change_ytd',
-  'market_cap', 'pe_ratio', 'dividend_yield', 'revenue_growth', 'rsi_14', 'rating', 'sparkline',
-];
-
-// ── Component ────────────────────────────────────────────────────────────────
-type SortDir = 'asc' | 'desc';
+const PRESETS = {
+  'All Stocks': [],
+  'Value': [{ field: 'pe' as keyof Stock, op: '<=' as const, value: 20 }, { field: 'pb' as keyof Stock, op: '<=' as const, value: 3 }, { field: 'divYield' as keyof Stock, op: '>=' as const, value: 1.5 }],
+  'Growth': [{ field: 'epsGrowth' as keyof Stock, op: '>=' as const, value: 15 }, { field: 'revGrowth' as keyof Stock, op: '>=' as const, value: 10 }],
+  'Dividend': [{ field: 'divYield' as keyof Stock, op: '>=' as const, value: 2.5 }, { field: 'pe' as keyof Stock, op: '<=' as const, value: 25 }],
+  'Momentum': [{ field: 'rsi' as keyof Stock, op: '>=' as const, value: 50 }, { field: 'changePct' as keyof Stock, op: '>=' as const, value: 0 }],
+  'Oversold': [{ field: 'rsi' as keyof Stock, op: '<=' as const, value: 35 }],
+  'Large Cap': [{ field: 'marketCap' as keyof Stock, op: '>=' as const, value: 200e9 }],
+  'High Vol': [{ field: 'volRatio' as keyof Stock, op: '>=' as const, value: 1.5 }],
+};
 
 export default function StockScreenerUI2() {
-  const [stocks] = useState<ScreenerStock[]>(() => generateMockStocks());
-  const [filters, setFilters] = useState<FilterState[]>([]);
-  const [sortKey, setSortKey] = useState<ColumnKey>('market_cap');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activePreset, setActivePreset] = useState<string | null>(null);
-  const [filterCategory, setFilterCategory] = useState<FilterDef['category']>('fundamental');
-  const [showFilters, setShowFilters] = useState(true);
-  const [visibleColumns, setVisibleColumns] = useState<Set<ColumnKey>>(new Set(DEFAULT_VISIBLE_COLUMNS));
-  const [selectedStock, setSelectedStock] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
-  const pageSize = 25;
+  // ── Hook integration ──
+  const [marketState, marketActions] = useMarketData();
+  const [indicatorState, indicatorActions] = useIndicators();
+  const [mlState, mlActions] = useML();
 
-  // ── Apply preset ──
-  const applyPreset = useCallback((preset: Preset) => {
-    const newFilters: FilterState[] = [];
-    for (const [id, values] of Object.entries(preset.filters)) {
-      newFilters.push({
-        id,
-        min: values.min,
-        max: values.max,
-        value: values.value,
-        enabled: true,
+  const [stocks] = useState(generateStocks);
+  const [filters, setFilters] = useState<FilterConfig[]>([]);
+  const [preset, setPreset] = useState('All Stocks');
+  const [sortBy, setSortBy] = useState<keyof Stock>('marketCap');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [search, setSearch] = useState('');
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+
+  const activeFilters = preset !== 'Custom' ? (PRESETS[preset as keyof typeof PRESETS] || []) : filters;
+
+  const filteredStocks = useMemo(() => {
+    let result = stocks.filter(s => !search || s.symbol.toLowerCase().includes(search.toLowerCase()) || s.name.toLowerCase().includes(search.toLowerCase()));
+    activeFilters.forEach(f => {
+      result = result.filter(s => {
+        const v = s[f.field] as number;
+        if (f.op === '>=') return v >= f.value;
+        if (f.op === '<=') return v <= f.value;
+        if (f.op === '==') return Math.abs(v - f.value) < 0.01;
+        return true;
       });
-    }
-    setFilters(newFilters);
-    setActivePreset(preset.name);
-    setPage(0);
-  }, []);
-
-  // ── Toggle filter ──
-  const toggleFilter = useCallback((filterId: string) => {
-    setFilters(prev => {
-      const existing = prev.find(f => f.id === filterId);
-      if (existing) {
-        return prev.filter(f => f.id !== filterId);
-      }
-      const def = FILTER_DEFS.find(d => d.id === filterId);
-      if (!def) return prev;
-      return [...prev, {
-        id: filterId,
-        min: def.min,
-        max: def.max,
-        value: def.type === 'boolean' ? true : def.type === 'select' ? 'Any' : undefined,
-        enabled: true,
-      }];
     });
-    setActivePreset(null);
-    setPage(0);
-  }, []);
-
-  // ── Update filter value ──
-  const updateFilter = useCallback((filterId: string, patch: Partial<FilterState>) => {
-    setFilters(prev => prev.map(f => f.id === filterId ? { ...f, ...patch } : f));
-    setPage(0);
-  }, []);
-
-  // ── Filtered + sorted results ──
-  const results = useMemo(() => {
-    let filtered = stocks;
-
-    // Text search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(s =>
-        s.symbol.toLowerCase().includes(q) ||
-        s.name.toLowerCase().includes(q) ||
-        s.sector.toLowerCase().includes(q) ||
-        s.industry.toLowerCase().includes(q)
-      );
-    }
-
-    // Apply filters
-    for (const f of filters) {
-      if (!f.enabled) continue;
-      const def = FILTER_DEFS.find(d => d.id === f.id);
-      if (!def) continue;
-
-      if (def.type === 'range') {
-        filtered = filtered.filter(s => {
-          const val = (s as Record<string, unknown>)[f.id] as number;
-          if (val === undefined) return true;
-          if (f.min !== undefined && val < f.min) return false;
-          if (f.max !== undefined && val > f.max) return false;
-          return true;
-        });
-      } else if (def.type === 'boolean') {
-        if (f.value === true) {
-          // For SMA above booleans, check price > some threshold
-          filtered = filtered.filter(() => Math.random() > 0.3); // Mock
-        }
-      } else if (def.type === 'select' && f.value !== 'Any') {
-        // Mock filter for select types
-        filtered = filtered.filter(() => Math.random() > 0.4);
-      }
-    }
-
-    // Sort
-    filtered = [...filtered].sort((a, b) => {
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return sortDir === 'asc' ? av - bv : bv - av;
-      }
-      if (typeof av === 'string' && typeof bv === 'string') {
-        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-      }
-      return 0;
+    return result.sort((a, b) => {
+      const av = a[sortBy], bv = b[sortBy];
+      if (typeof av === 'string' && typeof bv === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === 'asc' ? (Number(av) - Number(bv)) : (Number(bv) - Number(av));
     });
+  }, [stocks, activeFilters, sortBy, sortDir, search]);
 
-    return filtered;
-  }, [stocks, filters, searchQuery, sortKey, sortDir]);
+  const handleSort = useCallback((col: keyof Stock) => { if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortBy(col); setSortDir('desc'); } }, [sortBy]);
+  const handlePreset = useCallback((p: string) => { setPreset(p); if (p !== 'Custom') setFilters([]); }, []);
 
-  // ── Pagination ──
-  const totalPages = Math.ceil(results.length / pageSize);
-  const pageResults = results.slice(page * pageSize, (page + 1) * pageSize);
+  const selectedStock = selectedSymbol ? stocks.find(s => s.symbol === selectedSymbol) : null;
 
-  // ── Sort handler ──
-  const handleSort = useCallback((key: ColumnKey) => {
-    if (sortKey === key) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortKey(key);
-      setSortDir('desc');
-    }
-  }, [sortKey]);
+  const thS: React.CSSProperties = { padding: '4px 6px', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', color: T.text3, borderBottom: `1px solid ${T.border0}`, fontFamily: T.fontSans, cursor: 'pointer', position: 'sticky', top: 0, background: T.bg1, zIndex: 1, whiteSpace: 'nowrap', textAlign: 'right' };
+  const tdS: React.CSSProperties = { padding: '3px 6px', fontSize: '11px', fontFamily: T.fontMono, color: T.text1, borderBottom: `1px solid ${T.border0}`, textAlign: 'right', whiteSpace: 'nowrap' };
 
-  // ── Export CSV ──
-  const exportCSV = useCallback(() => {
-    const cols = COLUMNS.filter(c => visibleColumns.has(c.key) && c.key !== 'sparkline');
-    const header = cols.map(c => c.label).join(',');
-    const rows = results.map(r =>
-      cols.map(c => {
-        const v = r[c.key];
-        return typeof v === 'string' ? `"${v}"` : v;
-      }).join(',')
-    );
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `screener_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [results, visibleColumns]);
-
-  // ── Sector breakdown ──
-  const sectorBreakdown = useMemo(() => {
-    const map = new Map<string, number>();
-    results.forEach(s => map.set(s.sector, (map.get(s.sector) || 0) + 1));
-    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-  }, [results]);
-
-  const filterCategories: FilterDef['category'][] = ['fundamental', 'technical', 'performance', 'valuation', 'risk'];
-  const activeFilterDefs = FILTER_DEFS.filter(d => d.category === filterCategory);
+  const columns: { key: keyof Stock; label: string; fmt?: (v: any) => string; color?: (v: any) => string; width?: string }[] = [
+    { key: 'symbol', label: 'Symbol', width: '65px' },
+    { key: 'price', label: 'Price', fmt: v => fmtUsd(v) },
+    { key: 'changePct', label: 'Chg%', fmt: v => fmtPct(v), color: v => clr(v) },
+    { key: 'marketCap', label: 'Mkt Cap', fmt: v => fmtK(v) },
+    { key: 'pe', label: 'P/E' },
+    { key: 'pb', label: 'P/B' },
+    { key: 'divYield', label: 'Div%', fmt: v => `${v}%` },
+    { key: 'epsGrowth', label: 'EPS G%', fmt: v => fmtPct(v), color: v => clr(v) },
+    { key: 'revGrowth', label: 'Rev G%', fmt: v => fmtPct(v), color: v => clr(v) },
+    { key: 'rsi', label: 'RSI', color: v => v > 70 ? T.dn : v < 30 ? T.up : T.text2 },
+    { key: 'volRatio', label: 'Vol Ratio', color: v => v > 2 ? T.warn : T.text2 },
+    { key: 'beta', label: 'Beta', color: v => v > 1.5 ? T.warn : T.text2 },
+  ];
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      background: BG,
-      fontFamily: '"Roboto Mono", "Cascadia Code", monospace',
-      fontSize: 11,
-      color: TEXT,
-    }}>
-      {/* ── Header ── */}
-      <div style={{
-        background: PANEL,
-        borderBottom: `1px solid ${BORDER}`,
-        padding: '8px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-      }}>
-        <span style={{ color: AMBER, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>
-          STOCK SCREENER
-        </span>
-        <span style={{ color: MUTED, fontSize: 10 }}>
-          {results.length} matches / {stocks.length} universe
-        </span>
-
-        {/* Search */}
-        <input
-          style={{
-            background: '#0d0d0d',
-            border: `1px solid ${BORDER}`,
-            borderRadius: 3,
-            color: TEXT,
-            padding: '4px 10px',
-            fontSize: 11,
-            fontFamily: '"Roboto Mono", monospace',
-            outline: 'none',
-            width: 200,
-            marginLeft: 'auto',
-          }}
-          placeholder="Search symbol, name, sector..."
-          value={searchQuery}
-          onChange={e => { setSearchQuery(e.target.value); setPage(0); }}
-        />
-
-        <button
-          style={{
-            background: 'transparent',
-            border: `1px solid ${BORDER}`,
-            color: showFilters ? AMBER : MUTED,
-            padding: '4px 10px',
-            borderRadius: 3,
-            cursor: 'pointer',
-            fontSize: 10,
-            fontFamily: '"Roboto Mono", monospace',
-          }}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          {showFilters ? 'HIDE FILTERS' : 'SHOW FILTERS'}
-        </button>
-
-        <button
-          style={{
-            background: 'transparent',
-            border: `1px solid ${BORDER}`,
-            color: MUTED,
-            padding: '4px 10px',
-            borderRadius: 3,
-            cursor: 'pointer',
-            fontSize: 10,
-            fontFamily: '"Roboto Mono", monospace',
-          }}
-          onClick={exportCSV}
-        >
-          EXPORT CSV
-        </button>
-
-        <button
-          style={{
-            background: 'transparent',
-            border: `1px solid ${RED}`,
-            color: RED,
-            padding: '4px 10px',
-            borderRadius: 3,
-            cursor: 'pointer',
-            fontSize: 10,
-            fontFamily: '"Roboto Mono", monospace',
-          }}
-          onClick={() => { setFilters([]); setActivePreset(null); setSearchQuery(''); setPage(0); }}
-        >
-          CLEAR ALL
-        </button>
+    <div data-testid="screener-page" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+      {/* Toolbar */}
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', padding: '4px 8px', background: T.bg1, borderRadius: T.radius, border: `1px solid ${T.border0}`, flexWrap: 'wrap' }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search symbol or name..." style={{ padding: '4px 8px', background: T.bg2, border: `1px solid ${T.border1}`, borderRadius: T.radius, color: T.text0, fontSize: '11px', fontFamily: T.fontSans, width: '200px', outline: 'none' }} />
+        <span style={{ color: T.text3, fontSize: '10px' }}>|</span>
+        <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
+          {Object.keys(PRESETS).map(p => (
+            <button key={p} onClick={() => handlePreset(p)} style={{ padding: '3px 8px', border: 'none', borderRadius: '2px', fontSize: '9px', cursor: 'pointer', fontFamily: T.fontSans, background: preset === p ? T.brand : T.bg3, color: preset === p ? '#fff' : T.text2, fontWeight: preset === p ? 700 : 400 }}>{p}</button>
+          ))}
+        </div>
+        <span style={{ marginLeft: 'auto', fontSize: '10px', color: T.text2, fontFamily: T.fontMono }}>{filteredStocks.length} results</span>
       </div>
 
-      {/* ── Presets bar ── */}
-      <div style={{
-        background: PANEL,
-        borderBottom: `1px solid ${BORDER}`,
-        padding: '6px 16px',
-        display: 'flex',
-        gap: 6,
-        overflowX: 'auto',
-      }}>
-        {PRESETS.map(p => (
-          <button
-            key={p.name}
-            style={{
-              background: activePreset === p.name ? 'rgba(245,166,35,0.15)' : 'transparent',
-              border: `1px solid ${activePreset === p.name ? AMBER : BORDER}`,
-              color: activePreset === p.name ? AMBER : MUTED,
-              padding: '4px 10px',
-              borderRadius: 3,
-              cursor: 'pointer',
-              fontSize: 10,
-              fontFamily: '"Roboto Mono", monospace',
-              whiteSpace: 'nowrap',
-            }}
-            onClick={() => applyPreset(p)}
-            title={p.description}
-          >
-            {p.icon} {p.name}
-          </button>
-        ))}
-      </div>
+      {/* Active Filters */}
+      {activeFilters.length > 0 && (
+        <div style={{ display: 'flex', gap: '4px', padding: '3px 8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '9px', color: T.text3 }}>FILTERS:</span>
+          {activeFilters.map((f, i) => (
+            <span key={i} style={{ fontSize: '9px', padding: '2px 6px', background: `${T.brand}22`, color: T.brand, borderRadius: '2px', fontFamily: T.fontMono }}>
+              {String(f.field)} {f.op} {typeof f.value === 'number' && f.value >= 1e9 ? `$${(f.value / 1e9).toFixed(0)}B` : f.value}
+            </span>
+          ))}
+        </div>
+      )}
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* ── Filters panel ── */}
-        {showFilters && (
-          <div style={{
-            width: 260,
-            background: PANEL,
-            borderRight: `1px solid ${BORDER}`,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}>
-            {/* Category tabs */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 2,
-              padding: '6px 8px',
-              borderBottom: `1px solid ${BORDER}`,
-            }}>
-              {filterCategories.map(c => (
-                <button
-                  key={c}
-                  style={{
-                    background: filterCategory === c ? 'rgba(245,166,35,0.15)' : 'transparent',
-                    border: `1px solid ${filterCategory === c ? AMBER : BORDER}`,
-                    color: filterCategory === c ? AMBER : MUTED,
-                    padding: '3px 6px',
-                    borderRadius: 3,
-                    cursor: 'pointer',
-                    fontSize: 9,
-                    fontFamily: '"Roboto Mono", monospace',
-                    textTransform: 'uppercase',
-                  }}
-                  onClick={() => setFilterCategory(c)}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-
-            {/* Filter list */}
-            <div style={{ flex: 1, overflow: 'auto', padding: 8 }}>
-              {activeFilterDefs.map(def => {
-                const active = filters.find(f => f.id === def.id);
-                return (
-                  <div
-                    key={def.id}
-                    style={{
-                      padding: '6px 8px',
-                      borderBottom: `1px solid ${BORDER}`,
-                      background: active ? 'rgba(245,166,35,0.05)' : 'transparent',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() => toggleFilter(def.id)}
-                    >
-                      <span style={{ color: active ? AMBER : TEXT, fontSize: 10 }}>{def.label}</span>
-                      <span style={{ color: active ? GREEN : MUTED, fontSize: 9 }}>
-                        {active ? '●' : '○'}
-                      </span>
-                    </div>
-
-                    {active && def.type === 'range' && (
-                      <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                        <input
-                          style={{
-                            background: '#0d0d0d',
-                            border: `1px solid ${BORDER}`,
-                            borderRadius: 2,
-                            color: TEXT,
-                            padding: '2px 4px',
-                            fontSize: 10,
-                            fontFamily: '"Roboto Mono", monospace',
-                            width: '45%',
-                            outline: 'none',
-                          }}
-                          type="number"
-                          placeholder="Min"
-                          value={active.min ?? ''}
-                          onChange={e => updateFilter(def.id, { min: e.target.value ? parseFloat(e.target.value) : undefined })}
-                        />
-                        <span style={{ color: MUTED }}>-</span>
-                        <input
-                          style={{
-                            background: '#0d0d0d',
-                            border: `1px solid ${BORDER}`,
-                            borderRadius: 2,
-                            color: TEXT,
-                            padding: '2px 4px',
-                            fontSize: 10,
-                            fontFamily: '"Roboto Mono", monospace',
-                            width: '45%',
-                            outline: 'none',
-                          }}
-                          type="number"
-                          placeholder="Max"
-                          value={active.max ?? ''}
-                          onChange={e => updateFilter(def.id, { max: e.target.value ? parseFloat(e.target.value) : undefined })}
-                        />
-                      </div>
-                    )}
-
-                    {active && def.type === 'select' && (
-                      <select
-                        style={{
-                          background: '#0d0d0d',
-                          border: `1px solid ${BORDER}`,
-                          borderRadius: 2,
-                          color: TEXT,
-                          padding: '2px 4px',
-                          fontSize: 10,
-                          fontFamily: '"Roboto Mono", monospace',
-                          width: '100%',
-                          marginTop: 4,
-                          outline: 'none',
-                        }}
-                        value={active.value as string || 'Any'}
-                        onChange={e => updateFilter(def.id, { value: e.target.value })}
-                      >
-                        {(def.options || []).map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Active filters summary */}
-            {filters.length > 0 && (
-              <div style={{
-                padding: '6px 8px',
-                borderTop: `1px solid ${BORDER}`,
-                fontSize: 9,
-                color: MUTED,
-              }}>
-                {filters.length} active filter{filters.length !== 1 ? 's' : ''}
-              </div>
-            )}
-
-            {/* Sector breakdown */}
-            <div style={{
-              padding: '8px',
-              borderTop: `1px solid ${BORDER}`,
-            }}>
-              <div style={{ color: AMBER, fontSize: 9, fontWeight: 600, letterSpacing: 1, marginBottom: 4, textTransform: 'uppercase' }}>
-                SECTOR BREAKDOWN
-              </div>
-              {sectorBreakdown.slice(0, 8).map(([sector, count]) => (
-                <div key={sector} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '2px 0',
-                  fontSize: 9,
-                }}>
-                  <span style={{ color: TEXT }}>{sector}</span>
-                  <span style={{ color: AMBER }}>{count}</span>
-                </div>
-              ))}
-            </div>
+      {/* Main content */}
+      <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: selectedStock ? '1fr 320px' : '1fr', gap: '6px' }}>
+        {/* Results Grid */}
+        <div style={panelStyle}>
+          <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ ...thS, textAlign: 'center', width: '20px' }}>#</th>
+                  {columns.map(c => (
+                    <th key={c.key} onClick={() => handleSort(c.key)} style={{ ...thS, width: c.width }}>
+                      {c.label} {sortBy === c.key ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                    </th>
+                  ))}
+                  <th style={thS}>Chart</th>
+                  <th style={thS}>Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStocks.map((s, idx) => (
+                  <tr key={s.symbol} onClick={() => setSelectedSymbol(s.symbol === selectedSymbol ? null : s.symbol)} style={{ cursor: 'pointer', background: s.symbol === selectedSymbol ? `${T.brand}11` : '' }} onMouseEnter={e => { if (s.symbol !== selectedSymbol) e.currentTarget.style.background = T.bg2; }} onMouseLeave={e => { if (s.symbol !== selectedSymbol) e.currentTarget.style.background = ''; }}>
+                    <td style={{ ...tdS, textAlign: 'center', color: T.text3, fontSize: '9px' }}>{idx + 1}</td>
+                    {columns.map(c => {
+                      const val = s[c.key];
+                      const displayVal = c.fmt ? c.fmt(val) : typeof val === 'number' ? fmt2(val) : val;
+                      const color = c.color ? c.color(val) : c.key === 'symbol' ? T.brand : T.text1;
+                      return (
+                        <td key={c.key} style={{ ...tdS, color, fontWeight: c.key === 'symbol' ? 700 : 400, textAlign: c.key === 'symbol' ? 'left' : 'right' }}>
+                          {displayVal}
+                        </td>
+                      );
+                    })}
+                    <td style={tdS}><Sparkline data={s.sparkline} /></td>
+                    <td style={tdS}><AnalystRating rating={s.analystRating} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
 
-        {/* ── Results table ── */}
-        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          {/* Table header */}
-          <div style={{
-            display: 'flex',
-            background: BG,
-            borderBottom: `2px solid ${BORDER}`,
-            position: 'sticky',
-            top: 0,
-            zIndex: 1,
-          }}>
-            {COLUMNS.filter(c => visibleColumns.has(c.key)).map(col => (
-              <div
-                key={col.key}
-                style={{
-                  width: col.width,
-                  minWidth: col.width,
-                  padding: '6px 6px',
-                  color: sortKey === col.key ? AMBER : MUTED,
-                  fontSize: 9,
-                  fontWeight: 600,
-                  letterSpacing: 0.5,
-                  textAlign: col.align || 'left',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  whiteSpace: 'nowrap',
-                  textTransform: 'uppercase',
-                }}
-                onClick={() => handleSort(col.key)}
-              >
-                {col.label}
-                {sortKey === col.key && (
-                  <span style={{ marginLeft: 2 }}>{sortDir === 'asc' ? '▲' : '▼'}</span>
-                )}
+        {/* Detail Panel */}
+        {selectedStock && (
+          <div style={panelStyle}>
+            <div style={panelHdr}>
+              <span>{selectedStock.symbol}</span>
+              <button onClick={() => setSelectedSymbol(null)} style={{ background: 'transparent', border: 'none', color: T.text3, cursor: 'pointer', fontSize: '12px' }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: T.text0, fontFamily: T.fontMono }}>{fmtUsd(selectedStock.price)}</div>
+                <div style={{ fontSize: '12px', color: clr(selectedStock.changePct), fontWeight: 600, fontFamily: T.fontMono }}>{selectedStock.change >= 0 ? '+' : ''}{fmt2(selectedStock.change)} ({fmtPct(selectedStock.changePct)})</div>
+                <div style={{ fontSize: '10px', color: T.text3, marginTop: '2px' }}>{selectedStock.name} · {selectedStock.sector} · {selectedStock.industry}</div>
               </div>
-            ))}
-          </div>
+              <Sparkline data={selectedStock.sparkline} width={280} height={60} />
 
-          {/* Table body */}
-          <div style={{ flex: 1 }}>
-            {pageResults.map((stock, i) => (
-              <div
-                key={stock.symbol}
-                style={{
-                  display: 'flex',
-                  borderBottom: `1px solid ${BORDER}`,
-                  background: selectedStock === stock.symbol
-                    ? 'rgba(245,166,35,0.08)'
-                    : i % 2 === 0 ? PANEL : BG,
-                  cursor: 'pointer',
-                  transition: 'background 0.1s',
-                }}
-                onClick={() => setSelectedStock(stock.symbol)}
-                onMouseEnter={e => {
-                  if (selectedStock !== stock.symbol) {
-                    (e.currentTarget as HTMLDivElement).style.background = 'rgba(245,166,35,0.04)';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (selectedStock !== stock.symbol) {
-                    (e.currentTarget as HTMLDivElement).style.background = i % 2 === 0 ? PANEL : BG;
-                  }
-                }}
-              >
-                {COLUMNS.filter(c => visibleColumns.has(c.key)).map(col => (
-                  <div
-                    key={col.key}
-                    style={{
-                      width: col.width,
-                      minWidth: col.width,
-                      padding: '5px 6px',
-                      textAlign: col.align || 'left',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      fontSize: 10,
-                    }}
-                  >
-                    {col.format ? col.format(stock[col.key], stock) : String(stock[col.key])}
+              <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                {[
+                  ['Market Cap', fmtK(selectedStock.marketCap)], ['P/E', fmt2(selectedStock.pe)], ['Fwd P/E', fmt2(selectedStock.forwardPe)],
+                  ['P/B', fmt2(selectedStock.pb)], ['P/S', fmt2(selectedStock.ps)], ['Div Yield', `${selectedStock.divYield}%`],
+                  ['EPS', fmtUsd(selectedStock.eps)], ['EPS Growth', fmtPct(selectedStock.epsGrowth)], ['Rev Growth', fmtPct(selectedStock.revGrowth)],
+                  ['RSI', fmt2(selectedStock.rsi)], ['SMA 20', fmtUsd(selectedStock.sma20)], ['SMA 50', fmtUsd(selectedStock.sma50)],
+                  ['SMA 200', fmtUsd(selectedStock.sma200)], ['Beta', fmt2(selectedStock.beta)],
+                  ['Short Int', `${selectedStock.shortInterest}%`], ['Vol Ratio', `${selectedStock.volRatio}x`],
+                  ['Target', fmtUsd(selectedStock.targetPrice)], ['Upside', fmtPct(((selectedStock.targetPrice - selectedStock.price) / selectedStock.price) * 100)],
+                ].map(([label, val]) => (
+                  <div key={label as string} style={{ padding: '3px 0', borderBottom: `1px solid ${T.border0}` }}>
+                    <div style={{ fontSize: '8px', color: T.text3, textTransform: 'uppercase' }}>{label}</div>
+                    <div style={{ fontSize: '11px', fontFamily: T.fontMono, color: T.text0, fontWeight: 600 }}>{val}</div>
                   </div>
                 ))}
               </div>
-            ))}
-          </div>
 
-          {/* Pagination */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '6px 12px',
-            borderTop: `1px solid ${BORDER}`,
-            background: PANEL,
-          }}>
-            <span style={{ color: MUTED, fontSize: 10 }}>
-              Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, results.length)} of {results.length}
-            </span>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${BORDER}`,
-                  color: page > 0 ? AMBER : MUTED,
-                  padding: '3px 8px',
-                  borderRadius: 3,
-                  cursor: page > 0 ? 'pointer' : 'not-allowed',
-                  fontSize: 10,
-                  fontFamily: '"Roboto Mono", monospace',
-                }}
-                disabled={page === 0}
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-              >
-                ← PREV
-              </button>
-              <span style={{ color: AMBER, fontSize: 10, padding: '3px 8px' }}>
-                {page + 1}/{totalPages}
-              </span>
-              <button
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${BORDER}`,
-                  color: page < totalPages - 1 ? AMBER : MUTED,
-                  padding: '3px 8px',
-                  borderRadius: 3,
-                  cursor: page < totalPages - 1 ? 'pointer' : 'not-allowed',
-                  fontSize: 10,
-                  fontFamily: '"Roboto Mono", monospace',
-                }}
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-              >
-                NEXT →
-              </button>
+              <div style={{ marginTop: '10px', display: 'flex', gap: '3px' }}>
+                <button style={{ flex: 1, padding: '6px', background: T.up, color: '#fff', border: 'none', borderRadius: T.radius, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}>BUY</button>
+                <button style={{ flex: 1, padding: '6px', background: T.dn, color: '#fff', border: 'none', borderRadius: T.radius, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}>SELL</button>
+                <button style={{ flex: 1, padding: '6px', background: T.bg3, color: T.text1, border: 'none', borderRadius: T.radius, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}>CHART</button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

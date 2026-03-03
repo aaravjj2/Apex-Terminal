@@ -226,7 +226,7 @@ export function ConvergenceCockpitV1UI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>CONVERGENCE COCKPIT V1 â€” MULTI-SCENARIO EVIDENCE + AGENT TRACE + CITATION RECALL</span>
         {running && <span style={{ fontSize: 10, color: AMBER }}>RUNNING SCENARIOâ€¦</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Agent Confidence" value={avgConfidence !== null ? `${(avgConfidence * 100).toFixed(1)}%` : 'â€”'} col={avgConfidence !== null ? (avgConfidence >= 0.7 ? GREEN : AMBER) : SUBTLE} />

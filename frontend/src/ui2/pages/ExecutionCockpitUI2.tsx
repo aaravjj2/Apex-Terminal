@@ -239,8 +239,8 @@ export function ExecutionCockpitUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>XCKT</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>EXECUTION COCKPIT â€” REAL-TIME ORDER FLOW + FILL QUALITY + LATENCY + TCA</span>
-        {rejectCount > 0 && <span style={{ fontFamily: MONO, fontSize: 10, color: RED, fontWeight: 700 }}>âš  {rejectCount} REJECTED</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {rejectCount > 0 && <span style={{ fontFamily: MONO, fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {rejectCount} REJECTED</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         {loading && <span style={{ fontSize: 10, color: SUBTLE }}>Loading...</span>}
       </div>
 

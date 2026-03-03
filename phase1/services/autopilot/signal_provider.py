@@ -149,10 +149,15 @@ async def _compute_internal_signal(symbol: str) -> DirectionalSignal:
             else:
                 regime = "ranging"
 
+        _sma20_str = f"{sma20:.2f}" if sma20 is not None else "N/A"
+        _sma50_str = f"{sma50:.2f}" if sma50 is not None else "N/A"
+        _sma_cmp = ">" if (sma20 and sma50 and sma20 > sma50) else "<"
+        _rsi_str = f"{rsi14:.1f}" if rsi14 is not None else "N/A"
+        _atr_str = f"{atr_pct*100:.1f}" if atr_pct is not None else "N/A"
         detail = (
-            f"SMA20={sma20:.2f} {'>' if sma20>sma50 else '<'} SMA50={sma50:.2f}; "
-            f"RSI14={rsi14:.1f if rsi14 else 'N/A'}; "
-            f"ATR%={atr_pct*100:.1f if atr_pct else 'N/A'}%"
+            f"SMA20={_sma20_str} {_sma_cmp} SMA50={_sma50_str}; "
+            f"RSI14={_rsi_str}; "
+            f"ATR%={_atr_str}%"
         )
 
         return DirectionalSignal(

@@ -1,89 +1,94 @@
 /**
  * DrawingToolbar.tsx — TradingView-style vertical drawing tools sidebar
  * =====================================================================
- * All 26 drawing tool types from core/types.ts, organized in groups.
+ * Driven by the 42-tool library in @/lib/ta/drawing-tools.ts.
  * Bloomberg amber-on-dark styling. Integrates with DrawingLayer via store.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { getAllDrawingTools, type DrawingToolDefinition } from '@/lib/ta/drawing-tools';
 
 // ── Drawing Tool Definitions ──────────────────────────────────────────────────
 
-export type DrawingToolType =
-  | 'cursor' | 'crosshair'
-  | 'line' | 'ray' | 'extended_line' | 'arrow'
-  | 'hline' | 'vline' | 'price_range' | 'date_range'
-  | 'parallel_channel' | 'regression_channel'
-  | 'fib' | 'fib_channel' | 'fib_time' | 'fib_circle'
-  | 'pitchfork' | 'schiff_pitchfork' | 'modified_schiff'
-  | 'rect' | 'ellipse' | 'triangle'
-  | 'text' | 'callout' | 'note'
-  | 'brush' | 'highlighter'
-  | 'risk_reward' | 'long_position' | 'short_position';
+/** All tool IDs accepted by the toolbar (lib IDs + built-in pointer/paint tools) */
+export type DrawingToolType = string;
 
 interface DrawingTool {
-  id:     DrawingToolType;
+  id:     string;
   label:  string;
   icon:   string;
   group:  string;
   hotkey?: string;
 }
 
+// Map lib category → UI group id
+const CATEGORY_TO_GROUP: Record<string, string> = {
+  lines:        'lines',
+  channels:     'channels',
+  fibonacci:    'fibonacci',
+  gann:         'gann',
+  shapes:       'shapes',
+  annotations:  'annotations',
+  measurements: 'measurements',
+};
+
+// Icon map keyed by lib tool id (first char of name as fallback)
+const TOOL_ICONS: Record<string, string> = {
+  trend_line: '╲', ray: '⟶', extended_line: '⟷', horizontal_line: '─',
+  vertical_line: '│', cross_line: '✚', horizontal_ray: '⇢', info_line: 'ℹ',
+  parallel_channel: '╏', regression_trend: '⊏', andrews_pitchfork: 'Ψ',
+  schiff_pitchfork: 'Ÿ', modified_schiff_pitchfork: 'ÿ', inside_pitchfork: 'ψ',
+  disjoint_channel: '⊞', flat_channel: '⊟',
+  fib_retracement: '🌀', fib_extension: '⇡', fib_fan: '⊛', fib_arc: '◠',
+  fib_time_zone: '⊙', fib_channel: '⊚', fib_spiral: '🌀', fib_wedge: '∠',
+  fib_circle: '◎',
+  rectangle: '▭', circle: '◯', ellipse: '⬮', triangle: '△',
+  polyline: '⏤', arc: '◠', arrow: '→', arrow_marker: '➤',
+  gann_box: '⊞', gann_fan: '⊛', gann_square: '⊟', gann_square_fixed: '⊠',
+  price_range: '⇕', date_range: '⇔', measure: '📐',
+  text: 'T',
+};
+
+// Hotkeys for common tools
+const TOOL_HOTKEYS: Record<string, string> = {
+  trend_line: 'T', horizontal_line: 'H', fib_retracement: 'F', rectangle: 'R',
+};
+
 const TOOL_GROUPS: { id: string; label: string }[] = [
-  { id: 'pointer',   label: 'Pointer' },
-  { id: 'lines',     label: 'Lines' },
-  { id: 'hv',        label: 'H/V Lines' },
-  { id: 'channels',  label: 'Channels' },
-  { id: 'fib',       label: 'Fibonacci' },
-  { id: 'pitchfork', label: 'Pitchfork' },
-  { id: 'shapes',    label: 'Shapes' },
-  { id: 'text',      label: 'Text' },
-  { id: 'measure',   label: 'Measure' },
-  { id: 'paint',     label: 'Paint' },
+  { id: 'pointer',      label: 'Pointer' },
+  { id: 'lines',        label: 'Lines' },
+  { id: 'channels',     label: 'Channels' },
+  { id: 'fibonacci',    label: 'Fibonacci' },
+  { id: 'gann',         label: 'Gann' },
+  { id: 'shapes',       label: 'Shapes' },
+  { id: 'annotations',  label: 'Text' },
+  { id: 'measurements', label: 'Measure' },
 ];
 
-const TOOLS: DrawingTool[] = [
-  // Pointer
-  { id: 'cursor',        label: 'Cursor',            icon: '↖', group: 'pointer', hotkey: 'V' },
-  { id: 'crosshair',     label: 'Crosshair',         icon: '✚', group: 'pointer' },
-  // Lines
-  { id: 'line',          label: 'Trend Line',         icon: '╲', group: 'lines', hotkey: 'T' },
-  { id: 'ray',           label: 'Ray',                icon: '⟶', group: 'lines' },
-  { id: 'extended_line', label: 'Extended Line',       icon: '⟷', group: 'lines' },
-  { id: 'arrow',         label: 'Arrow',              icon: '→', group: 'lines' },
-  // H/V Lines
-  { id: 'hline',         label: 'Horizontal Line',    icon: '─', group: 'hv', hotkey: 'H' },
-  { id: 'vline',         label: 'Vertical Line',      icon: '│', group: 'hv' },
-  { id: 'price_range',   label: 'Price Range',        icon: '⇕', group: 'hv' },
-  { id: 'date_range',    label: 'Date Range',         icon: '⇔', group: 'hv' },
-  // Channels
-  { id: 'parallel_channel',   label: 'Parallel Channel',   icon: '╏', group: 'channels' },
-  { id: 'regression_channel', label: 'Regression Channel',  icon: '⊏', group: 'channels' },
-  // Fibonacci
-  { id: 'fib',           label: 'Fib Retracement',    icon: '🌀', group: 'fib', hotkey: 'F' },
-  { id: 'fib_channel',   label: 'Fib Channel',        icon: '⊚', group: 'fib' },
-  { id: 'fib_time',      label: 'Fib Time Zones',     icon: '⊙', group: 'fib' },
-  { id: 'fib_circle',    label: 'Fib Arcs',           icon: '◠', group: 'fib' },
-  // Pitchfork
-  { id: 'pitchfork',        label: "Andrew's Pitchfork", icon: 'Ψ', group: 'pitchfork' },
-  { id: 'schiff_pitchfork', label: 'Schiff Pitchfork',   icon: 'Ÿ', group: 'pitchfork' },
-  { id: 'modified_schiff',  label: 'Mod. Schiff',        icon: 'ÿ', group: 'pitchfork' },
-  // Shapes
-  { id: 'rect',          label: 'Rectangle',          icon: '▭', group: 'shapes', hotkey: 'R' },
-  { id: 'ellipse',       label: 'Ellipse',            icon: '◯', group: 'shapes' },
-  { id: 'triangle',      label: 'Triangle',           icon: '△', group: 'shapes' },
-  // Text
-  { id: 'text',          label: 'Text',               icon: 'T', group: 'text' },
-  { id: 'callout',       label: 'Callout',            icon: '💬', group: 'text' },
-  { id: 'note',          label: 'Note',               icon: '📝', group: 'text' },
-  // Measure
-  { id: 'risk_reward',   label: 'Risk/Reward',        icon: '⇡', group: 'measure' },
-  { id: 'long_position', label: 'Long Position',      icon: '▲', group: 'measure' },
-  { id: 'short_position',label: 'Short Position',     icon: '▼', group: 'measure' },
-  // Paint
-  { id: 'brush',         label: 'Brush',              icon: '🖌', group: 'paint' },
-  { id: 'highlighter',   label: 'Highlighter',        icon: '🖍', group: 'paint' },
+/** Built-in pointer tools (not from lib) */
+const POINTER_TOOLS: DrawingTool[] = [
+  { id: 'cursor',    label: 'Cursor',    icon: '↖', group: 'pointer', hotkey: 'V' },
+  { id: 'crosshair', label: 'Crosshair', icon: '✚', group: 'pointer' },
 ];
+
+/** Convert a lib DrawingToolDefinition into a toolbar DrawingTool */
+function libToolToDrawingTool(def: DrawingToolDefinition): DrawingTool {
+  return {
+    id:     def.id,
+    label:  def.name,
+    icon:   TOOL_ICONS[def.id] ?? def.name.charAt(0),
+    group:  CATEGORY_TO_GROUP[def.category] ?? def.category,
+    hotkey: TOOL_HOTKEYS[def.id],
+  };
+}
+
+/** Build the full TOOLS array: pointer (built-in) + all 42 lib tools */
+function buildToolList(): DrawingTool[] {
+  const libTools = getAllDrawingTools().map(libToolToDrawingTool);
+  return [...POINTER_TOOLS, ...libTools];
+}
+
+const TOOLS: DrawingTool[] = buildToolList();
 
 // ── Component ─────────────────────────────────────────────────────────────────
 

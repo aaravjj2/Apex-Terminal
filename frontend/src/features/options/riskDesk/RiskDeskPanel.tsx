@@ -226,7 +226,7 @@ export function RiskDeskPanel() {
       <div style={{ padding: '8px 14px', borderBottom: `1px solid ${BORDER}`, background: PANEL, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 16, color: GREEN }}></span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, letterSpacing: '0.04em' }} data-testid="risk-desk-title">RISK DESK</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, letterSpacing: '0.04em' }} data-testid="risk-desk-title">Risk Desk</span>
           <ProviderPill {...providerInfo} testIdPrefix="riskdesk-provider" />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -321,7 +321,7 @@ export function RiskDeskPanel() {
                     style={{ padding: '8px 10px', borderRadius: 2, border: `1px solid ${result.ok ? GREEN + '44' : RED + '44'}`, background: result.ok ? GREEN + '11' : RED + '11', fontSize: 11, color: result.ok ? GREEN : RED, marginBottom: 8 }}
                     data-testid="run-status"
                   >
-                    <span style={{ fontWeight: 700 }}>{result.ok ? ' PIPELINE COMPLETE' : ' PIPELINE FAILED'}</span>
+                    <span style={{ fontWeight: 700 }}>{result.ok ? ' Pipeline Complete' : ' Pipeline Failed'}</span>
                     <span style={{ marginLeft: 8, color: SUBTLE, fontSize: 10 }}>{result.run_id}</span>
                     {result.error && <div style={{ marginTop: 4, fontSize: 10 }}>{result.error}</div>}
                   </div>
@@ -573,7 +573,7 @@ export function RiskDeskPanel() {
         {/* EXPORT TAB */}
         {activeTab === 'export' && (
           <div data-testid="export-tab" role="tabpanel" id="riskdesk-tabpanel-export">
-            <span data-testid="riskdesk-export-ready" style={{ display: 'none' }}></span>
+            <span data-testid="riskdesk-export-ready" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0.01 }}></span>
             <div style={{ fontSize: 10, fontWeight: 700, color: AMBER, letterSpacing: '0.1em', marginBottom: 10 }}>EXPORT RISK DESK DATA</div>
             {!result && <div style={{ fontSize: 11, color: SUBTLE, marginBottom: 12 }}>No risk run available. Execute a run first to enable exports.</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 480 }}>

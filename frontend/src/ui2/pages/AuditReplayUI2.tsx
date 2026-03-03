@@ -214,9 +214,9 @@ export function AuditReplayUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>AUDIT REPLAY â€” EVENT REPLAY + TIMELINE RECONSTRUCTION + FORENSIC ANALYSIS</span>
-        {running > 0 && <span style={{ fontSize: 10, color: BLUE, fontWeight: 700 }}>âš¡ {running} RUNNING</span>}
-        {criticalFindings > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalFindings} CRITICAL FINDINGS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {running > 0 && <span style={{ fontSize: 10, color: BLUE, fontWeight: 700 }}>⚠¡ {running} RUNNING</span>}
+        {criticalFindings > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalFindings} CRITICAL FINDINGS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Sessions" value={sessions.length} col={BLUE} />
@@ -299,7 +299,7 @@ export function AuditReplayUI2() {
                     <Td mono col={TEXT}>{t.actor}</Td>
                     <Td mono col={PURPLE}>{t.eventType}</Td>
                     <Td><SevBadge s={t.impact} /></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: t.anomaly ? RED : SUBTLE }}>{t.anomaly ? 'âš‘ ANOMALY' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: t.anomaly ? RED : SUBTLE }}>{t.anomaly ? '⚠‘ ANOMALY' : 'â€”'}</span></Td>
                     <Td right mono col={t.relatedEvents > 0 ? BLUE : SUBTLE}>{t.relatedEvents}</Td>
                     <Td mono col={SUBTLE}>{t.description.slice(0, 50)}{t.description.length > 50 ? 'â€¦' : ''}</Td>
                     <Td mono col={SUBTLE}>{t.timestamp}</Td>

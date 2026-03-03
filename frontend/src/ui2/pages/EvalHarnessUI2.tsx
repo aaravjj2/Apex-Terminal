@@ -231,10 +231,10 @@ export function EvalHarnessUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>EVLH</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>EVAL HARNESS â€” BENCHMARKS + TEST SUITES + REGRESSION DETECTION + MODEL COMPARISONS</span>
-        {criticalRegressions > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalRegressions} CRITICAL REGRESSIONS</span>}
-        {failedBenchmarks > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {failedBenchmarks} BENCHMARK FAILURES</span>}
-        {failingSuites > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {failingSuites} SUITES WITH FAILURES</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {criticalRegressions > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalRegressions} CRITICAL REGRESSIONS</span>}
+        {failedBenchmarks > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {failedBenchmarks} BENCHMARK FAILURES</span>}
+        {failingSuites > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {failingSuites} SUITES WITH FAILURES</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Benchmarks" value={benchmarks.length} col={BLUE} />

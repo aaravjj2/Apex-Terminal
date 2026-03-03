@@ -235,11 +235,11 @@ export function DerivativesGovUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DRGT</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>DERIVATIVES GOVERNANCE â€” POSITIONS + LIMITS + MARGIN + EMIR/DFA REPORTING + CLEARING</span>
-        {pendingApprovals > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {pendingApprovals} PENDING APPROVALS</span>}
-        {flagged > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {flagged} FLAGGED</span>}
-        {breachedLimits > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {breachedLimits} LIMIT BREACHES</span>}
-        {reportingErrors > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {reportingErrors} REPORT ERRORS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {pendingApprovals > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingApprovals} PENDING APPROVALS</span>}
+        {flagged > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {flagged} FLAGGED</span>}
+        {breachedLimits > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {breachedLimits} LIMIT BREACHES</span>}
+        {reportingErrors > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {reportingErrors} REPORT ERRORS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Total Positions" value={positions.length} col={BLUE} />

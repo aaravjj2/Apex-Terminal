@@ -237,9 +237,9 @@ export function SignalProvenanceUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>SIGNAL PROVENANCE â€” LINEAGE TRACKING + REPRODUCIBILITY ATTESTATION + AUDIT LEDGER</span>
-        {expiredAttestations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {expiredAttestations} ATTESTATION EXPIRED</span>}
-        {failedReplays > 0 && <span style={{ fontSize: 10, color: RED }}>âš‘ {failedReplays} REPLAY FAILURES</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {expiredAttestations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {expiredAttestations} ATTESTATION EXPIRED</span>}
+        {failedReplays > 0 && <span style={{ fontSize: 10, color: RED }}>⚠‘ {failedReplays} REPLAY FAILURES</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Total Signals" value={signals.length} sub={`${activeSignals} active`} col={BLUE} />

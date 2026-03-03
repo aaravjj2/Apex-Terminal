@@ -209,7 +209,7 @@ export function ExportBundleUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>EXPORT BUNDLE â€” JUDGE BUNDLE BUILDER + MANIFEST + ES TEMPLATES + DB TABLES</span>
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <button onClick={handleBuild} disabled={buildStatus === 'running'} style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 11, fontWeight: 700, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, borderRadius: 3, padding: '5px 14px', cursor: buildStatus === 'running' ? 'wait' : 'pointer' }}>
           {buildStatus === 'running' ? 'BUILDINGâ€¦' : buildStatus === 'done' ? 'BUILT âœ“' : buildStatus === 'error' ? 'ERROR' : 'BUILD BUNDLE'}
         </button>

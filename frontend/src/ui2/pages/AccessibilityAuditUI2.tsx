@@ -228,8 +228,8 @@ export function AccessibilityAuditUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>ACCESSIBILITY AUDIT â€” axe-core / WCAG 2.1 COMPLIANCE + VIOLATION TRIAGE + REMEDIATION PIPELINE</span>
-        {criticalOpen > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalOpen} CRITICAL OPEN</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {criticalOpen > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalOpen} CRITICAL OPEN</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Critical Open" value={criticalOpen} col={criticalOpen > 0 ? RED : GREEN} />

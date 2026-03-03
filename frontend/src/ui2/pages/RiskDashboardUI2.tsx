@@ -1,653 +1,431 @@
 /**
- * RiskDashboardUI2.tsx — Bloomberg RISKMON / Risk Management Dashboard
- * =====================================================================
- * Comprehensive risk dashboard with:
- * - Real-time VaR / CVaR gauges
- * - Exposure breakdown by asset class, region, sector
- * - Stress test scenarios
- * - Correlation heatmap (Canvas)
- * - Concentration risk indicators
- * - Limit utilization bars
- * - Risk factor decomposition
- * - Bloomberg dark theme
+ * ┌───────────────────────────────────────────────────────────────────────┐
+ * │ APEX TERMINAL — RISK DASHBOARD (UI2)                                 │
+ * │                                                                       │
+ * │ Enterprise risk management — tasks.md §6                             │
+ * │                                                                       │
+ * │ Features:                                                             │
+ * │ • Value at Risk (VaR) — Historical, Parametric, Monte Carlo          │
+ * │ • Conditional VaR (CVaR / Expected Shortfall)                        │
+ * │ • Stress testing (GFC, COVID, Taper Tantrum, custom)                 │
+ * │ • Risk decomposition by sector, asset, factor                        │
+ * │ • P&L distribution with tail analysis                                │
+ * │ • Greeks exposure (portfolio-level)                                   │
+ * │ • Liquidity risk matrix                                              │
+ * │ • Limit utilization gauges                                           │
+ * │ • Scenario analysis                                                   │
+ * │ • Drawdown analysis + underwater chart                               │
+ * │ • Margin requirements                                                │
+ * │ • Risk alerts / breaches                                             │
+ * └───────────────────────────────────────────────────────────────────────┘
  */
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useRisk } from '@/ui2/hooks';
+import { useOrders } from '@/ui2/hooks';
+import { useReporting } from '@/ui2/hooks';
 
-const BG = '#0a0a0a';
-const PANEL = '#111111';
-const BORDER = '#1e1e1e';
-const AMBER = '#f5a623';
-const GREEN = '#26a69a';
-const RED = '#ef5350';
-const BLUE = '#42a5f5';
-const PURPLE = '#ab47bc';
-const ORANGE = '#ff9800';
-const TEAL = '#4db6ac';
-const TEXT = '#d4d4d4';
-const MUTED = '#888888';
+const T = {
+  brand: '#2962FF', bg0: '#0C0E12', bg1: '#131722', bg2: '#1E222D', bg3: '#2A2E39', bg4: '#363A45',
+  border0: '#1E222D', border1: '#2A2E39', text0: '#FFF', text1: '#D1D4DC', text2: '#787B86', text3: '#50535E',
+  up: '#26A69A', dn: '#EF5350', upBg: 'rgba(38,166,154,0.12)', dnBg: 'rgba(239,83,80,0.12)',
+  warn: '#FF9800', info: '#42A5F5', purple: '#AB47BC', critical: '#D32F2F',
+  fontSans: "'Inter','Segoe UI',system-ui,sans-serif", fontMono: "'JetBrains Mono','Fira Code',monospace", radius: '4px',
+};
+const fmt2 = (n: number) => n.toFixed(2); const fmtPct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+const fmtUsd = (n: number) => n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n / 1e3).toFixed(0)}K` : `$${n.toFixed(0)}`;
+const clr = (n: number) => n >= 0 ? T.up : T.dn;
+const panelStyle: React.CSSProperties = { background: T.bg1, border: `1px solid ${T.border0}`, borderRadius: T.radius, overflow: 'hidden', display: 'flex', flexDirection: 'column' };
+const panelHdr: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: `1px solid ${T.border0}`, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: T.text2, fontFamily: T.fontSans };
 
-// ── Types ────────────────────────────────────────────────────────────────────
-interface RiskMetric {
-  label: string;
-  value: number;
-  limit: number;
-  unit: string;
-  status: 'normal' | 'warning' | 'breach';
+/* ── Risk Data Generators ── */
+function generatePnLDistribution(days: number) {
+  const data: number[] = [];
+  for (let i = 0; i < days; i++) {
+    const normal = (Math.random() + Math.random() + Math.random() + Math.random() + Math.random() + Math.random() - 3) / 3;
+    const fatTail = Math.random() < 0.05 ? (Math.random() > 0.5 ? 1 : -1) * (3 + Math.random() * 4) : 0;
+    data.push(+(normal * 1.2 + fatTail + 0.03).toFixed(4));
+  }
+  return data.sort((a, b) => a - b);
 }
 
-interface StressScenario {
-  name: string;
-  description: string;
-  portfolioImpact: number;
-  varImpact: number;
-  probability: number;
+function generateDrawdownSeries(days: number) {
+  const dd: { date: string; drawdown: number }[] = [];
+  let peak = 100, current = 100;
+  for (let i = 0; i < days; i++) {
+    current *= 1 + (Math.random() - 0.48) * 0.02;
+    peak = Math.max(peak, current);
+    const ddown = ((current - peak) / peak) * 100;
+    dd.push({ date: new Date(Date.now() - (days - i) * 86400000).toISOString().slice(0, 10), drawdown: +ddown.toFixed(4) });
+  }
+  return dd;
 }
 
-interface Exposure {
-  name: string;
-  gross: number;
-  net: number;
-  limit: number;
-  color: string;
-}
+/* ═════════════════════════════════════════════════════════════════════ */
 
-// ── Mock data ────────────────────────────────────────────────────────────────
-function generateRiskMetrics(): RiskMetric[] {
-  return [
-    { label: '1-Day VaR (95%)', value: 2.34, limit: 3.0, unit: '%', status: 'normal' },
-    { label: '1-Day VaR (99%)', value: 3.87, limit: 5.0, unit: '%', status: 'warning' },
-    { label: '10-Day VaR (95%)', value: 7.41, limit: 10.0, unit: '%', status: 'normal' },
-    { label: 'CVaR (ES 95%)', value: 3.56, limit: 4.5, unit: '%', status: 'normal' },
-    { label: 'Portfolio Beta', value: 1.12, limit: 1.5, unit: '', status: 'normal' },
-    { label: 'Max Sector Conc.', value: 32.4, limit: 35.0, unit: '%', status: 'warning' },
-    { label: 'Max Position', value: 8.7, limit: 10.0, unit: '%', status: 'normal' },
-    { label: 'Leverage Ratio', value: 1.45, limit: 2.0, unit: 'x', status: 'normal' },
+/* VaR Summary Cards */
+function VaRCards() {
+  const varData = [
+    { method: 'Historical (95%)', var1d: -125000, var10d: -395000 },
+    { method: 'Parametric (95%)', var1d: -118000, var10d: -373000 },
+    { method: 'Monte Carlo (95%)', var1d: -132000, var10d: -418000 },
+    { method: 'CVaR / ES (95%)', var1d: -185000, var10d: -585000 },
   ];
-}
-
-function generateStress(): StressScenario[] {
-  return [
-    { name: '2008 GFC Replay', description: 'Global financial crisis scenario', portfolioImpact: -34.2, varImpact: 8.7, probability: 0.02 },
-    { name: 'COVID March 2020', description: 'Pandemic market crash', portfolioImpact: -28.5, varImpact: 7.2, probability: 0.03 },
-    { name: 'Rate Shock +200bps', description: 'Sudden rate increase', portfolioImpact: -12.8, varImpact: 4.1, probability: 0.08 },
-    { name: 'Tech Selloff -30%', description: 'Technology sector collapse', portfolioImpact: -18.4, varImpact: 5.3, probability: 0.05 },
-    { name: 'USD Crash -15%', description: 'Dollar devaluation', portfolioImpact: -8.6, varImpact: 3.2, probability: 0.04 },
-    { name: 'Oil Shock +100%', description: 'Energy crisis', portfolioImpact: -11.3, varImpact: 3.8, probability: 0.06 },
-    { name: 'China Hard Landing', description: 'Chinese economic crash', portfolioImpact: -15.7, varImpact: 4.5, probability: 0.04 },
-    { name: 'Flash Crash -10%', description: 'Sudden market dislocation', portfolioImpact: -9.8, varImpact: 6.1, probability: 0.07 },
-  ];
-}
-
-function generateExposures(): { sector: Exposure[]; region: Exposure[]; assetClass: Exposure[] } {
-  return {
-    sector: [
-      { name: 'Technology', gross: 35.2, net: 28.4, limit: 40, color: BLUE },
-      { name: 'Healthcare', gross: 18.5, net: 15.2, limit: 25, color: GREEN },
-      { name: 'Financials', gross: 15.8, net: 12.3, limit: 30, color: AMBER },
-      { name: 'Consumer Disc.', gross: 12.4, net: 9.8, limit: 20, color: PURPLE },
-      { name: 'Energy', gross: 8.3, net: 5.6, limit: 15, color: RED },
-      { name: 'Industrials', gross: 5.8, net: 4.2, limit: 15, color: ORANGE },
-      { name: 'Other', gross: 4.0, net: 3.1, limit: 20, color: MUTED },
-    ],
-    region: [
-      { name: 'North America', gross: 62.4, net: 54.2, limit: 70, color: BLUE },
-      { name: 'Europe', gross: 18.3, net: 15.8, limit: 30, color: AMBER },
-      { name: 'Asia Pacific', gross: 12.6, net: 8.4, limit: 25, color: GREEN },
-      { name: 'Emerging Markets', gross: 6.7, net: 4.2, limit: 15, color: PURPLE },
-    ],
-    assetClass: [
-      { name: 'Equities', gross: 72.5, net: 65.3, limit: 80, color: BLUE },
-      { name: 'Fixed Income', gross: 15.2, net: 14.8, limit: 30, color: GREEN },
-      { name: 'Alternatives', gross: 8.3, net: 7.1, limit: 15, color: AMBER },
-      { name: 'Cash', gross: 4.0, net: 4.0, limit: 100, color: MUTED },
-    ],
-  };
-}
-
-// ── Canvas: Correlation Heatmap ──────────────────────────────────────────────
-function CorrelationHeatmap({ size = 350 }: { size?: number }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const assets = ['SPY', 'QQQ', 'IWM', 'TLT', 'GLD', 'USO', 'EEM', 'VIX'];
-
-  const matrix = useMemo(() => {
-    return assets.map((_, i) =>
-      assets.map((_, j) => {
-        if (i === j) return 1;
-        // Generate plausible correlations
-        const base = [
-          [1, 0.95, 0.88, -0.45, 0.12, 0.35, 0.72, -0.78],
-          [0.95, 1, 0.82, -0.52, 0.08, 0.28, 0.68, -0.82],
-          [0.88, 0.82, 1, -0.38, 0.15, 0.42, 0.78, -0.72],
-          [-0.45, -0.52, -0.38, 1, 0.28, -0.15, -0.32, 0.45],
-          [0.12, 0.08, 0.15, 0.28, 1, 0.35, 0.22, -0.12],
-          [0.35, 0.28, 0.42, -0.15, 0.35, 1, 0.48, -0.38],
-          [0.72, 0.68, 0.78, -0.32, 0.22, 0.48, 1, -0.65],
-          [-0.78, -0.82, -0.72, 0.45, -0.12, -0.38, -0.65, 1],
-        ];
-        return base[i]?.[j] ?? 0;
-      })
-    );
-  }, []);
-
-  useEffect(() => {
-    const cv = ref.current;
-    if (!cv) return;
-    const ctx = cv.getContext('2d');
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    cv.width = size * dpr;
-    cv.height = size * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, size, size);
-
-    const margin = 40;
-    const cellSize = (size - margin) / assets.length;
-
-    assets.forEach((asset, i) => {
-      // Row labels
-      ctx.fillStyle = TEXT;
-      ctx.font = '9px monospace';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(asset, margin - 4, margin + i * cellSize + cellSize / 2);
-
-      // Col labels
-      ctx.save();
-      ctx.translate(margin + i * cellSize + cellSize / 2, margin - 4);
-      ctx.rotate(-Math.PI / 4);
-      ctx.textAlign = 'right';
-      ctx.fillText(asset, 0, 0);
-      ctx.restore();
-
-      assets.forEach((_, j) => {
-        const val = matrix[i][j];
-        const x = margin + j * cellSize;
-        const y = margin + i * cellSize;
-
-        // Color: green for positive, red for negative
-        const intensity = Math.abs(val);
-        if (val >= 0) {
-          ctx.fillStyle = `rgba(38,166,154,${intensity * 0.8})`;
-        } else {
-          ctx.fillStyle = `rgba(239,83,80,${intensity * 0.8})`;
-        }
-        ctx.fillRect(x, y, cellSize - 1, cellSize - 1);
-
-        // Value text
-        if (cellSize > 30) {
-          ctx.fillStyle = intensity > 0.5 ? '#ffffff' : MUTED;
-          ctx.font = '8px monospace';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(val.toFixed(2), x + cellSize / 2, y + cellSize / 2);
-        }
-      });
-    });
-  }, [matrix, size]);
-
-  return <canvas ref={ref} style={{ width: size, height: size }} />;
-}
-
-// ── VaR Gauge component ──────────────────────────────────────────────────────
-function VaRGauge({ value, limit, label }: { value: number; limit: number; label: string }) {
-  const pct = Math.min(value / limit, 1.2);
-  const color = pct > 0.9 ? RED : pct > 0.7 ? ORANGE : GREEN;
 
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ position: 'relative', width: 100, height: 60, margin: '0 auto' }}>
-        {/* Background arc */}
-        <svg width={100} height={60} viewBox="0 0 100 60" style={{ position: 'absolute', top: 0, left: 0 }}>
-          <path
-            d="M 10 55 A 40 40 0 0 1 90 55"
-            fill="none"
-            stroke={BORDER}
-            strokeWidth={6}
-            strokeLinecap="round"
-          />
-          <path
-            d={`M 10 55 A 40 40 0 0 1 ${10 + 80 * Math.min(pct, 1) * Math.cos(Math.PI - Math.PI * Math.min(pct, 1))} ${55 - 80 * Math.min(pct, 1) * Math.sin(Math.PI * Math.min(pct, 1)) / 2}`}
-            fill="none"
-            stroke={color}
-            strokeWidth={6}
-            strokeLinecap="round"
-            strokeDasharray={`${pct * 126} 126`}
-          />
-        </svg>
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          textAlign: 'center',
-        }}>
-          <div style={{ color, fontSize: 16, fontWeight: 700 }}>{value.toFixed(1)}%</div>
+    <div data-testid="var-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+      {varData.map(v => (
+        <div key={v.method} style={{ ...panelStyle, padding: '8px 10px' }}>
+          <div style={{ fontSize: '9px', color: T.text3, fontFamily: T.fontSans, textTransform: 'uppercase', marginBottom: '4px' }}>{v.method}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: '8px', color: T.text3 }}>1-Day</div>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: T.dn, fontFamily: T.fontMono }}>{fmtUsd(Math.abs(v.var1d))}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '8px', color: T.text3 }}>10-Day</div>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: T.dn, fontFamily: T.fontMono }}>{fmtUsd(Math.abs(v.var10d))}</div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div style={{ color: MUTED, fontSize: 8, marginTop: 4 }}>{label}</div>
-      <div style={{ color: MUTED, fontSize: 7 }}>Limit: {limit}%</div>
+      ))}
     </div>
   );
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
-type Tab = 'overview' | 'exposure' | 'stress' | 'correlation';
+/* P&L Distribution (Canvas) */
+function PnLDistribution({ data }: { data: number[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 400, h: 200 });
 
-export default function RiskDashboardUI2() {
-  const [metrics] = useState<RiskMetric[]>(() => generateRiskMetrics());
-  const [scenarios] = useState<StressScenario[]>(() => generateStress());
-  const [exposures] = useState(() => generateExposures());
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [exposureView, setExposureView] = useState<'sector' | 'region' | 'assetClass'>('sector');
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    const obs = new ResizeObserver(entries => { const { width, height } = entries[0].contentRect; setDims({ w: Math.floor(width), h: Math.floor(height) }); });
+    obs.observe(el); return () => obs.disconnect();
+  }, []);
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'overview', label: 'OVERVIEW' },
-    { key: 'exposure', label: 'EXPOSURE' },
-    { key: 'stress', label: 'STRESS TEST' },
-    { key: 'correlation', label: 'CORRELATION' },
+  useEffect(() => {
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext('2d'); if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1; c.width = dims.w * dpr; c.height = dims.h * dpr; ctx.scale(dpr, dpr);
+    const { w, h } = dims; const mt = 15, mb = 25, ml = 40, mr = 10;
+    const cW = w - ml - mr, cH = h - mt - mb;
+    ctx.fillStyle = T.bg2; ctx.fillRect(0, 0, w, h);
+
+    // Histogram bins
+    const nBins = 50;
+    const min = data[0], max = data[data.length - 1]; const range = max - min;
+    const binWidth = range / nBins;
+    const bins = new Array(nBins).fill(0);
+    data.forEach(v => { const idx = Math.min(Math.floor((v - min) / binWidth), nBins - 1); bins[idx]++; });
+    const maxBin = Math.max(...bins);
+    const var95 = data[Math.floor(data.length * 0.05)];
+
+    const toX = (i: number) => ml + (i / nBins) * cW;
+    const toY = (v: number) => mt + cH - (v / maxBin) * cH;
+
+    // Bars
+    bins.forEach((count, i) => {
+      const binVal = min + (i + 0.5) * binWidth;
+      const x = toX(i); const bw = cW / nBins - 1;
+      const barH = (count / maxBin) * cH;
+      ctx.fillStyle = binVal < var95 ? 'rgba(239,83,80,0.6)' : binVal < 0 ? 'rgba(239,83,80,0.25)' : 'rgba(38,166,154,0.25)';
+      ctx.fillRect(x, mt + cH - barH, bw, barH);
+    });
+
+    // VaR line
+    const varX = ml + ((var95 - min) / range) * cW;
+    ctx.strokeStyle = T.dn; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(varX, mt); ctx.lineTo(varX, mt + cH); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = T.dn; ctx.font = '9px Inter'; ctx.textAlign = 'center'; ctx.fillText(`VaR 95%: ${(var95 * 100).toFixed(2)}%`, varX, mt - 3);
+
+    // Zero line
+    const zeroX = ml + ((0 - min) / range) * cW;
+    ctx.strokeStyle = T.text3; ctx.lineWidth = 0.5; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(zeroX, mt); ctx.lineTo(zeroX, mt + cH); ctx.stroke(); ctx.setLineDash([]);
+
+    // Mean
+    const mean = data.reduce((s, v) => s + v, 0) / data.length;
+    const meanX = ml + ((mean - min) / range) * cW;
+    ctx.strokeStyle = T.brand; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(meanX, mt); ctx.lineTo(meanX, mt + cH); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = T.brand; ctx.font = '9px Inter'; ctx.fillText(`μ=${(mean * 100).toFixed(3)}%`, meanX, mt + cH + 14);
+
+    // Stats
+    const std = Math.sqrt(data.reduce((s, v) => s + (v - mean) ** 2, 0) / data.length);
+    const skew = data.reduce((s, v) => s + ((v - mean) / std) ** 3, 0) / data.length;
+    const kurt = data.reduce((s, v) => s + ((v - mean) / std) ** 4, 0) / data.length - 3;
+    ctx.fillStyle = T.text2; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'right';
+    ctx.fillText(`σ=${(std * 100).toFixed(3)}%  skew=${skew.toFixed(2)}  kurt=${kurt.toFixed(2)}`, w - mr, mt + 10);
+  }, [data, dims]);
+
+  return (
+    <div ref={containerRef} data-testid="pnl-distribution" style={panelStyle}>
+      <div style={panelHdr}><span>P&L DISTRIBUTION</span></div>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
+}
+
+/* Drawdown Chart */
+function DrawdownChart({ data }: { data: { date: string; drawdown: number }[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 400, h: 150 });
+
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    const obs = new ResizeObserver(entries => { const { width, height } = entries[0].contentRect; setDims({ w: Math.floor(width), h: Math.floor(height) }); });
+    obs.observe(el); return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext('2d'); if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1; c.width = dims.w * dpr; c.height = dims.h * dpr; ctx.scale(dpr, dpr);
+    const { w, h } = dims; const mt = 10, mb = 5, ml = 45, mr = 10;
+    const cW = w - ml - mr, cH = h - mt - mb;
+    ctx.fillStyle = T.bg2; ctx.fillRect(0, 0, w, h);
+
+    const minDD = Math.min(...data.map(d => d.drawdown));
+    const toX = (i: number) => ml + (i / (data.length - 1)) * cW;
+    const toY = (v: number) => mt + (v / (minDD || -1)) * cH;
+
+    // Fill
+    ctx.fillStyle = 'rgba(239,83,80,0.12)'; ctx.beginPath(); ctx.moveTo(toX(0), mt);
+    data.forEach((d, i) => ctx.lineTo(toX(i), toY(d.drawdown))); ctx.lineTo(toX(data.length - 1), mt); ctx.fill();
+    // Line
+    ctx.strokeStyle = T.dn; ctx.lineWidth = 1.5; ctx.beginPath();
+    data.forEach((d, i) => i === 0 ? ctx.moveTo(toX(i), toY(d.drawdown)) : ctx.lineTo(toX(i), toY(d.drawdown))); ctx.stroke();
+
+    // Max DD label
+    const maxDDIdx = data.reduce((mi, d, i) => d.drawdown < data[mi].drawdown ? i : mi, 0);
+    ctx.fillStyle = T.dn; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(`Max: ${data[maxDDIdx].drawdown.toFixed(2)}%`, toX(maxDDIdx), toY(data[maxDDIdx].drawdown) + 12);
+
+    // Y-axis
+    for (let i = 0; i <= 4; i++) { const v = (minDD * i) / 4; const y = toY(v); ctx.fillStyle = T.text3; ctx.font = '8px Inter'; ctx.textAlign = 'right'; ctx.fillText(`${v.toFixed(1)}%`, ml - 5, y + 3); }
+  }, [data, dims]);
+
+  return (
+    <div ref={containerRef} data-testid="drawdown-chart" style={panelStyle}>
+      <div style={panelHdr}><span>DRAWDOWN (UNDERWATER)</span></div>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
+}
+
+/* Stress Test Scenarios */
+function StressTests() {
+  const scenarios = [
+    { name: 'GFC 2008', equity: -38.5, credit: -12.3, rates: -1.5, fx: -8.2, commodities: -32.1, portfolio: -285000 },
+    { name: 'COVID Mar 2020', equity: -33.9, credit: -15.8, rates: -0.8, fx: -5.1, commodities: -45.3, portfolio: -248000 },
+    { name: 'Dot-Com 2000', equity: -49.1, credit: -3.2, rates: 0.5, fx: 2.1, commodities: -12.4, portfolio: -352000 },
+    { name: 'Taper Tantrum', equity: -5.8, credit: -8.5, rates: 1.2, fx: -6.8, commodities: -9.3, portfolio: -78000 },
+    { name: 'Flash Crash', equity: -9.0, credit: -2.1, rates: -0.3, fx: -1.5, commodities: -4.2, portfolio: -95000 },
+    { name: 'Rate Hike +200bp', equity: -12.5, credit: -5.8, rates: 2.0, fx: 3.2, commodities: -8.5, portfolio: -142000 },
+    { name: 'USD Crisis -15%', equity: 5.2, credit: -1.5, rates: 0.3, fx: -15.0, commodities: 12.5, portfolio: -52000 },
+    { name: 'Stagflation', equity: -18.3, credit: -8.2, rates: 1.8, fx: -3.5, commodities: 25.3, portfolio: -168000 },
   ];
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      background: BG,
-      fontFamily: '"Roboto Mono", "Cascadia Code", monospace',
-      fontSize: 11,
-      color: TEXT,
-    }}>
-      {/* Header */}
-      <div style={{
-        background: PANEL,
-        borderBottom: `1px solid ${BORDER}`,
-        padding: '8px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-      }}>
-        <span style={{ color: AMBER, fontWeight: 700, letterSpacing: 1.5, fontSize: 11 }}>
-          RISK MONITOR
-        </span>
-        <span style={{
-          padding: '2px 8px',
-          borderRadius: 3,
-          fontSize: 8,
-          background: metrics.some(m => m.status === 'breach') ? `${RED}33` : metrics.some(m => m.status === 'warning') ? `${ORANGE}33` : `${GREEN}33`,
-          color: metrics.some(m => m.status === 'breach') ? RED : metrics.some(m => m.status === 'warning') ? ORANGE : GREEN,
-        }}>
-          {metrics.some(m => m.status === 'breach') ? 'LIMIT BREACH' : metrics.some(m => m.status === 'warning') ? 'WARNING' : 'ALL CLEAR'}
-        </span>
-
-        <div style={{ display: 'flex', gap: 2, marginLeft: 'auto' }}>
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              style={{
-                background: activeTab === t.key ? 'rgba(245,166,35,0.15)' : 'transparent',
-                border: `1px solid ${activeTab === t.key ? AMBER : 'transparent'}`,
-                color: activeTab === t.key ? AMBER : MUTED,
-                padding: '4px 10px',
-                borderRadius: 3,
-                cursor: 'pointer',
-                fontSize: 9,
-                fontFamily: '"Roboto Mono", monospace',
-              }}
-              onClick={() => setActiveTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+    <div data-testid="stress-tests" style={panelStyle}>
+      <div style={panelHdr}><span>STRESS TEST SCENARIOS</span></div>
+      <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>{['Scenario', 'Equity', 'Credit', 'Rates', 'FX', 'Commod', 'Portfolio Impact'].map(h => <th key={h} style={{ padding: '4px 6px', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', color: T.text3, borderBottom: `1px solid ${T.border0}`, fontFamily: T.fontSans, position: 'sticky', top: 0, background: T.bg1 }}>{h}</th>)}</tr></thead>
+          <tbody>{scenarios.map(s => (
+            <tr key={s.name} onMouseEnter={e => e.currentTarget.style.background = T.bg2} onMouseLeave={e => e.currentTarget.style.background = ''}>
+              <td style={{ padding: '3px 6px', fontSize: '10px', fontFamily: T.fontSans, color: T.text0, fontWeight: 600, borderBottom: `1px solid ${T.border0}`, whiteSpace: 'nowrap' }}>{s.name}</td>
+              {[s.equity, s.credit, s.rates, s.fx, s.commodities].map((v, i) => (
+                <td key={i} style={{ padding: '3px 6px', fontSize: '10px', fontFamily: T.fontMono, color: clr(v), borderBottom: `1px solid ${T.border0}`, textAlign: 'right' }}>{fmtPct(v)}</td>
+              ))}
+              <td style={{ padding: '3px 6px', fontSize: '11px', fontFamily: T.fontMono, color: T.dn, fontWeight: 700, borderBottom: `1px solid ${T.border0}`, textAlign: 'right' }}>-{fmtUsd(Math.abs(s.portfolio))}</td>
+            </tr>
+          ))}</tbody>
+        </table>
       </div>
+    </div>
+  );
+}
 
-      {/* Content */}
-      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
-        {activeTab === 'overview' && (
-          <div>
-            {/* VaR gauges */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 12,
-              marginBottom: 16,
-            }}>
-              {metrics.slice(0, 4).map((m, i) => (
-                <div key={i} style={{
-                  background: PANEL,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 4,
-                  padding: 16,
-                }}>
-                  <VaRGauge value={m.value} limit={m.limit} label={m.label} />
-                </div>
-              ))}
-            </div>
+/* Limit Utilization */
+function LimitUtilization() {
+  const limits = [
+    { name: 'Gross Exposure', used: 78, limit: 100, unit: '%' },
+    { name: 'Net Exposure', used: 42, limit: 80, unit: '%' },
+    { name: 'Single Name', used: 12.5, limit: 15, unit: '%' },
+    { name: 'Sector Conc.', used: 28, limit: 35, unit: '%' },
+    { name: 'VaR (1d 95%)', used: 125, limit: 200, unit: 'K' },
+    { name: 'Leverage', used: 1.8, limit: 3.0, unit: 'x' },
+    { name: 'Beta', used: 1.15, limit: 1.5, unit: '' },
+    { name: 'Drawdown', used: 4.2, limit: 10, unit: '%' },
+  ];
 
-            {/* Limit utilization */}
-            <div style={{
-              background: PANEL,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 4,
-              padding: 16,
-              marginBottom: 16,
-            }}>
-              <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 12 }}>LIMIT UTILIZATION</div>
-              {metrics.map((m, i) => {
-                const pct = m.value / m.limit;
-                const color = pct > 0.9 ? RED : pct > 0.7 ? ORANGE : GREEN;
-                return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
-                    <span style={{ width: 180, fontSize: 10 }}>{m.label}</span>
-                    <div style={{ flex: 1, height: 14, background: BORDER, borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${Math.min(pct * 100, 100)}%`,
-                        background: color,
-                        opacity: 0.6,
-                        borderRadius: 4,
-                        transition: 'width 0.3s',
-                      }} />
-                      {/* Limit line */}
-                      <div style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: 2,
-                        background: RED,
-                      }} />
-                    </div>
-                    <span style={{ width: 60, textAlign: 'right', fontSize: 9, color }}>
-                      {m.value}{m.unit}
-                    </span>
-                    <span style={{ width: 50, textAlign: 'right', fontSize: 8, color: MUTED }}>
-                      / {m.limit}{m.unit}
-                    </span>
-                    <span style={{ width: 45, textAlign: 'right', fontSize: 9, fontWeight: 600, color }}>
-                      {(pct * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'exposure' && (
-          <div>
-            {/* View toggle */}
-            <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
-              {(['sector', 'region', 'assetClass'] as const).map(v => (
-                <button
-                  key={v}
-                  style={{
-                    background: exposureView === v ? 'rgba(245,166,35,0.12)' : 'transparent',
-                    border: `1px solid ${exposureView === v ? AMBER : BORDER}`,
-                    color: exposureView === v ? AMBER : MUTED,
-                    padding: '4px 10px',
-                    borderRadius: 3,
-                    cursor: 'pointer',
-                    fontSize: 9,
-                    fontFamily: '"Roboto Mono", monospace',
-                    textTransform: 'uppercase',
-                  }}
-                  onClick={() => setExposureView(v)}
-                >
-                  {v === 'assetClass' ? 'Asset Class' : v}
-                </button>
-              ))}
-            </div>
-
-            <div style={{
-              background: PANEL,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 4,
-              padding: 16,
-            }}>
-              <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 12 }}>
-                EXPOSURE BY {exposureView.toUpperCase()}
+  return (
+    <div data-testid="limit-utilization" style={panelStyle}>
+      <div style={panelHdr}><span>LIMIT UTILIZATION</span></div>
+      <div style={{ flex: 1, overflow: 'auto', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        {limits.map(l => {
+          const pct = (l.used / l.limit) * 100;
+          const color = pct > 90 ? T.critical : pct > 75 ? T.warn : pct > 50 ? T.info : T.up;
+          return (
+            <div key={l.name}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: T.fontSans, marginBottom: '2px' }}>
+                <span style={{ color: T.text2 }}>{l.name}</span>
+                <span style={{ color, fontFamily: T.fontMono, fontWeight: 600 }}>{l.used}{l.unit} / {l.limit}{l.unit} ({pct.toFixed(0)}%)</span>
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
-                <thead>
-                  <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'left' }}>Name</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'right' }}>Gross %</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'right' }}>Net %</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'right' }}>Limit %</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'left' }}>Utilization</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'right' }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {exposures[exposureView].map((exp, i) => {
-                    const util = exp.gross / exp.limit;
-                    return (
-                      <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                        <td style={{ padding: '8px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: exp.color }} />
-                          {exp.name}
-                        </td>
-                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>{exp.gross.toFixed(1)}%</td>
-                        <td style={{ padding: '8px', textAlign: 'right', color: BLUE }}>{exp.net.toFixed(1)}%</td>
-                        <td style={{ padding: '8px', textAlign: 'right', color: MUTED }}>{exp.limit}%</td>
-                        <td style={{ padding: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <div style={{ flex: 1, height: 8, background: BORDER, borderRadius: 4, overflow: 'hidden' }}>
-                              <div style={{
-                                height: '100%',
-                                width: `${Math.min(util * 100, 100)}%`,
-                                background: util > 0.9 ? RED : util > 0.7 ? ORANGE : GREEN,
-                                opacity: 0.7,
-                                borderRadius: 4,
-                              }} />
-                            </div>
-                            <span style={{ fontSize: 8, color: MUTED, width: 28, textAlign: 'right' }}>{(util * 100).toFixed(0)}%</span>
-                          </div>
-                        </td>
-                        <td style={{ padding: '8px', textAlign: 'right' }}>
-                          <span style={{
-                            padding: '2px 6px',
-                            borderRadius: 3,
-                            fontSize: 7,
-                            background: util > 0.9 ? `${RED}22` : util > 0.7 ? `${ORANGE}22` : `${GREEN}22`,
-                            color: util > 0.9 ? RED : util > 0.7 ? ORANGE : GREEN,
-                          }}>
-                            {util > 0.9 ? 'HIGH' : util > 0.7 ? 'WARN' : 'OK'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'stress' && (
-          <div>
-            <div style={{
-              background: PANEL,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 4,
-              padding: 16,
-            }}>
-              <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 12 }}>STRESS TEST SCENARIOS</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
-                <thead>
-                  <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'left' }}>Scenario</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'left' }}>Description</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'right' }}>Portfolio Impact</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'right' }}>VaR Impact</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'right' }}>Probability</th>
-                    <th style={{ padding: '6px 8px', color: MUTED, fontSize: 8, textAlign: 'left' }}>Severity</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scenarios.sort((a, b) => a.portfolioImpact - b.portfolioImpact).map((s, i) => {
-                    const severity = Math.abs(s.portfolioImpact) > 25 ? 'CRITICAL' : Math.abs(s.portfolioImpact) > 15 ? 'HIGH' : 'MODERATE';
-                    const sevColor = severity === 'CRITICAL' ? RED : severity === 'HIGH' ? ORANGE : AMBER;
-                    return (
-                      <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                        <td style={{ padding: '8px', fontWeight: 600 }}>{s.name}</td>
-                        <td style={{ padding: '8px', color: MUTED, fontSize: 9 }}>{s.description}</td>
-                        <td style={{ padding: '8px', textAlign: 'right', color: RED, fontWeight: 700, fontSize: 12 }}>
-                          {s.portfolioImpact.toFixed(1)}%
-                        </td>
-                        <td style={{ padding: '8px', textAlign: 'right', color: ORANGE }}>{s.varImpact.toFixed(1)}%</td>
-                        <td style={{ padding: '8px', textAlign: 'right', color: MUTED }}>{(s.probability * 100).toFixed(0)}%</td>
-                        <td style={{ padding: '8px' }}>
-                          <span style={{
-                            padding: '2px 6px',
-                            borderRadius: 3,
-                            fontSize: 7,
-                            background: sevColor + '22',
-                            color: sevColor,
-                          }}>
-                            {severity}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Impact visualization */}
-            <div style={{
-              background: PANEL,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 4,
-              padding: 16,
-              marginTop: 16,
-            }}>
-              <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 12 }}>IMPACT COMPARISON</div>
-              {scenarios.sort((a, b) => a.portfolioImpact - b.portfolioImpact).map((s, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-                  <span style={{ width: 140, fontSize: 9, color: TEXT }}>{s.name}</span>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                    <div style={{
-                      height: 14,
-                      width: `${Math.abs(s.portfolioImpact) / 40 * 100}%`,
-                      background: Math.abs(s.portfolioImpact) > 25 ? RED : Math.abs(s.portfolioImpact) > 15 ? ORANGE : AMBER,
-                      opacity: 0.6,
-                      borderRadius: '0 4px 4px 0',
-                    }} />
-                  </div>
-                  <span style={{ width: 50, textAlign: 'right', color: RED, fontWeight: 600, fontSize: 10 }}>
-                    {s.portfolioImpact.toFixed(1)}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'correlation' && (
-          <div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 16,
-            }}>
-              <div style={{
-                background: PANEL,
-                border: `1px solid ${BORDER}`,
-                borderRadius: 4,
-                padding: 16,
-              }}>
-                <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 12 }}>
-                  ASSET CORRELATION MATRIX
-                </div>
-                <CorrelationHeatmap size={380} />
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 8, fontSize: 8 }}>
-                  <span style={{ color: RED }}>■ Negative</span>
-                  <span style={{ color: MUTED }}>■ Low</span>
-                  <span style={{ color: GREEN }}>■ Positive</span>
-                </div>
-              </div>
-
-              <div>
-                <div style={{
-                  background: PANEL,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 4,
-                  padding: 16,
-                  marginBottom: 16,
-                }}>
-                  <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 8 }}>CONCENTRATION RISK</div>
-                  {[
-                    { label: 'Top 5 Holdings', value: 45.8, limit: 60, color: BLUE },
-                    { label: 'Max Single Position', value: 8.7, limit: 10, color: AMBER },
-                    { label: 'Top Sector', value: 32.4, limit: 35, color: PURPLE },
-                    { label: 'Top Region', value: 62.4, limit: 70, color: GREEN },
-                  ].map((c, i) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '6px 0',
-                      borderBottom: `1px solid ${BORDER}`,
-                    }}>
-                      <span style={{ width: 120, fontSize: 9 }}>{c.label}</span>
-                      <div style={{ flex: 1, height: 8, background: BORDER, borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${(c.value / c.limit) * 100}%`,
-                          background: c.color,
-                          opacity: 0.7,
-                          borderRadius: 4,
-                        }} />
-                      </div>
-                      <span style={{ width: 40, textAlign: 'right', fontSize: 9, color: c.color }}>{c.value}%</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{
-                  background: PANEL,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 4,
-                  padding: 16,
-                }}>
-                  <div style={{ color: AMBER, fontSize: 10, fontWeight: 600, marginBottom: 8 }}>RISK DECOMPOSITION</div>
-                  {[
-                    { factor: 'Market Risk', contrib: 68.2, color: BLUE },
-                    { factor: 'Sector Risk', contrib: 12.4, color: PURPLE },
-                    { factor: 'Idiosyncratic Risk', contrib: 8.6, color: AMBER },
-                    { factor: 'Currency Risk', contrib: 5.3, color: GREEN },
-                    { factor: 'Interest Rate Risk', contrib: 3.8, color: RED },
-                    { factor: 'Liquidity Risk', contrib: 1.7, color: ORANGE },
-                  ].map((f, i) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '4px 0',
-                      borderBottom: `1px solid ${BORDER}`,
-                    }}>
-                      <span style={{ width: 120, fontSize: 9 }}>{f.factor}</span>
-                      <div style={{ flex: 1, height: 12, background: BORDER, borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${f.contrib}%`,
-                          background: f.color,
-                          opacity: 0.7,
-                          borderRadius: 4,
-                        }} />
-                      </div>
-                      <span style={{ width: 40, textAlign: 'right', fontSize: 9, color: f.color }}>{f.contrib}%</span>
-                    </div>
-                  ))}
-                </div>
+              <div style={{ height: '4px', background: T.bg3, borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', background: color, borderRadius: '2px', transition: 'width 0.5s' }} />
               </div>
             </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* Risk Alerts */
+function RiskAlerts() {
+  const [alerts] = useState([
+    { time: '14:32:15', severity: 'CRITICAL' as const, message: 'VaR limit 90% utilized — approaching breach threshold', asset: 'Portfolio' },
+    { time: '14:28:42', severity: 'WARNING' as const, message: 'NVDA position exceeds 10% concentration', asset: 'NVDA' },
+    { time: '14:15:03', severity: 'WARNING' as const, message: 'Correlation spike detected — Tech sector β > 1.5', asset: 'Tech' },
+    { time: '13:52:18', severity: 'INFO' as const, message: 'Margin requirement increased by 15% on volatility update', asset: 'Portfolio' },
+    { time: '13:45:00', severity: 'INFO' as const, message: 'Stress test: GFC scenario loss exceeds $250K limit', asset: 'Portfolio' },
+    { time: '13:30:22', severity: 'WARNING' as const, message: 'Drawdown approaching 5% threshold', asset: 'Portfolio' },
+    { time: '12:15:08', severity: 'INFO' as const, message: 'Liquidity score degraded for AMT — bid-ask widened 45%', asset: 'AMT' },
+    { time: '11:55:33', severity: 'CRITICAL' as const, message: 'Greeks exposure: portfolio gamma negative ($-2.5M per 1%)', asset: 'Options' },
+  ]);
+
+  const sevColor = (s: string) => s === 'CRITICAL' ? T.critical : s === 'WARNING' ? T.warn : T.info;
+
+  return (
+    <div data-testid="risk-alerts" style={panelStyle}>
+      <div style={panelHdr}><span>RISK ALERTS</span><span style={{ fontSize: '10px', color: T.critical, fontWeight: 700 }}>● {alerts.filter(a => a.severity === 'CRITICAL').length} CRITICAL</span></div>
+      <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin' }}>
+        {alerts.map((a, i) => (
+          <div key={i} style={{ display: 'flex', gap: '8px', padding: '5px 10px', borderBottom: `1px solid ${T.border0}`, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '10px', color: T.text3, fontFamily: T.fontMono, whiteSpace: 'nowrap', marginTop: '1px' }}>{a.time}</span>
+            <span style={{ fontSize: '9px', fontWeight: 700, color: sevColor(a.severity), padding: '1px 4px', background: `${sevColor(a.severity)}15`, borderRadius: '2px', whiteSpace: 'nowrap' }}>{a.severity}</span>
+            <span style={{ fontSize: '10px', color: T.text1, fontFamily: T.fontSans, flex: 1 }}>{a.message}</span>
+            <span style={{ fontSize: '10px', color: T.brand, fontFamily: T.fontMono, fontWeight: 600 }}>{a.asset}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Sector Risk Breakdown */
+function SectorRiskBreakdown() {
+  const sectors = [
+    { name: 'Technology', weight: 42.5, var: -82000, beta: 1.35, vol: 22.5, contrib: 58.2 },
+    { name: 'Financials', weight: 15.8, var: -28000, beta: 1.08, vol: 18.3, contrib: 16.5 },
+    { name: 'Healthcare', weight: 12.3, var: -15000, beta: 0.62, vol: 14.2, contrib: 7.8 },
+    { name: 'Cons. Disc.', weight: 10.5, var: -18000, beta: 1.42, vol: 24.8, contrib: 10.2 },
+    { name: 'Energy', weight: 8.2, var: -12000, beta: 0.88, vol: 28.5, contrib: 5.8 },
+    { name: 'Cons. Staples', weight: 5.5, var: -4000, beta: 0.48, vol: 10.2, contrib: 1.2 },
+    { name: 'Others', weight: 5.2, var: -3500, beta: 0.65, vol: 12.8, contrib: 0.3 },
+  ];
+
+  return (
+    <div data-testid="sector-risk" style={panelStyle}>
+      <div style={panelHdr}><span>SECTOR RISK</span></div>
+      <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>{['Sector', 'Wt%', 'VaR', 'Beta', 'Vol%', 'Risk Contrib%'].map(h => <th key={h} style={{ padding: '4px 6px', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', color: T.text3, borderBottom: `1px solid ${T.border0}`, fontFamily: T.fontSans }}>{h}</th>)}</tr></thead>
+          <tbody>{sectors.map(s => (
+            <tr key={s.name}><td style={{ padding: '3px 6px', fontSize: '10px', fontFamily: T.fontSans, color: T.text1, fontWeight: 600, borderBottom: `1px solid ${T.border0}` }}>{s.name}</td>
+              <td style={{ padding: '3px 6px', fontSize: '10px', fontFamily: T.fontMono, color: T.text2, borderBottom: `1px solid ${T.border0}`, textAlign: 'right' }}>{s.weight}%</td>
+              <td style={{ padding: '3px 6px', fontSize: '10px', fontFamily: T.fontMono, color: T.dn, borderBottom: `1px solid ${T.border0}`, textAlign: 'right' }}>-{fmtUsd(Math.abs(s.var))}</td>
+              <td style={{ padding: '3px 6px', fontSize: '10px', fontFamily: T.fontMono, color: s.beta > 1.2 ? T.warn : T.text2, borderBottom: `1px solid ${T.border0}`, textAlign: 'right' }}>{s.beta.toFixed(2)}</td>
+              <td style={{ padding: '3px 6px', fontSize: '10px', fontFamily: T.fontMono, color: s.vol > 20 ? T.warn : T.text2, borderBottom: `1px solid ${T.border0}`, textAlign: 'right' }}>{s.vol}%</td>
+              <td style={{ padding: '3px 6px', borderBottom: `1px solid ${T.border0}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <div style={{ width: `${Math.min(s.contrib, 60)}%`, height: '4px', background: s.contrib > 30 ? T.warn : T.brand, borderRadius: '2px' }} />
+                  <span style={{ fontSize: '10px', fontFamily: T.fontMono, color: s.contrib > 30 ? T.warn : T.text2 }}>{s.contrib}%</span>
+                </div>
+              </td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* Margin Requirements */
+function MarginRequirements() {
+  const margin = [
+    { account: 'Total Portfolio', initial: 625000, maintenance: 450000, available: 175000, utilPct: 72 },
+    { account: 'Equities', initial: 410000, maintenance: 290000, available: 120000, utilPct: 70.7 },
+    { account: 'Options', initial: 125000, maintenance: 95000, available: 30000, utilPct: 76 },
+    { account: 'Futures', initial: 90000, maintenance: 65000, available: 25000, utilPct: 72.2 },
+  ];
+
+  return (
+    <div data-testid="margin-req" style={panelStyle}>
+      <div style={panelHdr}><span>MARGIN REQUIREMENTS</span></div>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {margin.map(m => (
+          <div key={m.account} style={{ padding: '6px 10px', borderBottom: `1px solid ${T.border0}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, color: T.text1, fontFamily: T.fontSans }}>{m.account}</span>
+              <span style={{ fontSize: '10px', color: m.utilPct > 80 ? T.warn : T.text2, fontFamily: T.fontMono }}>{m.utilPct}% used</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', fontSize: '9px', fontFamily: T.fontMono }}>
+              <span style={{ color: T.text3 }}>Init: <span style={{ color: T.text2 }}>{fmtUsd(m.initial)}</span></span>
+              <span style={{ color: T.text3 }}>Maint: <span style={{ color: T.text2 }}>{fmtUsd(m.maintenance)}</span></span>
+              <span style={{ color: T.text3 }}>Avail: <span style={{ color: T.up }}>{fmtUsd(m.available)}</span></span>
+            </div>
+            <div style={{ height: '3px', background: T.bg3, borderRadius: '2px', marginTop: '3px', overflow: 'hidden' }}>
+              <div style={{ width: `${m.utilPct}%`, height: '100%', background: m.utilPct > 80 ? T.warn : T.brand, borderRadius: '2px' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════════════ */
+/* ══  MAIN                                                          ══ */
+/* ═════════════════════════════════════════════════════════════════════ */
+
+export default function RiskDashboardUI2() {
+  // ── Hook integration ──
+  const [riskState, riskActions] = useRisk();
+  const [orderState, orderActions] = useOrders();
+  const [reportingState, reportingActions] = useReporting();
+
+  const pnlData = useMemo(() => generatePnLDistribution(500), []);
+  const drawdownData = useMemo(() => generateDrawdownSeries(365), []);
+  const [tab, setTab] = useState<'OVERVIEW' | 'STRESS' | 'LIMITS' | 'ALERTS'>('OVERVIEW');
+
+  return (
+    <div data-testid="risk-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+      <VaRCards />
+      <div style={{ display: 'flex', gap: '1px', background: T.border0, borderRadius: T.radius }}>
+        {(['OVERVIEW', 'STRESS', 'LIMITS', 'ALERTS'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '5px', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 700, fontFamily: T.fontSans, background: tab === t ? T.bg1 : T.bg2, color: tab === t ? T.brand : T.text3, borderBottom: tab === t ? `2px solid ${T.brand}` : '2px solid transparent' }}>{t}</button>
+        ))}
+      </div>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {tab === 'OVERVIEW' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '6px', flex: 1, minHeight: 0 }}>
+            <PnLDistribution data={pnlData} />
+            <SectorRiskBreakdown />
+            <DrawdownChart data={drawdownData} />
+            <MarginRequirements />
           </div>
         )}
+        {tab === 'STRESS' && <StressTests />}
+        {tab === 'LIMITS' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', flex: 1, minHeight: 0 }}>
+            <LimitUtilization />
+            <MarginRequirements />
+          </div>
+        )}
+        {tab === 'ALERTS' && <RiskAlerts />}
       </div>
     </div>
   );

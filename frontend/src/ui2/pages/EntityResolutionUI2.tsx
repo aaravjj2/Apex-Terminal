@@ -230,10 +230,10 @@ export function EntityResolutionUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>ENTR</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>ENTITY RESOLUTION â€” ENTITY GRAPH + MATCHING + PIPELINE + DEDUPLICATION + AUDIT</span>
-        {pendingMatches > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {pendingMatches} PENDING REVIEW</span>}
-        {failedPipelines > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {failedPipelines} PIPELINE FAILED</span>}
-        {lowConfidence > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {lowConfidence} LOW CONFIDENCE</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {pendingMatches > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingMatches} PENDING REVIEW</span>}
+        {failedPipelines > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {failedPipelines} PIPELINE FAILED</span>}
+        {lowConfidence > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {lowConfidence} LOW CONFIDENCE</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Entities" value={entities.length} col={BLUE} />

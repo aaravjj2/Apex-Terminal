@@ -25,7 +25,7 @@ test.beforeAll(() => {
 // ── Navigate to Risk Desk ──────────────────────────────────────────────────
 
 async function navigateToRiskDesk(page: import('@playwright/test').Page) {
-  await page.goto('/');
+  await page.goto('/legacy/');
   await page.waitForLoadState('domcontentloaded');
 
   // Wait for React to mount

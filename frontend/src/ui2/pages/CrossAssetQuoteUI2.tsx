@@ -250,7 +250,7 @@ export function CrossAssetQuoteUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>XASQ</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>CROSS-ASSET QUOTE MATRIX â€” MULTI-EXCHANGE REAL-TIME FEEDS</span>
-        {alertCount > 0 && <span style={{ fontSize: 10, color: RED }}>âš¡ {alertCount} ALERTS</span>}
+        {alertCount > 0 && <span style={{ fontSize: 10, color: RED }}>⚠¡ {alertCount} ALERTS</span>}
         {loading && <span style={{ fontSize: 9, color: SUBTLE }}>â—</span>}
       </div>
 
@@ -317,7 +317,7 @@ export function CrossAssetQuoteUI2() {
               )}
               {filtQuotes.map(q => (
                 <tr key={q.symbol} style={{ background: q.alertTriggered ? '#1a0800' : 'transparent' }}>
-                  <Td mono col={AMBER}>{q.symbol}{q.alertTriggered && <span style={{ fontSize: 7, color: RED, marginLeft: 4 }}>âš¡</span>}</Td>
+                  <Td mono col={AMBER}>{q.symbol}{q.alertTriggered && <span style={{ fontSize: 7, color: RED, marginLeft: 4 }}>⚠¡</span>}</Td>
                   <Td><AssetBadge ac={q.assetClass} /></Td>
                   <Td mono col={SUBTLE}>{q.exchange}</Td>
                   <Td right mono col={SUBTLE}>{fmtPrice(q.bid, q.assetClass)}</Td>

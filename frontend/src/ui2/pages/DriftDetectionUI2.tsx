@@ -228,10 +228,10 @@ export function DriftDetectionUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DRTD</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>DRIFT DETECTION â€” MODEL DRIFT + SEGMENT ANALYSIS + ROOT CAUSE + ALERTS + HISTORY</span>
-        {driftedModels > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {driftedModels} DRIFTED</span>}
-        {warningModels > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {warningModels} WARNING</span>}
-        {criticalAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalAlerts} CRITICAL ALERTS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {driftedModels > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {driftedModels} DRIFTED</span>}
+        {warningModels > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {warningModels} WARNING</span>}
+        {criticalAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalAlerts} CRITICAL ALERTS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Models Monitored" value={monitor.length} col={BLUE} />

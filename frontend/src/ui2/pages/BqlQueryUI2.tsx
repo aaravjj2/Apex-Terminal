@@ -179,7 +179,7 @@ export function BqlQueryUI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>BQL</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>BLOOMBERG QUERY LANGUAGE â€” LIVE DATA RETRIEVAL + FORMULA ENGINE + ANALYTICS</span>
         {lastRunMs && <span style={{ fontSize: 10, color: GREEN }}>âœ“ {lastRunMs}ms Â· {results.length} rows</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
 
       {/* STATS */}

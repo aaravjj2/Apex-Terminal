@@ -230,7 +230,7 @@ export function WalkForwardV3UI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>WALK-FORWARD V3 â€” FOLD ANALYSIS + ROBUSTNESS MATRIX + SENSITIVITY HEATMAP + PARAM OPTIMIZATION</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>RUNNINGâ€¦</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Folds" value={walkResult ? walkResult.nFolds : 'â€”'} col={BLUE} />

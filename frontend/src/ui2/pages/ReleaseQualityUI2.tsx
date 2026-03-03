@@ -222,9 +222,9 @@ export function ReleaseQualityUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>RELEASE QUALITY â€” RISK SCORING + READINESS GATES + REGRESSION ANALYSIS</span>
-        {blockedReleases > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {blockedReleases} BLOCKED</span>}
-        {criticalRisks > 0 && <span style={{ fontSize: 10, color: ORANGE }}>âš‘ {criticalRisks} CRITICAL RISKS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {blockedReleases > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {blockedReleases} BLOCKED</span>}
+        {criticalRisks > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {criticalRisks} CRITICAL RISKS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Releases" value={releases.length} col={BLUE} />

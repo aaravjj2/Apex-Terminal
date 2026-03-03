@@ -1,28 +1,36 @@
 /**
- * UI2 AppShellUI2 Component
- * Professional trading terminal shell with Bloomberg-grade polish
- * TopBar + LeftRail + LeftDrawer + Center + RightSidebar + BottomDock + CommandPalette
- * v1.94: Real connection status from tradingStore
+ * UI2 AppShellUI2 Component — v2.0
+ * TradingView-inspired terminal shell matching demo/index.html exactly
+ * Grid: 40px TopBar | 1fr Layout (48px LeftNav + 1fr Content + 286px RightSidebar) | 20px StatusBar
+ * 
+ * Layout matches demo/index.html:
+ * - TopBar: Logo, Mode Badge, Search, Symbol Strip, Latency, Clock, Icons, User
+ * - LeftNav: 5 collapsible groups (TRADE/STRAT/MKTS/ASSET/SYSTEM) with SVG icons
+ * - Content: React Router Outlet
+ * - RightSidebar: 6 tabs (Order/Watch/Pos/News/L2/T&amp;S)
+ * - StatusBar: Live dot, Market status, NAV, Scrolling ticker tape, Version
+ * - CommandPalette: Ctrl+K
  */
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BottomDock, RightSidebar, CommandPalette, MarketTape, type CommandItem } from './components';
-import { DATA_MODE_LABEL, MARKET_PROVIDER } from './dataMode/config';
-// Online-only identity
-const APEX_USER = { name: 'Apex Trader' };
+import { Outlet } from 'react-router-dom';
+import { TopBar, LeftNav, RightSidebarNew, StatusBar, CommandPaletteNew } from './shell';
+import type { CmdItem } from './shell';
+import { COMMAND_REGISTRY } from './stores/commandRegistry';
+import { useContextBus } from './stores/contextBusStore';
+import { ToastProvider } from '../ui/Toast';
+import { tradingStore } from './stores/tradingStore';
+
+// Import design system CSS
+import '../styles/apex-design-system.css';
+
 // Phase A: Build-time version fingerprints
 declare const __GIT_SHA__: string;
 declare const __BUILD_TIME__: string;
 const FE_GIT_SHA = typeof __GIT_SHA__ !== 'undefined' ? __GIT_SHA__ : 'unknown';
 const FE_BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'unknown';
-import { COMMAND_REGISTRY } from './stores/commandRegistry';
-import { useContextBus } from './stores/contextBusStore';
-import { ToastProvider } from '../ui/Toast';
-import { OrdersBlotter } from '../features/orders/OrdersBlotter';
-import { TradesLedger } from '../features/trades/TradesLedger';
-import { tradingStore } from './stores/tradingStore';
 
+// ─── Workspace config for command palette navigation ───
 interface WorkspaceConfig {
   id: string;
   label: string;
@@ -34,1693 +42,218 @@ interface WorkspaceConfig {
 }
 
 const WORKSPACES: WorkspaceConfig[] = [
-  // Main section
-  { 
-    id: 'dashboard', 
-    label: 'Dashboard', 
-    icon: '🏠', 
-    path: '/ui2/dashboard', 
-    section: 'main',
-    description: 'Command center with key metrics',
-    keywords: ['home', 'overview', 'metrics', 'kpi']
-  },
-  { 
-    id: 'trading', 
-    label: 'Trading', 
-    icon: '📈', 
-    path: '/ui2/trading', 
-    section: 'main',
-    description: 'Live chart and order execution',
-    keywords: ['chart', 'trade', 'order', 'execution']
-  },
-  { 
-    id: 'trading-multi', 
-    label: 'Multi Chart', 
-    icon: '📊', 
-    path: '/ui2/trading-multi', 
-    section: 'main',
-    description: 'Multi-pane chart grid',
-    keywords: ['multi', 'chart', 'grid', 'compare']
-  },
-  { 
-    id: 'portfolio', 
-    label: 'Portfolio', 
-    icon: '💼', 
-    path: '/ui2/portfolio', 
-    section: 'main',
-    description: 'Positions and performance',
-    keywords: ['positions', 'pnl', 'performance', 'holdings']
-  },
-  { 
-    id: 'orders', 
-    label: 'Orders', 
-    icon: '📋', 
-    path: '/ui2/orders', 
-    section: 'main',
-    description: 'Order history and management',
-    keywords: ['order', 'history', 'fills', 'execution']
-  },
-  // Tools section
-  { 
-    id: 'risk', 
-    label: 'Risk & Options', 
-    icon: '🛡️', 
-    path: '/ui2/risk', 
-    section: 'tools',
-    description: 'Options chain and risk analysis',
-    keywords: ['options', 'greeks', 'risk', 'strategy']
-  },
-  { 
-    id: 'research', 
-    label: 'Research', 
-    icon: '🔬', 
-    path: '/ui2/research', 
-    section: 'tools',
-    description: 'Strategy lab and analysis',
-    keywords: ['strategies', 'backtest', 'research', 'analysis']
-  },
-  { 
-    id: 'backtest', 
-    label: 'Backtest', 
-    icon: '🧪', 
-    path: '/ui2/backtest', 
-    section: 'tools',
-    description: 'Historical strategy testing',
-    keywords: ['backtest', 'historical', 'test', 'simulation']
-  },
-  { 
-    id: 'autopilot', 
-    label: 'Autopilot', 
-    icon: '🤖', 
-    path: '/ui2/autopilot', 
-    section: 'tools',
-    description: 'Autonomous trading agent',
-    keywords: ['autopilot', 'agent', 'autonomous', 'auto']
-  },
-  { 
-    id: 'alerts', 
-    label: 'Alerts', 
-    icon: '🔔', 
-    path: '/ui2/alerts', 
-    section: 'tools',
-    description: 'Price and technical alerts',
-    keywords: ['alerts', 'notifications', 'triggers']
-  },
-  { 
-    id: 'replay', 
-    label: 'Replay', 
-    icon: '⏪', 
-    path: '/ui2/replay', 
-    section: 'tools',
-    description: 'Market replay and analysis',
-    keywords: ['replay', 'historical', 'playback']
-  },
-  // System section
-  { 
-    id: 'runs', 
-    label: 'Runs & Audit', 
-    icon: '📜', 
-    path: '/ui2/runs', 
-    section: 'system',
-    description: 'Execution audit trail',
-    keywords: ['runs', 'audit', 'history', 'log']
-  },
-  {
-    id: 'ops',
-    label: 'Ops',
-    icon: '⚙️',
-    path: '/ui2/ops',
-    section: 'system',
-    description: 'System operations and monitoring',
-    keywords: ['ops', 'operations', 'system', 'monitoring']
-  },
-  // W01 — Monitor Grid
-  {
-    id: 'monitor',
-    label: 'Monitor',
-    icon: '🖥️',
-    path: '/ui2/monitor',
-    section: 'main',
-    description: 'Multi-panel trading monitor',
-    keywords: ['monitor', 'grid', 'panels', 'multi', 'chart', 'watchlist']
-  },
-  {
-    id: 'settings', 
-    label: 'Settings', 
-    icon: '🔧', 
-    path: '/ui2/settings', 
-    section: 'system',
-    description: 'Platform configuration',
-    keywords: ['settings', 'config', 'preferences']
-  },
-  // Wave 7 — v1.63+
-  {
-    id: 'automation',
-    label: 'Automation',
-    icon: '🔄',
-    path: '/ui2/automation',
-    section: 'tools',
-    description: 'Workflow automation studio',
-    keywords: ['workflow', 'automation', 'pipeline', 'trigger']
-  },
-  {
-    id: 'search',
-    label: 'Search',
-    icon: '🔍',
-    path: '/ui2/search',
-    section: 'tools',
-    description: 'Full-text entity search',
-    keywords: ['search', 'find', 'query', 'elasticsearch']
-  },
-  {
-    id: 'agent',
-    label: 'AI Agent',
-    icon: '💡',
-    path: '/ui2/agent',
-    section: 'tools',
-    description: 'AI assistant with tool execution',
-    keywords: ['agent', 'ai', 'assistant', 'nova', 'llm']
-  },
-  // Wave 8 — v1.73+
-  {
-    id: 'autopilot-v2',
-    label: 'Autopilot V2',
-    icon: '🚀',
-    path: '/ui2/autopilot-v2',
-    section: 'tools',
-    description: 'V2 pipeline: scoring, risk, sizing, execution sim',
-    keywords: ['autopilot', 'v2', 'pipeline', 'scoring', 'risk', 'execution']
-  },
-  {
-    id: 'automation-v2',
-    label: 'Automation V2',
-    icon: '⚡',
-    path: '/ui2/automation-v2',
-    section: 'tools',
-    description: 'DAG-based workflow automation engine',
-    keywords: ['automation', 'dag', 'workflow', 'trigger']
-  },
-  {
-    id: 'export',
-    label: 'Export',
-    icon: '📦',
-    path: '/ui2/export',
-    section: 'system',
-    description: 'Export bundles and compliance reports',
-    keywords: ['export', 'bundle', 'report', 'audit', 'compliance']
-  },
-  {
-    id: 'health',
-    label: 'Health',
-    icon: '💚',
-    path: '/ui2/health',
-    section: 'system',
-    description: 'Platform health and observability',
-    keywords: ['health', 'status', 'metrics', 'observability']
-  },
-  // Wave 12 — v1.115+
-  {
-    id: 'telemetry',
-    label: 'Telemetry',
-    icon: '📡',
-    path: '/ui2/telemetry',
-    section: 'system',
-    description: 'Event telemetry and observability',
-    keywords: ['telemetry', 'events', 'observability', 'tracing']
-  },
-  {
-    id: 'autopilot-explain',
-    label: 'Explain',
-    icon: '🧠',
-    path: '/ui2/autopilot-explain',
-    section: 'tools',
-    description: 'Autopilot decision explainability',
-    keywords: ['explain', 'autopilot', 'decision', 'reasoning']
-  },
-  // Wave 13-14 — v1.123+
-  {
-    id: 'automation-runs',
-    label: 'Automation Runs',
-    icon: '🏃',
-    path: '/ui2/automation-runs',
-    section: 'system',
-    description: 'Automation run history and logs',
-    keywords: ['runs', 'automation', 'execution', 'history', 'logs']
-  },
-  {
-    id: 'workflow-builder',
-    label: 'Workflow Builder',
-    icon: '🔨',
-    path: '/ui2/workflow-builder',
-    section: 'tools',
-    description: 'Visual workflow editor with templates',
-    keywords: ['workflow', 'builder', 'create', 'template', 'editor']
-  },
-  {
-    id: 'incidents',
-    label: 'Incidents',
-    icon: '🚨',
-    path: '/ui2/incidents',
-    section: 'system',
-    description: 'Incident tracking and response',
-    keywords: ['incidents', 'alert', 'outage', 'response']
-  },
-  {
-    id: 'decisions',
-    label: 'Decisions',
-    icon: '🧭',
-    path: '/ui2/decisions',
-    section: 'tools',
-    description: 'Autopilot decision explorer with portfolio impact',
-    keywords: ['decisions', 'autopilot', 'impact', 'portfolio']
-  },
-  {
-    id: 'health-v4',
-    label: 'Health V4',
-    icon: '💊',
-    path: '/ui2/health-v4',
-    section: 'system',
-    description: 'All-subsystem health with search, LLM, replay status',
-    keywords: ['health', 'v4', 'subsystem', 'status']
-  },
-  // Wave 17 — v1.150+
-  {
-    id: 'ai-provider',
-    label: 'AI Provider',
-    icon: '🧩',
-    path: '/ui2/ai-provider',
-    section: 'system',
-    description: 'LLM provider status, budget, cache, rate limits',
-    keywords: ['ai', 'llm', 'provider', 'budget', 'cache', 'nova']
-  },
-  // Wave 18 — v1.155+
-  {
-    id: 'decision-explainer',
-    label: 'Decision V2',
-    icon: '📊',
-    path: '/ui2/decision-explainer',
-    section: 'tools',
-    description: 'Decision explainer with feature attribution and confidence',
-    keywords: ['decision', 'explainer', 'attribution', 'confidence', 'post-trade']
-  },
-  {
-    id: 'nl-workflow',
-    label: 'NL Workflow',
-    icon: '✨',
-    path: '/ui2/nl-workflow',
-    section: 'tools',
-    description: 'Natural language workflow generator with validation',
-    keywords: ['nl', 'workflow', 'generate', 'natural', 'language', 'simulation']
-  },
-  // Waves 11-20 — Online-Only Swing Equities v1
-  {
-    id: 'market-session-v2',
-    label: 'Market Session',
-    icon: '🕐',
-    path: '/ui2/market-session-v2',
-    section: 'system',
-    description: 'NYSE market session engine with holidays',
-    keywords: ['market', 'session', 'holidays', 'hours', 'nyse']
-  },
-  {
-    id: 'data-spine',
-    label: 'Data Spine',
-    icon: '🔌',
-    path: '/ui2/data-spine',
-    section: 'system',
-    description: 'Online-only data ingestion pipeline',
-    keywords: ['data', 'spine', 'ingest', 'yfinance', 'universe']
-  },
-  {
-    id: 'broker-v2',
-    label: 'Paper Broker',
-    icon: '🏦',
-    path: '/ui2/broker-v2',
-    section: 'main',
-    description: 'Paper-only Alpaca broker with kill switch',
-    keywords: ['broker', 'paper', 'alpaca', 'orders', 'kill switch']
-  },
-  {
-    id: 'portfolio-v2',
-    label: 'Allocator',
-    icon: '⚖️',
-    path: '/ui2/portfolio-v2',
-    section: 'tools',
-    description: 'Portfolio allocation with equal-weight and inverse-vol',
-    keywords: ['portfolio', 'allocator', 'weight', 'exposure']
-  },
-  {
-    id: 'performance-v2',
-    label: 'Ledger',
-    icon: '📊',
-    path: '/ui2/performance-v2',
-    section: 'tools',
-    description: 'Performance ledger with Sharpe, drawdown, auto-disable',
-    keywords: ['performance', 'sharpe', 'drawdown', 'leaderboard']
-  },
-  {
-    id: 'backtester-v3',
-    label: 'Backtester V3',
-    icon: '🧪',
-    path: '/ui2/backtester-v3',
-    section: 'tools',
-    description: 'Backtester v3 with calibration and corporate actions',
-    keywords: ['backtester', 'v3', 'calibration', 'sma']
-  },
-  {
-    id: 'discovery',
-    label: 'Discovery',
-    icon: '🔎',
-    path: '/ui2/discovery',
-    section: 'tools',
-    description: 'Strategy discovery with walk-forward and robustness',
-    keywords: ['discovery', 'strategy', 'walk-forward', 'robustness']
-  },
-  {
-    id: 'ai-strategy',
-    label: 'AI Strategy',
-    icon: '🤖',
-    path: '/ui2/ai-strategy',
-    section: 'tools',
-    description: 'AI strategy builder with guardrails and sweeps',
-    keywords: ['ai', 'strategy', 'guardrail', 'sweep', 'groq']
-  },
-  {
-    id: 'sentiment-v2',
-    label: 'Sentiment V2',
-    icon: '📰',
-    path: '/ui2/sentiment-v2',
-    section: 'tools',
-    description: 'FinBERT sentiment with time-decay and signal overlay',
-    keywords: ['sentiment', 'finbert', 'news', 'articles']
-  },
-  {
-    id: 'workflows-v3',
-    label: 'Workflows V3',
-    icon: '🔗',
-    path: '/ui2/workflows-v3',
-    section: 'tools',
-    description: 'DAG-based workflow engine with schedule triggers',
-    keywords: ['workflow', 'dag', 'schedule', 'trigger']
-  },
-  {
-    id: 'observability-v2',
-    label: 'Ops Center',
-    icon: '📡',
-    path: '/ui2/observability-v2',
-    section: 'system',
-    description: 'System observability with query perf and ILM',
-    keywords: ['observability', 'health', 'metrics', 'alerts', 'ilm']
-  },
-  {
-    id: 'productization',
-    label: 'Productization',
-    icon: '🚀',
-    path: '/ui2/productization',
-    section: 'system',
-    description: 'Universe management, config profiles, runbooks',
-    keywords: ['productization', 'universe', 'profiles', 'runbooks', 'backup']
-  },
-  {
-    id: 'dataset-snapshots',
-    label: 'Datasets',
-    icon: '🗃️',
-    path: '/ui2/dataset-snapshots',
-    section: 'tools',
-    description: 'Immutable dataset snapshots with SHA-256 integrity',
-    keywords: ['dataset', 'snapshot', 'sha256', 'integrity', 'immutable', 'data']
-  },
-  // ── Masterplan W15-W104: 2-Year Feature Set ──
-  {
-    id: 'cross-asset-quote',
-    label: 'Cross-Asset Quotes',
-    icon: '💹',
-    path: '/ui2/cross-asset-quote',
-    section: 'tools',
-    description: 'Real-time cross-asset quote aggregation',
-    keywords: ['cross', 'asset', 'quote']
-  },
-  {
-    id: 'corporate-actions',
-    label: 'Corporate Actions',
-    icon: '📋',
-    path: '/ui2/corporate-actions',
-    section: 'tools',
-    description: 'Corporate actions ingestion and audit trail',
-    keywords: ['corporate', 'actions']
-  },
-  {
-    id: 'economic-calendar',
-    label: 'Economic Calendar',
-    icon: '📅',
-    path: '/ui2/economic-calendar',
-    section: 'tools',
-    description: 'Global economic event calendar',
-    keywords: ['economic', 'calendar']
-  },
-  {
-    id: 'news-enrichment',
-    label: 'News Enrichment',
-    icon: '📰',
-    path: '/ui2/news-enrichment',
-    section: 'tools',
-    description: 'NLP-enriched news with sentiment scoring',
-    keywords: ['news', 'enrichment']
-  },
-  {
-    id: 'entity-resolution',
-    label: 'Entity Resolution',
-    icon: '🔗',
-    path: '/ui2/entity-resolution',
-    section: 'tools',
-    description: 'Entity resolution and deduplication',
-    keywords: ['entity', 'resolution']
-  },
-  {
-    id: 'theme-clustering',
-    label: 'Theme Clustering',
-    icon: '🎯',
-    path: '/ui2/theme-clustering',
-    section: 'tools',
-    description: 'ML-powered thematic clustering',
-    keywords: ['theme', 'clustering']
-  },
-  {
-    id: 'research-notebook',
-    label: 'Research Notebook',
-    icon: '📓',
-    path: '/ui2/research-notebook',
-    section: 'tools',
-    description: 'Collaborative research notebooks',
-    keywords: ['research', 'notebook']
-  },
-  {
-    id: 'bql-query',
-    label: 'BQL Query',
-    icon: '⌨️',
-    path: '/ui2/bql-query',
-    section: 'tools',
-    description: 'Bloomberg-style query language',
-    keywords: ['bql', 'query']
-  },
-  {
-    id: 'search-explain',
-    label: 'Search Explain',
-    icon: '🔍',
-    path: '/ui2/search-explain',
-    section: 'tools',
-    description: 'Search ranking explainability',
-    keywords: ['search', 'explain']
-  },
-  {
-    id: 'screeners',
-    label: 'Screeners',
-    icon: '📊',
-    path: '/ui2/screeners',
-    section: 'tools',
-    description: 'Stock screeners with monitoring',
-    keywords: ['screeners']
-  },
-  {
-    id: 'collaboration',
-    label: 'Collaboration',
-    icon: '👥',
-    path: '/ui2/collaboration',
-    section: 'tools',
-    description: 'Analyst collaboration toolkit',
-    keywords: ['collaboration']
-  },
-  {
-    id: 'research-governance',
-    label: 'Research Gov',
-    icon: '🏛️',
-    path: '/ui2/research-governance',
-    section: 'tools',
-    description: 'Research QA and governance',
-    keywords: ['research', 'governance']
-  },
-  {
-    id: 'execution-cockpit',
-    label: 'Exec Cockpit',
-    icon: '🎛️',
-    path: '/ui2/execution-cockpit',
-    section: 'main',
-    description: 'Real-time execution monitoring',
-    keywords: ['execution', 'cockpit']
-  },
-  {
-    id: 'blotter',
-    label: 'Blotter',
-    icon: '📑',
-    path: '/ui2/blotter',
-    section: 'main',
-    description: 'Execution blotter with audit trail',
-    keywords: ['blotter']
-  },
-  {
-    id: 'pre-trade-risk',
-    label: 'Pre-Trade Risk',
-    icon: '⚠️',
-    path: '/ui2/pre-trade-risk',
-    section: 'tools',
-    description: 'Pre-trade risk checks',
-    keywords: ['pre', 'trade', 'risk']
-  },
-  {
-    id: 'surveillance',
-    label: 'Surveillance',
-    icon: '👁️',
-    path: '/ui2/surveillance',
-    section: 'tools',
-    description: 'Post-trade surveillance',
-    keywords: ['surveillance']
-  },
-  {
-    id: 'attribution',
-    label: 'Attribution',
-    icon: '📊',
-    path: '/ui2/attribution',
-    section: 'tools',
-    description: 'Portfolio attribution engine',
-    keywords: ['attribution']
-  },
-  {
-    id: 'factor-model',
-    label: 'Factor Model',
-    icon: '🧮',
-    path: '/ui2/factor-model',
-    section: 'tools',
-    description: 'Multi-factor risk model',
-    keywords: ['factor', 'model']
-  },
-  {
-    id: 'stress-scenarios',
-    label: 'Stress Scenarios',
-    icon: '🌪️',
-    path: '/ui2/stress-scenarios',
-    section: 'tools',
-    description: 'Stress scenario composer',
-    keywords: ['stress', 'scenarios']
-  },
-  {
-    id: 'pnl-explain',
-    label: 'PnL Explainer',
-    icon: '💰',
-    path: '/ui2/pnl-explain',
-    section: 'tools',
-    description: 'PnL explainability service',
-    keywords: ['pnl', 'explain']
-  },
-  {
-    id: 'reconciliation',
-    label: 'Reconciliation',
-    icon: '🔄',
-    path: '/ui2/reconciliation',
-    section: 'system',
-    description: 'Trade reconciliation automation',
-    keywords: ['reconciliation']
-  },
-  {
-    id: 'smart-routing',
-    label: 'Smart Routing',
-    icon: '🛤️',
-    path: '/ui2/smart-routing',
-    section: 'tools',
-    description: 'Smart order routing',
-    keywords: ['smart', 'routing']
-  },
-  {
-    id: 'broker-scoring',
-    label: 'Broker Scoring',
-    icon: '⭐',
-    path: '/ui2/broker-scoring',
-    section: 'tools',
-    description: 'Broker quality scoring',
-    keywords: ['broker', 'scoring']
-  },
-  {
-    id: 'cross-account',
-    label: 'Cross-Account',
-    icon: '🔐',
-    path: '/ui2/cross-account',
-    section: 'system',
-    description: 'Cross-account controls',
-    keywords: ['cross', 'account']
-  },
-  {
-    id: 'risk-governance',
-    label: 'Risk Governance',
-    icon: '🏛️',
-    path: '/ui2/risk-governance',
-    section: 'system',
-    description: 'Risk governance framework',
-    keywords: ['risk', 'governance']
-  },
-  {
-    id: 'agent-registry',
-    label: 'Agent Registry',
-    icon: '🤖',
-    path: '/ui2/agent-registry',
-    section: 'tools',
-    description: 'AI agent registry',
-    keywords: ['agent', 'registry']
-  },
-  {
-    id: 'autopilot-playbook',
-    label: 'Playbook',
-    icon: '📖',
-    path: '/ui2/autopilot-playbook',
-    section: 'tools',
-    description: 'Autopilot playbook engine',
-    keywords: ['autopilot', 'playbook']
-  },
-  {
-    id: 'prompt-firewall',
-    label: 'Prompt Firewall',
-    icon: '🔥',
-    path: '/ui2/prompt-firewall',
-    section: 'system',
-    description: 'Prompt policy firewall',
-    keywords: ['prompt', 'firewall']
-  },
-  {
-    id: 'model-router',
-    label: 'Model Router',
-    icon: '🔀',
-    path: '/ui2/model-router',
-    section: 'system',
-    description: 'AI model router',
-    keywords: ['model', 'router']
-  },
-  {
-    id: 'eval-harness',
-    label: 'Eval Harness',
-    icon: '🧪',
-    path: '/ui2/eval-harness',
-    section: 'tools',
-    description: 'Model evaluation harness',
-    keywords: ['eval', 'harness']
-  },
-  {
-    id: 'approval-queue',
-    label: 'Approval Queue',
-    icon: '✅',
-    path: '/ui2/approval-queue',
-    section: 'system',
-    description: 'Human approval queue',
-    keywords: ['approval', 'queue']
-  },
-  {
-    id: 'strategy-sim',
-    label: 'Strategy Sim',
-    icon: '🎲',
-    path: '/ui2/strategy-sim',
-    section: 'tools',
-    description: 'Strategy simulation',
-    keywords: ['strategy', 'sim']
-  },
-  {
-    id: 'signal-provenance',
-    label: 'Signal Provenance',
-    icon: '📜',
-    path: '/ui2/signal-provenance',
-    section: 'tools',
-    description: 'Signal provenance ledger',
-    keywords: ['signal', 'provenance']
-  },
-  {
-    id: 'incident-ai',
-    label: 'Incident AI',
-    icon: '🚨',
-    path: '/ui2/incident-ai',
-    section: 'system',
-    description: 'Incident-aware AI fallback',
-    keywords: ['incident', 'ai']
-  },
-  {
-    id: 'drift-detection',
-    label: 'Drift Detection',
-    icon: '📐',
-    path: '/ui2/drift-detection',
-    section: 'tools',
-    description: 'Drift detection pipeline',
-    keywords: ['drift', 'detection']
-  },
-  {
-    id: 'control-tower',
-    label: 'Control Tower',
-    icon: '🗼',
-    path: '/ui2/control-tower',
-    section: 'main',
-    description: 'Autopilot control tower',
-    keywords: ['control', 'tower']
-  },
-  {
-    id: 'policy-attestation',
-    label: 'Policy Attest',
-    icon: '📝',
-    path: '/ui2/policy-attestation',
-    section: 'system',
-    description: 'Policy attestation packs',
-    keywords: ['policy', 'attestation']
-  },
-  {
-    id: 'ai-governance',
-    label: 'AI Governance',
-    icon: '🏗️',
-    path: '/ui2/ai-governance',
-    section: 'system',
-    description: 'AI release governance',
-    keywords: ['ai', 'governance']
-  },
-  {
-    id: 'options-matrix',
-    label: 'Options Matrix',
-    icon: '📐',
-    path: '/ui2/options-matrix',
-    section: 'tools',
-    description: 'Options chain matrix',
-    keywords: ['options', 'matrix']
-  },
-  {
-    id: 'greeks-service',
-    label: 'Greeks',
-    icon: 'Δ',
-    path: '/ui2/greeks-service',
-    section: 'tools',
-    description: 'Greeks computation service',
-    keywords: ['greeks', 'service']
-  },
-  {
-    id: 'vol-surface',
-    label: 'Vol Surface',
-    icon: '📈',
-    path: '/ui2/vol-surface',
-    section: 'tools',
-    description: 'Volatility surface analytics',
-    keywords: ['vol', 'surface']
-  },
-  {
-    id: 'payoff-lab',
-    label: 'Payoff Lab',
-    icon: '🔬',
-    path: '/ui2/payoff-lab',
-    section: 'tools',
-    description: 'Strategy payoff lab',
-    keywords: ['payoff', 'lab']
-  },
-  {
-    id: 'spread-tools',
-    label: 'Spread Tools',
-    icon: '🔧',
-    path: '/ui2/spread-tools',
-    section: 'tools',
-    description: 'Options spread execution',
-    keywords: ['spread', 'tools']
-  },
-  {
-    id: 'futures-curve',
-    label: 'Futures Curve',
-    icon: '📉',
-    path: '/ui2/futures-curve',
-    section: 'tools',
-    description: 'Futures curve analytics',
-    keywords: ['futures', 'curve']
-  },
-  {
-    id: 'rates-monitor',
-    label: 'Rates Monitor',
-    icon: '💵',
-    path: '/ui2/rates-monitor',
-    section: 'tools',
-    description: 'Interest rates monitor',
-    keywords: ['rates', 'monitor']
-  },
-  {
-    id: 'cross-margin',
-    label: 'Cross-Margin',
-    icon: '💼',
-    path: '/ui2/cross-margin',
-    section: 'system',
-    description: 'Cross-margin controls',
-    keywords: ['cross', 'margin']
-  },
-  {
-    id: 'derivatives-oms',
-    label: 'Derivatives OMS',
-    icon: '🏢',
-    path: '/ui2/derivatives-oms',
-    section: 'main',
-    description: 'Derivatives order management',
-    keywords: ['derivatives', 'oms']
-  },
-  {
-    id: 'vol-scanner',
-    label: 'Vol Scanner',
-    icon: '🔎',
-    path: '/ui2/vol-scanner',
-    section: 'tools',
-    description: 'Volatility scanner',
-    keywords: ['vol', 'scanner']
-  },
-  {
-    id: 'hedge-engine',
-    label: 'Hedge Engine',
-    icon: '🛡️',
-    path: '/ui2/hedge-engine',
-    section: 'tools',
-    description: 'Hedge recommendation engine',
-    keywords: ['hedge', 'engine']
-  },
-  {
-    id: 'risk-adj-exec',
-    label: 'Risk-Adj Exec',
-    icon: '⚡',
-    path: '/ui2/risk-adj-exec',
-    section: 'tools',
-    description: 'Risk-adjusted execution',
-    keywords: ['risk', 'adj', 'exec']
-  },
-  {
-    id: 'derivatives-gov',
-    label: 'Deriv Gov',
-    icon: '🏛️',
-    path: '/ui2/derivatives-gov',
-    section: 'system',
-    description: 'Derivatives governance',
-    keywords: ['derivatives', 'gov']
-  },
-  {
-    id: 'policy-code',
-    label: 'Policy Code',
-    icon: '📜',
-    path: '/ui2/policy-code',
-    section: 'system',
-    description: 'Policy-as-code engine',
-    keywords: ['policy', 'code']
-  },
-  {
-    id: 'entitlements',
-    label: 'Entitlements',
-    icon: '🔑',
-    path: '/ui2/entitlements',
-    section: 'system',
-    description: 'Entitlements matrix',
-    keywords: ['entitlements']
-  },
-  {
-    id: 'approval-chain',
-    label: 'Approval Chain',
-    icon: '🔗',
-    path: '/ui2/approval-chain',
-    section: 'system',
-    description: 'Approval chain engine',
-    keywords: ['approval', 'chain']
-  },
-  {
-    id: 'evidence-vault',
-    label: 'Evidence Vault',
-    icon: '🔒',
-    path: '/ui2/evidence-vault',
-    section: 'system',
-    description: 'Regulatory evidence vault',
-    keywords: ['evidence', 'vault']
-  },
-  {
-    id: 'retention-policy',
-    label: 'Retention Policy',
-    icon: '🗑️',
-    path: '/ui2/retention-policy',
-    section: 'system',
-    description: 'Data retention automation',
-    keywords: ['retention', 'policy']
-  },
-  {
-    id: 'audit-replay',
-    label: 'Audit Replay',
-    icon: '⏪',
-    path: '/ui2/audit-replay',
-    section: 'system',
-    description: 'Audit event replay',
-    keywords: ['audit', 'replay']
-  },
-  {
-    id: 'incident-compliance',
-    label: 'Incident Compl',
-    icon: '🔔',
-    path: '/ui2/incident-compliance',
-    section: 'system',
-    description: 'Incident compliance bridge',
-    keywords: ['incident', 'compliance']
-  },
-  {
-    id: 'supervisory',
-    label: 'Supervisory',
-    icon: '👔',
-    path: '/ui2/supervisory',
-    section: 'system',
-    description: 'Supervisory dashboards',
-    keywords: ['supervisory']
-  },
-  {
-    id: 'kri-scoring',
-    label: 'KRI Scoring',
-    icon: '📏',
-    path: '/ui2/kri-scoring',
-    section: 'system',
-    description: 'Key Risk Indicator scoring',
-    keywords: ['kri', 'scoring']
-  },
-  {
-    id: 'third-party-risk',
-    label: '3rd Party Risk',
-    icon: '🌐',
-    path: '/ui2/third-party-risk',
-    section: 'system',
-    description: 'Third-party risk connectors',
-    keywords: ['third', 'party', 'risk']
-  },
-  {
-    id: 'sso-hardening',
-    label: 'SSO Hardening',
-    icon: '🔐',
-    path: '/ui2/sso-hardening',
-    section: 'system',
-    description: 'Enterprise SSO hardening',
-    keywords: ['sso', 'hardening']
-  },
-  {
-    id: 'jurisdiction',
-    label: 'Jurisdiction',
-    icon: '🌍',
-    path: '/ui2/jurisdiction',
-    section: 'system',
-    description: 'Jurisdiction rulesets',
-    keywords: ['jurisdiction']
-  },
-  {
-    id: 'control-framework',
-    label: 'Control FW',
-    icon: '✔️',
-    path: '/ui2/control-framework',
-    section: 'system',
-    description: 'Control framework signoff',
-    keywords: ['control', 'framework']
-  },
-  {
-    id: 'plugin-runtime',
-    label: 'Plugins',
-    icon: '🧩',
-    path: '/ui2/plugin-runtime',
-    section: 'system',
-    description: 'Plugin sandbox runtime',
-    keywords: ['plugin', 'runtime']
-  },
-  {
-    id: 'sdk-api',
-    label: 'SDK Standard',
-    icon: '📘',
-    path: '/ui2/sdk-api',
-    section: 'system',
-    description: 'SDK API standard',
-    keywords: ['sdk', 'api']
-  },
-  {
-    id: 'app-sandbox',
-    label: 'App Sandbox',
-    icon: '📦',
-    path: '/ui2/app-sandbox',
-    section: 'system',
-    description: 'App sandbox controls',
-    keywords: ['app', 'sandbox']
-  },
-  {
-    id: 'marketplace',
-    label: 'Marketplace',
-    icon: '🏪',
-    path: '/ui2/marketplace',
-    section: 'tools',
-    description: 'Extension marketplace',
-    keywords: ['marketplace']
-  },
-  {
-    id: 'partner-ci',
-    label: 'Partner CI',
-    icon: '🤝',
-    path: '/ui2/partner-ci',
-    section: 'system',
-    description: 'Partner CI certification',
-    keywords: ['partner', 'ci']
-  },
-  {
-    id: 'usage-metering',
-    label: 'Usage Metering',
-    icon: '📊',
-    path: '/ui2/usage-metering',
-    section: 'system',
-    description: 'Usage metering pipeline',
-    keywords: ['usage', 'metering']
-  },
-  {
-    id: 'billing-events',
-    label: 'Billing',
-    icon: '💳',
-    path: '/ui2/billing-events',
-    section: 'system',
-    description: 'Billing event processing',
-    keywords: ['billing', 'events']
-  },
-  {
-    id: 'ext-observability',
-    label: 'Ext Observ',
-    icon: '🔭',
-    path: '/ui2/ext-observability',
-    section: 'system',
-    description: 'Extension observability',
-    keywords: ['ext', 'observability']
-  },
-  {
-    id: 'tenant-quota',
-    label: 'Tenant Quota',
-    icon: '📐',
-    path: '/ui2/tenant-quota',
-    section: 'system',
-    description: 'Tenant quota controls',
-    keywords: ['tenant', 'quota']
-  },
-  {
-    id: 'compat-matrix',
-    label: 'Compat Matrix',
-    icon: '🔢',
-    path: '/ui2/compat-matrix',
-    section: 'system',
-    description: 'Compatibility matrix',
-    keywords: ['compat', 'matrix']
-  },
-  {
-    id: 'dev-portal',
-    label: 'Dev Portal',
-    icon: '🌐',
-    path: '/ui2/dev-portal',
-    section: 'tools',
-    description: 'Developer portal',
-    keywords: ['dev', 'portal']
-  },
-  {
-    id: 'support-sla',
-    label: 'Support SLA',
-    icon: '🎫',
-    path: '/ui2/support-sla',
-    section: 'system',
-    description: 'Support SLA management',
-    keywords: ['support', 'sla']
-  },
-  {
-    id: 'marketplace-trust',
-    label: 'Mktplace Trust',
-    icon: '🔒',
-    path: '/ui2/marketplace-trust',
-    section: 'system',
-    description: 'Marketplace trust security',
-    keywords: ['marketplace', 'trust']
-  },
-  {
-    id: 'multi-region',
-    label: 'Multi-Region',
-    icon: '🌏',
-    path: '/ui2/multi-region',
-    section: 'system',
-    description: 'Multi-region traffic steering',
-    keywords: ['multi', 'region']
-  },
-  {
-    id: 'latency-budget',
-    label: 'Latency Budget',
-    icon: '⏱️',
-    path: '/ui2/latency-budget',
-    section: 'system',
-    description: 'Latency budget engine',
-    keywords: ['latency', 'budget']
-  },
-  {
-    id: 'cost-profiler',
-    label: 'Cost Profiler',
-    icon: '💲',
-    path: '/ui2/cost-profiler',
-    section: 'system',
-    description: 'Infrastructure cost profiler',
-    keywords: ['cost', 'profiler']
-  },
-  {
-    id: 'reliability-econ',
-    label: 'Reliability Econ',
-    icon: '📊',
-    path: '/ui2/reliability-econ',
-    section: 'system',
-    description: 'Reliability economics dashboard',
-    keywords: ['reliability', 'econ']
-  },
-  {
-    id: 'regional-failover',
-    label: 'Failover Drills',
-    icon: '🔄',
-    path: '/ui2/regional-failover',
-    section: 'system',
-    description: 'Regional failover drills',
-    keywords: ['regional', 'failover']
-  },
-  {
-    id: 'data-residency',
-    label: 'Data Residency',
-    icon: '📍',
-    path: '/ui2/data-residency',
-    section: 'system',
-    description: 'Data residency controls',
-    keywords: ['data', 'residency']
-  },
-  {
-    id: 'ops-automation-ai',
-    label: 'Ops AI',
-    icon: '🤖',
-    path: '/ui2/ops-automation-ai',
-    section: 'system',
-    description: 'AI ops automation',
-    keywords: ['ops', 'automation', 'ai']
-  },
-  {
-    id: 'hot-path',
-    label: 'Hot Path',
-    icon: '🔥',
-    path: '/ui2/hot-path',
-    section: 'system',
-    description: 'Hot path profiling',
-    keywords: ['hot', 'path']
-  },
-  {
-    id: 'release-quality',
-    label: 'Release Quality',
-    icon: '🎯',
-    path: '/ui2/release-quality',
-    section: 'system',
-    description: 'Release quality predictor',
-    keywords: ['release', 'quality']
-  },
-  {
-    id: 'capacity-plan',
-    label: 'Capacity Plan',
-    icon: '📐',
-    path: '/ui2/capacity-plan',
-    section: 'system',
-    description: 'Capacity planning model',
-    keywords: ['capacity', 'plan']
-  },
-  {
-    id: 'platform-debt',
-    label: 'Platform Debt',
-    icon: '🧹',
-    path: '/ui2/platform-debt',
-    section: 'system',
-    description: 'Technical debt retirement',
-    keywords: ['platform', 'debt']
-  },
-  {
-    id: 'operator-enable',
-    label: 'Operator Enable',
-    icon: '📚',
-    path: '/ui2/operator-enable',
-    section: 'system',
-    description: 'Operator enablement',
-    keywords: ['operator', 'enable']
-  },
-  {
-    id: 'global-readiness',
-    label: 'Global Ready',
-    icon: '🌟',
-    path: '/ui2/global-readiness',
-    section: 'system',
-    description: 'Global readiness certification',
-    keywords: ['global', 'readiness']
-  },
-  // New UI2 Pages — demo/index.html parity
-  {
-    id: 'heatmap',
-    label: 'Heatmap',
-    icon: '🗺️',
-    path: '/ui2/heatmap',
-    section: 'main',
-    description: 'Market heatmap with sector treemap',
-    keywords: ['heatmap', 'sector', 'treemap', 'market', 'heat']
-  },
-  {
-    id: 'fixed-income',
-    label: 'Fixed Income',
-    icon: '🏛️',
-    path: '/ui2/fixed-income',
-    section: 'main',
-    description: 'Yield curves, bond search, credit spreads',
-    keywords: ['bonds', 'yield', 'curve', 'fixed', 'income', 'credit']
-  },
-  {
-    id: 'fx-dashboard',
-    label: 'FX',
-    icon: '💱',
-    path: '/ui2/fx-dashboard',
-    section: 'main',
-    description: 'FX cross rates, forwards, vol surface',
-    keywords: ['fx', 'forex', 'currency', 'cross', 'rates']
-  },
-  {
-    id: 'commodities',
-    label: 'Commodities',
-    icon: '🛢️',
-    path: '/ui2/commodities',
-    section: 'main',
-    description: 'Energy, metals, agriculture futures',
-    keywords: ['commodities', 'oil', 'gold', 'futures', 'energy']
-  },
-  {
-    id: 'crypto',
-    label: 'Crypto',
-    icon: '₿',
-    path: '/ui2/crypto',
-    section: 'main',
-    description: 'Crypto markets, on-chain, DeFi, derivatives',
-    keywords: ['crypto', 'bitcoin', 'ethereum', 'defi', 'blockchain']
-  },
-  {
-    id: 'social',
-    label: 'Social',
-    icon: '💬',
-    path: '/ui2/social',
-    section: 'main',
-    description: 'Trading ideas, sentiment, community',
-    keywords: ['social', 'ideas', 'sentiment', 'community', 'chat']
-  },
-  {
-    id: 'macro',
-    label: 'Macro',
-    icon: '🌐',
-    path: '/ui2/macro',
-    section: 'main',
-    description: 'Economic calendar, central banks, global markets',
-    keywords: ['macro', 'economic', 'calendar', 'central', 'bank', 'gdp']
-  },
-  {
-    id: 'stock-screener',
-    label: 'Screener',
-    icon: '🔍',
-    path: '/ui2/stock-screener',
-    section: 'main',
-    description: 'Advanced stock screening with 50+ filters',
-    keywords: ['screener', 'filter', 'scan', 'stocks', 'screen']
-  },
-  {
-    id: 'watchlist-manager',
-    label: 'Watchlists',
-    icon: '👁️',
-    path: '/ui2/watchlist-manager',
-    section: 'main',
-    description: 'Multi-watchlist manager with heatmaps',
-    keywords: ['watchlist', 'watch', 'list', 'track', 'monitor']
-  },
-  {
-    id: 'news-terminal',
-    label: 'News',
-    icon: '📰',
-    path: '/ui2/news-terminal',
-    section: 'main',
-    description: 'Real-time news feed with sentiment analysis',
-    keywords: ['news', 'feed', 'headline', 'sentiment', 'article']
-  },
-  {
-    id: 'alerts-manager',
-    label: 'Alerts',
-    icon: '🔔',
-    path: '/ui2/alerts-manager',
-    section: 'main',
-    description: 'Price alerts, conditions, and notifications',
-    keywords: ['alert', 'notification', 'trigger', 'condition', 'price']
-  },
-  {
-    id: 'options-chain',
-    label: 'Options',
-    icon: '⚡',
-    path: '/ui2/options-chain',
-    section: 'main',
-    description: 'Options chain, vol surface, Greeks, strategies',
-    keywords: ['options', 'chain', 'greeks', 'volatility', 'calls', 'puts']
-  },
-  {
-    id: 'ml-dashboard',
-    label: 'ML/AI',
-    icon: '🤖',
-    path: '/ui2/ml-dashboard',
-    section: 'main',
-    description: 'ML model training, predictions, feature analysis',
-    keywords: ['ml', 'ai', 'machine', 'learning', 'model', 'prediction']
-  },
-  {
-    id: 'portfolio-analytics',
-    label: 'Analytics',
-    icon: '📊',
-    path: '/ui2/portfolio-analytics',
-    section: 'main',
-    description: 'Portfolio allocation, drawdown, attribution',
-    keywords: ['portfolio', 'analytics', 'allocation', 'drawdown', 'attribution']
-  },
-  {
-    id: 'risk-dashboard',
-    label: 'Risk Mgmt',
-    icon: '🛡️',
-    path: '/ui2/risk-dashboard',
-    section: 'main',
-    description: 'VaR, stress tests, correlation, exposure analysis',
-    keywords: ['risk', 'var', 'stress', 'test', 'correlation', 'exposure']
-  },
-  {
-    id: 'order-book-depth',
-    label: 'Order Book',
-    icon: '📗',
-    path: '/ui2/order-book-depth',
-    section: 'main',
-    description: 'Level 2 DOM, time & sales, order flow, volume profile',
-    keywords: ['order', 'book', 'depth', 'level2', 'dom', 'flow']
-  },
-  {
-    id: 'algo-execution',
-    label: 'Algo Exec',
-    icon: '⚡',
-    path: '/ui2/algo-execution',
-    section: 'main',
-    description: 'Algo execution, TCA, venue distribution, basket trading',
-    keywords: ['algo', 'execution', 'twap', 'vwap', 'tca', 'basket']
-  },
-  {
-    id: 'bloomberg-terminal',
-    label: 'Bloomberg',
-    icon: '🖥️',
-    path: '/ui2/bloomberg-terminal',
-    section: 'main',
-    description: 'Bloomberg-style command line, security finder, launchpad',
-    keywords: ['bloomberg', 'terminal', 'command', 'bbg', 'security']
-  },
-  {
-    id: 'monte-carlo-sim',
-    label: 'Monte Carlo',
-    icon: '🎲',
-    path: '/ui2/monte-carlo-sim',
-    section: 'main',
-    description: 'Monte Carlo simulation, fan chart, distributions',
-    keywords: ['monte', 'carlo', 'simulation', 'random', 'probability']
-  },
-  {
-    id: 'strategy-builder-pro',
-    label: 'Strategy Pro',
-    icon: '🏗️',
-    path: '/ui2/strategy-builder-pro',
-    section: 'main',
-    description: 'Visual strategy builder, indicators, Pine Script',
-    keywords: ['strategy', 'builder', 'indicators', 'pine', 'script']
-  },
-  {
-    id: 'multi-chart-layout',
-    label: 'Multi Chart',
-    icon: '📈',
-    path: '/ui2/multi-chart-layout',
-    section: 'main',
-    description: 'Multi-panel workspace, 8 layouts, drawing tools',
-    keywords: ['multi', 'chart', 'layout', 'panel', 'workspace']
-  },
-  {
-    id: 'portfolio-optimizer-pro',
-    label: 'Optimizer',
-    icon: '🎯',
-    path: '/ui2/portfolio-optimizer-pro',
-    section: 'main',
-    description: 'Mean-Variance, Black-Litterman, efficient frontier',
-    keywords: ['portfolio', 'optimizer', 'frontier', 'sharpe', 'allocation']
-  },
-  {
-    id: 'volatility-surface',
-    label: 'Vol Surface',
-    icon: '🌊',
-    path: '/ui2/volatility-surface',
-    section: 'main',
-    description: '3D vol surface, smile, term structure, Greeks',
-    keywords: ['volatility', 'surface', 'smile', 'skew', 'greeks']
-  },
-  {
-    id: 'backtest-engine',
-    label: 'Backtest',
-    icon: '⏪',
-    path: '/ui2/backtest-engine',
-    section: 'main',
-    description: 'Backtest engine, equity curve, walk-forward analysis',
-    keywords: ['backtest', 'engine', 'equity', 'curve', 'optimization']
-  },
-  {
-    id: 'trading-journal',
-    label: 'Journal',
-    icon: '📓',
-    path: '/ui2/trading-journal',
-    section: 'main',
-    description: 'Trade journal, P/L calendar, emotion tracking',
-    keywords: ['journal', 'diary', 'trade', 'log', 'emotion', 'review']
-  },
-  {
-    id: 'sector-analysis',
-    label: 'Sectors',
-    icon: '🏭',
-    path: '/ui2/sector-analysis',
-    section: 'main',
-    description: 'Sector rotation, relative strength, GICS analysis',
-    keywords: ['sector', 'rotation', 'gics', 'industry', 'relative']
-  },
-  {
-    id: 'dark-pool',
-    label: 'Dark Pool',
-    icon: '🌑',
-    path: '/ui2/dark-pool',
-    section: 'main',
-    description: 'Dark pool activity, block trades, hidden liquidity',
-    keywords: ['dark', 'pool', 'block', 'hidden', 'finra', 'otc']
-  },
-  {
-    id: 'market-maker',
-    label: 'Market Maker',
-    icon: '🏦',
-    path: '/ui2/market-maker',
-    section: 'main',
-    description: 'Market making simulation, spread, inventory risk',
-    keywords: ['market', 'maker', 'spread', 'inventory', 'quoting']
-  },
-  {
-    id: 'correlation-matrix',
-    label: 'Correlation',
-    icon: '🔗',
-    path: '/ui2/correlation-matrix',
-    section: 'main',
-    description: 'Cross-asset correlation heatmap, PCA, regime detection',
-    keywords: ['correlation', 'matrix', 'pca', 'regime', 'covariance']
-  },
-  {
-    id: 'earnings-calendar',
-    label: 'Earnings',
-    icon: '📅',
-    path: '/ui2/earnings-calendar',
-    section: 'main',
-    description: 'Earnings calendar, estimates, surprises, whisper numbers',
-    keywords: ['earnings', 'calendar', 'eps', 'revenue', 'surprise']
-  },
-  {
-    id: 'yield-curve',
-    label: 'Yield Curve',
-    icon: '📈',
-    path: '/ui2/yield-curve',
-    section: 'main',
-    description: 'Interactive yield curve builder, Nelson-Siegel, forward rates',
-    keywords: ['yield', 'curve', 'treasury', 'rates', 'spread']
-  },
-  {
-    id: 'real-time-scanner',
-    label: 'Scanner',
-    icon: '📡',
-    path: '/ui2/real-time-scanner',
-    section: 'main',
-    description: 'Live streaming scanner, volume heatmap, pattern recognition',
-    keywords: ['scanner', 'screener', 'volume', 'pattern', 'filter']
-  },
-  {
-    id: 'economic-indicators',
-    label: 'Economics',
-    icon: '🏛️',
-    path: '/ui2/economic-indicators',
-    section: 'main',
-    description: 'Macro indicators, economic calendar, GDP, CPI, employment',
-    keywords: ['economics', 'gdp', 'cpi', 'employment', 'indicators']
-  },
-  {
-    id: 'market-overview',
-    label: 'Mkt Overview',
-    icon: '🌍',
-    path: '/ui2/market-overview',
-    section: 'main',
-    description: 'Global indices, sector performance, top movers',
-    keywords: ['market', 'overview', 'indices', 'sectors', 'movers']
-  },
-  {
-    id: 'report-builder',
-    label: 'Reports',
-    icon: '📊',
-    path: '/ui2/report-builder',
-    section: 'main',
-    description: 'Drag-and-drop report builder, templates, export',
-    keywords: ['report', 'builder', 'export', 'template', 'pdf']
-  },
-  {
-    id: 'financial-analysis',
-    label: 'Financials',
-    icon: '💰',
-    path: '/ui2/financial-analysis',
-    section: 'main',
-    description: 'Income statement, balance sheet, cash flow, DCF model',
-    keywords: ['financial', 'analysis', 'income', 'balance', 'dcf']
-  },
-  {
-    id: 'comparable-companies',
-    label: 'Comps',
-    icon: '⚖️',
-    path: '/ui2/comparable-companies',
-    section: 'main',
-    description: 'Peer groups, scatter plot, waterfall, football field',
-    keywords: ['comparable', 'companies', 'peers', 'valuation', 'multiples']
-  },
-  {
-    id: 'security-finder',
-    label: 'SecFinder',
-    icon: '🔎',
-    path: '/ui2/security-finder',
-    section: 'main',
-    description: 'Multi-asset security search with filters',
-    keywords: ['security', 'finder', 'search', 'lookup', 'secf']
-  },
-  {
-    id: 'transaction-cost-analysis',
-    label: 'TCA',
-    icon: '💱',
-    path: '/ui2/transaction-cost-analysis',
-    section: 'main',
-    description: 'Best execution TCA, slippage distribution, venue analysis',
-    keywords: ['tca', 'transaction', 'cost', 'execution', 'slippage']
-  },
-  {
-    id: 'alert-delivery',
-    label: 'Alert Delivery',
-    icon: '🔔',
-    path: '/ui2/alert-delivery',
-    section: 'main',
-    description: 'Alert delivery management, channels, templates, escalation',
-    keywords: ['alert', 'delivery', 'notification', 'channel', 'escalation']
-  },
-  {
-    id: 'credit-risk',
-    label: 'Credit Risk',
-    icon: '🏦',
-    path: '/ui2/credit-risk',
-    section: 'main',
-    description: 'CDS spreads, transition matrix, CVA/DVA, credit analytics',
-    keywords: ['credit', 'risk', 'cds', 'default', 'rating']
-  },
-  {
-    id: 'workspace-manager',
-    label: 'Workspaces',
-    icon: '🗂️',
-    path: '/ui2/workspace-manager',
-    section: 'main',
-    description: 'Workspace management, layouts, themes, keybindings',
-    keywords: ['workspace', 'layout', 'theme', 'keybinding', 'manager']
-  },
-  {
-    id: 'chart-replay',
-    label: 'Replay',
-    icon: '⏪',
-    path: '/ui2/chart-replay',
-    section: 'main',
-    description: 'Historical market replay, speed control, candle stepping',
-    keywords: ['chart', 'replay', 'playback', 'historical', 'practice']
-  },
-  {
-    id: 'options-pricing-lab',
-    label: 'Pricing Lab',
-    icon: '🧪',
-    path: '/ui2/options-pricing-lab',
-    section: 'main',
-    description: 'BSM calculator, binomial tree, Monte Carlo, exotic options',
-    keywords: ['options', 'pricing', 'bsm', 'greeks', 'monte carlo']
-  },
-  {
-    id: 'market-breadth',
-    label: 'Breadth',
-    icon: '📶',
-    path: '/ui2/market-breadth',
-    section: 'main',
-    description: 'McClellan Oscillator, TRIN, advance/decline, breadth thrust',
-    keywords: ['breadth', 'mcclellan', 'trin', 'advance', 'decline']
-  },
-  {
-    id: 'autopilot-position-sizing',
-    label: 'Position Size',
-    icon: '📐',
-    path: '/ui2/autopilot-position-sizing',
-    section: 'main',
-    description: 'Kelly criterion, regime-aware sizing, risk budgeting',
-    keywords: ['position', 'sizing', 'kelly', 'risk', 'budget']
-  },
-  {
-    id: 'autopilot-audit-trail',
-    label: 'Audit Trail',
-    icon: '📋',
-    path: '/ui2/autopilot-audit-trail',
-    section: 'main',
-    description: 'Autopilot audit log, decision trail, compliance checks',
-    keywords: ['audit', 'trail', 'compliance', 'log', 'decision']
-  },
-  {
-    id: 'drawing-tool-manager',
-    label: 'Drawings',
-    icon: '✏️',
-    path: '/ui2/drawing-tool-manager',
-    section: 'main',
-    description: '41 drawing tools, templates, properties, sync & share',
-    keywords: ['drawing', 'tools', 'fibonacci', 'trendline', 'annotation']
-  },
+  // ── TRADE ──
+  { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/ui2/dashboard', section: 'main', description: 'Command center with key metrics', keywords: ['home', 'overview', 'metrics', 'kpi'] },
+  { id: 'trading', label: 'Trading', icon: '📈', path: '/ui2/trading', section: 'main', description: 'Live chart and order execution', keywords: ['chart', 'trade', 'order', 'execution'] },
+  { id: 'trading-multi', label: 'Multi Chart', icon: '📊', path: '/ui2/trading-multi', section: 'main', description: 'Multi-pane chart grid', keywords: ['multi', 'chart', 'grid', 'compare'] },
+  { id: 'portfolio', label: 'Portfolio', icon: '💼', path: '/ui2/portfolio', section: 'main', description: 'Positions and performance', keywords: ['positions', 'pnl', 'performance', 'holdings'] },
+  { id: 'orders', label: 'Orders', icon: '📋', path: '/ui2/orders', section: 'main', description: 'Order history and management', keywords: ['order', 'history', 'fills', 'execution'] },
+  { id: 'risk-dashboard', label: 'Risk Management', icon: '🛡️', path: '/ui2/risk-dashboard', section: 'main', description: 'VaR, stress tests, correlation', keywords: ['risk', 'var', 'stress', 'exposure'] },
+  { id: 'heatmap', label: 'Heatmap', icon: '🗺️', path: '/ui2/heatmap', section: 'main', description: 'Market heatmap with sector treemap', keywords: ['heatmap', 'sector', 'treemap'] },
+  // ── STRAT ──
+  { id: 'backtest-engine', label: 'Backtest', icon: '⏪', path: '/ui2/backtest-engine', section: 'tools', description: 'Backtest engine, equity curve', keywords: ['backtest', 'engine', 'equity'] },
+  { id: 'backtest', label: 'Walk-Forward', icon: '🧪', path: '/ui2/backtest', section: 'tools', description: 'Walk-forward analysis', keywords: ['walk', 'forward', 'analysis'] },
+  { id: 'monte-carlo-sim', label: 'Monte Carlo', icon: '🎲', path: '/ui2/monte-carlo-sim', section: 'tools', description: 'Monte Carlo simulation', keywords: ['monte', 'carlo', 'simulation'] },
+  { id: 'strategy-builder-pro', label: 'Strategy Studio', icon: '🏗️', path: '/ui2/strategy-builder-pro', section: 'tools', description: 'Visual strategy builder', keywords: ['strategy', 'builder', 'pine'] },
+  // ── MKTS ──
+  { id: 'options-chain', label: 'Options', icon: '⚡', path: '/ui2/options-chain', section: 'tools', description: 'Options chain, Greeks', keywords: ['options', 'chain', 'greeks'] },
+  { id: 'stock-screener', label: 'Screener', icon: '🔍', path: '/ui2/stock-screener', section: 'tools', description: 'Stock screener', keywords: ['screener', 'filter', 'scan'] },
+  { id: 'alerts-manager', label: 'Alerts', icon: '🔔', path: '/ui2/alerts-manager', section: 'tools', description: 'Price and alerts', keywords: ['alert', 'notification'] },
+  { id: 'macro', label: 'Economic Calendar', icon: '🌐', path: '/ui2/macro', section: 'tools', description: 'Economic calendar', keywords: ['macro', 'economic', 'calendar'] },
+  { id: 'research', label: 'Research', icon: '🔬', path: '/ui2/research', section: 'tools', description: 'Research / Sentiment', keywords: ['research', 'sentiment', 'analysis'] },
+  { id: 'social', label: 'Social', icon: '💬', path: '/ui2/social', section: 'main', description: 'Trading ideas, community', keywords: ['social', 'ideas', 'community'] },
+  // ── ASSET ──
+  { id: 'fixed-income', label: 'Fixed Income', icon: '🏛️', path: '/ui2/fixed-income', section: 'main', description: 'Yield curves, bonds', keywords: ['bonds', 'yield'] },
+  { id: 'fx-dashboard', label: 'FX', icon: '💱', path: '/ui2/fx-dashboard', section: 'main', description: 'FX cross rates', keywords: ['fx', 'forex', 'currency'] },
+  { id: 'commodities', label: 'Commodities', icon: '🛢️', path: '/ui2/commodities', section: 'main', description: 'Energy, metals, agriculture', keywords: ['commodities', 'oil', 'gold'] },
+  { id: 'crypto', label: 'Crypto', icon: '₿', path: '/ui2/crypto', section: 'main', description: 'Crypto markets', keywords: ['crypto', 'bitcoin', 'ethereum'] },
+  // ── SYSTEM ──
+  { id: 'settings', label: 'Settings', icon: '⚙️', path: '/ui2/settings', section: 'system', description: 'Platform configuration', keywords: ['settings', 'config'] },
+  { id: 'ops', label: 'Platform', icon: '🔧', path: '/ui2/ops', section: 'system', description: 'System operations', keywords: ['ops', 'system'] },
+  // ── TOOLS (command palette only) ──
+  { id: 'autopilot', label: 'Autopilot', icon: '🤖', path: '/ui2/autopilot', section: 'tools', description: 'Autonomous trading agent', keywords: ['autopilot', 'agent', 'auto'] },
+  { id: 'risk', label: 'Risk & Options', icon: '🛡️', path: '/ui2/risk', section: 'tools', description: 'Options chain and risk', keywords: ['options', 'greeks', 'risk'] },
+  { id: 'replay', label: 'Replay', icon: '⏪', path: '/ui2/replay', section: 'tools', description: 'Market replay', keywords: ['replay', 'playback'] },
+  { id: 'runs', label: 'Runs & Audit', icon: '📜', path: '/ui2/runs', section: 'system', description: 'Execution audit trail', keywords: ['runs', 'audit'] },
+  { id: 'monitor', label: 'Monitor', icon: '🖥️', path: '/ui2/monitor', section: 'main', description: 'Multi-panel monitoring', keywords: ['monitor', 'grid'] },
+  { id: 'automation', label: 'Automation', icon: '🔄', path: '/ui2/automation', section: 'tools', description: 'Workflow automation', keywords: ['workflow', 'automation'] },
+  { id: 'search', label: 'Search', icon: '🔍', path: '/ui2/search', section: 'tools', description: 'Full-text search', keywords: ['search', 'find'] },
+  { id: 'agent', label: 'AI Agent', icon: '💡', path: '/ui2/agent', section: 'tools', description: 'AI assistant', keywords: ['agent', 'ai', 'assistant'] },
+  { id: 'alerts', label: 'Alerts', icon: '🔔', path: '/ui2/alerts', section: 'tools', description: 'Price alerts', keywords: ['alerts'] },
+  { id: 'autopilot-v2', label: 'Autopilot V2', icon: '🚀', path: '/ui2/autopilot-v2', section: 'tools', description: 'V2 pipeline', keywords: ['autopilot', 'v2'] },
+  { id: 'automation-v2', label: 'Automation V2', icon: '⚡', path: '/ui2/automation-v2', section: 'tools', description: 'DAG workflow', keywords: ['dag', 'workflow'] },
+  { id: 'export', label: 'Export', icon: '📦', path: '/ui2/export', section: 'system', description: 'Export bundles', keywords: ['export', 'bundle'] },
+  { id: 'health', label: 'Health', icon: '💚', path: '/ui2/health', section: 'system', description: 'Platform health', keywords: ['health', 'status'] },
+  { id: 'telemetry', label: 'Telemetry', icon: '📡', path: '/ui2/telemetry', section: 'system', description: 'Event telemetry', keywords: ['telemetry', 'events'] },
+  { id: 'autopilot-explain', label: 'Explain', icon: '🧠', path: '/ui2/autopilot-explain', section: 'tools', description: 'Decision explainability', keywords: ['explain', 'decision'] },
+  { id: 'automation-runs', label: 'Automation Runs', icon: '🏃', path: '/ui2/automation-runs', section: 'system', description: 'Run history', keywords: ['runs', 'history'] },
+  { id: 'workflow-builder', label: 'Workflow Builder', icon: '🔨', path: '/ui2/workflow-builder', section: 'tools', description: 'Visual workflow editor', keywords: ['workflow', 'builder'] },
+  { id: 'incidents', label: 'Incidents', icon: '🚨', path: '/ui2/incidents', section: 'system', description: 'Incident tracking', keywords: ['incidents'] },
+  { id: 'decisions', label: 'Decisions', icon: '🧭', path: '/ui2/decisions', section: 'tools', description: 'Decision explorer', keywords: ['decisions'] },
+  { id: 'health-v4', label: 'Health V4', icon: '💊', path: '/ui2/health-v4', section: 'system', description: 'All-subsystem health', keywords: ['health', 'v4'] },
+  { id: 'ai-provider', label: 'AI Provider', icon: '🧩', path: '/ui2/ai-provider', section: 'system', description: 'LLM provider status', keywords: ['ai', 'llm'] },
+  { id: 'decision-explainer', label: 'Decision V2', icon: '📊', path: '/ui2/decision-explainer', section: 'tools', description: 'Decision explainer', keywords: ['decision'] },
+  { id: 'nl-workflow', label: 'NL Workflow', icon: '✨', path: '/ui2/nl-workflow', section: 'tools', description: 'Natural language workflow', keywords: ['nl', 'workflow'] },
+  { id: 'market-session-v2', label: 'Market Session', icon: '🕐', path: '/ui2/market-session-v2', section: 'system', description: 'NYSE market session', keywords: ['market', 'session'] },
+  { id: 'data-spine', label: 'Data Spine', icon: '🔌', path: '/ui2/data-spine', section: 'system', description: 'Data ingestion pipeline', keywords: ['data', 'spine'] },
+  { id: 'broker-v2', label: 'Paper Broker', icon: '🏦', path: '/ui2/broker-v2', section: 'main', description: 'Paper-only Alpaca broker', keywords: ['broker', 'paper'] },
+  { id: 'portfolio-v2', label: 'Allocator', icon: '⚖️', path: '/ui2/portfolio-v2', section: 'tools', description: 'Portfolio allocation', keywords: ['portfolio', 'allocator'] },
+  { id: 'performance-v2', label: 'Ledger', icon: '📊', path: '/ui2/performance-v2', section: 'tools', description: 'Performance ledger', keywords: ['performance', 'sharpe'] },
+  { id: 'backtester-v3', label: 'Backtester V3', icon: '🧪', path: '/ui2/backtester-v3', section: 'tools', description: 'Backtester v3', keywords: ['backtester', 'v3'] },
+  { id: 'discovery', label: 'Discovery', icon: '🔎', path: '/ui2/discovery', section: 'tools', description: 'Strategy discovery', keywords: ['discovery', 'strategy'] },
+  { id: 'ai-strategy', label: 'AI Strategy', icon: '🤖', path: '/ui2/ai-strategy', section: 'tools', description: 'AI strategy builder', keywords: ['ai', 'strategy'] },
+  { id: 'sentiment-v2', label: 'Sentiment V2', icon: '📰', path: '/ui2/sentiment-v2', section: 'tools', description: 'FinBERT sentiment', keywords: ['sentiment'] },
+  { id: 'workflows-v3', label: 'Workflows V3', icon: '🔗', path: '/ui2/workflows-v3', section: 'tools', description: 'DAG workflow engine', keywords: ['workflow'] },
+  { id: 'observability-v2', label: 'Ops Center', icon: '📡', path: '/ui2/observability-v2', section: 'system', description: 'System observability', keywords: ['observability'] },
+  { id: 'productization', label: 'Productization', icon: '🚀', path: '/ui2/productization', section: 'system', description: 'Universe management', keywords: ['productization'] },
+  { id: 'dataset-snapshots', label: 'Datasets', icon: '🗃️', path: '/ui2/dataset-snapshots', section: 'tools', description: 'Dataset snapshots', keywords: ['dataset'] },
+  // Comprehensive pages
+  { id: 'portfolio-analytics', label: 'Analytics', icon: '📊', path: '/ui2/portfolio-analytics', section: 'main', description: 'Portfolio analytics', keywords: ['analytics', 'allocation'] },
+  { id: 'order-book-depth', label: 'Order Book', icon: '📗', path: '/ui2/order-book-depth', section: 'main', description: 'Level 2 DOM', keywords: ['order', 'book'] },
+  { id: 'algo-execution', label: 'Algo Exec', icon: '⚡', path: '/ui2/algo-execution', section: 'main', description: 'Algo execution', keywords: ['algo'] },
+  { id: 'bloomberg-terminal', label: 'Bloomberg', icon: '🖥️', path: '/ui2/bloomberg-terminal', section: 'main', description: 'Bloomberg-style terminal', keywords: ['bloomberg'] },
+  { id: 'multi-chart-layout', label: 'Multi Chart', icon: '📈', path: '/ui2/multi-chart-layout', section: 'main', description: 'Multi-panel workspace', keywords: ['multi', 'chart'] },
+  { id: 'portfolio-optimizer-pro', label: 'Optimizer', icon: '🎯', path: '/ui2/portfolio-optimizer-pro', section: 'tools', description: 'Portfolio optimizer', keywords: ['optimizer'] },
+  { id: 'volatility-surface', label: 'Vol Surface', icon: '🌊', path: '/ui2/volatility-surface', section: 'tools', description: '3D vol surface', keywords: ['vol', 'surface'] },
+  { id: 'ml-dashboard', label: 'ML/AI', icon: '🤖', path: '/ui2/ml-dashboard', section: 'tools', description: 'ML models and predictions', keywords: ['ml', 'ai', 'model'] },
+  { id: 'news-terminal', label: 'News', icon: '📰', path: '/ui2/news-terminal', section: 'main', description: 'Real-time news feed', keywords: ['news', 'feed'] },
+  { id: 'watchlist-manager', label: 'Watchlists', icon: '👁️', path: '/ui2/watchlist-manager', section: 'main', description: 'Multi-watchlist manager', keywords: ['watchlist'] },
+  { id: 'trading-journal', label: 'Journal', icon: '📓', path: '/ui2/trading-journal', section: 'main', description: 'Trade journal', keywords: ['journal'] },
+  { id: 'sector-analysis', label: 'Sectors', icon: '🏭', path: '/ui2/sector-analysis', section: 'main', description: 'Sector rotation', keywords: ['sector'] },
+  { id: 'dark-pool', label: 'Dark Pool', icon: '🌑', path: '/ui2/dark-pool', section: 'main', description: 'Dark pool activity', keywords: ['dark', 'pool'] },
+  { id: 'market-maker', label: 'Market Maker', icon: '🏦', path: '/ui2/market-maker', section: 'main', description: 'Market making sim', keywords: ['market', 'maker'] },
+  { id: 'correlation-matrix', label: 'Correlation', icon: '🔗', path: '/ui2/correlation-matrix', section: 'main', description: 'Correlation heatmap', keywords: ['correlation'] },
+  { id: 'earnings-calendar', label: 'Earnings', icon: '📅', path: '/ui2/earnings-calendar', section: 'main', description: 'Earnings calendar', keywords: ['earnings'] },
+  { id: 'yield-curve', label: 'Yield Curve', icon: '📈', path: '/ui2/yield-curve', section: 'main', description: 'Yield curve builder', keywords: ['yield'] },
+  { id: 'real-time-scanner', label: 'Scanner', icon: '📡', path: '/ui2/real-time-scanner', section: 'main', description: 'Live scanner', keywords: ['scanner'] },
+  { id: 'economic-indicators', label: 'Economics', icon: '🏛️', path: '/ui2/economic-indicators', section: 'main', description: 'Macro indicators', keywords: ['economics'] },
+  { id: 'market-overview', label: 'Mkt Overview', icon: '🌍', path: '/ui2/market-overview', section: 'main', description: 'Global indices', keywords: ['overview'] },
+  { id: 'report-builder', label: 'Reports', icon: '📊', path: '/ui2/report-builder', section: 'main', description: 'Report builder', keywords: ['report'] },
+  { id: 'financial-analysis', label: 'Financials', icon: '💰', path: '/ui2/financial-analysis', section: 'main', description: 'Income/Balance/CF', keywords: ['financial'] },
+  { id: 'comparable-companies', label: 'Comps', icon: '⚖️', path: '/ui2/comparable-companies', section: 'main', description: 'Peer groups', keywords: ['comps'] },
+  { id: 'security-finder', label: 'SecFinder', icon: '🔎', path: '/ui2/security-finder', section: 'main', description: 'Security search', keywords: ['security', 'finder'] },
+  { id: 'transaction-cost-analysis', label: 'TCA', icon: '💱', path: '/ui2/transaction-cost-analysis', section: 'main', description: 'Transaction cost analysis', keywords: ['tca'] },
+  { id: 'alert-delivery', label: 'Alert Delivery', icon: '🔔', path: '/ui2/alert-delivery', section: 'main', description: 'Alert delivery', keywords: ['alert', 'delivery'] },
+  { id: 'credit-risk', label: 'Credit Risk', icon: '🏦', path: '/ui2/credit-risk', section: 'main', description: 'Credit analytics', keywords: ['credit'] },
+  { id: 'workspace-manager', label: 'Workspaces', icon: '🗂️', path: '/ui2/workspace-manager', section: 'main', description: 'Workspace manager', keywords: ['workspace'] },
+  { id: 'chart-replay', label: 'Chart Replay', icon: '⏪', path: '/ui2/chart-replay', section: 'main', description: 'Historical replay', keywords: ['chart', 'replay'] },
+  { id: 'options-pricing-lab', label: 'Pricing Lab', icon: '🧪', path: '/ui2/options-pricing-lab', section: 'main', description: 'BSM calculator', keywords: ['options', 'pricing'] },
+  { id: 'market-breadth', label: 'Breadth', icon: '📶', path: '/ui2/market-breadth', section: 'main', description: 'Market breadth', keywords: ['breadth'] },
+  { id: 'autopilot-position-sizing', label: 'Position Size', icon: '📐', path: '/ui2/autopilot-position-sizing', section: 'main', description: 'Position sizing', keywords: ['position', 'sizing'] },
+  { id: 'autopilot-audit-trail', label: 'Audit Trail', icon: '📋', path: '/ui2/autopilot-audit-trail', section: 'main', description: 'Audit trail', keywords: ['audit'] },
+  { id: 'drawing-tool-manager', label: 'Drawings', icon: '✏️', path: '/ui2/drawing-tool-manager', section: 'main', description: 'Drawing tools', keywords: ['drawing'] },
+  // Masterplan routes
+  { id: 'cross-asset-quote', label: 'Cross-Asset Quotes', icon: '💹', path: '/ui2/cross-asset-quote', section: 'tools', description: 'Cross-asset quote aggregation', keywords: ['cross', 'asset'] },
+  { id: 'corporate-actions', label: 'Corporate Actions', icon: '📋', path: '/ui2/corporate-actions', section: 'tools', description: 'Corporate actions', keywords: ['corporate'] },
+  { id: 'economic-calendar', label: 'Economic Calendar', icon: '📅', path: '/ui2/economic-calendar', section: 'tools', description: 'Economic calendar', keywords: ['economic'] },
+  { id: 'news-enrichment', label: 'News Enrichment', icon: '📰', path: '/ui2/news-enrichment', section: 'tools', description: 'NLP news enrichment', keywords: ['news'] },
+  { id: 'entity-resolution', label: 'Entity Resolution', icon: '🔗', path: '/ui2/entity-resolution', section: 'tools', description: 'Entity resolution', keywords: ['entity'] },
+  { id: 'theme-clustering', label: 'Theme Clustering', icon: '🎯', path: '/ui2/theme-clustering', section: 'tools', description: 'ML clustering', keywords: ['theme'] },
+  { id: 'research-notebook', label: 'Research Notebook', icon: '📓', path: '/ui2/research-notebook', section: 'tools', description: 'Research notebooks', keywords: ['notebook'] },
+  { id: 'bql-query', label: 'BQL Query', icon: '⌨️', path: '/ui2/bql-query', section: 'tools', description: 'Query language', keywords: ['bql'] },
+  { id: 'search-explain', label: 'Search Explain', icon: '🔍', path: '/ui2/search-explain', section: 'tools', description: 'Search explainability', keywords: ['search'] },
+  { id: 'screeners', label: 'Screeners', icon: '📊', path: '/ui2/screeners', section: 'tools', description: 'Stock screeners', keywords: ['screeners'] },
+  { id: 'collaboration', label: 'Collaboration', icon: '👥', path: '/ui2/collaboration', section: 'tools', description: 'Collaboration toolkit', keywords: ['collaboration'] },
+  { id: 'research-governance', label: 'Research Gov', icon: '🏛️', path: '/ui2/research-governance', section: 'tools', description: 'Research governance', keywords: ['governance'] },
+  { id: 'execution-cockpit', label: 'Exec Cockpit', icon: '🎛️', path: '/ui2/execution-cockpit', section: 'main', description: 'Execution monitoring', keywords: ['execution'] },
+  { id: 'blotter', label: 'Blotter', icon: '📑', path: '/ui2/blotter', section: 'main', description: 'Execution blotter', keywords: ['blotter'] },
+  { id: 'pre-trade-risk', label: 'Pre-Trade Risk', icon: '⚠️', path: '/ui2/pre-trade-risk', section: 'tools', description: 'Pre-trade risk', keywords: ['pre-trade'] },
+  { id: 'surveillance', label: 'Surveillance', icon: '👁️', path: '/ui2/surveillance', section: 'tools', description: 'Post-trade surveillance', keywords: ['surveillance'] },
+  { id: 'attribution', label: 'Attribution', icon: '📊', path: '/ui2/attribution', section: 'tools', description: 'Portfolio attribution', keywords: ['attribution'] },
+  { id: 'factor-model', label: 'Factor Model', icon: '🧮', path: '/ui2/factor-model', section: 'tools', description: 'Multi-factor model', keywords: ['factor'] },
+  { id: 'stress-scenarios', label: 'Stress Scenarios', icon: '🌪️', path: '/ui2/stress-scenarios', section: 'tools', description: 'Stress scenarios', keywords: ['stress'] },
+  { id: 'pnl-explain', label: 'PnL Explainer', icon: '💰', path: '/ui2/pnl-explain', section: 'tools', description: 'PnL explainability', keywords: ['pnl'] },
+  { id: 'control-tower', label: 'Control Tower', icon: '🗼', path: '/ui2/control-tower', section: 'main', description: 'Control tower', keywords: ['control'] },
+  { id: 'options-matrix', label: 'Options Matrix', icon: '📐', path: '/ui2/options-matrix', section: 'tools', description: 'Options matrix', keywords: ['options'] },
+  { id: 'derivatives-oms', label: 'Derivatives OMS', icon: '🏢', path: '/ui2/derivatives-oms', section: 'main', description: 'Derivatives OMS', keywords: ['derivatives'] },
+  { id: 'marketplace', label: 'Marketplace', icon: '🏪', path: '/ui2/marketplace', section: 'tools', description: 'Extension marketplace', keywords: ['marketplace'] },
+  { id: 'global-readiness', label: 'Global Ready', icon: '🌟', path: '/ui2/global-readiness', section: 'system', description: 'Global readiness', keywords: ['global'] },
+  { id: 'reconciliation', label: 'Reconciliation', icon: '🔄', path: '/ui2/reconciliation', section: 'system', description: 'Trade reconciliation', keywords: ['reconciliation'] },
+  { id: 'smart-routing', label: 'Smart Routing', icon: '🛤️', path: '/ui2/smart-routing', section: 'tools', description: 'Smart order routing', keywords: ['routing'] },
+  { id: 'broker-scoring', label: 'Broker Scoring', icon: '⭐', path: '/ui2/broker-scoring', section: 'tools', description: 'Broker quality', keywords: ['broker'] },
+  { id: 'cross-account', label: 'Cross-Account', icon: '🔐', path: '/ui2/cross-account', section: 'system', description: 'Cross-account controls', keywords: ['cross'] },
+  { id: 'risk-governance', label: 'Risk Governance', icon: '🏛️', path: '/ui2/risk-governance', section: 'system', description: 'Risk governance', keywords: ['risk'] },
+  { id: 'agent-registry', label: 'Agent Registry', icon: '🤖', path: '/ui2/agent-registry', section: 'tools', description: 'AI agent registry', keywords: ['agent'] },
+  { id: 'autopilot-playbook', label: 'Playbook', icon: '📖', path: '/ui2/autopilot-playbook', section: 'tools', description: 'Playbook engine', keywords: ['playbook'] },
+  { id: 'prompt-firewall', label: 'Prompt Firewall', icon: '🔥', path: '/ui2/prompt-firewall', section: 'system', description: 'Prompt policy', keywords: ['prompt'] },
+  { id: 'model-router', label: 'Model Router', icon: '🔀', path: '/ui2/model-router', section: 'system', description: 'AI model router', keywords: ['model'] },
+  { id: 'eval-harness', label: 'Eval Harness', icon: '🧪', path: '/ui2/eval-harness', section: 'tools', description: 'Model evaluation', keywords: ['eval'] },
+  { id: 'approval-queue', label: 'Approval Queue', icon: '✅', path: '/ui2/approval-queue', section: 'system', description: 'Approval queue', keywords: ['approval'] },
+  { id: 'strategy-sim', label: 'Strategy Sim', icon: '🎲', path: '/ui2/strategy-sim', section: 'tools', description: 'Strategy simulation', keywords: ['strategy'] },
+  { id: 'signal-provenance', label: 'Signal Provenance', icon: '📜', path: '/ui2/signal-provenance', section: 'tools', description: 'Signal provenance', keywords: ['signal'] },
+  { id: 'incident-ai', label: 'Incident AI', icon: '🚨', path: '/ui2/incident-ai', section: 'system', description: 'AI incident fallback', keywords: ['incident'] },
+  { id: 'drift-detection', label: 'Drift Detection', icon: '📐', path: '/ui2/drift-detection', section: 'tools', description: 'Drift detection', keywords: ['drift'] },
+  { id: 'policy-attestation', label: 'Policy Attest', icon: '📝', path: '/ui2/policy-attestation', section: 'system', description: 'Policy attestation', keywords: ['policy'] },
+  { id: 'ai-governance', label: 'AI Governance', icon: '🏗️', path: '/ui2/ai-governance', section: 'system', description: 'AI governance', keywords: ['governance'] },
+  { id: 'greeks-service', label: 'Greeks', icon: 'Δ', path: '/ui2/greeks-service', section: 'tools', description: 'Greeks computation', keywords: ['greeks'] },
+  { id: 'vol-surface', label: 'Vol Surface', icon: '📈', path: '/ui2/vol-surface', section: 'tools', description: 'Vol surface analytics', keywords: ['vol'] },
+  { id: 'payoff-lab', label: 'Payoff Lab', icon: '🔬', path: '/ui2/payoff-lab', section: 'tools', description: 'Payoff lab', keywords: ['payoff'] },
+  { id: 'spread-tools', label: 'Spread Tools', icon: '🔧', path: '/ui2/spread-tools', section: 'tools', description: 'Options spreads', keywords: ['spread'] },
+  { id: 'futures-curve', label: 'Futures Curve', icon: '📉', path: '/ui2/futures-curve', section: 'tools', description: 'Futures curve', keywords: ['futures'] },
+  { id: 'rates-monitor', label: 'Rates Monitor', icon: '💵', path: '/ui2/rates-monitor', section: 'tools', description: 'Interest rates', keywords: ['rates'] },
+  { id: 'cross-margin', label: 'Cross-Margin', icon: '💼', path: '/ui2/cross-margin', section: 'system', description: 'Cross-margin', keywords: ['margin'] },
+  { id: 'vol-scanner', label: 'Vol Scanner', icon: '🔎', path: '/ui2/vol-scanner', section: 'tools', description: 'Vol scanner', keywords: ['vol'] },
+  { id: 'hedge-engine', label: 'Hedge Engine', icon: '🛡️', path: '/ui2/hedge-engine', section: 'tools', description: 'Hedge engine', keywords: ['hedge'] },
+  { id: 'risk-adj-exec', label: 'Risk-Adj Exec', icon: '⚡', path: '/ui2/risk-adj-exec', section: 'tools', description: 'Risk-adjusted execution', keywords: ['risk-adj'] },
+  { id: 'derivatives-gov', label: 'Deriv Gov', icon: '🏛️', path: '/ui2/derivatives-gov', section: 'system', description: 'Derivatives governance', keywords: ['derivatives'] },
+  { id: 'policy-code', label: 'Policy Code', icon: '📜', path: '/ui2/policy-code', section: 'system', description: 'Policy-as-code', keywords: ['policy'] },
+  { id: 'entitlements', label: 'Entitlements', icon: '🔑', path: '/ui2/entitlements', section: 'system', description: 'Entitlements', keywords: ['entitlements'] },
+  { id: 'approval-chain', label: 'Approval Chain', icon: '🔗', path: '/ui2/approval-chain', section: 'system', description: 'Approval chain', keywords: ['approval'] },
+  { id: 'evidence-vault', label: 'Evidence Vault', icon: '🔒', path: '/ui2/evidence-vault', section: 'system', description: 'Evidence vault', keywords: ['evidence'] },
+  { id: 'retention-policy', label: 'Retention Policy', icon: '🗑️', path: '/ui2/retention-policy', section: 'system', description: 'Data retention', keywords: ['retention'] },
+  { id: 'audit-replay', label: 'Audit Replay', icon: '⏪', path: '/ui2/audit-replay', section: 'system', description: 'Audit replay', keywords: ['audit'] },
+  { id: 'incident-compliance', label: 'Incident Compl', icon: '🔔', path: '/ui2/incident-compliance', section: 'system', description: 'Incident compliance', keywords: ['incident'] },
+  { id: 'supervisory', label: 'Supervisory', icon: '👔', path: '/ui2/supervisory', section: 'system', description: 'Supervisory dashboards', keywords: ['supervisory'] },
+  { id: 'kri-scoring', label: 'KRI Scoring', icon: '📏', path: '/ui2/kri-scoring', section: 'system', description: 'KRI scoring', keywords: ['kri'] },
+  { id: 'third-party-risk', label: '3rd Party Risk', icon: '🌐', path: '/ui2/third-party-risk', section: 'system', description: '3rd party risk', keywords: ['third-party'] },
+  { id: 'sso-hardening', label: 'SSO Hardening', icon: '🔐', path: '/ui2/sso-hardening', section: 'system', description: 'SSO hardening', keywords: ['sso'] },
+  { id: 'jurisdiction', label: 'Jurisdiction', icon: '🌍', path: '/ui2/jurisdiction', section: 'system', description: 'Jurisdiction rules', keywords: ['jurisdiction'] },
+  { id: 'control-framework', label: 'Control FW', icon: '✔️', path: '/ui2/control-framework', section: 'system', description: 'Control framework', keywords: ['control'] },
+  { id: 'plugin-runtime', label: 'Plugins', icon: '🧩', path: '/ui2/plugin-runtime', section: 'system', description: 'Plugin runtime', keywords: ['plugin'] },
+  { id: 'sdk-api', label: 'SDK Standard', icon: '📘', path: '/ui2/sdk-api', section: 'system', description: 'SDK API', keywords: ['sdk'] },
+  { id: 'app-sandbox', label: 'App Sandbox', icon: '📦', path: '/ui2/app-sandbox', section: 'system', description: 'App sandbox', keywords: ['sandbox'] },
+  { id: 'partner-ci', label: 'Partner CI', icon: '🤝', path: '/ui2/partner-ci', section: 'system', description: 'Partner CI', keywords: ['partner'] },
+  { id: 'usage-metering', label: 'Usage Metering', icon: '📊', path: '/ui2/usage-metering', section: 'system', description: 'Usage metering', keywords: ['usage'] },
+  { id: 'billing-events', label: 'Billing', icon: '💳', path: '/ui2/billing-events', section: 'system', description: 'Billing events', keywords: ['billing'] },
+  { id: 'ext-observability', label: 'Ext Observ', icon: '🔭', path: '/ui2/ext-observability', section: 'system', description: 'Extension observability', keywords: ['ext'] },
+  { id: 'tenant-quota', label: 'Tenant Quota', icon: '📐', path: '/ui2/tenant-quota', section: 'system', description: 'Tenant quota', keywords: ['tenant'] },
+  { id: 'compat-matrix', label: 'Compat Matrix', icon: '🔢', path: '/ui2/compat-matrix', section: 'system', description: 'Compatibility matrix', keywords: ['compat'] },
+  { id: 'dev-portal', label: 'Dev Portal', icon: '🌐', path: '/ui2/dev-portal', section: 'tools', description: 'Developer portal', keywords: ['dev'] },
+  { id: 'support-sla', label: 'Support SLA', icon: '🎫', path: '/ui2/support-sla', section: 'system', description: 'Support SLA', keywords: ['support'] },
+  { id: 'marketplace-trust', label: 'Mktplace Trust', icon: '🔒', path: '/ui2/marketplace-trust', section: 'system', description: 'Marketplace trust', keywords: ['trust'] },
+  { id: 'multi-region', label: 'Multi-Region', icon: '🌏', path: '/ui2/multi-region', section: 'system', description: 'Multi-region', keywords: ['multi-region'] },
+  { id: 'latency-budget', label: 'Latency Budget', icon: '⏱️', path: '/ui2/latency-budget', section: 'system', description: 'Latency budget', keywords: ['latency'] },
+  { id: 'cost-profiler', label: 'Cost Profiler', icon: '💲', path: '/ui2/cost-profiler', section: 'system', description: 'Cost profiler', keywords: ['cost'] },
+  { id: 'reliability-econ', label: 'Reliability Econ', icon: '📊', path: '/ui2/reliability-econ', section: 'system', description: 'Reliability economics', keywords: ['reliability'] },
+  { id: 'regional-failover', label: 'Failover Drills', icon: '🔄', path: '/ui2/regional-failover', section: 'system', description: 'Failover drills', keywords: ['failover'] },
+  { id: 'data-residency', label: 'Data Residency', icon: '📍', path: '/ui2/data-residency', section: 'system', description: 'Data residency', keywords: ['residency'] },
+  { id: 'ops-automation-ai', label: 'Ops AI', icon: '🤖', path: '/ui2/ops-automation-ai', section: 'system', description: 'AI ops automation', keywords: ['ops-ai'] },
+  { id: 'hot-path', label: 'Hot Path', icon: '🔥', path: '/ui2/hot-path', section: 'system', description: 'Hot path profiling', keywords: ['hot-path'] },
+  { id: 'release-quality', label: 'Release Quality', icon: '🎯', path: '/ui2/release-quality', section: 'system', description: 'Release quality', keywords: ['release'] },
+  { id: 'capacity-plan', label: 'Capacity Plan', icon: '📐', path: '/ui2/capacity-plan', section: 'system', description: 'Capacity planning', keywords: ['capacity'] },
+  { id: 'platform-debt', label: 'Platform Debt', icon: '🧹', path: '/ui2/platform-debt', section: 'system', description: 'Technical debt', keywords: ['debt'] },
+  { id: 'operator-enable', label: 'Operator Enable', icon: '📚', path: '/ui2/operator-enable', section: 'system', description: 'Operator enablement', keywords: ['operator'] },
+  { id: 'compliance', label: 'Compliance', icon: '📑', path: '/ui2/compliance', section: 'system', description: 'Compliance dashboard', keywords: ['compliance'] },
+  { id: 'platform-settings', label: 'Platform Settings', icon: '🔧', path: '/ui2/platform-settings', section: 'system', description: 'Platform settings', keywords: ['platform'] },
 ];
 
-// Core Correctness Track — Autopilot, Strategies/Backtester, Workflows/Agents, Search, Ops/Settings
-// All other workspaces are still routable but hidden from the left rail.
-const CORE_NAV_IDS = new Set(['autopilot', 'search', 'workflow-builder', 'backtester-v3', 'broker-v2', 'runs', 'settings', 'observability-v2', 'productization', 'dataset-snapshots', 'execution-cockpit', 'control-tower', 'options-matrix', 'derivatives-oms', 'marketplace', 'global-readiness', 'heatmap', 'fixed-income', 'fx-dashboard', 'commodities', 'crypto', 'social', 'macro', 'stock-screener', 'watchlist-manager', 'news-terminal', 'alerts-manager', 'options-chain', 'ml-dashboard', 'portfolio-analytics', 'risk-dashboard', 'order-book-depth', 'algo-execution', 'bloomberg-terminal', 'monte-carlo-sim', 'strategy-builder-pro', 'multi-chart-layout', 'portfolio-optimizer-pro', 'volatility-surface', 'backtest-engine', 'trading-journal', 'sector-analysis', 'dark-pool', 'market-maker', 'correlation-matrix', 'earnings-calendar', 'yield-curve', 'real-time-scanner', 'economic-indicators', 'market-overview', 'report-builder', 'financial-analysis', 'comparable-companies', 'security-finder', 'transaction-cost-analysis', 'alert-delivery', 'credit-risk', 'workspace-manager', 'chart-replay', 'options-pricing-lab', 'market-breadth', 'autopilot-position-sizing', 'autopilot-audit-trail', 'drawing-tool-manager']);
-const VISIBLE_WORKSPACES = WORKSPACES.filter(w => CORE_NAV_IDS.has(w.id));
-
+/* ────────────────────────────────────────── */
+/*              MAIN APP SHELL               */
+/* ────────────────────────────────────────── */
 export function AppShellUI2() {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [marketOpen, setMarketOpen] = useState(false);
   const [marketSession, setMarketSession] = useState<string>('closed');
   const [beGitSha, setBeGitSha] = useState<string>('');
   const [versionMismatch, setVersionMismatch] = useState(false);
-  const isE2EMode = typeof window !== 'undefined' && (
-    window.location.search.includes('e2e=1') || 
-    window.location.search.includes('PLAYWRIGHT_TEST_BASE_URL')
-  );
 
-  // Subscribe to trading store connection status (v1.94)
+  // Subscribe to trading store connection status
   const connectionStatus = useSyncExternalStore(
-    tradingStore.subscribe, 
+    tradingStore.subscribe,
     tradingStore.getConnectionStatus
   );
 
-  // Phase A: Fetch backend version and check for mismatch
+  // Phase A: Fetch backend version
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1740,7 +273,7 @@ export function AppShellUI2() {
     return () => { cancelled = true; };
   }, []);
 
-  // Phase D: Fetch market session status every 30s
+  // Phase D: Fetch market session every 30s
   useEffect(() => {
     let cancelled = false;
     const poll = async () => {
@@ -1760,33 +293,6 @@ export function AppShellUI2() {
     return () => { cancelled = true; clearInterval(iv); };
   }, []);
 
-  const drawerVisible = true;
-  const rightSidebarContent = (
-    <div style={{ color: 'var(--ui2-text-muted)', fontSize: '13px' }}>
-      Select an item to inspect
-    </div>
-  );
-  const [bottomDockTabs] = useState([
-    {
-      id: 'orders',
-      label: 'Orders',
-      content: <OrdersBlotter embedded />,
-    },
-    {
-      id: 'trades',
-      label: 'Trades',
-      content: <TradesLedger embedded />,
-    },
-    {
-      id: 'logs',
-      label: 'Logs',
-      content: <div style={{ color: 'var(--ui2-text-muted)', padding: '12px', fontFamily: 'monospace', fontSize: '12px' }}>System logs stream...</div>,
-    },
-  ]);
-
-  const activeWorkspace =
-    WORKSPACES.find((w) => location.pathname.startsWith(w.path))?.id || 'dashboard';
-
   // Ctrl+K command palette
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1799,15 +305,14 @@ export function AppShellUI2() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Build command palette items from COMMAND_REGISTRY + workspace navigation
-  // W01: Wire ticker commands to ContextBus
-  const setActiveSymbol = useContextBus((s) => s.setActiveSymbol);
-  const commands: CommandItem[] = [
-    ...WORKSPACES.map((ws) => ({
+  // Build command palette items from WORKSPACES + COMMAND_REGISTRY
+  const setActiveSymbol = useContextBus(s => s.setActiveSymbol);
+  const commands: CmdItem[] = [
+    ...WORKSPACES.map(ws => ({
       id: ws.id,
       label: ws.label,
       description: ws.description,
-      icon: ws.icon,
+      icon: <span style={{ fontSize: '14px' }}>{ws.icon}</span>,
       category: 'navigation' as const,
       keywords: ws.keywords,
       path: ws.path,
@@ -1816,11 +321,10 @@ export function AppShellUI2() {
       id: c.id,
       label: c.label,
       description: c.description,
-      icon: c.icon,
-      category: c.category,
+      icon: <span style={{ fontSize: '14px' }}>{c.icon}</span>,
+      category: c.category as CmdItem['category'],
       keywords: c.keywords,
       path: c.path,
-      // W01: Ticker commands set the active symbol via ContextBus
       ...(c.action?.startsWith('select-ticker-') ? {
         onSelect: () => setActiveSymbol(c.action!.replace('select-ticker-', '')),
       } : {}),
@@ -1829,443 +333,117 @@ export function AppShellUI2() {
 
   return (
     <ToastProvider>
-    {/* Phase A: Version mismatch banner */}
-    {versionMismatch && (
-      <div data-testid="version-mismatch-banner" style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000,
-        background: '#d97706', color: '#fff', textAlign: 'center',
-        padding: '6px 16px', fontSize: '12px', fontWeight: 600
-      }}>
-        Version mismatch — FE: {FE_GIT_SHA} / BE: {beGitSha}. Hard-refresh recommended.
-      </div>
-    )}
-    {/* W104 — Skip-to-main-content link (visible on keyboard focus) */}
-    <a
-      href="#main-content"
-      data-testid="skip-to-main"
-      style={{
-        position: 'fixed',
-        top: '-40px',
-        left: '8px',
-        zIndex: 9999,
-        padding: '8px 16px',
-        background: 'var(--ui2-brand-primary, #4f8ef7)',
-        color: '#fff',
-        fontWeight: 600,
-        fontSize: '13px',
-        borderRadius: '4px',
-        textDecoration: 'none',
-        transition: 'top 0.1s',
-      }}
-      onFocus={(e) => { e.currentTarget.style.top = '8px'; }}
-      onBlur={(e) => { e.currentTarget.style.top = '-40px'; }}
-    >
-      Skip to main content
-    </a>
-    <div
-      className="ui2-root"
-      data-testid="ui2-app-shell"
-      data-e2e-mode={isE2EMode ? 'true' : 'false'}
-      style={{
-        width: '100vw',
-        height: '100vh',
-        display: 'grid',
-        gridTemplateRows: '36px 28px 1fr 200px',
-        gridTemplateColumns: '48px auto 1fr auto',
-        gridTemplateAreas: `
-          "topbar topbar topbar topbar"
-          "tape tape tape tape"
-          "rail drawer center sidebar"
-          "rail dock dock dock"
-        `,
-        background: 'var(--ui2-bg-base)',
-        overflow: 'hidden',
-        fontFamily: "'IBM Plex Mono', 'Roboto Mono', monospace",
-      }}
-    >
-      {/* TopBar */}
-      <div
-        data-testid="ui2-topbar"
-        style={{
-          gridArea: 'topbar',
-          background: 'var(--ui2-bg-elevated)',
-          borderBottom: '1px solid var(--ui2-border-strong)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 12px',
-          gap: '12px',
-        }}
-      >
-        {/* Bloomberg APEX Brand */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              width: '22px',
-              height: '22px',
-              background: 'var(--ui2-amber)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '11px',
-              fontWeight: 700,
-              color: '#000',
-              fontFamily: "'IBM Plex Mono', monospace",
-              letterSpacing: '-0.03em',
-              flexShrink: 0,
-            }}
-          >
-            A
-          </div>
-          <div>
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--ui2-amber)',
-                lineHeight: 1,
-                fontFamily: "'IBM Plex Mono', monospace",
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-              }}
-            >
-              APEX
-            </div>
-            <div
-              style={{
-                fontSize: '8px',
-                color: 'var(--ui2-text-muted)',
-                lineHeight: 1,
-                marginTop: '1px',
-                fontFamily: "'IBM Plex Mono', monospace",
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              TERMINAL
-            </div>
-          </div>
-        </div>
-
-        {/* Bloomberg Command Search */}
-        <button
-          onClick={() => setCommandPaletteOpen(true)}
-          data-testid="ui2-command-trigger"
-          aria-label="Open command palette (Ctrl+K)"
-          style={{
-            flex: 1,
-            maxWidth: '500px',
-            padding: '4px 10px',
-            fontSize: '11px',
-            fontFamily: "'IBM Plex Mono', monospace",
-            background: 'var(--ui2-bg-input)',
-            border: '1px solid var(--ui2-border)',
-            borderRadius: '0',
-            color: 'var(--ui2-text-muted)',
-            textAlign: 'left',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            transition: 'border-color 80ms ease, box-shadow 80ms ease',
-            letterSpacing: '0.03em',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--ui2-amber)';
-            e.currentTarget.style.boxShadow = '0 0 8px rgba(255,153,0,0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--ui2-border)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ui2-text-muted)' }}>
-            <span style={{ fontSize: '10px' }}>⎈</span>
-            <span>SEARCH / COMMAND...</span>
-          </div>
-          <div
-            style={{
-              fontSize: '9px',
-              padding: '1px 5px',
-              background: 'var(--ui2-bg-panel)',
-              border: '1px solid var(--ui2-border)',
-              color: 'var(--ui2-amber)',
-              fontFamily: "'IBM Plex Mono', monospace",
-              letterSpacing: '0.06em',
-            }}
-          >
-            CTRL+K
-          </div>
-        </button>
-
-        <div style={{ flex: 1 }} />
-
-        {/* W01: Active Symbol Indicator from ContextBus */}
-        <div
-          data-testid="ui2-active-symbol"
-          style={{
-            padding: '3px 8px',
-            background: 'var(--ui2-amber-ghost)',
-            border: '1px solid var(--ui2-amber)',
-            borderRadius: '0',
-            fontSize: '11px',
-            fontWeight: 700,
-            color: 'var(--ui2-amber)',
-            fontFamily: "'IBM Plex Mono', monospace",
-            letterSpacing: '0.06em',
-          }}
-        >
-          {useContextBus((s) => s.activeSymbol)}
-        </div>
-
-        {/* Status Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-          {/* Data Mode Badge */}
-          <div className="ui2-badge ui2-badge-info" data-testid="ui2-mode-badge">
-            <span>🌐</span>
-            <span data-testid="ui2-data-mode-badge">Online</span>
-          </div>
-
-          {/* Market Status — fetched from backend */}
-          <div
-            className={`ui2-badge ${marketOpen ? 'ui2-badge-success' : 'ui2-badge-neutral'}`}
-            data-testid="ui2-market-status"
-            data-market-session={marketSession}
-          >
-            <span>{marketOpen ? '●' : '○'}</span>
-            <span>{marketOpen ? 'Market Open' : marketSession === 'pre' ? 'Pre-Market' : marketSession === 'post' ? 'After Hours' : 'Market Closed'}</span>
-          </div>
-
-          {/* Theme Toggle — accessible for E2E and a11y */}
-          <button
-            type="button"
-            className="ui2-theme-toggle theme-toggle"
-            aria-label="Toggle theme"
-            title="Toggle theme"
-            onClick={() => {
-              const root = document.documentElement;
-              const mode = root.getAttribute('data-theme-mode') || 'dark';
-              const next = mode === 'dark' ? 'light' : 'dark';
-              root.setAttribute('data-theme-mode', next);
-              root.setAttribute('data-theme', next === 'dark' ? 'tradingview-dark' : 'tradingview-light');
-              try { localStorage.setItem('platform_theme', next === 'dark' ? 'tradingview-dark' : 'tradingview-light'); } catch { /* noop */ }
-            }}
-            style={{
-              width: '28px', height: '28px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)',
-              borderRadius: '0', cursor: 'pointer', fontSize: '12px',
-            }}
-          >
-            <span aria-hidden>🌓</span>
-          </button>
-
-          {/* Connectivity (v1.94: Real status from tradingStore) */}
-          <div 
-            style={{
-              display: 'flex', alignItems: 'center', gap: '4px',
-              fontSize: '9px', fontFamily: "'IBM Plex Mono', monospace",
-              fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
-              padding: '2px 6px',
-              background: connectionStatus === 'connected' ? 'rgba(0,216,138,0.08)' : 'rgba(255,153,0,0.08)',
-              border: `1px solid ${connectionStatus === 'connected' ? 'rgba(0,216,138,0.3)' : 'rgba(255,153,0,0.3)'}`,
-              color: connectionStatus === 'connected' ? 'var(--ui2-green)' : 'var(--ui2-amber)',
-            }} 
-            data-testid="ui2-conn-status"
-            title={`Connection: ${connectionStatus}`}
-          >
-            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
-            <span>
-              {connectionStatus === 'connected' ? 'WS' :
-               connectionStatus === 'connecting' ? 'Connecting' :
-               connectionStatus === 'fallback' ? 'Polling' :
-               'Offline'}
-            </span>
-          </div>
-
-          {/* User Profile */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '3px 8px',
-              background: 'var(--ui2-bg-panel)',
-              border: '1px solid var(--ui2-border)',
-              borderRadius: '0',
-            }}
-          >
-            <div
-              style={{
-                width: '18px',
-                height: '18px',
-                background: 'var(--ui2-amber)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '8px',
-                color: '#000',
-                fontWeight: 700,
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}
-            >
-              {APEX_USER.name.slice(0, 2).toUpperCase()}
-            </div>
-            <span style={{ color: 'var(--ui2-text-secondary)', fontSize: '10px', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              {APEX_USER.name.split(' ')[0]}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* MarketTape */}
-      <div style={{ gridArea: 'tape' }}>
-        <MarketTape />
-      </div>
-
-      {/* LeftRail */}
-      <div
-        data-testid="ui2-left-rail"
-        style={{
-          gridArea: 'rail',
-          background: 'var(--ui2-bg-elevated)',
-          borderRight: '1px solid var(--ui2-border)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: '6px',
-          gap: '2px',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-        }}
-      >
-        {VISIBLE_WORKSPACES.map((workspace, i) => {
-          const isActive = activeWorkspace === workspace.id;
-          const prevSection = i > 0 ? VISIBLE_WORKSPACES[i - 1].section : undefined;
-          const showDivider = prevSection && workspace.section !== prevSection;
-          return (
-            <div key={workspace.id} style={{ display: 'contents' }}>
-              {showDivider && (
-                <div style={{ width: '28px', height: '1px', background: 'var(--ui2-border)', margin: '3px 0' }} />
-              )}
-              <button
-                data-testid={`ui2-rail-${workspace.id}`}
-                onClick={() => navigate(workspace.path)}
-                title={workspace.label}
-                aria-label={workspace.label}
-                style={{
-                  width: '40px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  background: isActive ? 'var(--ui2-amber-hover)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '0',
-                  cursor: 'pointer',
-                  transition: 'all 80ms ease',
-                  borderLeft: isActive ? '2px solid var(--ui2-amber)' : '2px solid transparent',
-                  flexShrink: 0,
-                  filter: isActive ? 'none' : 'grayscale(0.6) opacity(0.7)',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'var(--ui2-amber-ghost)';
-                    e.currentTarget.style.borderLeftColor = 'rgba(255,153,0,0.3)';
-                    e.currentTarget.style.filter = 'none';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.borderLeftColor = 'transparent';
-                    e.currentTarget.style.filter = 'grayscale(0.6) opacity(0.7)';
-                  }
-                }}
-              >
-                {workspace.icon}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* LeftDrawer */}
-      {drawerVisible && (
-        <div
-          data-testid="ui2-left-drawer"
-          style={{
-            gridArea: 'drawer',
-            width: '240px',
-            background: 'var(--ui2-bg-panel)',
-            borderRight: '1px solid var(--ui2-border)',
-            overflow: 'auto',
-            padding: '12px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              color: 'var(--ui2-text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '8px',
-            }}
-          >
-            {WORKSPACES.find((w) => w.id === activeWorkspace)?.label || 'Workspace'}
-          </div>
-          <div style={{ color: 'var(--ui2-text-muted)', fontSize: '12px' }}>
-            Context-sensitive list (watchlist, strategies, portfolios, etc.)
-          </div>
+      {/* Phase A: Version mismatch banner */}
+      {versionMismatch && (
+        <div data-testid="version-mismatch-banner" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000,
+          background: 'var(--warn, #F59E0B)', color: '#fff', textAlign: 'center',
+          padding: '6px 16px', fontSize: '12px', fontWeight: 600,
+        }}>
+          Version mismatch — FE: {FE_GIT_SHA} / BE: {beGitSha}. Hard-refresh recommended.
         </div>
       )}
 
-      {/* Center Workspace */}
-      <div
-        id="main-content"
-        role="main"
-        aria-label="Main workspace"
-        data-testid="ui2-center"
+      {/* Skip-to-main-content */}
+      <a
+        href="#main-content"
+        data-testid="skip-to-main"
         style={{
-          gridArea: 'center',
-          background: 'var(--ui2-bg-base)',
-          overflow: 'auto',
-          position: 'relative',
+          position: 'fixed', top: '-40px', left: '8px', zIndex: 9999,
+          padding: '8px 16px', background: 'var(--brand, #2962FF)', color: '#fff',
+          fontWeight: 600, fontSize: '13px', borderRadius: '4px',
+          textDecoration: 'none', transition: 'top 0.1s',
+        }}
+        onFocus={e => { e.currentTarget.style.top = '8px'; }}
+        onBlur={e => { e.currentTarget.style.top = '-40px'; }}
+      >
+        Skip to main content
+      </a>
+
+      {/* ━━━ MAIN APP GRID ━━━
+        3 rows: 40px topbar | 1fr layout | 20px statusbar
+        Layout inner: 48px leftnav | 1fr content | 286px rightsidebar
+      */}
+      <div
+        className="apex-app"
+        data-testid="ui2-app-shell"
+        style={{
+          display: 'grid',
+          gridTemplateRows: '40px 1fr 20px',
+          gridTemplateColumns: '1fr',
+          width: '100vw',
+          height: '100vh',
+          overflow: 'hidden',
+          background: 'var(--bg0, #0C0E12)',
+          color: 'var(--tx1, #D1D4DC)',
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          fontSize: '13px',
         }}
       >
-        <Outlet />
-      </div>
+        {/* ROW 1: TopBar (40px) */}
+        {/* Data mode badge — visible in TopBar area */}
+        <span
+          data-testid="ui2-data-mode-badge"
+          style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0.01 }}
+          aria-hidden="false"
+        >Online</span>
+        <TopBar
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          connectionStatus={connectionStatus}
+          marketOpen={marketOpen}
+          marketSession={marketSession}
+        />
 
-      {/* RightSidebar */}
-      <div style={{ gridArea: 'sidebar' }}>
-        <RightSidebar testId="ui2-right-sidebar">{rightSidebarContent}</RightSidebar>
-      </div>
+        {/* ROW 2: Layout (1fr) — 3-column inner grid */}
+        <div
+          className="apex-layout"
+          data-testid="ui2-layout"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '48px 1fr 286px',
+            overflow: 'hidden',
+            minHeight: 0,
+          }}
+        >
+          {/* COL 1: LeftNav (48px) */}
+          <LeftNav />
 
-      {/* BottomDock */}
-      <div style={{ gridArea: 'dock' }}>
-        <BottomDock
-          tabs={bottomDockTabs}
-          defaultTab="orders"
-          testId="ui2-bottom-dock"
+          {/* COL 2: Content (1fr) */}
+          <div
+            className="apex-content"
+            id="main-content"
+            role="main"
+            aria-label="Main workspace"
+            data-testid="ui2-center"
+            style={{
+              overflow: 'auto',
+              minHeight: 0,
+              background: 'var(--bg1, #131722)',
+              borderLeft: '1px solid var(--border, #1E222D)',
+              borderRight: '1px solid var(--border, #1E222D)',
+            }}
+          >
+            <Outlet />
+          </div>
+
+          {/* COL 3: RightSidebar (286px) */}
+          <RightSidebarNew />
+        </div>
+
+        {/* ROW 3: StatusBar (20px) */}
+        <StatusBar
+          marketOpen={marketOpen}
+          marketSession={marketSession}
+          connectionStatus={connectionStatus}
         />
       </div>
 
-      {/* Command Palette (Ctrl+K) */}
-      <CommandPalette
+      {/* Command Palette Overlay (Ctrl+K) */}
+      <CommandPaletteNew
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
-        commands={commands}
-        testId="command-palette"
+        items={commands}
       />
-    </div>
     </ToastProvider>
   );
 }

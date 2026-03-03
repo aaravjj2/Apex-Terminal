@@ -56,3 +56,5 @@ frontend/test-results/
 *.zip
 *.tar.gz
 archives/
+artifacts/
+proofpacks/

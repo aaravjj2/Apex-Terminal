@@ -207,10 +207,10 @@ export function IncidentComplianceUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>ICMP</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>INCIDENT COMPLIANCE â€” REGULATORY NOTIFICATIONS + OBLIGATIONS + BREACH REPORTING</span>
-        {reportableIncidents > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {reportableIncidents} REPORTABLE</span>}
-        {overdueObligations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {overdueObligations} OVERDUE OBLIGATIONS</span>}
-        {lateRiskNotifs > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {lateRiskNotifs} LATE RISK NOTIFS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {reportableIncidents > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {reportableIncidents} REPORTABLE</span>}
+        {overdueObligations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {overdueObligations} OVERDUE OBLIGATIONS</span>}
+        {lateRiskNotifs > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {lateRiskNotifs} LATE RISK NOTIFS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Total Incidents" value={incidents.length} col={BLUE} />
@@ -270,7 +270,7 @@ export function IncidentComplianceUI2() {
                     <Td mono col={SUBTLE}>{n.jurisdiction}</Td>
                     <Td mono col={PURPLE}>{n.notifType}</Td>
                     <Td><StatusBadge2 s={n.status} /></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.lateRisk ? RED : SUBTLE }}>{n.lateRisk ? 'âš‘ YES' : 'NO'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.lateRisk ? RED : SUBTLE }}>{n.lateRisk ? '⚠‘ YES' : 'NO'}</span></Td>
                     <Td mono col={AMBER}>{n.dueAt}</Td>
                     <Td mono col={n.submittedAt ? GREEN : SUBTLE}>{n.submittedAt || 'â€”'}</Td>
                     <Td mono col={SUBTLE}>{n.refNumber || 'â€”'}</Td>

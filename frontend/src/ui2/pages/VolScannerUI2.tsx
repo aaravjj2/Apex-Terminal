@@ -303,7 +303,7 @@ export function VolScannerUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>VOLSCAN</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>VOLATILITY SCANNER â€” UNUSUAL ACTIVITY DETECTION</span>
-        {highAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš  {highAlerts} HIGH ALERTS</span>}
+        {highAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {highAlerts} HIGH ALERTS</span>}
       </div>
 
       {/* â”€â”€ STATS STRIP â”€â”€ */}
@@ -371,7 +371,7 @@ export function VolScannerUI2() {
                     <tr key={s.symbol}>
                       <Td mono col={AMBER}>
                         {s.symbol}
-                        {s.unusualActivity && <span style={{ fontSize: 7, color: RED, marginLeft: 5 }}>âš¡U</span>}
+                        {s.unusualActivity && <span style={{ fontSize: 7, color: RED, marginLeft: 5 }}>⚠¡U</span>}
                       </Td>
                       <Td><SignalBadge signal={s.signal} /></Td>
                       <Td right mono col={s.score > 7 ? GREEN : s.score > 4 ? AMBER : RED}>{s.score.toFixed(1)}</Td>

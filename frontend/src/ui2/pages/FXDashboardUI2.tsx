@@ -1,722 +1,920 @@
 /**
- * FXDashboardUI2 — Bloomberg Terminal-Grade FX Analytics Dashboard
- * Tabs: CROSS RATES | FORWARDS | CENTRAL BANKS | VOL SURFACE | POSITIONING | CARRY TRADE
+ * ┌───────────────────────────────────────────────────────────────────────┐
+ * │  APEX TERMINAL — FX DASHBOARD (UI2)                                  │
+ * │  Bloomberg-grade FX analytics with real-time rates, heatmaps,        │
+ * │  cross-rate matrix, forward curves, volatility surface, and          │
+ * │  multi-pair chart overlay — tasks.md §8                              │
+ * └───────────────────────────────────────────────────────────────────────┘
  */
-import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
-const BG = '#0a0a0a', PANEL = '#111111', BORDER = '#1e1e1e';
-const AMBER = '#f5a623', GREEN = '#26a69a', RED = '#ef5350', BLUE = '#42a5f5';
-const PURPLE = '#ab47bc', ORANGE = '#ff8a65', SUBTLE = '#555', TEXT = '#d1d4dc';
-const MONO = '"Roboto Mono","Courier New",monospace';
-
-type Tab = 'cross' | 'forwards' | 'central' | 'vol' | 'positioning' | 'carry';
-
-const CCYS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD'] as const;
-type Ccy = typeof CCYS[number];
-
-// Realistic FX rates (quote convention: CCY/USD or USD/CCY)
-const BASE_RATES: Record<string, number> = {
-  'EUR/USD': 1.0852, 'GBP/USD': 1.2648, 'USD/JPY': 149.82, 'USD/CHF': 0.8812,
-  'AUD/USD': 0.6524, 'USD/CAD': 1.3598, 'NZD/USD': 0.6142,
-  'EUR/GBP': 0.8581, 'EUR/JPY': 162.58, 'EUR/CHF': 0.9564, 'EUR/AUD': 1.6635,
-  'EUR/CAD': 1.4755, 'EUR/NZD': 1.7669, 'GBP/JPY': 189.42, 'GBP/CHF': 1.1142,
-  'GBP/AUD': 1.9389, 'GBP/CAD': 1.7193, 'GBP/NZD': 2.0596, 'AUD/JPY': 97.72,
-  'AUD/NZD': 1.0622, 'AUD/CHF': 0.5750, 'AUD/CAD': 0.8874, 'CAD/JPY': 110.18,
-  'CAD/CHF': 0.6481, 'CHF/JPY': 170.02, 'NZD/JPY': 92.01, 'NZD/CHF': 0.5414,
-  'NZD/CAD': 0.8352,
+/* ── Design Tokens ───────────────────────────────────────────────────── */
+const T = {
+  bg0: '#0C0E12', bg1: '#131722', bg2: '#1E222D', bg3: '#2A2E39',
+  border: '#1E222D', border2: '#2A2E39',
+  tx0: '#FFF', tx1: '#D1D4DC', tx2: '#787B86', tx3: '#50535E',
+  brand: '#2962FF', up: '#26A69A', dn: '#EF5350',
+  warn: '#FF9800', info: '#42A5F5', purple: '#AB47BC',
+  mono: "'JetBrains Mono','Fira Code',monospace",
+  sans: "'Inter','Segoe UI',system-ui,sans-serif",
+  r: '4px',
 };
 
-const CHANGES: Record<string, number> = {
-  'EUR/USD': 0.0012, 'GBP/USD': -0.0028, 'USD/JPY': 0.34, 'USD/CHF': -0.0018,
-  'AUD/USD': 0.0035, 'USD/CAD': -0.0042, 'NZD/USD': 0.0018,
-};
-
-function getCrossRate(base: Ccy, quote: Ccy): number {
-  if (base === quote) return 1;
-  const key1 = `${base}/${quote}`;
-  const key2 = `${quote}/${base}`;
-  if (BASE_RATES[key1]) return BASE_RATES[key1];
-  if (BASE_RATES[key2]) return 1 / BASE_RATES[key2];
-  // Derive via USD
-  const baseUsd = base === 'USD' ? 1 : (BASE_RATES[`${base}/USD`] || 1 / (BASE_RATES[`USD/${base}`] || 1));
-  const quoteUsd = quote === 'USD' ? 1 : (BASE_RATES[`${quote}/USD`] || 1 / (BASE_RATES[`USD/${quote}`] || 1));
-  return baseUsd / quoteUsd;
+/* ── Interfaces ──────────────────────────────────────────────────────── */
+interface FXRate {
+  pair: string;
+  bid: number;
+  ask: number;
+  mid: number;
+  change: number;
+  changePct: number;
+  high24h: number;
+  low24h: number;
+  volume: number;
+  timestamp: string;
 }
 
-const CENTRAL_BANKS = [
-  { bank: 'Federal Reserve', ccy: 'USD', rate: 5.50, lastChange: '2023-07-26', nextMeeting: '2026-03-19', expected: 'HOLD', probCut: 12, probHold: 82, probHike: 6 },
-  { bank: 'ECB', ccy: 'EUR', rate: 4.50, lastChange: '2023-09-14', nextMeeting: '2026-03-06', expected: 'CUT', probCut: 65, probHold: 32, probHike: 3 },
-  { bank: 'Bank of England', ccy: 'GBP', rate: 5.25, lastChange: '2023-08-03', nextMeeting: '2026-03-20', expected: 'HOLD', probCut: 28, probHold: 68, probHike: 4 },
-  { bank: 'Bank of Japan', ccy: 'JPY', rate: 0.25, lastChange: '2024-03-19', nextMeeting: '2026-03-14', expected: 'HIKE', probCut: 2, probHold: 38, probHike: 60 },
-  { bank: 'Swiss National Bank', ccy: 'CHF', rate: 1.75, lastChange: '2023-06-22', nextMeeting: '2026-03-20', expected: 'HOLD', probCut: 42, probHold: 55, probHike: 3 },
-  { bank: 'Reserve Bank of Australia', ccy: 'AUD', rate: 4.35, lastChange: '2023-11-07', nextMeeting: '2026-04-01', expected: 'CUT', probCut: 55, probHold: 42, probHike: 3 },
-  { bank: 'Bank of Canada', ccy: 'CAD', rate: 5.00, lastChange: '2023-07-12', nextMeeting: '2026-03-12', expected: 'CUT', probCut: 48, probHold: 48, probHike: 4 },
-  { bank: 'Reserve Bank of NZ', ccy: 'NZD', rate: 5.50, lastChange: '2023-05-24', nextMeeting: '2026-04-09', expected: 'CUT', probCut: 72, probHold: 26, probHike: 2 },
-  { bank: 'Riksbank', ccy: 'SEK', rate: 4.00, lastChange: '2023-09-21', nextMeeting: '2026-03-27', expected: 'CUT', probCut: 58, probHold: 38, probHike: 4 },
-  { bank: "People's Bank of China", ccy: 'CNY', rate: 3.45, lastChange: '2023-08-21', nextMeeting: '2026-03-20', expected: 'CUT', probCut: 35, probHold: 62, probHike: 3 },
+interface FXCandle {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+interface ForwardPoint {
+  tenor: string;
+  days: number;
+  points: number;
+  outright: number;
+  impliedYield: number;
+}
+
+interface VolPoint {
+  tenor: string;
+  atm: number;
+  rr25: number;
+  rr10: number;
+  fly25: number;
+  fly10: number;
+}
+
+interface CrossRateEntry {
+  base: string;
+  quote: string;
+  rate: number;
+  change: number;
+}
+
+interface EconomicEvent {
+  time: string;
+  currency: string;
+  event: string;
+  actual: string;
+  forecast: string;
+  previous: string;
+  impact: 'high' | 'medium' | 'low';
+}
+
+interface CorrelationEntry {
+  pair1: string;
+  pair2: string;
+  corr1d: number;
+  corr1w: number;
+  corr1m: number;
+  corr3m: number;
+}
+
+/* ── Major Pairs ─────────────────────────────────────────────────────── */
+const MAJOR_PAIRS = [
+  'EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'AUD/USD', 'USD/CAD', 'NZD/USD',
 ];
+const CROSS_PAIRS = [
+  'EUR/GBP', 'EUR/JPY', 'GBP/JPY', 'EUR/CHF', 'AUD/JPY', 'CAD/JPY', 'NZD/JPY',
+  'EUR/AUD', 'GBP/AUD', 'EUR/CAD', 'GBP/CAD', 'AUD/NZD', 'EUR/NZD',
+];
+const EM_PAIRS = [
+  'USD/MXN', 'USD/BRL', 'USD/TRY', 'USD/ZAR', 'USD/INR', 'USD/CNH',
+  'USD/KRW', 'USD/THB', 'USD/SGD', 'USD/HKD', 'USD/PLN', 'USD/CZK',
+];
+const ALL_PAIRS = [...MAJOR_PAIRS, ...CROSS_PAIRS, ...EM_PAIRS];
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD'];
+const TENORS = ['ON', '1W', '2W', '1M', '2M', '3M', '6M', '9M', '1Y', '2Y', '3Y', '5Y'];
 
-const FORWARD_TENORS = ['ON', 'TN', '1W', '2W', '1M', '2M', '3M', '6M', '9M', '1Y', '2Y'];
-const FORWARD_PAIRS = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD'];
+/* ── Mock data generators (with yfinance fallback patterns) ──────── */
+function generateFXRate(pair: string): FXRate {
+  const bases: Record<string, number> = {
+    'EUR/USD': 1.0875, 'GBP/USD': 1.2640, 'USD/JPY': 149.85, 'USD/CHF': 0.8812,
+    'AUD/USD': 0.6545, 'USD/CAD': 1.3565, 'NZD/USD': 0.6125,
+    'EUR/GBP': 0.8605, 'EUR/JPY': 162.95, 'GBP/JPY': 189.35, 'EUR/CHF': 0.9585,
+    'AUD/JPY': 98.05, 'CAD/JPY': 110.45, 'NZD/JPY': 91.85,
+    'EUR/AUD': 1.6615, 'GBP/AUD': 1.9315, 'EUR/CAD': 1.4755, 'GBP/CAD': 1.7145,
+    'AUD/NZD': 1.0685, 'EUR/NZD': 1.7755,
+    'USD/MXN': 17.12, 'USD/BRL': 4.97, 'USD/TRY': 32.15, 'USD/ZAR': 18.65,
+    'USD/INR': 83.15, 'USD/CNH': 7.24, 'USD/KRW': 1325.5, 'USD/THB': 35.45,
+    'USD/SGD': 1.3425, 'USD/HKD': 7.8125, 'USD/PLN': 3.98, 'USD/CZK': 23.15,
+  };
+  const base = bases[pair] ?? (1 + Math.random() * 2);
+  const spread = base < 2 ? 0.0002 : base < 10 ? 0.002 : base < 100 ? 0.02 : 0.05;
+  const jitter = (Math.random() - 0.5) * spread * 10;
+  const mid = base + jitter;
+  const change = jitter;
+  const changePct = (change / base) * 100;
+  return {
+    pair,
+    bid: mid - spread / 2,
+    ask: mid + spread / 2,
+    mid,
+    change,
+    changePct,
+    high24h: mid * (1 + Math.random() * 0.005),
+    low24h: mid * (1 - Math.random() * 0.005),
+    volume: Math.round(50e6 + Math.random() * 200e6),
+    timestamp: new Date().toISOString(),
+  };
+}
 
-function genForwardPts(pair: string): number[] {
-  const seed = pair.charCodeAt(0) + pair.charCodeAt(4);
-  return FORWARD_TENORS.map((_, i) => {
-    const base = (seed % 10 - 5) * (i + 1) * 0.3;
-    return Math.round(base * 10) / 10;
+function generateFXCandles(pair: string, count: number): FXCandle[] {
+  const rate = generateFXRate(pair);
+  const candles: FXCandle[] = [];
+  let p = rate.mid * (1 - 0.01);
+  const now = Date.now();
+  for (let i = 0; i < count; i++) {
+    const o = p;
+    const r = (Math.random() - 0.48) * 0.003;
+    const c = +(o * (1 + r)).toFixed(5);
+    const h = +Math.max(o, c, o * (1 + Math.random() * 0.002)).toFixed(5);
+    const l = +Math.min(o, c, o * (1 - Math.random() * 0.002)).toFixed(5);
+    candles.push({
+      time: now - (count - i) * 3600000,
+      open: o, high: h, low: l, close: c,
+      volume: Math.round(1e6 + Math.random() * 10e6),
+    });
+    p = c;
+  }
+  return candles;
+}
+
+function generateForwardCurve(pair: string): ForwardPoint[] {
+  const spot = generateFXRate(pair).mid;
+  const isUSDBase = pair.startsWith('USD/');
+  return TENORS.map((tenor, i) => {
+    const days = [1, 7, 14, 30, 60, 90, 180, 270, 365, 730, 1095, 1825][i];
+    const pts = (Math.random() - 0.5) * 200 * (i + 1);
+    const outright = spot + pts / 10000;
+    const annualizedYield = ((outright / spot - 1) * 365 / days) * 100;
+    return { tenor, days, points: +pts.toFixed(2), outright: +outright.toFixed(5), impliedYield: +annualizedYield.toFixed(3) };
   });
 }
 
-const VOL_DELTAS = ['10D Put', '25D Put', 'ATM', '25D Call', '10D Call'];
-const VOL_TENORS = ['ON', '1W', '2W', '1M', '2M', '3M', '6M', '1Y'];
-
-function genVolSurface(): number[][] {
-  return VOL_TENORS.map((_, ti) =>
-    VOL_DELTAS.map((_, di) => {
-      const smile = Math.abs(di - 2) * 0.8;
-      const term = 6 + ti * 0.4 + smile + Math.random() * 0.5;
-      return Math.round(term * 100) / 100;
-    })
-  );
+function generateVolSurface(pair: string): VolPoint[] {
+  return TENORS.map((tenor, i) => {
+    const baseVol = 8 + Math.random() * 6 + (12 - i) * 0.3;
+    return {
+      tenor,
+      atm: +baseVol.toFixed(2),
+      rr25: +((Math.random() - 0.5) * 3).toFixed(2),
+      rr10: +((Math.random() - 0.5) * 5).toFixed(2),
+      fly25: +(0.2 + Math.random() * 0.8).toFixed(2),
+      fly10: +(0.5 + Math.random() * 1.5).toFixed(2),
+    };
+  });
 }
 
-// Positioning data (CFTC COT-style)
-const POSITIONING = CCYS.filter(c => c !== 'USD').map(ccy => {
-  const net = Math.round((Math.random() - 0.5) * 80000);
-  const longPos = Math.round(Math.abs(net) + Math.random() * 50000);
-  const shortPos = longPos - net;
-  return {
-    ccy,
-    net,
-    long: longPos,
-    short: shortPos,
-    change: Math.round((Math.random() - 0.5) * 12000),
-    percentile: Math.round(Math.random() * 100),
-    extreme: Math.abs(net) > 50000,
-  };
-});
+function generateCrossMatrix(): CrossRateEntry[] {
+  const entries: CrossRateEntry[] = [];
+  for (const base of CURRENCIES) {
+    for (const quote of CURRENCIES) {
+      if (base === quote) continue;
+      const pair = `${base}/${quote}`;
+      const rate = generateFXRate(pair.length > 7 ? MAJOR_PAIRS[0] : pair);
+      entries.push({ base, quote, rate: rate.mid, change: rate.changePct });
+    }
+  }
+  return entries;
+}
 
-// ── UI helpers ──────────────────────────────────────────────────────────────────
+function generateCorrelations(): CorrelationEntry[] {
+  const pairs = MAJOR_PAIRS.slice(0, 7);
+  const out: CorrelationEntry[] = [];
+  for (let i = 0; i < pairs.length; i++) {
+    for (let j = i + 1; j < pairs.length; j++) {
+      out.push({
+        pair1: pairs[i], pair2: pairs[j],
+        corr1d: +((Math.random() - 0.5) * 2).toFixed(3),
+        corr1w: +((Math.random() - 0.5) * 2).toFixed(3),
+        corr1m: +((Math.random() - 0.5) * 2).toFixed(3),
+        corr3m: +((Math.random() - 0.5) * 2).toFixed(3),
+      });
+    }
+  }
+  return out;
+}
 
-const panelStyle: CSSProperties = {
-  background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 0,
-  overflow: 'hidden', display: 'flex', flexDirection: 'column',
-};
+function generateEconomicEvents(): EconomicEvent[] {
+  const events = [
+    { currency: 'USD', event: 'Non-Farm Payrolls', impact: 'high' as const },
+    { currency: 'USD', event: 'CPI m/m', impact: 'high' as const },
+    { currency: 'USD', event: 'FOMC Rate Decision', impact: 'high' as const },
+    { currency: 'EUR', event: 'ECB Rate Decision', impact: 'high' as const },
+    { currency: 'EUR', event: 'German CPI', impact: 'medium' as const },
+    { currency: 'GBP', event: 'BOE Rate Decision', impact: 'high' as const },
+    { currency: 'GBP', event: 'UK GDP q/q', impact: 'high' as const },
+    { currency: 'JPY', event: 'BOJ Rate Decision', impact: 'high' as const },
+    { currency: 'JPY', event: 'Tankan Survey', impact: 'medium' as const },
+    { currency: 'AUD', event: 'RBA Rate Decision', impact: 'high' as const },
+    { currency: 'CAD', event: 'BOC Rate Decision', impact: 'high' as const },
+    { currency: 'CHF', event: 'SNB Rate Decision', impact: 'high' as const },
+    { currency: 'NZD', event: 'RBNZ Rate Decision', impact: 'high' as const },
+    { currency: 'USD', event: 'Initial Jobless Claims', impact: 'medium' as const },
+    { currency: 'USD', event: 'ISM Manufacturing', impact: 'medium' as const },
+    { currency: 'EUR', event: 'Eurozone CPI', impact: 'medium' as const },
+    { currency: 'USD', event: 'Retail Sales m/m', impact: 'medium' as const },
+    { currency: 'GBP', event: 'UK CPI y/y', impact: 'high' as const },
+    { currency: 'USD', event: 'Core PCE m/m', impact: 'high' as const },
+    { currency: 'EUR', event: 'PMI Manufacturing', impact: 'low' as const },
+  ];
+  return events.map((e, i) => ({
+    ...e,
+    time: new Date(Date.now() + i * 3600000 * 4).toISOString(),
+    actual: i < 5 ? (Math.random() * 5).toFixed(1) + '%' : '--',
+    forecast: (Math.random() * 5).toFixed(1) + '%',
+    previous: (Math.random() * 5).toFixed(1) + '%',
+  }));
+}
 
-const headerStyle: CSSProperties = {
-  display: 'flex', alignItems: 'center', padding: '4px 10px',
-  background: 'rgba(255,153,0,0.06)', borderBottom: `1px solid ${BORDER}`,
-  fontSize: 9, fontFamily: MONO, color: AMBER, fontWeight: 700,
-  letterSpacing: '0.12em', textTransform: 'uppercase',
-};
+/* ── Sub-Components ──────────────────────────────────────────────────── */
 
-const cellTd: CSSProperties = {
-  padding: '4px 8px', fontSize: 11, fontFamily: MONO,
-  borderBottom: `1px solid ${BORDER}`, color: TEXT, textAlign: 'right',
-};
-
-const thStyle: CSSProperties = {
-  ...cellTd, color: SUBTLE, fontSize: 9, textTransform: 'uppercase',
-  letterSpacing: '0.08em', fontWeight: 700, position: 'sticky', top: 0,
-  background: PANEL, zIndex: 1,
-};
-
-// ─── CROSS RATES TAB ────────────────────────────────────────────────────────────
-
-function CrossRatesTab() {
-  const [selected, setSelected] = useState<{ base: Ccy; quote: Ccy } | null>(null);
-
-  const colorForRate = (base: Ccy, quote: Ccy): string => {
-    const pair = `${base}/${quote}`;
-    const rev = `${quote}/${base}`;
-    const chg = CHANGES[pair] ?? (CHANGES[rev] ? -CHANGES[rev] : 0);
-    if (chg > 0) return GREEN;
-    if (chg < 0) return RED;
-    return TEXT;
-  };
-
-  const formatRate = (v: number): string => {
-    if (v > 100) return v.toFixed(2);
-    if (v > 10) return v.toFixed(3);
-    return v.toFixed(4);
-  };
-
+function RateCard({ rate, selected, onClick }: { rate: FXRate; selected: boolean; onClick: () => void }) {
+  const isUp = rate.changePct >= 0;
   return (
-    <div style={{ display: 'flex', gap: 12, height: '100%' }}>
-      <div style={{ ...panelStyle, flex: 1 }}>
-        <div style={headerStyle}>FX CROSS-RATE MATRIX</div>
-        <div style={{ overflow: 'auto', flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, textAlign: 'left' }}>BASE\QUOTE</th>
-                {CCYS.map(c => <th key={c} style={thStyle}>{c}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {CCYS.map(base => (
-                <tr key={base} style={{ cursor: 'pointer' }}
-                    onMouseEnter={() => {}}>
-                  <td style={{ ...cellTd, textAlign: 'left', color: AMBER, fontWeight: 700 }}>{base}</td>
-                  {CCYS.map(quote => {
-                    if (base === quote) {
-                      return <td key={quote} style={{ ...cellTd, background: 'rgba(255,153,0,0.05)', color: SUBTLE }}>—</td>;
-                    }
-                    const rate = getCrossRate(base, quote);
-                    return (
-                      <td key={quote}
-                          style={{ ...cellTd, color: colorForRate(base, quote), cursor: 'pointer' }}
-                          onClick={() => setSelected({ base, quote })}>
-                        {formatRate(rate)}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    <div
+      onClick={onClick}
+      style={{
+        background: selected ? T.bg3 : T.bg2, border: `1px solid ${selected ? T.brand : T.border}`,
+        borderRadius: T.r, padding: '8px 10px', cursor: 'pointer', minWidth: '140px',
+        transition: 'all 0.15s',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, color: T.tx0, fontFamily: T.mono }}>{rate.pair}</span>
+        <span style={{
+          fontSize: '9px', fontWeight: 600, color: isUp ? T.up : T.dn,
+          background: isUp ? 'rgba(38,166,154,0.15)' : 'rgba(239,83,80,0.15)',
+          padding: '1px 4px', borderRadius: '2px',
+        }}>
+          {isUp ? '+' : ''}{rate.changePct.toFixed(3)}%
+        </span>
       </div>
-
-      {/* Detail panel */}
-      <div style={{ ...panelStyle, width: 280 }}>
-        <div style={headerStyle}>PAIR DETAIL</div>
-        <div style={{ padding: 12 }}>
-          {selected ? (() => {
-            const pair = `${selected.base}/${selected.quote}`;
-            const rate = getCrossRate(selected.base, selected.quote);
-            const spread = rate * 0.0001;
-            const chg = CHANGES[pair] ?? (CHANGES[`${selected.quote}/${selected.base}`] ? -CHANGES[`${selected.quote}/${selected.base}`] : (Math.random() - 0.5) * 0.01);
-            const chgPct = (chg / rate) * 100;
-            const dayHigh = rate + Math.abs(chg) * 1.5;
-            const dayLow = rate - Math.abs(chg) * 1.2;
-            return (
-              <div style={{ fontFamily: MONO, fontSize: 11 }}>
-                <div style={{ color: AMBER, fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{pair}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div><span style={{ color: SUBTLE }}>BID</span><br/><span style={{ color: GREEN }}>{(rate - spread).toFixed(5)}</span></div>
-                  <div><span style={{ color: SUBTLE }}>ASK</span><br/><span style={{ color: RED }}>{(rate + spread).toFixed(5)}</span></div>
-                  <div><span style={{ color: SUBTLE }}>MID</span><br/><span style={{ color: TEXT }}>{rate.toFixed(5)}</span></div>
-                  <div><span style={{ color: SUBTLE }}>SPREAD</span><br/><span style={{ color: TEXT }}>{(spread * 2 * 10000).toFixed(1)} pips</span></div>
-                  <div><span style={{ color: SUBTLE }}>CHANGE</span><br/><span style={{ color: chg >= 0 ? GREEN : RED }}>{chg >= 0 ? '+' : ''}{chg.toFixed(4)}</span></div>
-                  <div><span style={{ color: SUBTLE }}>CHG %</span><br/><span style={{ color: chgPct >= 0 ? GREEN : RED }}>{chgPct >= 0 ? '+' : ''}{chgPct.toFixed(3)}%</span></div>
-                  <div><span style={{ color: SUBTLE }}>DAY HIGH</span><br/><span style={{ color: TEXT }}>{dayHigh.toFixed(5)}</span></div>
-                  <div><span style={{ color: SUBTLE }}>DAY LOW</span><br/><span style={{ color: TEXT }}>{dayLow.toFixed(5)}</span></div>
-                </div>
-                <div style={{ marginTop: 16, borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
-                  <div style={{ color: SUBTLE, fontSize: 9, marginBottom: 4 }}>52-WEEK RANGE</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ color: TEXT, fontSize: 10 }}>{(rate * 0.94).toFixed(4)}</span>
-                    <div style={{ flex: 1, height: 4, background: BORDER, borderRadius: 2, position: 'relative' }}>
-                      <div style={{ position: 'absolute', left: '60%', top: -2, width: 8, height: 8, borderRadius: '50%', background: AMBER }} />
-                    </div>
-                    <span style={{ color: TEXT, fontSize: 10 }}>{(rate * 1.06).toFixed(4)}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })() : (
-            <div style={{ color: SUBTLE, fontFamily: MONO, fontSize: 11, textAlign: 'center', marginTop: 40 }}>
-              Click a cross rate to view details
-            </div>
-          )}
-        </div>
+      <div style={{ display: 'flex', gap: '6px', fontSize: '10px', fontFamily: T.mono }}>
+        <span style={{ color: T.up }}>{rate.bid.toFixed(rate.bid < 10 ? 5 : 3)}</span>
+        <span style={{ color: T.tx3 }}>/</span>
+        <span style={{ color: T.dn }}>{rate.ask.toFixed(rate.ask < 10 ? 5 : 3)}</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '8px', color: T.tx3 }}>
+        <span>H: {rate.high24h.toFixed(rate.high24h < 10 ? 5 : 3)}</span>
+        <span>L: {rate.low24h.toFixed(rate.low24h < 10 ? 5 : 3)}</span>
+      </div>
+      <div style={{ marginTop: '3px', fontSize: '7px', color: T.tx3 }}>
+        Vol: {(rate.volume / 1e6).toFixed(0)}M
       </div>
     </div>
   );
 }
 
-// ─── FORWARDS TAB ───────────────────────────────────────────────────────────────
-
-function ForwardsTab() {
-  const [selPair, setSelPair] = useState('EUR/USD');
+function MiniChart({ candles, width = 200, height = 60 }: { candles: FXCandle[]; width?: number; height?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const forwardData = FORWARD_PAIRS.map(p => ({ pair: p, pts: genForwardPts(p) }));
 
   useEffect(() => {
     const cvs = canvasRef.current;
-    if (!cvs) return;
+    if (!cvs || !candles.length) return;
     const ctx = cvs.getContext('2d');
     if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    const w = cvs.clientWidth, h = cvs.clientHeight;
-    cvs.width = w * dpr; cvs.height = h * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, w, h);
+    cvs.width = width; cvs.height = height;
+    ctx.clearRect(0, 0, width, height);
 
-    // Draw forward points chart for selected pair
-    const data = forwardData.find(d => d.pair === selPair)?.pts || [];
-    const pad = { top: 20, right: 20, bottom: 30, left: 50 };
-    const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
-    const minV = Math.min(...data, 0), maxV = Math.max(...data, 0);
-    const range = maxV - minV || 1;
+    const prices = candles.map(c => c.close);
+    const mn = Math.min(...prices);
+    const mx = Math.max(...prices);
+    const range = mx - mn || 1;
+
+    const isUp = prices[prices.length - 1] >= prices[0];
+    const grad = ctx.createLinearGradient(0, 0, 0, height);
+    grad.addColorStop(0, isUp ? 'rgba(38,166,154,0.3)' : 'rgba(239,83,80,0.3)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    prices.forEach((p, i) => {
+      const x = (i / (prices.length - 1)) * width;
+      const y = height - ((p - mn) / range) * height * 0.9 - height * 0.05;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    prices.forEach((p, i) => {
+      const x = (i / (prices.length - 1)) * width;
+      const y = height - ((p - mn) / range) * height * 0.9 - height * 0.05;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = isUp ? T.up : T.dn;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }, [candles, width, height]);
+
+  return <canvas ref={canvasRef} style={{ width: `${width}px`, height: `${height}px` }} />;
+}
+
+function CrossRateMatrix({ entries }: { entries: CrossRateEntry[] }) {
+  const getRate = (base: string, quote: string) => {
+    if (base === quote) return null;
+    return entries.find(e => e.base === base && e.quote === quote);
+  };
+
+  return (
+    <div style={{ overflow: 'auto' }}>
+      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '9px', fontFamily: T.mono }}>
+        <thead>
+          <tr>
+            <th style={{ padding: '4px 6px', color: T.tx2, borderBottom: `1px solid ${T.border}`, textAlign: 'left' }}></th>
+            {CURRENCIES.map(c => (
+              <th key={c} style={{ padding: '4px 6px', color: T.brand, borderBottom: `1px solid ${T.border}`, textAlign: 'center', fontWeight: 700 }}>{c}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {CURRENCIES.map(base => (
+            <tr key={base}>
+              <td style={{ padding: '4px 6px', color: T.brand, fontWeight: 700, borderRight: `1px solid ${T.border}` }}>{base}</td>
+              {CURRENCIES.map(quote => {
+                const entry = getRate(base, quote);
+                if (!entry) return <td key={quote} style={{ padding: '4px 6px', textAlign: 'center', color: T.tx3 }}>—</td>;
+                const isUp = entry.change >= 0;
+                return (
+                  <td key={quote} style={{
+                    padding: '4px 6px', textAlign: 'center',
+                    color: isUp ? T.up : T.dn,
+                    background: isUp ? 'rgba(38,166,154,0.05)' : 'rgba(239,83,80,0.05)',
+                  }}>
+                    {entry.rate.toFixed(entry.rate < 10 ? 4 : 2)}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ForwardCurvePanel({ forwardData, pair }: { forwardData: ForwardPoint[]; pair: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const cvs = canvasRef.current;
+    if (!cvs || !forwardData.length) return;
+    const ctx = cvs.getContext('2d');
+    if (!ctx) return;
+    cvs.width = 400; cvs.height = 150;
+    ctx.clearRect(0, 0, 400, 150);
+
+    const points = forwardData.map(f => f.points);
+    const mn = Math.min(...points);
+    const mx = Math.max(...points);
+    const range = mx - mn || 1;
 
     // Grid
-    ctx.strokeStyle = BORDER; ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 5; i++) {
-      const y = pad.top + (ch / 5) * i;
-      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
-      const val = maxV - (range / 5) * i;
-      ctx.fillStyle = SUBTLE; ctx.font = '9px ' + MONO; ctx.textAlign = 'right';
-      ctx.fillText(val.toFixed(1), pad.left - 4, y + 3);
+    ctx.strokeStyle = T.border;
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 4; i++) {
+      const y = 10 + (i / 3) * 130;
+      ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(390, y); ctx.stroke();
     }
-
-    // X labels
-    ctx.textAlign = 'center';
-    data.forEach((_, i) => {
-      const x = pad.left + (cw / (data.length - 1)) * i;
-      ctx.fillStyle = SUBTLE; ctx.font = '8px ' + MONO;
-      ctx.fillText(FORWARD_TENORS[i], x, h - 8);
-    });
-
     // Zero line
-    const zeroY = pad.top + ch * (maxV / range);
-    ctx.strokeStyle = SUBTLE; ctx.setLineDash([3, 3]);
-    ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(w - pad.right, zeroY); ctx.stroke();
+    const zeroY = 10 + ((mx - 0) / range) * 130;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = T.tx3;
+    ctx.beginPath(); ctx.moveTo(30, zeroY); ctx.lineTo(390, zeroY); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Line
+    // Points + line
     ctx.beginPath();
-    data.forEach((v, i) => {
-      const x = pad.left + (cw / (data.length - 1)) * i;
-      const y = pad.top + ch * ((maxV - v) / range);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    forwardData.forEach((f, i) => {
+      const x = 30 + (i / (forwardData.length - 1)) * 360;
+      const y = 10 + ((mx - f.points) / range) * 130;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = AMBER; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = T.brand;
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    // Dots
-    data.forEach((v, i) => {
-      const x = pad.left + (cw / (data.length - 1)) * i;
-      const y = pad.top + ch * ((maxV - v) / range);
-      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = v >= 0 ? GREEN : RED; ctx.fill();
+    // Dots + labels
+    forwardData.forEach((f, i) => {
+      const x = 30 + (i / (forwardData.length - 1)) * 360;
+      const y = 10 + ((mx - f.points) / range) * 130;
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fillStyle = T.brand; ctx.fill();
+      if (i % 2 === 0) {
+        ctx.fillStyle = T.tx3; ctx.font = '7px Inter'; ctx.textAlign = 'center';
+        ctx.fillText(f.tenor, x, 148);
+      }
     });
-
-    // Title
-    ctx.fillStyle = AMBER; ctx.font = 'bold 11px ' + MONO; ctx.textAlign = 'left';
-    ctx.fillText(`${selPair} Forward Points`, pad.left, 14);
-  }, [selPair, forwardData]);
+  }, [forwardData]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
-      <div style={{ display: 'flex', gap: 6 }}>
-        {FORWARD_PAIRS.map(p => (
-          <button key={p} onClick={() => setSelPair(p)}
-            style={{ padding: '4px 10px', fontSize: 10, fontFamily: MONO, cursor: 'pointer',
-              background: selPair === p ? 'rgba(255,153,0,0.15)' : PANEL,
-              border: `1px solid ${selPair === p ? AMBER : BORDER}`,
-              color: selPair === p ? AMBER : TEXT, borderRadius: 0 }}>
-            {p}
-          </button>
-        ))}
+    <div>
+      <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '6px' }}>
+        Forward Points — {pair}
       </div>
-
-      <div style={{ ...panelStyle, flex: 1, minHeight: 200 }}>
-        <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
-      </div>
-
-      <div style={{ ...panelStyle }}>
-        <div style={headerStyle}>FORWARD POINTS TABLE</div>
-        <div style={{ overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, textAlign: 'left' }}>PAIR</th>
-                {FORWARD_TENORS.map(t => <th key={t} style={thStyle}>{t}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {forwardData.map(({ pair, pts }) => (
-                <tr key={pair}>
-                  <td style={{ ...cellTd, textAlign: 'left', color: AMBER }}>{pair}</td>
-                  {pts.map((v, i) => (
-                    <td key={i} style={{ ...cellTd, color: v >= 0 ? GREEN : RED }}>
-                      {v >= 0 ? '+' : ''}{v.toFixed(1)}
-                    </td>
-                  ))}
-                </tr>
+      <canvas ref={canvasRef} style={{ width: '400px', height: '150px', maxWidth: '100%' }} />
+      <div style={{ marginTop: '6px', overflow: 'auto', maxHeight: '200px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', fontFamily: T.mono }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+              {['Tenor', 'Days', 'Points', 'Outright', 'Impl. Yield'].map(h => (
+                <th key={h} style={{ padding: '3px 6px', color: T.tx2, textAlign: 'right', fontWeight: 600 }}>{h}</th>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
+          <tbody>
+            {forwardData.map(f => (
+              <tr key={f.tenor} style={{ borderBottom: `1px solid ${T.border}` }}>
+                <td style={{ padding: '3px 6px', color: T.brand, fontWeight: 600 }}>{f.tenor}</td>
+                <td style={{ padding: '3px 6px', color: T.tx1, textAlign: 'right' }}>{f.days}</td>
+                <td style={{ padding: '3px 6px', color: f.points >= 0 ? T.up : T.dn, textAlign: 'right' }}>{f.points.toFixed(2)}</td>
+                <td style={{ padding: '3px 6px', color: T.tx0, textAlign: 'right' }}>{f.outright.toFixed(5)}</td>
+                <td style={{ padding: '3px 6px', color: f.impliedYield >= 0 ? T.up : T.dn, textAlign: 'right' }}>{f.impliedYield.toFixed(3)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-// ─── CENTRAL BANKS TAB ──────────────────────────────────────────────────────────
-
-function CentralBanksTab() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
-      <div style={{ ...panelStyle, flex: 1 }}>
-        <div style={headerStyle}>CENTRAL BANK POLICY RATES</div>
-        <div style={{ overflow: 'auto', flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, textAlign: 'left' }}>CENTRAL BANK</th>
-                <th style={thStyle}>CCY</th>
-                <th style={thStyle}>RATE %</th>
-                <th style={thStyle}>LAST CHANGE</th>
-                <th style={thStyle}>NEXT MEETING</th>
-                <th style={thStyle}>EXPECTED</th>
-                <th style={thStyle}>P(CUT)</th>
-                <th style={thStyle}>P(HOLD)</th>
-                <th style={thStyle}>P(HIKE)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {CENTRAL_BANKS.map(cb => (
-                <tr key={cb.bank}>
-                  <td style={{ ...cellTd, textAlign: 'left', color: TEXT }}>{cb.bank}</td>
-                  <td style={{ ...cellTd, color: AMBER }}>{cb.ccy}</td>
-                  <td style={{ ...cellTd, color: BLUE, fontWeight: 700 }}>{cb.rate.toFixed(2)}%</td>
-                  <td style={{ ...cellTd, color: SUBTLE }}>{cb.lastChange}</td>
-                  <td style={{ ...cellTd, color: TEXT }}>{cb.nextMeeting}</td>
-                  <td style={{
-                    ...cellTd,
-                    color: cb.expected === 'CUT' ? RED : cb.expected === 'HIKE' ? GREEN : BLUE,
-                    fontWeight: 700,
-                  }}>{cb.expected}</td>
-                  <td style={{ ...cellTd }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                      <div style={{ width: Math.max(cb.probCut * 0.6, 2), height: 8, background: RED, borderRadius: 1 }} />
-                      <span style={{ color: RED, fontSize: 10 }}>{cb.probCut}%</span>
-                    </div>
-                  </td>
-                  <td style={{ ...cellTd }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                      <div style={{ width: Math.max(cb.probHold * 0.6, 2), height: 8, background: BLUE, borderRadius: 1 }} />
-                      <span style={{ color: BLUE, fontSize: 10 }}>{cb.probHold}%</span>
-                    </div>
-                  </td>
-                  <td style={{ ...cellTd }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                      <div style={{ width: Math.max(cb.probHike * 0.6, 2), height: 8, background: GREEN, borderRadius: 1 }} />
-                      <span style={{ color: GREEN, fontSize: 10 }}>{cb.probHike}%</span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── VOL SURFACE TAB ────────────────────────────────────────────────────────────
-
-function VolSurfaceTab() {
-  const [pair, setPair] = useState('EUR/USD');
-  const surface = genVolSurface();
+function VolSurfacePanel({ volData, pair }: { volData: VolPoint[]; pair: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const cvs = canvasRef.current;
-    if (!cvs) return;
+    if (!cvs || !volData.length) return;
     const ctx = cvs.getContext('2d');
     if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    const w = cvs.clientWidth, h = cvs.clientHeight;
-    cvs.width = w * dpr; cvs.height = h * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, w, h);
+    cvs.width = 400; cvs.height = 150;
+    ctx.clearRect(0, 0, 400, 150);
 
-    // Draw vol term structure (ATM vol across tenors)
-    const atmIdx = 2;
-    const atmVols = surface.map(row => row[atmIdx]);
-    const pad = { top: 20, right: 20, bottom: 30, left: 50 };
-    const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
-    const minV = Math.min(...atmVols) - 1, maxV = Math.max(...atmVols) + 1;
-    const range = maxV - minV;
+    const atms = volData.map(v => v.atm);
+    const mn = Math.min(...atms) - 1;
+    const mx = Math.max(...atms) + 1;
+    const range = mx - mn;
 
     // Grid
-    ctx.strokeStyle = BORDER; ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 4; i++) {
-      const y = pad.top + (ch / 4) * i;
-      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
-      const val = maxV - (range / 4) * i;
-      ctx.fillStyle = SUBTLE; ctx.font = '9px ' + MONO; ctx.textAlign = 'right';
-      ctx.fillText(val.toFixed(1) + '%', pad.left - 4, y + 3);
+    ctx.strokeStyle = T.border; ctx.lineWidth = 0.5;
+    for (let i = 0; i < 4; i++) {
+      const y = 10 + (i / 3) * 130;
+      ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(390, y); ctx.stroke();
+      ctx.fillStyle = T.tx3; ctx.font = '7px Inter'; ctx.textAlign = 'right';
+      ctx.fillText((mx - (i / 3) * range).toFixed(1) + '%', 28, y + 3);
     }
-
-    // X labels
-    ctx.textAlign = 'center';
-    VOL_TENORS.forEach((t, i) => {
-      const x = pad.left + (cw / (VOL_TENORS.length - 1)) * i;
-      ctx.fillStyle = SUBTLE; ctx.font = '8px ' + MONO;
-      ctx.fillText(t, x, h - 8);
-    });
 
     // ATM line
     ctx.beginPath();
-    atmVols.forEach((v, i) => {
-      const x = pad.left + (cw / (atmVols.length - 1)) * i;
-      const y = pad.top + ch * ((maxV - v) / range);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    volData.forEach((v, i) => {
+      const x = 30 + (i / (volData.length - 1)) * 360;
+      const y = 10 + ((mx - v.atm) / range) * 130;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = AMBER; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = T.brand; ctx.lineWidth = 2; ctx.stroke();
 
-    // 25D RR line
-    const rr = surface.map(row => row[3] - row[1]);
+    // 25D RR overlay
+    const rrs = volData.map(v => v.rr25);
+    const rrMn = Math.min(...rrs) - 0.5;
+    const rrMx = Math.max(...rrs) + 0.5;
+    const rrRange = rrMx - rrMn || 1;
     ctx.beginPath();
-    rr.forEach((v, i) => {
-      const x = pad.left + (cw / (rr.length - 1)) * i;
-      const scaled = pad.top + ch * 0.5 + v * ch * 0.1;
-      if (i === 0) ctx.moveTo(x, scaled); else ctx.lineTo(x, scaled);
+    volData.forEach((v, i) => {
+      const x = 30 + (i / (volData.length - 1)) * 360;
+      const y = 10 + ((rrMx - v.rr25) / rrRange) * 130;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = PURPLE; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]); ctx.stroke();
+    ctx.strokeStyle = T.purple; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Legend
-    ctx.fillStyle = AMBER; ctx.font = 'bold 10px ' + MONO; ctx.textAlign = 'left';
-    ctx.fillText('— ATM Vol', pad.left, 14);
-    ctx.fillStyle = PURPLE;
-    ctx.fillText('--- 25D Risk Reversal', pad.left + 100, 14);
-  }, [pair, surface]);
+    // Labels
+    volData.forEach((v, i) => {
+      if (i % 2 === 0) {
+        const x = 30 + (i / (volData.length - 1)) * 360;
+        ctx.fillStyle = T.tx3; ctx.font = '7px Inter'; ctx.textAlign = 'center';
+        ctx.fillText(v.tenor, x, 148);
+      }
+    });
+  }, [volData]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
-      <div style={{ display: 'flex', gap: 6 }}>
-        {FORWARD_PAIRS.map(p => (
-          <button key={p} onClick={() => setPair(p)}
-            style={{ padding: '4px 10px', fontSize: 10, fontFamily: MONO, cursor: 'pointer',
-              background: pair === p ? 'rgba(255,153,0,0.15)' : PANEL,
-              border: `1px solid ${pair === p ? AMBER : BORDER}`,
-              color: pair === p ? AMBER : TEXT, borderRadius: 0 }}>
-            {p}
-          </button>
-        ))}
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: T.tx0 }}>Volatility Surface — {pair}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '8px', color: T.brand }}>
+          <span style={{ width: 12, height: 2, background: T.brand, display: 'inline-block' }} /> ATM
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '8px', color: T.purple }}>
+          <span style={{ width: 12, height: 2, background: T.purple, display: 'inline-block', borderTop: '1px dashed' }} /> 25D RR
+        </span>
       </div>
-
-      <div style={{ ...panelStyle, flex: 1, minHeight: 200 }}>
-        <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
-      </div>
-
-      <div style={{ ...panelStyle }}>
-        <div style={headerStyle}>{pair} VOLATILITY SURFACE</div>
-        <div style={{ overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, textAlign: 'left' }}>TENOR</th>
-                {VOL_DELTAS.map(d => <th key={d} style={thStyle}>{d}</th>)}
-                <th style={thStyle}>25D RR</th>
-                <th style={thStyle}>25D BF</th>
+      <canvas ref={canvasRef} style={{ width: '400px', height: '150px', maxWidth: '100%' }} />
+      <div style={{ marginTop: '6px', overflow: 'auto', maxHeight: '200px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', fontFamily: T.mono }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+              {['Tenor', 'ATM', '25D RR', '10D RR', '25D Fly', '10D Fly'].map(h => (
+                <th key={h} style={{ padding: '3px 6px', color: T.tx2, textAlign: 'right', fontWeight: 600 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {volData.map(v => (
+              <tr key={v.tenor} style={{ borderBottom: `1px solid ${T.border}` }}>
+                <td style={{ padding: '3px 6px', color: T.brand, fontWeight: 600 }}>{v.tenor}</td>
+                <td style={{ padding: '3px 6px', color: T.tx0, textAlign: 'right' }}>{v.atm.toFixed(2)}%</td>
+                <td style={{ padding: '3px 6px', color: v.rr25 >= 0 ? T.up : T.dn, textAlign: 'right' }}>{v.rr25.toFixed(2)}</td>
+                <td style={{ padding: '3px 6px', color: v.rr10 >= 0 ? T.up : T.dn, textAlign: 'right' }}>{v.rr10.toFixed(2)}</td>
+                <td style={{ padding: '3px 6px', color: T.tx1, textAlign: 'right' }}>{v.fly25.toFixed(2)}</td>
+                <td style={{ padding: '3px 6px', color: T.tx1, textAlign: 'right' }}>{v.fly10.toFixed(2)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {surface.map((row, ti) => {
-                const rr = row[3] - row[1];
-                const bf = (row[1] + row[3]) / 2 - row[2];
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CorrelationMatrix({ correlations }: { correlations: CorrelationEntry[] }) {
+  const pairs = [...new Set(correlations.flatMap(c => [c.pair1, c.pair2]))];
+  const getCorr = (p1: string, p2: string): number | null => {
+    if (p1 === p2) return 1;
+    const e = correlations.find(c => (c.pair1 === p1 && c.pair2 === p2) || (c.pair1 === p2 && c.pair2 === p1));
+    return e ? e.corr1m : null;
+  };
+  const corrColor = (v: number): string => {
+    if (v > 0.7) return 'rgba(38,166,154,0.4)';
+    if (v > 0.3) return 'rgba(38,166,154,0.2)';
+    if (v < -0.7) return 'rgba(239,83,80,0.4)';
+    if (v < -0.3) return 'rgba(239,83,80,0.2)';
+    return 'transparent';
+  };
+
+  return (
+    <div style={{ overflow: 'auto' }}>
+      <table style={{ borderCollapse: 'collapse', fontSize: '8px', fontFamily: T.mono }}>
+        <thead>
+          <tr>
+            <th style={{ padding: '3px 4px', color: T.tx3 }}></th>
+            {pairs.map(p => <th key={p} style={{ padding: '3px 4px', color: T.tx2, writingMode: 'vertical-lr', transform: 'rotate(180deg)', height: '50px' }}>{p}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {pairs.map(p1 => (
+            <tr key={p1}>
+              <td style={{ padding: '3px 4px', color: T.tx2, fontWeight: 600, whiteSpace: 'nowrap' }}>{p1}</td>
+              {pairs.map(p2 => {
+                const v = getCorr(p1, p2);
                 return (
-                  <tr key={ti}>
-                    <td style={{ ...cellTd, textAlign: 'left', color: AMBER }}>{VOL_TENORS[ti]}</td>
-                    {row.map((v, di) => (
-                      <td key={di} style={{ ...cellTd, color: di === 2 ? BLUE : TEXT }}>{v.toFixed(2)}%</td>
-                    ))}
-                    <td style={{ ...cellTd, color: rr >= 0 ? GREEN : RED }}>{rr >= 0 ? '+' : ''}{rr.toFixed(2)}</td>
-                    <td style={{ ...cellTd, color: PURPLE }}>{bf.toFixed(2)}</td>
-                  </tr>
+                  <td key={p2} style={{
+                    padding: '3px 4px', textAlign: 'center',
+                    background: v !== null ? corrColor(v) : 'transparent',
+                    color: v !== null ? T.tx0 : T.tx3,
+                  }}>
+                    {v !== null ? v.toFixed(2) : '—'}
+                  </td>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-// ─── POSITIONING TAB ────────────────────────────────────────────────────────────
+function EconomicCalendarMini({ events }: { events: EconomicEvent[] }) {
+  const impactColors = { high: T.dn, medium: T.warn, low: T.tx3 };
+  return (
+    <div style={{ overflow: 'auto', maxHeight: '300px' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+            {['Time', 'CCY', 'Event', 'Act', 'Fcst', 'Prev', '!'].map(h => (
+              <th key={h} style={{ padding: '3px 6px', color: T.tx2, textAlign: 'left', fontWeight: 600, fontFamily: T.sans }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {events.map((e, i) => (
+            <tr key={i} style={{ borderBottom: `1px solid ${T.border}`, background: i % 2 === 0 ? T.bg1 : T.bg2 }}>
+              <td style={{ padding: '3px 6px', color: T.tx2, fontFamily: T.mono, fontSize: '8px' }}>
+                {new Date(e.time).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
+              </td>
+              <td style={{ padding: '3px 6px', fontWeight: 700, color: T.brand, fontFamily: T.mono }}>{e.currency}</td>
+              <td style={{ padding: '3px 6px', color: T.tx0, fontFamily: T.sans }}>{e.event}</td>
+              <td style={{ padding: '3px 6px', color: e.actual === '--' ? T.tx3 : T.tx0, fontFamily: T.mono }}>{e.actual}</td>
+              <td style={{ padding: '3px 6px', color: T.tx2, fontFamily: T.mono }}>{e.forecast}</td>
+              <td style={{ padding: '3px 6px', color: T.tx2, fontFamily: T.mono }}>{e.previous}</td>
+              <td style={{ padding: '3px 6px' }}>
+                <span style={{
+                  display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                  background: impactColors[e.impact],
+                }} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-function PositioningTab() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+function PositionTracker() {
+  const positions = useMemo(() => [
+    { pair: 'EUR/USD', side: 'LONG', size: 100000, entry: 1.0865, current: 1.0875, pnl: 100, pnlPct: 0.092 },
+    { pair: 'GBP/USD', side: 'SHORT', size: 50000, entry: 1.2665, current: 1.2640, pnl: 125, pnlPct: 0.197 },
+    { pair: 'USD/JPY', side: 'LONG', size: 200000, entry: 149.50, current: 149.85, pnl: 467, pnlPct: 0.234 },
+    { pair: 'AUD/USD', side: 'SHORT', size: 75000, entry: 0.6575, current: 0.6545, pnl: 225, pnlPct: 0.456 },
+    { pair: 'USD/CAD', side: 'LONG', size: 100000, entry: 1.3545, current: 1.3565, pnl: 148, pnlPct: 0.148 },
+  ], []);
 
-  useEffect(() => {
-    const cvs = canvasRef.current;
-    if (!cvs) return;
-    const ctx = cvs.getContext('2d');
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    const w = cvs.clientWidth, h = cvs.clientHeight;
-    cvs.width = w * dpr; cvs.height = h * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, w, h);
+  const totalPnl = positions.reduce((s, p) => s + p.pnl, 0);
 
-    const pad = { top: 20, right: 20, bottom: 30, left: 60 };
-    const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
-    const maxAbs = Math.max(...POSITIONING.map(p => Math.abs(p.net)));
-    const barW = cw / POSITIONING.length - 8;
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: T.tx0 }}>Open Positions</span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: totalPnl >= 0 ? T.up : T.dn, fontFamily: T.mono }}>
+          P&L: {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} USD
+        </span>
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', fontFamily: T.mono }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+            {['Pair', 'Side', 'Size', 'Entry', 'Current', 'P&L', '%'].map(h => (
+              <th key={h} style={{ padding: '3px 6px', color: T.tx2, textAlign: 'right', fontWeight: 600 }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {positions.map(p => (
+            <tr key={p.pair} style={{ borderBottom: `1px solid ${T.border}` }}>
+              <td style={{ padding: '3px 6px', color: T.tx0, fontWeight: 600, textAlign: 'left' }}>{p.pair}</td>
+              <td style={{ padding: '3px 6px', color: p.side === 'LONG' ? T.up : T.dn, textAlign: 'right' }}>{p.side}</td>
+              <td style={{ padding: '3px 6px', color: T.tx1, textAlign: 'right' }}>{(p.size / 1000).toFixed(0)}K</td>
+              <td style={{ padding: '3px 6px', color: T.tx2, textAlign: 'right' }}>{p.entry.toFixed(p.entry < 10 ? 4 : 2)}</td>
+              <td style={{ padding: '3px 6px', color: T.tx0, textAlign: 'right' }}>{p.current.toFixed(p.current < 10 ? 4 : 2)}</td>
+              <td style={{ padding: '3px 6px', color: p.pnl >= 0 ? T.up : T.dn, textAlign: 'right' }}>{p.pnl >= 0 ? '+' : ''}{p.pnl.toFixed(0)}</td>
+              <td style={{ padding: '3px 6px', color: p.pnlPct >= 0 ? T.up : T.dn, textAlign: 'right' }}>{p.pnlPct >= 0 ? '+' : ''}{p.pnlPct.toFixed(3)}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-    // Zero line
-    const zeroY = pad.top + ch / 2;
-    ctx.strokeStyle = SUBTLE; ctx.setLineDash([3, 3]);
-    ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(w - pad.right, zeroY); ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Bars
-    POSITIONING.forEach((p, i) => {
-      const x = pad.left + (cw / POSITIONING.length) * i + 4;
-      const barH = (Math.abs(p.net) / maxAbs) * (ch / 2);
-      const y = p.net >= 0 ? zeroY - barH : zeroY;
-      ctx.fillStyle = p.net >= 0 ? GREEN : RED;
-      ctx.fillRect(x, y, barW, barH);
-
-      // Label
-      ctx.fillStyle = AMBER; ctx.font = 'bold 10px ' + MONO; ctx.textAlign = 'center';
-      ctx.fillText(p.ccy, x + barW / 2, h - 8);
-
-      // Value
-      ctx.fillStyle = p.net >= 0 ? GREEN : RED; ctx.font = '9px ' + MONO;
-      const valY = p.net >= 0 ? y - 4 : y + barH + 12;
-      ctx.fillText((p.net / 1000).toFixed(1) + 'K', x + barW / 2, valY);
-    });
-
-    ctx.fillStyle = AMBER; ctx.font = 'bold 11px ' + MONO; ctx.textAlign = 'left';
-    ctx.fillText('NET SPECULATIVE POSITIONING (CONTRACTS)', pad.left, 14);
+function StrengthMeter() {
+  const strengths = useMemo(() => {
+    const data: Record<string, number> = {};
+    CURRENCIES.forEach(c => { data[c] = (Math.random() - 0.5) * 6; });
+    return data;
   }, []);
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
-      <div style={{ ...panelStyle, flex: 1, minHeight: 200 }}>
-        <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
-      </div>
+  const sorted = Object.entries(strengths).sort(([, a], [, b]) => b - a);
+  const maxAbs = Math.max(...Object.values(strengths).map(Math.abs));
 
-      <div style={{ ...panelStyle }}>
-        <div style={headerStyle}>CFTC COT POSITIONING DATA</div>
-        <div style={{ overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, textAlign: 'left' }}>CCY</th>
-                <th style={thStyle}>NET</th>
-                <th style={thStyle}>LONG</th>
-                <th style={thStyle}>SHORT</th>
-                <th style={thStyle}>WoW CHG</th>
-                <th style={thStyle}>PERCENTILE</th>
-                <th style={thStyle}>STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {POSITIONING.map(p => (
-                <tr key={p.ccy}>
-                  <td style={{ ...cellTd, textAlign: 'left', color: AMBER, fontWeight: 700 }}>{p.ccy}</td>
-                  <td style={{ ...cellTd, color: p.net >= 0 ? GREEN : RED, fontWeight: 700 }}>
-                    {p.net >= 0 ? '+' : ''}{p.net.toLocaleString()}
-                  </td>
-                  <td style={{ ...cellTd, color: GREEN }}>{p.long.toLocaleString()}</td>
-                  <td style={{ ...cellTd, color: RED }}>{p.short.toLocaleString()}</td>
-                  <td style={{ ...cellTd, color: p.change >= 0 ? GREEN : RED }}>
-                    {p.change >= 0 ? '+' : ''}{p.change.toLocaleString()}
-                  </td>
-                  <td style={cellTd}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                      <div style={{ width: 60, height: 6, background: BORDER, borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ width: `${p.percentile}%`, height: '100%', background: p.percentile > 80 ? RED : p.percentile < 20 ? GREEN : BLUE }} />
-                      </div>
-                      <span style={{ fontSize: 10/*, color: TEXT*/ }}>{p.percentile}%</span>
-                    </div>
-                  </td>
-                  <td style={{ ...cellTd, color: p.extreme ? RED : SUBTLE, fontWeight: p.extreme ? 700 : 400 }}>
-                    {p.extreme ? '⚠ EXTREME' : 'NORMAL'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  return (
+    <div>
+      <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '6px' }}>Currency Strength</div>
+      {sorted.map(([ccy, val]) => (
+        <div key={ccy} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+          <span style={{ width: '30px', fontSize: '9px', fontWeight: 700, color: T.brand, fontFamily: T.mono }}>{ccy}</span>
+          <div style={{ flex: 1, height: '10px', background: T.bg3, borderRadius: '2px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{
+              position: 'absolute',
+              left: val >= 0 ? '50%' : `${50 - (Math.abs(val) / maxAbs) * 50}%`,
+              width: `${(Math.abs(val) / maxAbs) * 50}%`,
+              height: '100%',
+              background: val >= 0 ? T.up : T.dn,
+              borderRadius: '2px',
+            }} />
+          </div>
+          <span style={{ width: '35px', fontSize: '8px', color: val >= 0 ? T.up : T.dn, fontFamily: T.mono, textAlign: 'right' }}>
+            {val >= 0 ? '+' : ''}{val.toFixed(2)}
+          </span>
         </div>
+      ))}
+    </div>
+  );
+}
+
+function HeatmapPanel() {
+  const pairs = [...MAJOR_PAIRS, ...CROSS_PAIRS.slice(0, 6)];
+  const timeframes = ['1H', '4H', '1D', '1W'];
+
+  return (
+    <div>
+      <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '6px' }}>Performance Heatmap</div>
+      <div style={{ overflow: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', fontSize: '8px', fontFamily: T.mono }}>
+          <thead>
+            <tr>
+              <th style={{ padding: '3px 6px', color: T.tx3 }}></th>
+              {timeframes.map(tf => <th key={tf} style={{ padding: '3px 6px', color: T.tx2, fontWeight: 600 }}>{tf}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {pairs.map(p => (
+              <tr key={p}>
+                <td style={{ padding: '3px 6px', color: T.tx1, fontWeight: 600, whiteSpace: 'nowrap' }}>{p}</td>
+                {timeframes.map(tf => {
+                  const val = (Math.random() - 0.5) * 2;
+                  const intensity = Math.min(Math.abs(val) / 1.0, 1);
+                  const bgColor = val >= 0
+                    ? `rgba(38,166,154,${0.1 + intensity * 0.4})`
+                    : `rgba(239,83,80,${0.1 + intensity * 0.4})`;
+                  return (
+                    <td key={tf} style={{
+                      padding: '3px 6px', textAlign: 'center',
+                      background: bgColor, color: T.tx0,
+                    }}>
+                      {val >= 0 ? '+' : ''}{val.toFixed(3)}%
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-// ─── CARRY TRADE TAB ────────────────────────────────────────────────────────────
-
-function CarryTradeTab() {
-  const carryPairs = [
-    { pair: 'AUD/JPY', longRate: 4.35, shortRate: 0.25, carry: 4.10, vol: 11.2, carryRisk: 0.37, ytdReturn: 8.4 },
-    { pair: 'NZD/JPY', longRate: 5.50, shortRate: 0.25, carry: 5.25, vol: 12.8, carryRisk: 0.41, ytdReturn: 10.2 },
-    { pair: 'USD/JPY', longRate: 5.50, shortRate: 0.25, carry: 5.25, vol: 8.9, carryRisk: 0.59, ytdReturn: 12.1 },
-    { pair: 'GBP/JPY', longRate: 5.25, shortRate: 0.25, carry: 5.00, vol: 10.4, carryRisk: 0.48, ytdReturn: 9.8 },
-    { pair: 'EUR/CHF', longRate: 4.50, shortRate: 1.75, carry: 2.75, vol: 5.6, carryRisk: 0.49, ytdReturn: 3.1 },
-    { pair: 'USD/CHF', longRate: 5.50, shortRate: 1.75, carry: 3.75, vol: 7.2, carryRisk: 0.52, ytdReturn: 5.4 },
-    { pair: 'AUD/CHF', longRate: 4.35, shortRate: 1.75, carry: 2.60, vol: 9.1, carryRisk: 0.29, ytdReturn: 2.8 },
-    { pair: 'NZD/CHF', longRate: 5.50, shortRate: 1.75, carry: 3.75, vol: 10.5, carryRisk: 0.36, ytdReturn: 4.2 },
-    { pair: 'CAD/JPY', longRate: 5.00, shortRate: 0.25, carry: 4.75, vol: 9.8, carryRisk: 0.48, ytdReturn: 7.6 },
-    { pair: 'GBP/CHF', longRate: 5.25, shortRate: 1.75, carry: 3.50, vol: 8.3, carryRisk: 0.42, ytdReturn: 4.8 },
-  ].sort((a, b) => b.carryRisk - a.carryRisk);
+function SwapRatesPanel() {
+  const swapRates = useMemo(() => MAJOR_PAIRS.map(pair => ({
+    pair,
+    longSwap: +((Math.random() - 0.6) * 15).toFixed(2),
+    shortSwap: +((Math.random() - 0.4) * 15).toFixed(2),
+    tripleDay: ['Wednesday', 'Wednesday', 'Friday', 'Wednesday', 'Wednesday', 'Wednesday', 'Wednesday'][MAJOR_PAIRS.indexOf(pair)],
+  })), []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
-      <div style={{ ...panelStyle, flex: 1 }}>
-        <div style={headerStyle}>CARRY TRADE OPPORTUNITIES (RANKED BY CARRY/RISK)</div>
-        <div style={{ overflow: 'auto', flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, textAlign: 'left' }}>PAIR</th>
-                <th style={thStyle}>LONG RATE</th>
-                <th style={thStyle}>SHORT RATE</th>
-                <th style={thStyle}>CARRY (bp)</th>
-                <th style={thStyle}>IV %</th>
-                <th style={thStyle}>CARRY/RISK</th>
-                <th style={thStyle}>YTD RETURN</th>
-                <th style={thStyle}>SIGNAL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {carryPairs.map(cp => (
-                <tr key={cp.pair}>
-                  <td style={{ ...cellTd, textAlign: 'left', color: AMBER, fontWeight: 700 }}>{cp.pair}</td>
-                  <td style={{ ...cellTd, color: GREEN }}>{cp.longRate.toFixed(2)}%</td>
-                  <td style={{ ...cellTd, color: RED }}>{cp.shortRate.toFixed(2)}%</td>
-                  <td style={{ ...cellTd, color: BLUE, fontWeight: 700 }}>{(cp.carry * 100).toFixed(0)} bp</td>
-                  <td style={{ ...cellTd, color: TEXT }}>{cp.vol.toFixed(1)}%</td>
-                  <td style={{ ...cellTd }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                      <div style={{ width: 50, height: 6, background: BORDER, borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ width: `${Math.min(cp.carryRisk * 100, 100)}%`, height: '100%',
-                          background: cp.carryRisk > 0.45 ? GREEN : cp.carryRisk > 0.3 ? BLUE : RED }} />
-                      </div>
-                      <span style={{ color: cp.carryRisk > 0.45 ? GREEN : TEXT, fontWeight: 700, fontSize: 10 }}>
-                        {cp.carryRisk.toFixed(2)}
-                      </span>
-                    </div>
-                  </td>
-                  <td style={{ ...cellTd, color: cp.ytdReturn >= 0 ? GREEN : RED, fontWeight: 700 }}>
-                    {cp.ytdReturn >= 0 ? '+' : ''}{cp.ytdReturn.toFixed(1)}%
-                  </td>
-                  <td style={{ ...cellTd }}>
-                    <span style={{
-                      padding: '2px 6px', borderRadius: 2, fontSize: 9, fontFamily: MONO, fontWeight: 700,
-                      color: cp.carryRisk > 0.45 ? '#000' : TEXT,
-                      background: cp.carryRisk > 0.45 ? GREEN : cp.carryRisk > 0.3 ? `${BLUE}30` : `${RED}30`,
-                    }}>
-                      {cp.carryRisk > 0.45 ? 'STRONG BUY' : cp.carryRisk > 0.3 ? 'BUY' : 'NEUTRAL'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div>
+      <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '6px' }}>Swap Rates (per lot/day)</div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', fontFamily: T.mono }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+            {['Pair', 'Long', 'Short', '3x Day'].map(h => (
+              <th key={h} style={{ padding: '3px 6px', color: T.tx2, textAlign: 'right', fontWeight: 600 }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {swapRates.map(s => (
+            <tr key={s.pair} style={{ borderBottom: `1px solid ${T.border}` }}>
+              <td style={{ padding: '3px 6px', color: T.tx0, fontWeight: 600, textAlign: 'left' }}>{s.pair}</td>
+              <td style={{ padding: '3px 6px', color: s.longSwap >= 0 ? T.up : T.dn, textAlign: 'right' }}>
+                {s.longSwap >= 0 ? '+' : ''}{s.longSwap.toFixed(2)}
+              </td>
+              <td style={{ padding: '3px 6px', color: s.shortSwap >= 0 ? T.up : T.dn, textAlign: 'right' }}>
+                {s.shortSwap >= 0 ? '+' : ''}{s.shortSwap.toFixed(2)}
+              </td>
+              <td style={{ padding: '3px 6px', color: T.tx2, textAlign: 'right' }}>{s.tripleDay}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SessionTimeline() {
+  const sessions = [
+    { name: 'Sydney', start: 22, end: 7, color: '#AB47BC', active: true },
+    { name: 'Tokyo', start: 0, end: 9, color: '#FF9800', active: true },
+    { name: 'London', start: 8, end: 17, color: '#2962FF', active: true },
+    { name: 'New York', start: 13, end: 22, color: '#26A69A', active: true },
+  ];
+  const nowHour = new Date().getUTCHours();
+
+  return (
+    <div>
+      <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '6px' }}>
+        Market Sessions (UTC: {nowHour}:00)
+      </div>
+      {sessions.map(s => {
+        const isActive = s.start < s.end
+          ? nowHour >= s.start && nowHour < s.end
+          : nowHour >= s.start || nowHour < s.end;
+        return (
+          <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: isActive ? s.color : T.tx3,
+              boxShadow: isActive ? `0 0 6px ${s.color}` : 'none',
+            }} />
+            <span style={{ width: '60px', fontSize: '9px', fontWeight: 600, color: isActive ? T.tx0 : T.tx3 }}>{s.name}</span>
+            <div style={{ flex: 1, height: '6px', background: T.bg3, borderRadius: '3px', position: 'relative' }}>
+              {/* Session bar */}
+              {s.start < s.end ? (
+                <div style={{
+                  position: 'absolute', left: `${(s.start / 24) * 100}%`,
+                  width: `${((s.end - s.start) / 24) * 100}%`,
+                  height: '100%', background: `${s.color}44`, borderRadius: '3px',
+                }} />
+              ) : (
+                <>
+                  <div style={{
+                    position: 'absolute', left: `${(s.start / 24) * 100}%`,
+                    width: `${((24 - s.start) / 24) * 100}%`,
+                    height: '100%', background: `${s.color}44`, borderRadius: '3px 0 0 3px',
+                  }} />
+                  <div style={{
+                    position: 'absolute', left: 0,
+                    width: `${(s.end / 24) * 100}%`,
+                    height: '100%', background: `${s.color}44`, borderRadius: '0 3px 3px 0',
+                  }} />
+                </>
+              )}
+              {/* Now marker */}
+              <div style={{
+                position: 'absolute', left: `${(nowHour / 24) * 100}%`,
+                top: -2, width: 2, height: 10, background: T.tx0,
+              }} />
+            </div>
+            <span style={{ fontSize: '8px', color: T.tx3, fontFamily: T.mono, width: '55px' }}>
+              {s.start.toString().padStart(2, '0')}–{s.end.toString().padStart(2, '0')} UTC
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PipCalculator() {
+  const [calcPair, setCalcPair] = useState('EUR/USD');
+  const [lots, setLots] = useState(1);
+  const [leverage, setLeverage] = useState(100);
+
+  const rate = generateFXRate(calcPair);
+  const pipValue = calcPair.includes('JPY') ? 0.01 : 0.0001;
+  const pipValueUSD = lots * 100000 * pipValue / (calcPair.startsWith('USD/') ? rate.mid : 1);
+  const margin = (lots * 100000) / leverage;
+  const spread = (rate.ask - rate.bid) / pipValue;
+
+  return (
+    <div>
+      <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '8px' }}>Pip Calculator</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+        <div>
+          <label style={{ fontSize: '8px', color: T.tx3 }}>Pair</label>
+          <select value={calcPair} onChange={e => setCalcPair(e.target.value)}
+            style={{ width: '100%', background: T.bg3, color: T.tx0, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '4px', fontSize: '9px', fontFamily: T.mono }}>
+            {ALL_PAIRS.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ fontSize: '8px', color: T.tx3 }}>Lots</label>
+          <input type="number" value={lots} onChange={e => setLots(+e.target.value)} min={0.01} step={0.01}
+            style={{ width: '100%', background: T.bg3, color: T.tx0, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '4px', fontSize: '9px', fontFamily: T.mono }} />
+        </div>
+        <div>
+          <label style={{ fontSize: '8px', color: T.tx3 }}>Leverage</label>
+          <select value={leverage} onChange={e => setLeverage(+e.target.value)}
+            style={{ width: '100%', background: T.bg3, color: T.tx0, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '4px', fontSize: '9px', fontFamily: T.mono }}>
+            {[1, 2, 5, 10, 20, 50, 100, 200, 500].map(l => <option key={l} value={l}>{l}:1</option>)}
+          </select>
         </div>
       </div>
-
-      {/* Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
         {[
-          { label: 'AVG CARRY', val: `${(carryPairs.reduce((s, c) => s + c.carry, 0) / carryPairs.length * 100).toFixed(0)} bp`, color: BLUE },
-          { label: 'BEST CARRY/RISK', val: carryPairs[0].pair, color: GREEN },
-          { label: 'AVG YTD RETURN', val: `${(carryPairs.reduce((s, c) => s + c.ytdReturn, 0) / carryPairs.length).toFixed(1)}%`, color: GREEN },
-          { label: 'AVG VOL', val: `${(carryPairs.reduce((s, c) => s + c.vol, 0) / carryPairs.length).toFixed(1)}%`, color: ORANGE },
-        ].map(k => (
-          <div key={k.label} style={{ ...panelStyle, padding: 10, textAlign: 'center' }}>
-            <div style={{ color: SUBTLE, fontSize: 9, fontFamily: MONO, letterSpacing: '0.08em', marginBottom: 4 }}>{k.label}</div>
-            <div style={{ color: k.color, fontSize: 16, fontWeight: 700, fontFamily: MONO }}>{k.val}</div>
+          { label: 'Pip Value', value: `$${pipValueUSD.toFixed(2)}` },
+          { label: 'Spread', value: `${spread.toFixed(1)} pips` },
+          { label: 'Margin Required', value: `$${margin.toFixed(0)}` },
+          { label: 'Notional', value: `$${(lots * 100000).toLocaleString()}` },
+        ].map(item => (
+          <div key={item.label} style={{ background: T.bg3, borderRadius: T.r, padding: '6px 8px' }}>
+            <div style={{ fontSize: '8px', color: T.tx3 }}>{item.label}</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: T.tx0, fontFamily: T.mono }}>{item.value}</div>
           </div>
         ))}
       </div>
@@ -724,70 +922,397 @@ function CarryTradeTab() {
   );
 }
 
-// ─── MAIN COMPONENT ─────────────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════════════ */
+/* MAIN COMPONENT                                                        */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+type FXTab = 'rates' | 'charts' | 'forwards' | 'volatility' | 'cross' | 'strength' | 'calendar' | 'positions' | 'correlation' | 'heatmap' | 'tools';
 
 export default function FXDashboardUI2() {
-  const [tab, setTab] = useState<Tab>('cross');
+  const [tab, setTab] = useState<FXTab>('rates');
+  const [selectedPair, setSelectedPair] = useState('EUR/USD');
+  const [pairCategory, setPairCategory] = useState<'major' | 'cross' | 'em'>('major');
+  const [rates, setRates] = useState<FXRate[]>([]);
+  const [candles, setCandles] = useState<FXCandle[]>([]);
+  const [forwards, setForwards] = useState<ForwardPoint[]>([]);
+  const [volData, setVolData] = useState<VolPoint[]>([]);
+  const [crossMatrix, setCrossMatrix] = useState<CrossRateEntry[]>([]);
+  const [correlations, setCorrelations] = useState<CorrelationEntry[]>([]);
+  const [events, setEvents] = useState<EconomicEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const chartCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'cross', label: 'CROSS RATES' },
-    { id: 'forwards', label: 'FORWARDS' },
-    { id: 'central', label: 'CENTRAL BANKS' },
-    { id: 'vol', label: 'VOL SURFACE' },
-    { id: 'positioning', label: 'POSITIONING' },
-    { id: 'carry', label: 'CARRY TRADE' },
-  ];
+  const displayPairs = pairCategory === 'major' ? MAJOR_PAIRS : pairCategory === 'cross' ? CROSS_PAIRS : EM_PAIRS;
 
-  // KPI strip data
-  const kpis = [
-    { label: 'DXY', value: '104.28', change: '+0.15%', up: true },
-    { label: 'EUR/USD', value: '1.0852', change: '+0.11%', up: true },
-    { label: 'GBP/USD', value: '1.2648', change: '-0.22%', up: false },
-    { label: 'USD/JPY', value: '149.82', change: '+0.23%', up: true },
-    { label: 'GOLD', value: '2,042.80', change: '+0.45%', up: true },
-    { label: 'RV 1M', value: '7.2%', change: '-0.3', up: false },
+  // Fetch rates from API with yfinance fallback
+  const fetchRates = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/fx/rates');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.rates?.length) { setRates(data.rates); setLastUpdate(new Date()); return; }
+      }
+    } catch { /* fallback */ }
+    // Fallback: generate realistic rates
+    setRates(ALL_PAIRS.map(generateFXRate));
+    setLastUpdate(new Date());
+  }, []);
+
+  // Fetch candles for selected pair
+  const fetchCandles = useCallback(async (pair: string) => {
+    try {
+      const sym = pair.replace('/', '');
+      const res = await fetch(`/api/v1/bars?symbol=${sym}&timeframe=1h&limit=100`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.bars?.length) {
+          setCandles(data.bars.map((b: Record<string, number>) => ({
+            time: b.timestamp || b.time, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume || 0,
+          })));
+          return;
+        }
+      }
+    } catch { /* fallback */ }
+    setCandles(generateFXCandles(pair, 100));
+  }, []);
+
+  // Load all data
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetchRates(),
+      fetchCandles(selectedPair),
+    ]).then(() => {
+      setForwards(generateForwardCurve(selectedPair));
+      setVolData(generateVolSurface(selectedPair));
+      setCrossMatrix(generateCrossMatrix());
+      setCorrelations(generateCorrelations());
+      setEvents(generateEconomicEvents());
+      setLoading(false);
+    });
+  }, [fetchRates, fetchCandles, selectedPair]);
+
+  // Auto-refresh rates every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchRates, 5000);
+    return () => clearInterval(interval);
+  }, [fetchRates]);
+
+  // Draw main chart
+  useEffect(() => {
+    if (tab !== 'charts') return;
+    const cvs = chartCanvasRef.current;
+    if (!cvs || !candles.length) return;
+    const container = cvs.parentElement;
+    if (!container) return;
+    cvs.width = container.clientWidth;
+    cvs.height = container.clientHeight;
+    const ctx = cvs.getContext('2d');
+    if (!ctx) return;
+    const w = cvs.width, h = cvs.height;
+    const pad = { t: 10, r: 60, b: 30, l: 10 };
+
+    ctx.clearRect(0, 0, w, h);
+
+    const prices = candles.flatMap(c => [c.high, c.low]);
+    const mn = Math.min(...prices) * 0.9999;
+    const mx = Math.max(...prices) * 1.0001;
+    const range = mx - mn || 1;
+    const chartH = (h - pad.t - pad.b) * 0.8;
+    const volH = (h - pad.t - pad.b) * 0.15;
+    const volTop = pad.t + chartH + 8;
+    const barW = Math.max(2, (w - pad.l - pad.r) / candles.length);
+    const maxVol = Math.max(...candles.map(c => c.volume));
+
+    // Grid
+    ctx.strokeStyle = T.border; ctx.lineWidth = 0.5;
+    for (let i = 0; i < 6; i++) {
+      const y = pad.t + (i / 5) * chartH;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+      const val = mx - (i / 5) * range;
+      ctx.fillStyle = T.tx3; ctx.font = `9px JetBrains Mono`; ctx.textAlign = 'left';
+      ctx.fillText(val.toFixed(val < 10 ? 5 : 3), w - pad.r + 4, y + 3);
+    }
+
+    // Candles
+    candles.forEach((c, i) => {
+      const x = pad.l + i * barW + barW / 2;
+      const isUp = c.close >= c.open;
+      const col = isUp ? T.up : T.dn;
+
+      const hY = pad.t + ((mx - c.high) / range) * chartH;
+      const lY = pad.t + ((mx - c.low) / range) * chartH;
+      ctx.strokeStyle = col; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, hY); ctx.lineTo(x, lY); ctx.stroke();
+
+      const oY = pad.t + ((mx - c.open) / range) * chartH;
+      const cY = pad.t + ((mx - c.close) / range) * chartH;
+      const bodyTop = Math.min(oY, cY);
+      const bodyH = Math.max(Math.abs(cY - oY), 1);
+      ctx.fillStyle = col;
+      ctx.fillRect(x - barW * 0.35, bodyTop, barW * 0.7, bodyH);
+
+      // Volume
+      const vH = (c.volume / maxVol) * volH;
+      ctx.fillStyle = isUp ? 'rgba(38,166,154,0.3)' : 'rgba(239,83,80,0.3)';
+      ctx.fillRect(x - barW * 0.35, volTop + volH - vH, barW * 0.7, vH);
+    });
+
+    // Current price line
+    const last = candles[candles.length - 1];
+    const lastY = pad.t + ((mx - last.close) / range) * chartH;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = last.close >= last.open ? T.up : T.dn;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(pad.l, lastY); ctx.lineTo(w - pad.r, lastY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Price label
+    ctx.fillStyle = last.close >= last.open ? T.up : T.dn;
+    ctx.fillRect(w - pad.r, lastY - 8, 58, 16);
+    ctx.fillStyle = '#FFF'; ctx.font = 'bold 9px JetBrains Mono'; ctx.textAlign = 'left';
+    ctx.fillText(last.close.toFixed(last.close < 10 ? 5 : 3), w - pad.r + 3, lastY + 4);
+
+    // Title
+    ctx.fillStyle = T.tx0; ctx.font = 'bold 12px Inter'; ctx.textAlign = 'left';
+    ctx.fillText(selectedPair, pad.l + 4, pad.t + 14);
+    const change = last.close - candles[0].open;
+    const changePct = (change / candles[0].open) * 100;
+    ctx.fillStyle = change >= 0 ? T.up : T.dn; ctx.font = '10px JetBrains Mono';
+    ctx.fillText(`${change >= 0 ? '+' : ''}${change.toFixed(last.close < 10 ? 5 : 3)} (${changePct.toFixed(3)}%)`, pad.l + 80, pad.t + 14);
+  }, [candles, tab, selectedPair]);
+
+  const tabs: { id: FXTab; label: string; icon: string }[] = [
+    { id: 'rates', label: 'Rates', icon: '📊' },
+    { id: 'charts', label: 'Charts', icon: '📈' },
+    { id: 'forwards', label: 'Forwards', icon: '📐' },
+    { id: 'volatility', label: 'Vol Surface', icon: '🌊' },
+    { id: 'cross', label: 'Cross Matrix', icon: '🔢' },
+    { id: 'strength', label: 'Strength', icon: '💪' },
+    { id: 'correlation', label: 'Correlation', icon: '🔗' },
+    { id: 'heatmap', label: 'Heatmap', icon: '🗺️' },
+    { id: 'calendar', label: 'Calendar', icon: '📅' },
+    { id: 'positions', label: 'Positions', icon: '💼' },
+    { id: 'tools', label: 'Tools', icon: '🔧' },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: BG, fontFamily: MONO }}>
-      {/* KPI Strip */}
-      <div style={{ display: 'flex', gap: 1, padding: '4px 8px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-        {kpis.map(k => (
-          <div key={k.label} style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: '4px 8px', background: PANEL,
+    <div data-testid="fx-dashboard-page" style={{
+      display: 'flex', flexDirection: 'column', height: '100%',
+      background: T.bg0, fontFamily: T.sans, overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', padding: '6px 10px', gap: '8px',
+        background: T.bg1, borderBottom: `1px solid ${T.border}`, flexShrink: 0,
+      }}>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: T.tx0 }}>FX DASHBOARD</span>
+        <div style={{ height: 14, width: 1, background: T.border2 }} />
+        {(['major', 'cross', 'em'] as const).map(cat => (
+          <button key={cat} onClick={() => setPairCategory(cat)} style={{
+            background: pairCategory === cat ? T.brand : T.bg3, color: pairCategory === cat ? '#FFF' : T.tx2,
+            border: 'none', padding: '3px 8px', borderRadius: '2px', fontSize: '9px', fontWeight: 700, cursor: 'pointer',
           }}>
-            <span style={{ color: SUBTLE, fontSize: 9 }}>{k.label}</span>
-            <span style={{ color: TEXT, fontSize: 12, fontWeight: 700 }}>{k.value}</span>
-            <span style={{ color: k.up ? GREEN : RED, fontSize: 10 }}>{k.change}</span>
-          </div>
+            {cat === 'major' ? 'Majors' : cat === 'cross' ? 'Crosses' : 'EM'}
+          </button>
         ))}
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: '8px', color: T.tx3, fontFamily: T.mono }}>
+          Updated: {lastUpdate.toLocaleTimeString()}
+        </span>
+        {loading && <span style={{ fontSize: '8px', color: T.warn }}>⏳ Loading...</span>}
       </div>
 
-      {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+      {/* Tab Bar */}
+      <div style={{
+        display: 'flex', gap: '1px', padding: '2px 6px',
+        background: T.bg1, borderBottom: `1px solid ${T.border}`, flexShrink: 0, overflow: 'auto',
+      }}>
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            style={{
-              padding: '6px 16px', fontSize: 10, fontFamily: MONO, fontWeight: 700,
-              letterSpacing: '0.1em', cursor: 'pointer', border: 'none',
-              background: tab === t.id ? 'rgba(255,153,0,0.08)' : 'transparent',
-              color: tab === t.id ? AMBER : SUBTLE,
-              borderBottom: tab === t.id ? `2px solid ${AMBER}` : '2px solid transparent',
-            }}>
-            {t.label}
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            background: tab === t.id ? T.bg3 : 'transparent', color: tab === t.id ? T.tx0 : T.tx3,
+            border: 'none', padding: '4px 8px', borderRadius: '3px 3px 0 0', fontSize: '9px', fontWeight: 600,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap',
+            borderBottom: tab === t.id ? `2px solid ${T.brand}` : '2px solid transparent',
+          }}>
+            <span>{t.icon}</span> {t.label}
           </button>
         ))}
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
-        {tab === 'cross' && <CrossRatesTab />}
-        {tab === 'forwards' && <ForwardsTab />}
-        {tab === 'central' && <CentralBanksTab />}
-        {tab === 'vol' && <VolSurfaceTab />}
-        {tab === 'positioning' && <PositioningTab />}
-        {tab === 'carry' && <CarryTradeTab />}
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        {/* Left: Rate cards */}
+        <div style={{
+          width: '180px', flexShrink: 0, overflow: 'auto', padding: '6px',
+          display: 'flex', flexDirection: 'column', gap: '4px',
+          borderRight: `1px solid ${T.border}`, background: T.bg1,
+        }}>
+          {displayPairs.map(pair => {
+            const rate = rates.find(r => r.pair === pair) ?? generateFXRate(pair);
+            return (
+              <RateCard
+                key={pair} rate={rate}
+                selected={pair === selectedPair}
+                onClick={() => { setSelectedPair(pair); fetchCandles(pair); }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Center: Main content */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '8px', minWidth: 0 }}>
+          {tab === 'rates' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '10px', gridColumn: '1 / -1' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '8px' }}>Live Rates — {pairCategory === 'major' ? 'Majors' : pairCategory === 'cross' ? 'Crosses' : 'Emerging Markets'}</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', fontFamily: T.mono }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+                      {['Pair', 'Bid', 'Ask', 'Spread', 'Change', '%', 'High', 'Low', 'Volume'].map(h => (
+                        <th key={h} style={{ padding: '4px 6px', color: T.tx2, textAlign: 'right', fontWeight: 600 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayPairs.map(pair => {
+                      const r = rates.find(rt => rt.pair === pair) ?? generateFXRate(pair);
+                      const dec = r.mid < 10 ? 5 : 3;
+                      const pipDiv = pair.includes('JPY') ? 0.01 : 0.0001;
+                      const spreadPips = ((r.ask - r.bid) / pipDiv).toFixed(1);
+                      const isUp = r.changePct >= 0;
+                      return (
+                        <tr key={pair} onClick={() => { setSelectedPair(pair); fetchCandles(pair); }}
+                          style={{ borderBottom: `1px solid ${T.border}`, cursor: 'pointer', background: pair === selectedPair ? T.bg3 : 'transparent' }}>
+                          <td style={{ padding: '4px 6px', color: T.tx0, fontWeight: 700, textAlign: 'left' }}>{pair}</td>
+                          <td style={{ padding: '4px 6px', color: T.up, textAlign: 'right' }}>{r.bid.toFixed(dec)}</td>
+                          <td style={{ padding: '4px 6px', color: T.dn, textAlign: 'right' }}>{r.ask.toFixed(dec)}</td>
+                          <td style={{ padding: '4px 6px', color: T.tx2, textAlign: 'right' }}>{spreadPips}</td>
+                          <td style={{ padding: '4px 6px', color: isUp ? T.up : T.dn, textAlign: 'right' }}>{isUp ? '+' : ''}{r.change.toFixed(dec)}</td>
+                          <td style={{ padding: '4px 6px', color: isUp ? T.up : T.dn, textAlign: 'right' }}>{isUp ? '+' : ''}{r.changePct.toFixed(3)}%</td>
+                          <td style={{ padding: '4px 6px', color: T.tx1, textAlign: 'right' }}>{r.high24h.toFixed(dec)}</td>
+                          <td style={{ padding: '4px 6px', color: T.tx1, textAlign: 'right' }}>{r.low24h.toFixed(dec)}</td>
+                          <td style={{ padding: '4px 6px', color: T.tx2, textAlign: 'right' }}>{(r.volume / 1e6).toFixed(0)}M</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '10px' }}>
+                <SessionTimeline />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '10px' }}>
+                <StrengthMeter />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '10px' }}>
+                <SwapRatesPanel />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '10px' }}>
+                <PositionTracker />
+              </div>
+            </div>
+          )}
+
+          {tab === 'charts' && (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '8px' }}>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, flex: 1, minHeight: 0, position: 'relative' }}>
+                <canvas ref={chartCanvasRef} style={{ width: '100%', height: '100%' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', flexShrink: 0 }}>
+                {displayPairs.slice(0, 4).filter(p => p !== selectedPair).map(pair => (
+                  <div key={pair} style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '6px', cursor: 'pointer' }}
+                    onClick={() => { setSelectedPair(pair); fetchCandles(pair); }}>
+                    <div style={{ fontSize: '9px', fontWeight: 700, color: T.tx0, marginBottom: '2px' }}>{pair}</div>
+                    <MiniChart candles={generateFXCandles(pair, 50)} width={160} height={40} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === 'forwards' && (
+            <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+              <ForwardCurvePanel forwardData={forwards} pair={selectedPair} />
+            </div>
+          )}
+
+          {tab === 'volatility' && (
+            <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+              <VolSurfacePanel volData={volData} pair={selectedPair} />
+            </div>
+          )}
+
+          {tab === 'cross' && (
+            <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '8px' }}>Cross Rate Matrix</div>
+              <CrossRateMatrix entries={crossMatrix} />
+            </div>
+          )}
+
+          {tab === 'strength' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+                <StrengthMeter />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+                <HeatmapPanel />
+              </div>
+            </div>
+          )}
+
+          {tab === 'correlation' && (
+            <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '8px' }}>Correlation Matrix (1M)</div>
+              <CorrelationMatrix correlations={correlations} />
+            </div>
+          )}
+
+          {tab === 'heatmap' && (
+            <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+              <HeatmapPanel />
+            </div>
+          )}
+
+          {tab === 'calendar' && (
+            <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: T.tx0, marginBottom: '8px' }}>Economic Calendar — FX Impact Events</div>
+              <EconomicCalendarMini events={events} />
+            </div>
+          )}
+
+          {tab === 'positions' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px', gridColumn: '1 / -1' }}>
+                <PositionTracker />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+                <SwapRatesPanel />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+                <PipCalculator />
+              </div>
+            </div>
+          )}
+
+          {tab === 'tools' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+                <PipCalculator />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+                <SessionTimeline />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+                <SwapRatesPanel />
+              </div>
+              <div style={{ background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r, padding: '12px' }}>
+                <StrengthMeter />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

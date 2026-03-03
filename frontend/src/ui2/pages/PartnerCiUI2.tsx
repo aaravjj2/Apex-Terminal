@@ -218,9 +218,9 @@ export function PartnerCiUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>PARTNER CI â€” CERTIFICATION + TEST SUITES + COMPATIBILITY VALIDATION</span>
-        {failedPartners > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {failedPartners} FAILED</span>}
-        {criticalCompat > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {criticalCompat} COMPAT CRITICAL</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {failedPartners > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {failedPartners} FAILED</span>}
+        {criticalCompat > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {criticalCompat} COMPAT CRITICAL</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Certified" value={certifiedPartners} col={GREEN} />

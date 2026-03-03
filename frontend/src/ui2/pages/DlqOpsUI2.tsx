@@ -234,7 +234,7 @@ export function DlqOpsUI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>DLQ OPERATIONS â€” ELASTIHACK WAVES 011-020 / 061-070 â€” DEAD-LETTER QUEUE + INGEST OPS</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           {drainMsg && <span style={{ fontSize: 10, color: GREEN }}>{drainMsg}</span>}
           <button onClick={handleDrain} disabled={draining}

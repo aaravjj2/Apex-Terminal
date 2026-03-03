@@ -222,9 +222,9 @@ export function CorporateActionsUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CACT</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>CORPORATE ACTIONS â€” DIVIDENDS + SPLITS + M&A + RIGHTS + TENDER OFFERS + PROCESSING</span>
-        {imminent > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {imminent} EX IN â‰¤7 DAYS</span>}
-        {failedProc > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš  {failedProc} FAILED PROCESSING</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {imminent > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {imminent} EX IN â‰¤7 DAYS</span>}
+        {failedProc > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {failedProc} FAILED PROCESSING</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
 
       {/* STATS */}

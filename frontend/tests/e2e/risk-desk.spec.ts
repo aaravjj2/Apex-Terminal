@@ -29,7 +29,8 @@ test.beforeAll(() => {
 });
 
 function createTempCsv(name: string, content: string): string {
-  const dir = path.join(__dirname, '..', 'test-results-risk-desk', 'fixtures');
+  // Write to /tmp/ to avoid triggering Vite HMR file watchers on the project tree
+  const dir = '/tmp/pw-risk-desk-fixtures';
   fs.mkdirSync(dir, { recursive: true });
   const filepath = path.join(dir, name);
   fs.writeFileSync(filepath, content.trim() + '\n');
@@ -37,7 +38,7 @@ function createTempCsv(name: string, content: string): string {
 }
 
 async function navigateToRiskDesk(page: import('@playwright/test').Page) {
-  await page.goto('/');
+  await page.goto('/legacy/');
   await page.waitForLoadState('domcontentloaded');
   await page.waitForFunction(
     () => (document.getElementById('root')?.childElementCount ?? 0) > 0,
@@ -109,7 +110,7 @@ AAPL,call,220,03/21/2025,10,buy,100
 
   const fileInput = page.locator('[data-testid="file-input"]');
   await fileInput.setInputFiles(csvPath);
-  await page.waitForTimeout(500);
+  await expect(page.locator('[data-testid="run-button"]')).toBeEnabled({ timeout: 10000 });
 
   await page.locator('[data-testid="run-button"]').click();
   await expect(page.locator('[data-testid="run-status"]')).toBeVisible({ timeout: 30000 });
@@ -132,7 +133,7 @@ AAPL,call,999,2025-03-21,10,buy,100
 
   const fileInput = page.locator('[data-testid="file-input"]');
   await fileInput.setInputFiles(csvPath);
-  await page.waitForTimeout(500);
+  await expect(page.locator('[data-testid="run-button"]')).toBeEnabled({ timeout: 10000 });
 
   await page.locator('[data-testid="run-button"]').click();
   await expect(page.locator('[data-testid="run-status"]')).toBeVisible({ timeout: 30000 });
@@ -155,7 +156,7 @@ BRK.B,call,420,2025-06-20,1,buy,100
 
   const fileInput = page.locator('[data-testid="file-input"]');
   await fileInput.setInputFiles(csvPath);
-  await page.waitForTimeout(500);
+  await expect(page.locator('[data-testid="run-button"]')).toBeEnabled({ timeout: 10000 });
 
   await page.locator('[data-testid="run-button"]').click();
   await expect(page.locator('[data-testid="run-status"]')).toBeVisible({ timeout: 30000 });

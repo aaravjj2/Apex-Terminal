@@ -208,8 +208,8 @@ export function RatesMonitorUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>RATES MONITOR â€” YIELD CURVES + SPREADS + CENTRAL BANK + SOVEREIGN BONDS</span>
-        {invertedCount > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {invertedCount} INVERTED CURVE{invertedCount > 1 ? 'S' : ''}</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {invertedCount > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {invertedCount} INVERTED CURVE{invertedCount > 1 ? 'S' : ''}</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Yield Curves" value={yieldCurves.length} col={BLUE} />

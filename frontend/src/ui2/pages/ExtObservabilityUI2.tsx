@@ -219,10 +219,10 @@ export function ExtObservabilityUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>EXOB</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>EXT OBSERVABILITY â€” TRACES + PERFORMANCE METRICS + LOGS + DEPENDENCY HEALTH + ALERTS</span>
-        {criticalAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {criticalAlerts} CRITICAL ALERTS</span>}
-        {downDeps > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {downDeps} DEPS DOWN</span>}
-        {errorTraces > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {errorTraces} TRACE ERRORS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {criticalAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalAlerts} CRITICAL ALERTS</span>}
+        {downDeps > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {downDeps} DEPS DOWN</span>}
+        {errorTraces > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {errorTraces} TRACE ERRORS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Traces" value={traces.length} col={BLUE} />
@@ -260,7 +260,7 @@ export function ExtObservabilityUI2() {
                     <Td right mono col={t.durationMs > 1000 ? RED : t.durationMs > 500 ? AMBER : GREEN}>{t.durationMs}ms</Td>
                     <Td right mono col={SUBTLE}>{t.spans}</Td>
                     <Td right mono col={t.errorsInTrace > 0 ? RED : GREEN}>{t.errorsInTrace}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: t.userImpact ? RED : SUBTLE }}>{t.userImpact ? 'âš‘ YES' : 'NO'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: t.userImpact ? RED : SUBTLE }}>{t.userImpact ? '⚠‘ YES' : 'NO'}</span></Td>
                     <Td mono col={SUBTLE}>{t.startTime}</Td>
                   </tr>
                 ))}
@@ -337,7 +337,7 @@ export function ExtObservabilityUI2() {
                     <Td><LatBar val={d.latencyMs} max={500} /></Td>
                     <Td right mono col={d.errorRate > 5 ? RED : d.errorRate > 1 ? AMBER : GREEN}>{d.errorRate.toFixed(2)}%</Td>
                     <Td mono col={SUBTLE}>{d.version || 'â€”'}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.critical ? RED : SUBTLE }}>{d.critical ? 'âš‘ CRITICAL' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.critical ? RED : SUBTLE }}>{d.critical ? '⚠‘ CRITICAL' : 'â€”'}</span></Td>
                     <Td mono col={SUBTLE}>{d.lastChecked}</Td>
                   </tr>
                 ))}
@@ -363,7 +363,7 @@ export function ExtObservabilityUI2() {
                     <Td mono col={ORANGE}>{a.alertType}</Td>
                     <Td mono col={TEXT} style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{a.message}</Td>
                     <Td right mono col={a.affectedUsers > 100 ? RED : a.affectedUsers > 10 ? AMBER : SUBTLE}>{a.affectedUsers.toLocaleString()}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.sloViolation ? RED : SUBTLE }}>{a.sloViolation ? 'âš‘ YES' : 'NO'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.sloViolation ? RED : SUBTLE }}>{a.sloViolation ? '⚠‘ YES' : 'NO'}</span></Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.acknowledged ? GREEN : RED }}>{a.acknowledged ? 'ACKED' : 'OPEN'}</span></Td>
                     <Td mono col={a.resolvedAt ? GREEN : SUBTLE}>{a.resolvedAt || 'ACTIVE'}</Td>
                     <Td mono col={SUBTLE}>{a.triggeredAt}</Td>

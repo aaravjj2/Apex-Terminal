@@ -238,8 +238,8 @@ export function HedgeEngineUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>HEDG</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>HEDGE ENGINE â€” DELTA/GAMMA/VEGA HEDGE RECOMMENDATIONS + COST OPTIMIZATION + EFFECTIVENESS</span>
-        {criticalCount > 0 && <span style={{ fontFamily: MONO, fontSize: 10, color: RED, fontWeight: 700 }}>âš  {criticalCount} CRITICAL</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {criticalCount > 0 && <span style={{ fontFamily: MONO, fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {criticalCount} CRITICAL</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         {loading && <span style={{ fontSize: 10, color: SUBTLE }}>Loading...</span>}
       </div>
 

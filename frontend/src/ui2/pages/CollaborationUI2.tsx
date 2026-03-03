@@ -223,8 +223,8 @@ export function CollaborationUI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>COLB</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>COLLABORATION â€” WORKSPACES + RESEARCH NOTES + REVIEWS + ANNOTATIONS + TEAM PRESENCE</span>
         <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>â— {onlineCount} ONLINE</span>
-        {pendingReviews > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {pendingReviews} PENDING REVIEWS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {pendingReviews > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingReviews} PENDING REVIEWS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Active Workspaces" value={activeWorkspaces} col={GREEN} />

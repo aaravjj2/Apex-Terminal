@@ -217,10 +217,10 @@ export function GlobalReadinessUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>GLRD</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>GLOBAL READINESS â€” LAUNCH CHECKLIST + REGION GATES + CERTIFICATIONS + COMPLIANCE</span>
-        {blockingItems > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {blockingItems} BLOCKERS</span>}
-        {closedGates > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {closedGates} GATES CLOSED</span>}
-        {expiringCerts > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {expiringCerts} CERTS EXPIRING</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {blockingItems > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {blockingItems} BLOCKERS</span>}
+        {closedGates > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {closedGates} GATES CLOSED</span>}
+        {expiringCerts > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {expiringCerts} CERTS EXPIRING</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Checklist Items" value={checklist.length} col={BLUE} />
@@ -255,7 +255,7 @@ export function GlobalReadinessUI2() {
                     <Td><PriorityBadge p={c.priority} /></Td>
                     <Td><StatusBadge2 s={c.status} /></Td>
                     <Td mono col={SUBTLE}>{c.region}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.blocker ? RED : SUBTLE }}>{c.blocker ? 'âš‘ YES' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.blocker ? RED : SUBTLE }}>{c.blocker ? '⚠‘ YES' : 'â€”'}</span></Td>
                     <Td mono col={SUBTLE}>{c.owner}</Td>
                     <Td mono col={AMBER}>{c.dueDate}</Td>
                     <Td mono col={SUBTLE}>{c.lastChecked}</Td>

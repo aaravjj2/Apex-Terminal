@@ -211,10 +211,10 @@ export function IncidentAiUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>INAI</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>INCIDENT AI â€” ACTIVE INCIDENTS + AI FALLBACK STATES + RECOVERY + POSTMORTEM</span>
-        {sev1Count > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {sev1Count} SEV1 ACTIVE</span>}
-        {activeFallbacks > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {activeFallbacks} FALLBACKS ACTIVE</span>}
-        {blockedTasks > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {blockedTasks} RECOVERY BLOCKED</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {sev1Count > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {sev1Count} SEV1 ACTIVE</span>}
+        {activeFallbacks > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeFallbacks} FALLBACKS ACTIVE</span>}
+        {blockedTasks > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {blockedTasks} RECOVERY BLOCKED</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Open Incidents" value={openIncidents} col={openIncidents > 0 ? RED : GREEN} />
@@ -302,7 +302,7 @@ export function IncidentAiUI2() {
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.priority === 'p1' ? RED : r.priority === 'p2' ? AMBER : SUBTLE }}>{r.priority.toUpperCase()}</span></Td>
                     <Td><StatusBadge2 s={r.status} /></Td>
                     <Td mono col={SUBTLE}>{r.assignedTo}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.automationAvailable ? GREEN : SUBTLE }}>{r.automationAvailable ? 'âš™ AUTO' : 'MANUAL'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.automationAvailable ? GREEN : SUBTLE }}>{r.automationAvailable ? '⚠™ AUTO' : 'MANUAL'}</span></Td>
                     <Td mono col={AMBER}>{r.dueAt}</Td>
                     <Td mono col={r.completedAt ? GREEN : SUBTLE}>{r.completedAt || 'â€”'}</Td>
                   </tr>
@@ -351,7 +351,7 @@ export function IncidentAiUI2() {
                     <Td mono col={BLUE}>{a.incidentId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.automated ? PURPLE : SUBTLE }}>{a.automated ? 'âš™ AUTO' : 'MANUAL'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.automated ? PURPLE : SUBTLE }}>{a.automated ? '⚠™ AUTO' : 'MANUAL'}</span></Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
                     <Td mono col={SUBTLE}>{a.details}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>

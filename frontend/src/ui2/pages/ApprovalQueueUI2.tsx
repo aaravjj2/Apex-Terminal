@@ -216,9 +216,9 @@ export function ApprovalQueueUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>APPROVAL QUEUE â€” HUMAN-IN-THE-LOOP HIGH-RISK AI DECISION MANAGEMENT</span>
-        {critical > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {critical} CRITICAL</span>}
-        {breached > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {breached} SLA BREACHED</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {critical > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {critical} CRITICAL</span>}
+        {breached > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {breached} SLA BREACHED</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Pending" value={pending} col={pending > 0 ? AMBER : GREEN} />

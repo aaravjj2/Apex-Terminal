@@ -227,10 +227,10 @@ export function DataResidencyUI2() {
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DRSD</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>DATA RESIDENCY â€” REGIONS + CLASSIFICATION + COMPLIANCE + TRANSFERS + AUDIT</span>
-        {nonCompliant > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {nonCompliant} NON-COMPLIANT</span>}
-        {blockedTransfers > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {blockedTransfers} BLOCKED TRANSFERS</span>}
-        {auditFlags > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>âš‘ {auditFlags} AUDIT FLAGS</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {nonCompliant > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {nonCompliant} NON-COMPLIANT</span>}
+        {blockedTransfers > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {blockedTransfers} BLOCKED TRANSFERS</span>}
+        {auditFlags > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {auditFlags} AUDIT FLAGS</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Regions" value={totalRegions} col={BLUE} />

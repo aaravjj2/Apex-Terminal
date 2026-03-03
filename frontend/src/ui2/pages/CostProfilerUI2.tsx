@@ -225,9 +225,9 @@ export function CostProfilerUI2() {
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>COSP</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>COST PROFILER â€” SPEND + BREAKDOWN + OPTIMIZATION + BUDGET + ANOMALY DETECTION</span>
         {totalSavings > 0 && <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>â–¼ ${totalSavings.toLocaleString()}/mo SAVINGS AVAILABLE</span>}
-        {overBudget > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>âš‘ {overBudget} TEAMS OVER BUDGET</span>}
-        {activeAnomalies > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>âš‘ {activeAnomalies} ACTIVE ANOMALIES</span>}
-        {err && <span style={{ fontSize: 10, color: RED }}>âš  {err}</span>}
+        {overBudget > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {overBudget} TEAMS OVER BUDGET</span>}
+        {activeAnomalies > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeAnomalies} ACTIVE ANOMALIES</span>}
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="MTD Spend" value={overview ? `$${(overview.totalMtd / 1000).toFixed(1)}K` : 'â€”'} col={overview && overview.budgetVariancePct > 10 ? RED : TEXT} />

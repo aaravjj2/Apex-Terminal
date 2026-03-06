@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// VolScannerUI2 â€” Bloomberg OVML-grade volatility scanner terminal
+﻿// VolScannerUI2 — Bloomberg OVML-grade volatility scanner terminal
 // Tabs: SCANNER | IV RANK | SURFACE ALERTS | UNUSUAL ACTIVITY | TERM STRUCTURE
 // APIs: /api/v4/vol-scanner/scan, /api/v4/vol-scanner/iv-rank,
 //       /api/v4/vol-scanner/alerts, /api/v4/vol-scanner/unusual,
@@ -139,7 +139,7 @@ function IvRankGauge({ rank }: { rank: number }) {
 }
 
 function fmtTime(ts: string) {
-  if (!ts) return 'â€”'
+  if (!ts) return '—'
   try { return new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) } catch { return ts }
 }
 
@@ -302,7 +302,7 @@ export function VolScannerUI2() {
       {/* â”€â”€ HEADER â”€â”€ */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>VOLSCAN</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>VOLATILITY SCANNER â€” UNUSUAL ACTIVITY DETECTION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>VOLATILITY SCANNER — UNUSUAL ACTIVITY DETECTION</span>
         {highAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {highAlerts} HIGH ALERTS</span>}
       </div>
 
@@ -364,7 +364,7 @@ export function VolScannerUI2() {
                 <tbody>
                   {filteredResults.length === 0 && (
                     <tr><td colSpan={10} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      {loading ? 'Scanning...' : 'No results â€” click SCAN or check /api/v4/vol-scanner/scan'}
+                      {loading ? 'Scanning...' : 'No results — click SCAN'}
                     </td></tr>
                   )}
                   {filteredResults.sort((a, b) => b.score - a.score).map(s => (
@@ -415,7 +415,7 @@ export function VolScannerUI2() {
                 <tbody>
                   {ivRanks.length === 0 && (
                     <tr><td colSpan={9} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No IV rank data â€” check /api/v4/vol-scanner/iv-rank
+                      No IV rank data
                     </td></tr>
                   )}
                   {[...ivRanks].sort((a, b) => b.ivRank - a.ivRank).map(x => (
@@ -441,7 +441,7 @@ export function VolScannerUI2() {
         {tab === 'alerts' && (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {alerts.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No alerts â€” check /api/v4/vol-scanner/alerts</div>}
+              {alerts.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No alerts</div>}
               {[...alerts].sort((a, b) => {
                 const sev = { high: 3, medium: 2, low: 1 }
                 return sev[b.severity] - sev[a.severity]
@@ -484,7 +484,7 @@ export function VolScannerUI2() {
                 <tbody>
                   {unusualFiltered.length === 0 && (
                     <tr><td colSpan={11} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No unusual activity â€” check /api/v4/vol-scanner/unusual
+                      No unusual activity
                     </td></tr>
                   )}
                   {[...unusualFiltered].sort((a, b) => b.volToOi - a.volToOi).map((u, i) => (
@@ -518,7 +518,7 @@ export function VolScannerUI2() {
         {tab === 'term' && (
           <>
             {termStructure.length === 0 ? (
-              <div style={{ color: SUBTLE, fontSize: 11 }}>No term structure data â€” check /api/v4/vol-scanner/term-structure</div>
+              <div style={{ color: SUBTLE, fontSize: 11 }}>No term structure data</div>
             ) : (
               (() => {
                 const symbols = [...new Set(termStructure.map(p => p.symbol))]

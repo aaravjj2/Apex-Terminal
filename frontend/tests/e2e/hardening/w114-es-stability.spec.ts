@@ -15,7 +15,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const API = 'http://localhost:8090';
+const API = 'http://localhost:8000';
 
 test.describe('W114 — ES stability monitor', () => {
   test('w114-01 SLO.md exists with ES thresholds', async () => {

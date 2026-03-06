@@ -13,7 +13,7 @@
 
 import { test, expect, Page } from '@playwright/test';
 
-const API = 'http://localhost:8090';
+const API = 'http://localhost:8000';
 const UI  = 'http://localhost:5100';
 
 // Shared page — created once, reused by every test in this describe block.

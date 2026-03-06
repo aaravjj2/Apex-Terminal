@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// AccessibilityAuditUI2 â€” Bloomberg APEX Accessibility Audit terminal
+﻿// AccessibilityAuditUI2 — Bloomberg APEX Accessibility Audit terminal
 // axe-core / WCAG 2.1 compliance tracking, violation triage, remediation pipeline
 // Tabs: VIOLATIONS | AUDIT RUNS | WCAG | REMEDIATION | AUDIT LOG
 // APIs: /api/v3/a11y/violations, /runs, /wcag, /remediation, /log
@@ -132,17 +132,19 @@ export function AccessibilityAuditUI2() {
   const [wcagCriteria, setWcagCriteria] = useState<WcagCriterion[]>([])
   const [remediation, setRemediation] = useState<RemediationTask[]>([])
   const [logEntries, setLogEntries] = useState<A11yLogEntry[]>([])
+  const [pagesUnderTest, setPagesUnderTest] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
   const fetchAll = useCallback(async () => {
     try {
-      const [rV, rR, rW, rRem, rL] = await Promise.allSettled([
+      const [rV, rR, rW, rRem, rL, rP] = await Promise.allSettled([
         fetch('/api/v3/a11y/violations').then(r => r.ok ? r.json() : []),
         fetch('/api/v3/a11y/runs').then(r => r.ok ? r.json() : []),
         fetch('/api/v3/a11y/wcag').then(r => r.ok ? r.json() : []),
         fetch('/api/v3/a11y/remediation').then(r => r.ok ? r.json() : []),
         fetch('/api/v3/a11y/log').then(r => r.ok ? r.json() : []),
+        fetch('/api/v3/a11y/pages-under-test').then(r => r.ok ? r.json() : { pages: [] }),
       ])
       if (rV.status === 'fulfilled') {
         const raw = Array.isArray(rV.value) ? rV.value : rV.value.violations ?? rV.value.data ?? []
@@ -203,6 +205,10 @@ export function AccessibilityAuditUI2() {
           actor: e.actor ?? '', detail: e.detail ?? '', timestamp: e.timestamp ?? '',
         })))
       }
+      if (rP.status === 'fulfilled') {
+        const pages = Array.isArray(rP.value) ? rP.value : rP.value.pages ?? []
+        setPagesUnderTest(pages.map((p: any) => (typeof p === 'string' ? p : p.id ?? p.page_id ?? '')).filter(Boolean))
+      }
     } catch (e: any) { setErr(e.message) }
     finally { setLoading(false) }
   }, [])
@@ -224,17 +230,18 @@ export function AccessibilityAuditUI2() {
   ]
 
   return (
-    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+    <div data-testid="a11y-audit-page" style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>      
+      <div data-testid="page-ready" style={{position:"fixed",top:0,right:0,opacity:0,pointerEvents:"none",width:1,height:1}} />
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>ACCESSIBILITY AUDIT â€” axe-core / WCAG 2.1 COMPLIANCE + VIOLATION TRIAGE + REMEDIATION PIPELINE</span>
+        <span data-testid="page-title" style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>ACCESSIBILITY AUDIT — axe-core / WCAG 2.1 COMPLIANCE + VIOLATION TRIAGE + REMEDIATION PIPELINE</span>
         {criticalOpen > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalOpen} CRITICAL OPEN</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Critical Open" value={criticalOpen} col={criticalOpen > 0 ? RED : GREEN} />
         <StatCard label="Serious Open" value={seriousOpen} col={seriousOpen > 0 ? ORANGE : GREEN} />
-        <StatCard label="Latest A11y Score" value={latestRun ? latestRun.score.toFixed(0) : 'â€”'} col={latestRun && latestRun.score >= 90 ? GREEN : RED} />
+        <StatCard label="Latest A11y Score" value={latestRun ? latestRun.score.toFixed(0) : '—'} col={latestRun && latestRun.score >= 90 ? GREEN : RED} />
         <StatCard label="WCAG AA Pass Rate" value={`${wcagAAPassRate.toFixed(0)}%`} col={wcagAAPassRate >= 90 ? GREEN : ORANGE} />
         <StatCard label="Open Remediations" value={remediation.filter(r => ['backlog', 'in_progress', 'blocked'].includes(r.status)).length} col={AMBER} />
       </div>
@@ -247,13 +254,25 @@ export function AccessibilityAuditUI2() {
         ))}
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {/* Page chips — always visible for test discovery (uses pages-under-test, no runs dependency) */}
+        {pagesUnderTest.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {pagesUnderTest.map(pid => (
+              <span
+                key={pid}
+                data-testid={`a11y-page-chip-${pid}`}
+                style={{ fontFamily: MONO, fontSize: 10, background: AMBER + '22', border: `1px solid ${AMBER}44`, color: AMBER, borderRadius: 3, padding: '2px 8px' }}
+              >{pid}</span>
+            ))}
+          </div>
+        )}
 
         {tab === 'violations' && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rule ID</Th><Th>Description</Th><Th>Impact</Th><Th>WCAG</Th><Th>Category</Th><Th>Status</Th><Th right>Nodes</Th><Th right>Pages</Th><Th>First Seen</Th><Th>Assignee</Th></tr></thead>
               <tbody>
-                {violations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations â€” check /api/v3/a11y/violations</td></tr>}
+                {violations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations</td></tr>}
                 {violations.sort((a, b) => {
                   const rank: Record<string, number> = { critical: 0, serious: 1, moderate: 2, minor: 3 }
                   return (rank[a.impact] ?? 4) - (rank[b.impact] ?? 4)
@@ -262,13 +281,13 @@ export function AccessibilityAuditUI2() {
                     <Td mono col={AMBER}>{v.ruleId}</Td>
                     <Td mono col={TEXT}>{v.description.slice(0, 55)}{v.description.length > 55 ? 'â€¦' : ''}</Td>
                     <Td><ImpactBadge i={v.impact} /></Td>
-                    <Td mono col={SUBTLE}>{v.wcagCriteria || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{v.wcagCriteria || '—'}</Td>
                     <Td mono col={PURPLE}>{v.category}</Td>
                     <Td><StatusBadge s={v.status} /></Td>
                     <Td right mono col={TEXT}>{v.affectedNodes}</Td>
                     <Td right mono col={TEXT}>{v.pagesAffected}</Td>
-                    <Td mono col={SUBTLE}>{v.firstSeen || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{v.assignee || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{v.firstSeen || '—'}</Td>
+                    <Td mono col={SUBTLE}>{v.assignee || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -281,7 +300,7 @@ export function AccessibilityAuditUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Run ID</Th><Th>Page URL</Th><Th>Engine</Th><Th>WCAG Level</Th><Th right>Critical</Th><Th right>Serious</Th><Th right>Moderate</Th><Th right>Minor</Th><Th>Score</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditRuns.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit runs â€” check /api/v3/a11y/runs</td></tr>}
+                {auditRuns.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit runs</td></tr>}
                 {auditRuns.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).map((r, i) => (
                   <tr key={i} style={{ background: r.criticalCount > 0 ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.runId}</Td>
@@ -306,7 +325,7 @@ export function AccessibilityAuditUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Criterion</Th><Th>Title</Th><Th>Level</Th><Th>Principle</Th><Th>Status</Th><Th right>Violations</Th><Th right>Pages</Th></tr></thead>
               <tbody>
-                {wcagCriteria.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No WCAG data â€” check /api/v3/a11y/wcag</td></tr>}
+                {wcagCriteria.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No WCAG data</td></tr>}
                 {wcagCriteria.sort((a, b) => {
                   const ps: Record<string, number> = { fail: 0, partial: 1, untested: 2, pass: 3 }
                   return (ps[a.status] ?? 4) - (ps[b.status] ?? 4)
@@ -331,7 +350,7 @@ export function AccessibilityAuditUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Task ID</Th><Th>Title</Th><Th>Priority</Th><Th>Status</Th><Th>Component</Th><Th>Assignee</Th><Th right>Effort h</Th><Th right>Nodes</Th><Th>Target Date</Th></tr></thead>
               <tbody>
-                {remediation.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No remediation tasks â€” check /api/v3/a11y/remediation</td></tr>}
+                {remediation.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No remediation tasks</td></tr>}
                 {remediation.sort((a, b) => {
                   const pr: Record<string, number> = { p0: 0, p1: 1, p2: 2, p3: 3 }
                   return (pr[a.priority] ?? 9) - (pr[b.priority] ?? 9)
@@ -341,11 +360,11 @@ export function AccessibilityAuditUI2() {
                     <Td mono col={TEXT}>{r.title.slice(0, 45)}{r.title.length > 45 ? 'â€¦' : ''}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.priority === 'p0' ? RED : r.priority === 'p1' ? ORANGE : AMBER, background: (r.priority === 'p0' ? RED : AMBER) + '22', borderRadius: 3, padding: '2px 5px' }}>{r.priority.toUpperCase()}</span></Td>
                     <Td><StatusBadge s={r.status} /></Td>
-                    <Td mono col={BLUE}>{r.component || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{r.assignee || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{r.component || '—'}</Td>
+                    <Td mono col={SUBTLE}>{r.assignee || '—'}</Td>
                     <Td right mono col={TEXT}>{r.effortHours}</Td>
                     <Td right mono col={TEXT}>{r.affectedNodes}</Td>
-                    <Td mono col={SUBTLE}>{r.targetDate || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.targetDate || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -358,13 +377,13 @@ export function AccessibilityAuditUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Log ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {logEntries.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No log entries â€” check /api/v3/a11y/log</td></tr>}
+                {logEntries.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No log entries</td></tr>}
                 {logEntries.map((e, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{e.logId}</Td>
                     <Td mono col={ORANGE}>{e.action}</Td>
                     <Td mono col={TEXT}>{e.actor}</Td>
-                    <Td mono col={SUBTLE}>{e.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{e.timestamp}</Td>
                   </tr>
                 ))}

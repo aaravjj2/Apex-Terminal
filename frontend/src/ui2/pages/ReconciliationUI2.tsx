@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ReconciliationUI2 â€” Bloomberg APEX trade reconciliation terminal
+﻿// ReconciliationUI2 — Bloomberg APEX trade reconciliation terminal
 // Automated break detection, resolution workflows, exception management
 // Tabs: BREAKS | POSITIONS | RUNS | EXCEPTIONS | AUDIT
 // APIs: /api/v4/reconciliation/breaks, /positions, /runs, /exceptions, /audit
@@ -211,7 +211,7 @@ export function ReconciliationUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>RECONCILIATION â€” TRADE BREAKS + POSITION MATCHING + EXCEPTION MANAGEMENT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>RECONCILIATION — TRADE BREAKS + POSITION MATCHING + EXCEPTION MANAGEMENT</span>
         {openBreaks > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {openBreaks} OPEN BREAKS</span>}
         {criticalBreaks > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {criticalBreaks} CRITICAL</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -238,7 +238,7 @@ export function ReconciliationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Break ID</Th><Th>Trade ID</Th><Th>Asset Class</Th><Th>Counterparty</Th><Th>Type</Th><Th>Severity</Th><Th>Status</Th><Th right>Our Value</Th><Th right>Their Value</Th><Th right>Discrepancy</Th><Th right>Days Open</Th><Th>Assigned</Th></tr></thead>
               <tbody>
-                {breaks.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No breaks â€” check /api/v4/reconciliation/breaks</td></tr>}
+                {breaks.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No breaks</td></tr>}
                 {breaks.sort((a, b) => { const sv = { critical: 4, high: 3, medium: 2, low: 1 }; return (sv[b.severity] ?? 0) - (sv[a.severity] ?? 0) }).map((b, i) => (
                   <tr key={i} style={{ background: b.severity === 'critical' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.breakId}</Td>
@@ -252,7 +252,7 @@ export function ReconciliationUI2() {
                     <Td right mono col={TEXT}>{b.theirValue.toLocaleString()}</Td>
                     <Td right mono col={b.discrepancy !== 0 ? RED : GREEN}>{b.discrepancy.toLocaleString()}</Td>
                     <Td right mono col={b.daysOpen > 5 ? RED : b.daysOpen > 2 ? AMBER : SUBTLE}>{b.daysOpen}</Td>
-                    <Td mono col={SUBTLE}>{b.assignedTo || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{b.assignedTo || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -265,7 +265,7 @@ export function ReconciliationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Instrument</Th><Th>Account</Th><Th>Status</Th><Th right>Internal Qty</Th><Th right>External Qty</Th><Th right>Difference</Th><Th>CCY</Th><Th right>Market Value</Th><Th right>Tolerance</Th><Th>Last Recon</Th></tr></thead>
               <tbody>
-                {positions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No positions â€” check /api/v4/reconciliation/positions</td></tr>}
+                {positions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No positions</td></tr>}
                 {positions.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference)).map((p, i) => (
                   <tr key={i} style={{ background: p.reconStatus === 'break' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.instrument}</Td>
@@ -290,7 +290,7 @@ export function ReconciliationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Run ID</Th><Th>Type</Th><Th>Status</Th><Th right>Total Items</Th><Th right>Matched</Th><Th right>Breaks</Th><Th right>Exceptions</Th><Th right>Duration s</Th><Th>Started</Th><Th>Completed</Th></tr></thead>
               <tbody>
-                {runs.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No recon runs â€” check /api/v4/reconciliation/runs</td></tr>}
+                {runs.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No recon runs</td></tr>}
                 {runs.map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.runId}</Td>
@@ -302,7 +302,7 @@ export function ReconciliationUI2() {
                     <Td right mono col={r.exceptions > 0 ? ORANGE : SUBTLE}>{r.exceptions}</Td>
                     <Td right mono col={SUBTLE}>{r.durationSecs.toFixed(1)}</Td>
                     <Td mono col={SUBTLE}>{r.startedAt}</Td>
-                    <Td mono col={SUBTLE}>{r.completedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.completedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -315,17 +315,17 @@ export function ReconciliationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Exception ID</Th><Th>Break ID</Th><Th>Reason</Th><Th>Resolution</Th><Th>Approved By</Th><Th>Status</Th><Th right>Value at Risk</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {exceptions.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exceptions â€” check /api/v4/reconciliation/exceptions</td></tr>}
+                {exceptions.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exceptions</td></tr>}
                 {exceptions.map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'denied' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.exceptionId}</Td>
                     <Td mono col={BLUE}>{e.breakId}</Td>
-                    <Td mono col={TEXT}>{e.reason || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{e.resolution || 'â€”'}</Td>
-                    <Td mono col={TEXT}>{e.approvedBy || 'â€”'}</Td>
+                    <Td mono col={TEXT}>{e.reason || '—'}</Td>
+                    <Td mono col={SUBTLE}>{e.resolution || '—'}</Td>
+                    <Td mono col={TEXT}>{e.approvedBy || '—'}</Td>
                     <Td><StatusBadge s={e.status} /></Td>
                     <Td right mono col={e.valueAtRisk > 100000 ? RED : e.valueAtRisk > 10000 ? ORANGE : TEXT}>{e.valueAtRisk.toLocaleString()}</Td>
-                    <Td mono col={SUBTLE}>{e.expiresAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.expiresAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -338,14 +338,14 @@ export function ReconciliationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Break ID</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/reconciliation/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={BLUE}>{a.breakId || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.breakId || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

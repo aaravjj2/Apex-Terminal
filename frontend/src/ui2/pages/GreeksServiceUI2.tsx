@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// GreeksServiceUI2 â€” Bloomberg GRKS-grade real-time Greeks computation
+﻿// GreeksServiceUI2 — Bloomberg GRKS-grade real-time Greeks computation
 // First/second/third-order Greeks, sensitivity surfaces, risk decomposition
 // Tabs: LIVE GREEKS | PORTFOLIO GREEKS | SENSITIVITY | TERM STRUCTURE | RISK DECOMP
 // APIs: /api/v4/greeks/live, /portfolio, /sensitivity, /term-structure, /decomp
@@ -224,7 +224,7 @@ export function GreeksServiceUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>GRKS</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>GREEKS SERVICE â€” REAL-TIME Î” Î“ Î¸ V Ï + HIGHER ORDER + SENSITIVITY ANALYSIS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>GREEKS SERVICE — REAL-TIME Î” Î“ Î¸ V Ï + HIGHER ORDER + SENSITIVITY ANALYSIS</span>
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         {loading && <span style={{ fontSize: 10, color: SUBTLE }}>Loading...</span>}
       </div>
@@ -271,7 +271,7 @@ export function GreeksServiceUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Symbol</Th><Th>Right</Th><Th right>Strike</Th><Th>DTE</Th><Th right>IV</Th><Th right>Spot</Th><Th right>Delta</Th><Th right>Gamma</Th><Th right>Theta</Th><Th right>Vega</Th><Th right>Vanna</Th><Th right>Volga</Th><Th right>Edge</Th></tr></thead>
                 <tbody>
-                  {filtered.length === 0 && <tr><td colSpan={13} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No greeks data â€” check /api/v4/greeks/live</td></tr>}
+                  {filtered.length === 0 && <tr><td colSpan={13} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No greeks data</td></tr>}
                   {filtered.map((g, i) => (
                     <tr key={i}>
                       <Td mono col={AMBER}>{g.symbol}</Td>
@@ -301,7 +301,7 @@ export function GreeksServiceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Portfolio</Th><Th right>Net Î”</Th><Th right>Net Î“</Th><Th right>Net Î¸</Th><Th right>Net V</Th><Th right>Net Ï</Th><Th right>Î”$</Th><Th right>Î“$</Th><Th right>Î¸/Day $</Th><Th right>Positions</Th></tr></thead>
               <tbody>
-                {portfolioGreeks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No portfolio greeks â€” check /api/v4/greeks/portfolio</td></tr>}
+                {portfolioGreeks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No portfolio greeks</td></tr>}
                 {portfolioGreeks.map((p, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{p.portfolio}</Td>
@@ -327,7 +327,7 @@ export function GreeksServiceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Parameter</Th><Th right>Base Value</Th><Th right>Shock</Th><Th right>Î” Impact</Th><Th right>Portfolio Impact $</Th><Th>Unit</Th></tr></thead>
               <tbody>
-                {sensitivity.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sensitivity data â€” check /api/v4/greeks/sensitivity</td></tr>}
+                {sensitivity.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sensitivity data</td></tr>}
                 {sensitivity.map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.parameter}</Td>
@@ -349,7 +349,7 @@ export function GreeksServiceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Expiry</Th><Th right>DTE</Th><Th right>ATM IV</Th><Th right>25Î” Skew</Th><Th right>25Î” RR</Th><Th right>25Î” Fly</Th><Th right>Forward</Th><Th right>Int Rate</Th></tr></thead>
               <tbody>
-                {termStructure.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No term structure â€” check /api/v4/greeks/term-structure</td></tr>}
+                {termStructure.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No term structure</td></tr>}
                 {termStructure.sort((a, b) => a.dtedays - b.dtedays).map((t, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{t.expiry}</Td>
@@ -373,7 +373,7 @@ export function GreeksServiceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Risk Factor</Th><Th>Category</Th><Th right>Contribution $</Th><Th right>% of Total</Th></tr></thead>
               <tbody>
-                {decompRows.length === 0 && <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No decomp data â€” check /api/v4/greeks/decomp</td></tr>}
+                {decompRows.length === 0 && <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No decomp data</td></tr>}
                 {decompRows.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)).map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.riskFactor}</Td>

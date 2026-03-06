@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react'
-﻿// BacktestV4UI2 â€” Bloomberg BKTST-grade backtesting terminal v4
+﻿// BacktestV4UI2 — Bloomberg BKTST-grade backtesting terminal v4
 // Tabs: RUN CONFIG | PERFORMANCE | TRADES | RISK | OPTIMIZATION
 // APIs: /api/v4/backtest-v4/run, /api/v4/backtest-v4/results,
 //       /api/v4/backtest-v4/trades, /api/v4/backtest-v4/risk,
@@ -315,7 +315,7 @@ export function BacktestV4UI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>BKTST</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>BACKTEST ENGINE V4 â€” MULTI-STRATEGY SIMULATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>BACKTEST ENGINE V4 — MULTI-STRATEGY SIMULATION</span>
         {result && <span style={{ fontSize: 10, color: result.totalReturn >= 0 ? GREEN : RED }}>LAST: {fmtPct(result.totalReturn)} Â· SR={result.sharpe.toFixed(2)} Â· MDD={fmtPct(result.maxDrawdown)}</span>}
         {running && <span style={{ fontSize: 10, color: AMBER }}>âŸ³ RUNNING...</span>}
       </div>
@@ -461,7 +461,7 @@ export function BacktestV4UI2() {
                 <tbody>
                   {filtTrades.length === 0 && (
                     <tr><td colSpan={11} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No trades â€” run backtest first
+                      No trades — run backtest first
                     </td></tr>
                   )}
                   {filtTrades.map(t => (

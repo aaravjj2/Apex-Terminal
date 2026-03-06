@@ -255,7 +255,7 @@ export function RetentionPolicyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Policy Name</Th><Th>Category</Th><Th>Data Type</Th><Th>Framework</Th><Th>Purge Method</Th><Th>Enabled</Th><Th right>Retention days</Th><Th right>Archive days</Th><Th right>Datasets</Th><Th>Size</Th></tr></thead>
               <tbody>
-                {policies.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies — check /api/v4/retention-policy/policies</td></tr>}
+                {policies.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies</td></tr>}
                 {policies.map((p, i) => (
                   <tr key={i} style={{ opacity: p.enabled ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{p.name}</Td>
@@ -280,7 +280,7 @@ export function RetentionPolicyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Schedule</Th><Th>Policy ID</Th><Th>Cron</Th><Th>Last Status</Th><Th right>Datasets</Th><Th right>Avg Duration m</Th><Th>Alert</Th><Th>Last Run</Th><Th>Next Run</Th></tr></thead>
               <tbody>
-                {schedules.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No schedules — check /api/v4/retention-policy/schedules</td></tr>}
+                {schedules.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No schedules</td></tr>}
                 {schedules.sort((a, b) => (a.lastStatus === 'failed' ? -1 : 1) - (b.lastStatus === 'failed' ? -1 : 1)).map((s, i) => (
                   <tr key={i} style={{ background: s.lastStatus === 'failed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.name}</Td>
@@ -304,7 +304,7 @@ export function RetentionPolicyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Job ID</Th><Th>Policy</Th><Th>Dataset</Th><Th>Method</Th><Th>Status</Th><Th right>Target</Th><Th right>Processed</Th><Th>Storage Freed</Th><Th>Approved By</Th><Th>Started</Th></tr></thead>
               <tbody>
-                {purgeJobs.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No purge jobs — check /api/v4/retention-policy/purge-jobs</td></tr>}
+                {purgeJobs.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No purge jobs</td></tr>}
                 {purgeJobs.sort((a, b) => (b.status === 'running' ? 1 : 0) - (a.status === 'running' ? 1 : 0)).map((j, i) => (
                   <tr key={i} style={{ background: j.status === 'failed' ? RED + '0a' : j.status === 'running' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{j.jobId}</Td>
@@ -329,7 +329,7 @@ export function RetentionPolicyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Dataset</Th><Th>Classification</Th><Th>Policy ID</Th><Th>Status</Th><Th>Size</Th><Th right>Records</Th><Th>Oldest Record</Th><Th>Expires At</Th><Th>Purge Scheduled</Th></tr></thead>
               <tbody>
-                {datasets.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No datasets — check /api/v4/retention-policy/datasets</td></tr>}
+                {datasets.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No datasets</td></tr>}
                 {datasets.sort((a, b) => (a.status === 'overdue' ? -1 : 1) - (b.status === 'overdue' ? -1 : 1)).map((d, i) => (
                   <tr key={i} style={{ background: d.status === 'overdue' ? RED + '0a' : d.status === 'expiring' ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{d.name}</Td>
@@ -353,7 +353,7 @@ export function RetentionPolicyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Policy ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log — check /api/v4/retention-policy/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

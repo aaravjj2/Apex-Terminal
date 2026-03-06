@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 ﻿/**
- * VolSurfaceUI2 â€” Bloomberg OVML-grade Volatility Surface Terminal
+ * VolSurfaceUI2 — Bloomberg OVML-grade Volatility Surface Terminal
  * Tabs: IV SURFACE | TERM STRUCTURE | SKEW | SCANNER | HISTORY
  * Real API: /api/v4/vol-surface/* | /api/v4/options/chain
- * Full inline Bloomberg styling â€” no ui2/components dependency
+ * Full inline Bloomberg styling — no ui2/components dependency
  */
 
 // â”€â”€â”€ Bloomberg palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -361,7 +361,7 @@ export function VolSurfaceUI2() {
 
               {/* IV Matrix heatmap */}
               <div style={{ ...card, overflowX: 'auto' }}>
-                <div style={hdr}><span>IMPLIED VOLATILITY MATRIX (%) â€” HEATMAP</span></div>
+                <div style={hdr}><span>IMPLIED VOLATILITY MATRIX (%) — HEATMAP</span></div>
                 <table style={{ borderCollapse: 'collapse', width: '100%' }}>
                   <thead>
                     <tr>
@@ -408,7 +408,7 @@ export function VolSurfaceUI2() {
           {termPoints.length > 0 ? (
             <>
               <div style={card}>
-                <div style={hdr}><span>ATM IV TERM STRUCTURE â€” {symbol.toUpperCase()}</span></div>
+                <div style={hdr}><span>ATM IV TERM STRUCTURE — {symbol.toUpperCase()}</span></div>
                 <div style={{ padding: '10px 14px' }}>
                   <TermStrucSVG points={termPoints} />
                 </div>
@@ -503,7 +503,7 @@ export function VolSurfaceUI2() {
           {skewPoints.length > 0 ? (
             <>
               <div style={card}>
-                <div style={hdr}><span>VOLATILITY SMILE â€” {symbol.toUpperCase()} {skewExpiry}</span></div>
+                <div style={hdr}><span>VOLATILITY SMILE — {symbol.toUpperCase()} {skewExpiry}</span></div>
                 <div style={{ padding: '10px 14px' }}>
                   <SkewSVG points={skewPoints} />
                 </div>
@@ -595,7 +595,7 @@ export function VolSurfaceUI2() {
             <>
               {/* IV rank gauges for top 5 */}
               <div style={card}>
-                <div style={hdr}><span>IV RANK â€” TOP 5</span></div>
+                <div style={hdr}><span>IV RANK — TOP 5</span></div>
                 <div style={{ padding: '10px 14px' }}>
                   {[...scanData].sort((a, b) => (b.iv_rank ?? 0) - (a.iv_rank ?? 0)).slice(0, 5).map(row => (
                     <IVRankGauge key={row.symbol} label={row.symbol} rank={row.iv_rank ?? 0} />
@@ -669,7 +669,7 @@ export function VolSurfaceUI2() {
             <>
               {/* IV vs RV chart */}
               <div style={card}>
-                <div style={hdr}><span>HISTORICAL IV vs REALIZED VOL â€” {symbol2.toUpperCase()}</span></div>
+                <div style={hdr}><span>HISTORICAL IV vs REALIZED VOL — {symbol2.toUpperCase()}</span></div>
                 <div style={{ padding: '10px 14px' }}>
                   {(() => {
                     const W = 560, H = 150, PAD = 40;

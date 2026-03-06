@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// GlobalReadinessUI2 â€” Bloomberg GLRD global readiness certification terminal
+﻿// GlobalReadinessUI2 — Bloomberg GLRD global readiness certification terminal
 // Launch checklist, region gates, certification status, compliance, audit
 // Tabs: CHECKLIST | REGIONS | GATES | CERTIFICATIONS | AUDIT
 // APIs: /api/v4/global-readiness/checklist, /regions, /gates, /certifications, /audit
@@ -216,7 +216,7 @@ export function GlobalReadinessUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>GLRD</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>GLOBAL READINESS â€” LAUNCH CHECKLIST + REGION GATES + CERTIFICATIONS + COMPLIANCE</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>GLOBAL READINESS — LAUNCH CHECKLIST + REGION GATES + CERTIFICATIONS + COMPLIANCE</span>
         {blockingItems > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {blockingItems} BLOCKERS</span>}
         {closedGates > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {closedGates} GATES CLOSED</span>}
         {expiringCerts > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {expiringCerts} CERTS EXPIRING</span>}
@@ -244,7 +244,7 @@ export function GlobalReadinessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Category</Th><Th>Title</Th><Th>Priority</Th><Th>Status</Th><Th>Region</Th><Th>Blocker</Th><Th>Owner</Th><Th>Due</Th><Th>Last Checked</Th></tr></thead>
               <tbody>
-                {checklist.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No checklist â€” check /api/v4/global-readiness/checklist</td></tr>}
+                {checklist.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No checklist</td></tr>}
                 {checklist.sort((a, b) => {
                   const pOrd: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (pOrd[a.priority] ?? 4) - (pOrd[b.priority] ?? 4)
@@ -255,7 +255,7 @@ export function GlobalReadinessUI2() {
                     <Td><PriorityBadge p={c.priority} /></Td>
                     <Td><StatusBadge2 s={c.status} /></Td>
                     <Td mono col={SUBTLE}>{c.region}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.blocker ? RED : SUBTLE }}>{c.blocker ? '⚠‘ YES' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.blocker ? RED : SUBTLE }}>{c.blocker ? '⚠‘ YES' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{c.owner}</Td>
                     <Td mono col={AMBER}>{c.dueDate}</Td>
                     <Td mono col={SUBTLE}>{c.lastChecked}</Td>
@@ -271,7 +271,7 @@ export function GlobalReadinessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Code</Th><Th>Region</Th><Th>Status</Th><Th>Progress</Th><Th right>Critical Failed</Th><Th>Regulatory</Th><Th>Data Residency</Th><Th>Support Tier</Th><Th>Est. Launch</Th></tr></thead>
               <tbody>
-                {regions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regions â€” check /api/v4/global-readiness/regions</td></tr>}
+                {regions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regions</td></tr>}
                 {regions.sort((a, b) => {
                   const ord: Record<string, number> = { blocked: 0, 'not-ready': 1, partial: 2, ready: 3 }
                   return (ord[a.overallStatus] ?? 4) - (ord[b.overallStatus] ?? 4)
@@ -298,7 +298,7 @@ export function GlobalReadinessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Gate ID</Th><Th>Gate Name</Th><Th>Type</Th><Th>Status</Th><Th>Criteria</Th><Th>Blocks Region</Th><Th>Approved By</Th><Th>Approved At</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {gates.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No gates â€” check /api/v4/global-readiness/gates</td></tr>}
+                {gates.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No gates</td></tr>}
                 {gates.sort((a, b) => {
                   const ord: Record<string, number> = { closed: 0, pending: 1, open: 2 }
                   return (ord[a.status] ?? 3) - (ord[b.status] ?? 3)
@@ -309,10 +309,10 @@ export function GlobalReadinessUI2() {
                     <Td mono col={PURPLE}>{g.gateType}</Td>
                     <Td><StatusBadge2 s={g.status} /></Td>
                     <Td mono col={SUBTLE}>{g.criteria}</Td>
-                    <Td mono col={g.blocksRegion ? RED : SUBTLE}>{g.blocksRegion || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{g.approvedBy || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{g.approvedAt || 'â€”'}</Td>
-                    <Td mono col={AMBER}>{g.expiresAt || 'â€”'}</Td>
+                    <Td mono col={g.blocksRegion ? RED : SUBTLE}>{g.blocksRegion || '—'}</Td>
+                    <Td mono col={SUBTLE}>{g.approvedBy || '—'}</Td>
+                    <Td mono col={SUBTLE}>{g.approvedAt || '—'}</Td>
+                    <Td mono col={AMBER}>{g.expiresAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -325,7 +325,7 @@ export function GlobalReadinessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Cert ID</Th><Th>Certification</Th><Th>Jurisdiction</Th><Th>Status</Th><Th>Issuing Body</Th><Th>Scope</Th><Th right>Days Until Expiry</Th><Th>Renewal Req</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {certs.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No certifications â€” check /api/v4/global-readiness/certifications</td></tr>}
+                {certs.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No certifications</td></tr>}
                 {certs.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry).map((c, i) => (
                   <tr key={i} style={{ background: c.status === 'expired' || c.status === 'revoked' ? RED + '0a' : c.daysUntilExpiry < 30 ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.certId}</Td>
@@ -349,16 +349,16 @@ export function GlobalReadinessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Region</Th><Th>Gate</Th><Th>Outcome</Th><Th>Notes</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/global-readiness/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={BLUE}>{a.region || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.gate || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.region || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.gate || '—'}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.notes || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.notes || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

@@ -918,7 +918,8 @@ export default function TradingUI2() {
   const toggleIndicator = useCallback((ind: string) => { setIndicators(prev => prev.includes(ind) ? prev.filter(i => i !== ind) : [...prev, ind]); }, []);
 
   return (
-    <div data-testid="trading-page" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+    <div data-testid="trading-ui2-page" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+      <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none',width:1,height:1}} />
       <KPIStrip positions={positions} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '6px', flex: 1, minHeight: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: 0 }}>

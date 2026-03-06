@@ -302,7 +302,7 @@ export function CrossMarginUI2() {
                   <UtilBar pct={a.marginUtilization} />
                 </div>
               ))}
-              {accounts.length === 0 && <div style={{ fontSize: 10, color: SUBTLE }}>No accounts — check /api/v4/cross-margin/portfolio</div>}
+              {accounts.length === 0 && <div style={{ fontSize: 10, color: SUBTLE }}>No accounts</div>}
             </div>
             {/* Account detail */}
             {sel && (
@@ -365,7 +365,7 @@ export function CrossMarginUI2() {
               <tbody>
                 {collateral.length === 0 && (
                   <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                    No collateral — check /api/v4/cross-margin/collateral
+                    No collateral
                   </td></tr>
                 )}
                 {collateral.map((c, i) => (
@@ -397,7 +397,7 @@ export function CrossMarginUI2() {
         {/* ── MARGIN CALLS ── */}
         {tab === 'calls' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {calls.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No margin calls — check /api/v4/cross-margin/calls</div>}
+            {calls.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No margin calls</div>}
             {calls.map(c => (
               <div key={c.callId} style={{ background: PANEL, border: `1px solid ${c.status === 'overdue' ? RED + '66' : BORDER}`, borderRadius: 4, padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'center' }}>
                 <CallStatusBadge status={c.status} />
@@ -426,7 +426,7 @@ export function CrossMarginUI2() {
               <tbody>
                 {stressTests.length === 0 && (
                   <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                    No stress tests — check /api/v4/cross-margin/stress
+                    No stress tests
                   </td></tr>
                 )}
                 {stressTests.map((s, i) => (
@@ -465,7 +465,7 @@ export function CrossMarginUI2() {
                 <tbody>
                   {optimSuggestions.length === 0 && (
                     <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No suggestions — check /api/v4/cross-margin/optimize
+                      No suggestions
                     </td></tr>
                   )}
                   {[...optimSuggestions].sort((a, b) => b.saving - a.saving).map((s, i) => (

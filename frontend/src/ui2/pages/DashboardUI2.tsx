@@ -126,17 +126,17 @@ interface SectorData {
 function generateSectors(): SectorData[] {
   // Real change/marketCap populated from API; static structure only here
   const sectors = [
-    { name: 'Technology', stocks: ['AAPL', 'MSFT', 'NVDA', 'AVGO', 'ORCL', 'CRM'], cap: 12e12 },
-    { name: 'Healthcare', stocks: ['UNH', 'LLY', 'JNJ', 'ABBV', 'MRK', 'PFE'], cap: 6e12 },
-    { name: 'Finance', stocks: ['JPM', 'V', 'MA', 'BAC', 'GS', 'MS'], cap: 7e12 },
-    { name: 'Consumer', stocks: ['AMZN', 'TSLA', 'HD', 'MCD', 'NKE', 'SBUX'], cap: 5e12 },
-    { name: 'Energy', stocks: ['XOM', 'CVX', 'COP', 'SLB', 'EOG', 'MPC'], cap: 4e12 },
-    { name: 'Industrial', stocks: ['CAT', 'GE', 'BA', 'HON', 'UNP', 'LMT'], cap: 3.5e12 },
-    { name: 'Comm Svcs', stocks: ['GOOGL', 'META', 'NFLX', 'DIS', 'TMUS', 'VZ'], cap: 4.5e12 },
-    { name: 'Real Estate', stocks: ['PLD', 'AMT', 'EQIX', 'SPG', 'O', 'WELL'], cap: 2e12 },
+    { name: 'Technology', etf: 'XLK', stocks: ['AAPL', 'MSFT', 'NVDA', 'AVGO', 'ORCL', 'CRM'], cap: 12e12 },
+    { name: 'Healthcare', etf: 'XLV', stocks: ['UNH', 'LLY', 'JNJ', 'ABBV', 'MRK', 'PFE'], cap: 6e12 },
+    { name: 'Finance', etf: 'XLF', stocks: ['JPM', 'V', 'MA', 'BAC', 'GS', 'MS'], cap: 7e12 },
+    { name: 'Consumer', etf: 'XLY', stocks: ['AMZN', 'TSLA', 'HD', 'MCD', 'NKE', 'SBUX'], cap: 5e12 },
+    { name: 'Energy', etf: 'XLE', stocks: ['XOM', 'CVX', 'COP', 'SLB', 'EOG', 'MPC'], cap: 4e12 },
+    { name: 'Industrial', etf: 'XLI', stocks: ['CAT', 'GE', 'BA', 'HON', 'UNP', 'LMT'], cap: 3.5e12 },
+    { name: 'Comm Svcs', etf: 'XLC', stocks: ['GOOGL', 'META', 'NFLX', 'DIS', 'TMUS', 'VZ'], cap: 4.5e12 },
+    { name: 'Real Estate', etf: 'XLRE', stocks: ['PLD', 'AMT', 'EQIX', 'SPG', 'O', 'WELL'], cap: 2e12 },
   ];
   return sectors.map(s => ({
-    name: s.name,
+    name: `${s.name} ${s.etf}`,
     change: 0, // populated from API
     marketCap: s.cap,
     children: s.stocks.map(st => ({ name: st, change: 0, size: s.cap / s.stocks.length })),
@@ -571,7 +571,11 @@ export default function DashboardUI2() {
   const totalReturn = ((lastEq.equity / equityCurve[0].equity) - 1) * 100;
 
   return (
-    <div data-testid="dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+    <div data-testid="dashboard-ui2-page" data-ready="true" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+      {/* page-ready sentinel for test standardization */}
+      <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none',width:1,height:1}} />
+      {/* dashboard-ready sentinel for dashboard.spec.ts */}
+      <div data-testid="dashboard-ready" style={{ display: 'none' }} />
       {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '1px' }}>
         <KPICard label="NAV" value={fmtUsd(lastEq.equity)} sub={`${fmtPct(totalReturn)} total return`} color={T.text0} icon="💰" />

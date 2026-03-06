@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// PromptFirewallUI2 â€” Bloomberg APEX prompt firewall terminal
+﻿// PromptFirewallUI2 — Bloomberg APEX prompt firewall terminal
 // Input sanitization, output guardrails, blocked events, rules, audit
 // Tabs: EVENTS | RULES | GUARDRAILS | SANITIZATION | AUDIT
 // APIs: /api/v4/prompt-firewall/events, /rules, /guardrails, /sanitization, /audit
@@ -215,7 +215,7 @@ export function PromptFirewallUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>PROMPT FIREWALL â€” INPUT SANITIZATION + OUTPUT GUARDRAILS + THREAT DETECTION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>PROMPT FIREWALL — INPUT SANITIZATION + OUTPUT GUARDRAILS + THREAT DETECTION</span>
         {blockedEvents > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {blockedEvents} BLOCKED</span>}
         {highRiskEvents > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {highRiskEvents} HIGH RISK</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -242,16 +242,16 @@ export function PromptFirewallUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Event ID</Th><Th>Model</Th><Th>Direction</Th><Th>Action</Th><Th>Threat Type</Th><Th>Risk</Th><Th>Rule Matched</Th><Th right>Latency ms</Th><Th>User</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {events.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events â€” check /api/v4/prompt-firewall/events</td></tr>}
+                {events.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events</td></tr>}
                 {events.sort((a, b) => b.riskScore - a.riskScore).map((e, i) => (
                   <tr key={i} style={{ background: e.action === 'blocked' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.eventId}</Td>
                     <Td mono col={BLUE}>{e.modelId}</Td>
                     <Td><DirBadge d={e.direction} /></Td>
                     <Td><ActionBadge a={e.action} /></Td>
-                    <Td mono col={ORANGE}>{e.threatCategory || 'â€”'}</Td>
+                    <Td mono col={ORANGE}>{e.threatCategory || '—'}</Td>
                     <Td><RiskBar score={e.riskScore} /></Td>
-                    <Td mono col={SUBTLE}>{e.ruleMatched || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.ruleMatched || '—'}</Td>
                     <Td right mono col={e.latencyMs > 50 ? ORANGE : SUBTLE}>{e.latencyMs.toFixed(0)}</Td>
                     <Td mono col={SUBTLE}>{e.userId}</Td>
                     <Td mono col={SUBTLE}>{e.timestamp}</Td>
@@ -267,7 +267,7 @@ export function PromptFirewallUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rule</Th><Th>Type</Th><Th>Direction</Th><Th>Action</Th><Th>Enabled</Th><Th right>Priority</Th><Th right>Matches</Th><Th right>FP Rate</Th><Th>Last Eval</Th></tr></thead>
               <tbody>
-                {rules.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rules â€” check /api/v4/prompt-firewall/rules</td></tr>}
+                {rules.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rules</td></tr>}
                 {rules.sort((a, b) => a.priority - b.priority).map((r, i) => (
                   <tr key={i} style={{ opacity: r.enabled ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{r.ruleName}</Td>
@@ -278,7 +278,7 @@ export function PromptFirewallUI2() {
                     <Td right mono col={r.priority <= 5 ? AMBER : SUBTLE}>{r.priority}</Td>
                     <Td right mono col={r.matchCount > 0 ? TEXT : SUBTLE}>{r.matchCount.toLocaleString()}</Td>
                     <Td right mono col={r.falsePositiveRate > 0.05 ? ORANGE : GREEN}>{(r.falsePositiveRate * 100).toFixed(2)}%</Td>
-                    <Td mono col={SUBTLE}>{r.lastEvaluated || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.lastEvaluated || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -291,7 +291,7 @@ export function PromptFirewallUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Guardrail</Th><Th>Category</Th><Th>Scope</Th><Th>Model</Th><Th>Enabled</Th><Th right>Threshold</Th><Th right>Triggered/day</Th><Th right>Accuracy %</Th><Th right>Avg ms</Th></tr></thead>
               <tbody>
-                {guardrails.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No guardrails â€” check /api/v4/prompt-firewall/guardrails</td></tr>}
+                {guardrails.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No guardrails</td></tr>}
                 {guardrails.sort((a, b) => b.triggeredToday - a.triggeredToday).map((g, i) => (
                   <tr key={i} style={{ opacity: g.enabled ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{g.name}</Td>
@@ -315,14 +315,14 @@ export function PromptFirewallUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Sanitization ID</Th><Th>Technique</Th><Th>PII Removed</Th><Th>Injection Defused</Th><Th>Data Masked</Th><Th right>Transforms</Th><Th right>Orig Len</Th><Th right>Result Len</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {sanitization.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sanitization records â€” check /api/v4/prompt-firewall/sanitization</td></tr>}
+                {sanitization.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sanitization records</td></tr>}
                 {sanitization.map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.sanitizationId}</Td>
                     <Td mono col={BLUE}>{s.technique}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.piiRemoved ? ORANGE : SUBTLE }}>{s.piiRemoved ? 'âœ“ YES' : 'â€”'}</span></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.injectionDefused ? GREEN : SUBTLE }}>{s.injectionDefused ? 'âœ“ YES' : 'â€”'}</span></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.sensitiveDataMasked ? AMBER : SUBTLE }}>{s.sensitiveDataMasked ? 'âœ“ YES' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.piiRemoved ? ORANGE : SUBTLE }}>{s.piiRemoved ? 'âœ“ YES' : '—'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.injectionDefused ? GREEN : SUBTLE }}>{s.injectionDefused ? 'âœ“ YES' : '—'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.sensitiveDataMasked ? AMBER : SUBTLE }}>{s.sensitiveDataMasked ? 'âœ“ YES' : '—'}</span></Td>
                     <Td right mono col={TEXT}>{s.transformations}</Td>
                     <Td right mono col={SUBTLE}>{s.originalLength}</Td>
                     <Td right mono col={s.sanitizedLength < s.originalLength ? GREEN : SUBTLE}>{s.sanitizedLength}</Td>
@@ -339,7 +339,7 @@ export function PromptFirewallUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Rule</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/prompt-firewall/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -347,7 +347,7 @@ export function PromptFirewallUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><ActionBadge a={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

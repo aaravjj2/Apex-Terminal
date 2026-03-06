@@ -4,7 +4,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090/api/v3/jobs';
+const API = 'http://localhost:8000/api/v3/jobs';
 
 /* clear jobs before each test */
 test.beforeEach(async ({ request }) => {

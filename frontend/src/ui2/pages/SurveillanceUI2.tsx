@@ -322,7 +322,7 @@ export function SurveillanceUI2() {
                 <Th>Reg Flag</Th><Th>Status</Th><Th>Detected</Th><Th>Description</Th>
               </tr></thead>
               <tbody>
-                {visAlerts.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts — check /api/v4/surveillance/alerts</td></tr>}
+                {visAlerts.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts</td></tr>}
                 {visAlerts.map((a, i) => (
                   <tr key={i} style={{ background: a.severity === 'critical' ? '#1a0808' : 'transparent' }}>
                     <Td><AlertTypeBadge type={a.alertType} /></Td>
@@ -353,7 +353,7 @@ export function SurveillanceUI2() {
                 <Th>Opened</Th><Th>Resolved</Th><Th>Reg Report</Th><Th>Findings</Th>
               </tr></thead>
               <tbody>
-                {investigations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No investigations — check /api/v4/surveillance/investigations</td></tr>}
+                {investigations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No investigations</td></tr>}
                 {investigations.map((inv, i) => {
                   const sc = inv.status === 'closed' ? GREEN : inv.status === 'submitted' ? BLUE : inv.status === 'pending_review' ? AMBER : RED
                   return (
@@ -379,7 +379,7 @@ export function SurveillanceUI2() {
         {/* PATTERNS */}
         {tab === 'patterns' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 8 }}>
-            {patterns.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No patterns — check /api/v4/surveillance/patterns</div>}
+            {patterns.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No patterns</div>}
             {patterns.map(p => (
               <div key={p.patternId} style={{ background: PANEL, border: `1px solid ${p.active ? BORDER : BORDER + '55'}`, borderRadius: 4, padding: 12, opacity: p.active ? 1 : 0.5 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
@@ -416,7 +416,7 @@ export function SurveillanceUI2() {
                 <Th>Suspicious Patterns</Th>
               </tr></thead>
               <tbody>
-                {activity.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No activity data — check /api/v4/surveillance/activity</td></tr>}
+                {activity.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No activity data</td></tr>}
                 {[...activity].sort((a, b) => b.riskScore - a.riskScore).map((t, i) => (
                   <tr key={i} style={{ background: t.riskScore > 80 ? '#1a0808' : 'transparent' }}>
                     <Td mono col={t.riskScore > 70 ? RED : AMBER}>{t.trader}</Td>
@@ -448,7 +448,7 @@ export function SurveillanceUI2() {
                 <Th right>Alerts</Th><Th right>Investigations</Th><Th>Regulatory</Th><Th>Summary</Th>
               </tr></thead>
               <tbody>
-                {reports.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reports — check /api/v4/surveillance/reports</td></tr>}
+                {reports.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reports</td></tr>}
                 {reports.map((r, i) => (
                   <tr key={i}>
                     <Td mono col={SUBTLE} style={{ fontSize: 9 }}>{r.reportId.slice(0, 12)}</Td>

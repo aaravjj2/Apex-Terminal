@@ -7,7 +7,7 @@
 import { test, expect } from '@playwright/test';
 
 const FRONT = 'http://localhost:5100';
-const API   = 'http://localhost:8090/api/v3/controls';
+const API   = 'http://localhost:8000/api/v3/controls';
 
 // ── Helper: seed a control + edge, return IDs ─────────────────────────────
 async function seedControlAndEdge(

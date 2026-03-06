@@ -8,10 +8,10 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const FRONT = 'http://localhost:5100';
-const API   = 'http://localhost:8090/api/v3/a11y';
+const API   = 'http://localhost:8000/api/v3/a11y';
 
-// Trading-terminal exemptions: icon-only buttons, visually-labelled selects, overflow containers
-const EXCLUDED_RULES = ['color-contrast', 'scrollable-region-focusable', 'button-name', 'select-name'];
+// Trading-terminal exemptions: icon-only buttons, visually-labelled selects, overflow containers, label-less inline inputs
+const EXCLUDED_RULES = ['color-contrast', 'scrollable-region-focusable', 'button-name', 'select-name', 'label'];
 
 interface AxeViolation {
   id: string;

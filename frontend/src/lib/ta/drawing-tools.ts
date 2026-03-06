@@ -1291,12 +1291,559 @@ export const Measure = createTool({
   },
 });
 
+// ─── ADDITIONAL DRAWING TOOLS ────────────────────────────────────────────────
+
+const TrendAngle = createTool('TrendAngle', 'trend', 2, {
+  hitTest: (state, p, ctx) => TrendLine.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    TrendLine.render(state, ctx);
+    const pts = state.points.map(p => ptToPx(p, ctx.viewport));
+    const dx = pts[1].x - pts[0].x;
+    const dy = pts[1].y - pts[0].y;
+    const angle = Math.atan2(-dy, dx) * (180 / Math.PI);
+    ctx.ctx.font = '11px sans-serif';
+    ctx.ctx.fillStyle = '#FFD700';
+    ctx.ctx.fillText(`${angle.toFixed(1)}°`, pts[0].x + 10, pts[0].y - 10);
+  },
+});
+
+const RotatedRectangle = createTool('RotatedRectangle', 'shape', 3, {
+  hitTest: (state, p, ctx) => {
+    if (state.points.length < 3) return false;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const pp = ptToPx(p, ctx.viewport);
+    const dx = pts[1].x - pts[0].x;
+    const dy = pts[1].y - pts[0].y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const ux = dx / (len || 1), uy = dy / (len || 1);
+    const vx = -uy, vy = ux;
+    const w2 = pts[2].x - pts[0].x, h2 = pts[2].y - pts[0].y;
+    const projW = w2 * ux + h2 * uy;
+    const projH = w2 * vx + h2 * vy;
+    const relX = (pp.x - pts[0].x) * ux + (pp.y - pts[0].y) * uy;
+    const relY = (pp.x - pts[0].x) * vx + (pp.y - pts[0].y) * vy;
+    return relX >= 0 && relX <= projW && relY >= 0 && relY <= Math.abs(projH);
+  },
+  render: (state, ctx) => {
+    if (state.points.length < 3) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const dx = pts[1].x - pts[0].x, dy = pts[1].y - pts[0].y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const ux = dx / (len || 1), uy = dy / (len || 1);
+    const vx = -uy, vy = ux;
+    const h = (pts[2].x - pts[0].x) * vx + (pts[2].y - pts[0].y) * vy;
+    const corners = [
+      pts[0], pts[1],
+      { x: pts[1].x + vx * h, y: pts[1].y + vy * h },
+      { x: pts[0].x + vx * h, y: pts[0].y + vy * h },
+    ];
+    ctx.ctx.beginPath();
+    corners.forEach((c, i) => i === 0 ? ctx.ctx.moveTo(c.x, c.y) : ctx.ctx.lineTo(c.x, c.y));
+    ctx.ctx.closePath();
+    ctx.ctx.strokeStyle = state.style?.color ?? '#2962FF';
+    ctx.ctx.stroke();
+  },
+});
+
+const Curve = createTool('Curve', 'shape', 3, {
+  hitTest: (state, p, ctx) => {
+    if (state.points.length < 3) return false;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const pp = ptToPx(p, ctx.viewport);
+    for (let t = 0; t <= 1; t += 0.02) {
+      const mt = 1 - t;
+      const bx = mt * mt * pts[0].x + 2 * mt * t * pts[1].x + t * t * pts[2].x;
+      const by = mt * mt * pts[0].y + 2 * mt * t * pts[1].y + t * t * pts[2].y;
+      if (Math.hypot(bx - pp.x, by - pp.y) < 6) return true;
+    }
+    return false;
+  },
+  render: (state, ctx) => {
+    if (state.points.length < 3) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    ctx.ctx.moveTo(pts[0].x, pts[0].y);
+    ctx.ctx.quadraticCurveTo(pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+    ctx.ctx.strokeStyle = state.style?.color ?? '#2962FF';
+    ctx.ctx.stroke();
+  },
+});
+
+const DateAndPriceRange = createTool('DateAndPriceRange', 'measure', 2, {
+  hitTest: (state, p, ctx) => Rectangle.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    Rectangle.render(state, ctx);
+    const [p0, p1] = state.points;
+    const priceDiff = p1.price - p0.price;
+    const pct = (priceDiff / (p0.price || 1)) * 100;
+    const timeDiff = Math.abs(p1.time - p0.time);
+    const days = Math.round(timeDiff / 86400);
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const midX = (pts[0].x + pts[1].x) / 2;
+    const midY = (pts[0].y + pts[1].y) / 2;
+    ctx.ctx.font = '11px sans-serif';
+    ctx.ctx.fillStyle = '#E1E3E6';
+    ctx.ctx.fillText(`${priceDiff.toFixed(2)} (${pct.toFixed(1)}%) / ${days}d`, midX - 40, midY);
+  },
+});
+
+const BarsPattern = createTool('BarsPattern', 'pattern', 2, {
+  hitTest: (state, p, ctx) => Rectangle.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    Rectangle.render(state, ctx);
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.font = '10px sans-serif';
+    ctx.ctx.fillStyle = '#787B86';
+    ctx.ctx.fillText('Bars Pattern', pts[0].x + 4, pts[0].y + 12);
+  },
+});
+
+const GhostFeed = createTool('GhostFeed', 'pattern', 2, {
+  hitTest: (state, p, ctx) => Rectangle.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.setLineDash([4, 4]);
+    ctx.ctx.strokeStyle = state.style?.color ?? '#787B86';
+    ctx.ctx.globalAlpha = 0.5;
+    ctx.ctx.strokeRect(pts[0].x, pts[0].y, pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+    ctx.ctx.globalAlpha = 1;
+    ctx.ctx.setLineDash([]);
+  },
+});
+
+const Projection = createTool('Projection', 'pattern', 3, {
+  hitTest: (state, p, ctx) => {
+    if (state.points.length < 2) return false;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const pp = ptToPx(p, ctx.viewport);
+    return pts.some(pt => Math.hypot(pt.x - pp.x, pt.y - pp.y) < 8);
+  },
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.ctx.moveTo(pt.x, pt.y) : ctx.ctx.lineTo(pt.x, pt.y));
+    ctx.ctx.setLineDash([6, 3]);
+    ctx.ctx.strokeStyle = '#FFD700';
+    ctx.ctx.stroke();
+    ctx.ctx.setLineDash([]);
+    if (state.points.length >= 3) {
+      const projected = { x: pts[2].x + (pts[2].x - pts[1].x), y: pts[2].y + (pts[2].y - pts[1].y) };
+      ctx.ctx.lineTo(projected.x, projected.y);
+      ctx.ctx.stroke();
+    }
+  },
+});
+
+const LongPosition = createTool('LongPosition', 'trade', 2, {
+  hitTest: (state, p, ctx) => Rectangle.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const entry = pts[0].y, target = pts[1].y;
+    const stopY = entry + (entry - target);
+    ctx.ctx.fillStyle = 'rgba(38, 166, 91, 0.15)';
+    ctx.ctx.fillRect(pts[0].x, Math.min(entry, target), 120, Math.abs(target - entry));
+    ctx.ctx.fillStyle = 'rgba(234, 57, 67, 0.15)';
+    ctx.ctx.fillRect(pts[0].x, entry, 120, stopY - entry);
+    ctx.ctx.strokeStyle = '#26A65B';
+    ctx.ctx.setLineDash([4, 2]);
+    ctx.ctx.beginPath(); ctx.ctx.moveTo(pts[0].x, entry); ctx.ctx.lineTo(pts[0].x + 120, entry); ctx.ctx.stroke();
+    ctx.ctx.strokeStyle = '#EA3943';
+    ctx.ctx.beginPath(); ctx.ctx.moveTo(pts[0].x, stopY); ctx.ctx.lineTo(pts[0].x + 120, stopY); ctx.ctx.stroke();
+    ctx.ctx.setLineDash([]);
+    ctx.ctx.font = '10px sans-serif';
+    ctx.ctx.fillStyle = '#26A65B';
+    ctx.ctx.fillText('LONG', pts[0].x + 4, entry - 4);
+  },
+});
+
+const ShortPosition = createTool('ShortPosition', 'trade', 2, {
+  hitTest: (state, p, ctx) => Rectangle.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const entry = pts[0].y, target = pts[1].y;
+    const stopY = entry - (target - entry);
+    ctx.ctx.fillStyle = 'rgba(234, 57, 67, 0.15)';
+    ctx.ctx.fillRect(pts[0].x, Math.min(entry, target), 120, Math.abs(target - entry));
+    ctx.ctx.fillStyle = 'rgba(38, 166, 91, 0.15)';
+    ctx.ctx.fillRect(pts[0].x, stopY, 120, entry - stopY);
+    ctx.ctx.strokeStyle = '#EA3943';
+    ctx.ctx.setLineDash([4, 2]);
+    ctx.ctx.beginPath(); ctx.ctx.moveTo(pts[0].x, entry); ctx.ctx.lineTo(pts[0].x + 120, entry); ctx.ctx.stroke();
+    ctx.ctx.setLineDash([]);
+    ctx.ctx.font = '10px sans-serif';
+    ctx.ctx.fillStyle = '#EA3943';
+    ctx.ctx.fillText('SHORT', pts[0].x + 4, entry - 4);
+  },
+});
+
+const Forecast = createTool('Forecast', 'pattern', 3, {
+  hitTest: (state, p, ctx) => Projection.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    Projection.render(state, ctx);
+    if (state.points.length >= 2) {
+      const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+      ctx.ctx.font = '10px sans-serif';
+      ctx.ctx.fillStyle = '#26A65B';
+      ctx.ctx.fillText('Forecast', pts[0].x, pts[0].y - 6);
+    }
+  },
+});
+
+const XABCDPattern = createTool('XABCDPattern', 'harmonic', 5, {
+  hitTest: (state, p, ctx) => {
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const pp = ptToPx(p, ctx.viewport);
+    return pts.some(pt => Math.hypot(pt.x - pp.x, pt.y - pp.y) < 8);
+  },
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.ctx.moveTo(pt.x, pt.y) : ctx.ctx.lineTo(pt.x, pt.y));
+    ctx.ctx.strokeStyle = '#2962FF';
+    ctx.ctx.stroke();
+    const labels = ['X', 'A', 'B', 'C', 'D'];
+    pts.forEach((pt, i) => {
+      ctx.ctx.font = '11px sans-serif';
+      ctx.ctx.fillStyle = '#E1E3E6';
+      ctx.ctx.fillText(labels[i] || '', pt.x - 4, pt.y - 8);
+    });
+  },
+});
+
+const CypherPattern = createTool('CypherPattern', 'harmonic', 5, {
+  hitTest: (state, p, ctx) => XABCDPattern.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    XABCDPattern.render(state, ctx);
+    if (state.points.length >= 1) {
+      const px = ptToPx(state.points[0], ctx.viewport);
+      ctx.ctx.font = '10px sans-serif';
+      ctx.ctx.fillStyle = '#FFD700';
+      ctx.ctx.fillText('Cypher', px.x, px.y - 14);
+    }
+  },
+});
+
+const ABCDPattern = createTool('ABCDPattern', 'harmonic', 4, {
+  hitTest: (state, p, ctx) => XABCDPattern.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.ctx.moveTo(pt.x, pt.y) : ctx.ctx.lineTo(pt.x, pt.y));
+    ctx.ctx.strokeStyle = '#FF9800';
+    ctx.ctx.stroke();
+    ['A', 'B', 'C', 'D'].forEach((l, i) => {
+      if (pts[i]) {
+        ctx.ctx.font = '11px sans-serif';
+        ctx.ctx.fillStyle = '#E1E3E6';
+        ctx.ctx.fillText(l, pts[i].x - 4, pts[i].y - 8);
+      }
+    });
+  },
+});
+
+const ThreeDrives = createTool('ThreeDrives', 'harmonic', 6, {
+  hitTest: (state, p, ctx) => XABCDPattern.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.ctx.moveTo(pt.x, pt.y) : ctx.ctx.lineTo(pt.x, pt.y));
+    ctx.ctx.strokeStyle = '#9C27B0';
+    ctx.ctx.stroke();
+    ['1', '2', '3', 'D1', 'D2', 'D3'].forEach((l, i) => {
+      if (pts[i]) { ctx.ctx.fillStyle = '#E1E3E6'; ctx.ctx.fillText(l, pts[i].x - 4, pts[i].y - 8); }
+    });
+  },
+});
+
+const HeadAndShoulders = createTool('HeadAndShoulders', 'pattern', 7, {
+  hitTest: (state, p, ctx) => XABCDPattern.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 3) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.ctx.moveTo(pt.x, pt.y) : ctx.ctx.lineTo(pt.x, pt.y));
+    ctx.ctx.strokeStyle = '#FF5722';
+    ctx.ctx.stroke();
+    // Neckline
+    if (pts.length >= 5) {
+      ctx.ctx.setLineDash([4, 2]);
+      ctx.ctx.beginPath(); ctx.ctx.moveTo(pts[1].x, pts[1].y); ctx.ctx.lineTo(pts[3].x, pts[3].y);
+      ctx.ctx.strokeStyle = '#787B86'; ctx.ctx.stroke();
+      ctx.ctx.setLineDash([]);
+    }
+    ctx.ctx.font = '10px sans-serif';
+    ctx.ctx.fillStyle = '#FF5722';
+    ctx.ctx.fillText('H&S', pts[0].x, pts[0].y - 12);
+  },
+});
+
+const ElliottWaveImpulse = createTool('ElliottWaveImpulse', 'wave', 6, {
+  hitTest: (state, p, ctx) => XABCDPattern.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.ctx.moveTo(pt.x, pt.y) : ctx.ctx.lineTo(pt.x, pt.y));
+    ctx.ctx.strokeStyle = '#2962FF';
+    ctx.ctx.stroke();
+    ['0', '1', '2', '3', '4', '5'].forEach((l, i) => {
+      if (pts[i]) { ctx.ctx.font = '12px sans-serif'; ctx.ctx.fillStyle = '#2962FF'; ctx.ctx.fillText(l, pts[i].x + 4, pts[i].y - 6); }
+    });
+  },
+});
+
+const ElliottWaveCorrection = createTool('ElliottWaveCorrection', 'wave', 4, {
+  hitTest: (state, p, ctx) => XABCDPattern.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.ctx.moveTo(pt.x, pt.y) : ctx.ctx.lineTo(pt.x, pt.y));
+    ctx.ctx.strokeStyle = '#FF9800';
+    ctx.ctx.stroke();
+    ['A', 'B', 'C'].forEach((l, i) => {
+      if (pts[i]) { ctx.ctx.font = '12px sans-serif'; ctx.ctx.fillStyle = '#FF9800'; ctx.ctx.fillText(l, pts[i].x + 4, pts[i].y - 6); }
+    });
+  },
+});
+
+const ElliottWaveCombo = createTool('ElliottWaveCombo', 'wave', 8, {
+  hitTest: (state, p, ctx) => XABCDPattern.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.ctx.moveTo(pt.x, pt.y) : ctx.ctx.lineTo(pt.x, pt.y));
+    ctx.ctx.strokeStyle = '#4CAF50';
+    ctx.ctx.stroke();
+    ['W', 'X', 'Y', 'X2', 'Z'].forEach((l, i) => {
+      if (pts[i]) { ctx.ctx.font = '12px sans-serif'; ctx.ctx.fillStyle = '#4CAF50'; ctx.ctx.fillText(l, pts[i].x + 4, pts[i].y - 6); }
+    });
+  },
+});
+
+const CyclicLines = createTool('CyclicLines', 'cycle', 2, {
+  hitTest: (state, p, ctx) => {
+    if (state.points.length < 2) return false;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const pp = ptToPx(p, ctx.viewport);
+    const spacing = Math.abs(pts[1].x - pts[0].x);
+    if (spacing < 1) return false;
+    const offset = (pp.x - pts[0].x) % spacing;
+    return Math.abs(offset) < 4 || Math.abs(offset - spacing) < 4;
+  },
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const spacing = Math.abs(pts[1].x - pts[0].x);
+    if (spacing < 1) return;
+    ctx.ctx.strokeStyle = state.style?.color ?? '#787B86';
+    ctx.ctx.setLineDash([2, 2]);
+    const { width, height } = ctx.viewport;
+    for (let x = pts[0].x; x <= width; x += spacing) {
+      ctx.ctx.beginPath(); ctx.ctx.moveTo(x, 0); ctx.ctx.lineTo(x, height); ctx.ctx.stroke();
+    }
+    for (let x = pts[0].x - spacing; x >= 0; x -= spacing) {
+      ctx.ctx.beginPath(); ctx.ctx.moveTo(x, 0); ctx.ctx.lineTo(x, height); ctx.ctx.stroke();
+    }
+    ctx.ctx.setLineDash([]);
+  },
+});
+
+const TimeCycles = createTool('TimeCycles', 'cycle', 2, {
+  hitTest: (state, p, ctx) => CyclicLines.hitTest(state, p, ctx),
+  render: (state, ctx) => CyclicLines.render(state, ctx),
+});
+
+const SineLine = createTool('SineLine', 'cycle', 2, {
+  hitTest: (state, p, ctx) => {
+    if (state.points.length < 2) return false;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const pp = ptToPx(p, ctx.viewport);
+    const period = Math.abs(pts[1].x - pts[0].x) * 2;
+    const amp = Math.abs(pts[1].y - pts[0].y);
+    if (period < 1) return false;
+    const midY = (pts[0].y + pts[1].y) / 2;
+    const sinY = midY + amp * Math.sin(((pp.x - pts[0].x) / period) * 2 * Math.PI);
+    return Math.abs(sinY - pp.y) < 6;
+  },
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    const period = Math.abs(pts[1].x - pts[0].x) * 2;
+    const amp = Math.abs(pts[1].y - pts[0].y);
+    const midY = (pts[0].y + pts[1].y) / 2;
+    ctx.ctx.beginPath();
+    for (let x = 0; x <= ctx.viewport.width; x += 2) {
+      const sy = midY + amp * Math.sin(((x - pts[0].x) / (period || 1)) * 2 * Math.PI);
+      x === 0 ? ctx.ctx.moveTo(x, sy) : ctx.ctx.lineTo(x, sy);
+    }
+    ctx.ctx.strokeStyle = state.style?.color ?? '#2962FF';
+    ctx.ctx.stroke();
+  },
+});
+
+const Note = createTool('Note', 'annotation', 1, {
+  hitTest: (state, p, ctx) => {
+    if (!state.points.length) return false;
+    const pt = ptToPx(state.points[0], ctx.viewport);
+    const pp = ptToPx(p, ctx.viewport);
+    return Math.abs(pt.x - pp.x) < 60 && Math.abs(pt.y - pp.y) < 30;
+  },
+  render: (state, ctx) => {
+    if (!state.points.length) return;
+    const pt = ptToPx(state.points[0], ctx.viewport);
+    const txt = state.text ?? 'Note';
+    ctx.ctx.fillStyle = 'rgba(30, 33, 40, 0.9)';
+    ctx.ctx.fillRect(pt.x, pt.y, 120, 40);
+    ctx.ctx.strokeStyle = '#787B86';
+    ctx.ctx.strokeRect(pt.x, pt.y, 120, 40);
+    ctx.ctx.font = '11px sans-serif';
+    ctx.ctx.fillStyle = '#E1E3E6';
+    ctx.ctx.fillText(txt, pt.x + 6, pt.y + 16);
+  },
+});
+
+const AnchoredNote = createTool('AnchoredNote', 'annotation', 1, {
+  hitTest: (state, p, ctx) => Note.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (!state.points.length) return;
+    const pt = ptToPx(state.points[0], ctx.viewport);
+    ctx.ctx.beginPath();
+    ctx.ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+    ctx.ctx.fillStyle = '#FFD700';
+    ctx.ctx.fill();
+    const txt = state.text ?? 'Anchored Note';
+    ctx.ctx.fillStyle = 'rgba(30, 33, 40, 0.9)';
+    ctx.ctx.fillRect(pt.x + 8, pt.y - 10, 130, 24);
+    ctx.ctx.font = '11px sans-serif';
+    ctx.ctx.fillStyle = '#E1E3E6';
+    ctx.ctx.fillText(txt, pt.x + 12, pt.y + 6);
+  },
+});
+
+const Callout = createTool('Callout', 'annotation', 2, {
+  hitTest: (state, p, ctx) => Note.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    ctx.ctx.moveTo(pts[0].x, pts[0].y);
+    ctx.ctx.lineTo(pts[1].x, pts[1].y);
+    ctx.ctx.strokeStyle = '#787B86';
+    ctx.ctx.stroke();
+    const txt = state.text ?? 'Callout';
+    const tw = ctx.ctx.measureText(txt).width + 12;
+    ctx.ctx.fillStyle = 'rgba(30, 33, 40, 0.95)';
+    ctx.ctx.fillRect(pts[1].x, pts[1].y - 12, tw, 20);
+    ctx.ctx.font = '11px sans-serif';
+    ctx.ctx.fillStyle = '#E1E3E6';
+    ctx.ctx.fillText(txt, pts[1].x + 6, pts[1].y + 2);
+  },
+});
+
+const PriceLabel = createTool('PriceLabel', 'annotation', 1, {
+  hitTest: (state, p, ctx) => {
+    if (!state.points.length) return false;
+    const pt = ptToPx(state.points[0], ctx.viewport);
+    const pp = ptToPx(p, ctx.viewport);
+    return Math.abs(pt.x - pp.x) < 40 && Math.abs(pt.y - pp.y) < 12;
+  },
+  render: (state, ctx) => {
+    if (!state.points.length) return;
+    const pt = ptToPx(state.points[0], ctx.viewport);
+    const price = state.points[0].price.toFixed(2);
+    ctx.ctx.fillStyle = '#2962FF';
+    ctx.ctx.fillRect(pt.x, pt.y - 10, 60, 20);
+    ctx.ctx.font = '11px sans-serif';
+    ctx.ctx.fillStyle = '#FFF';
+    ctx.ctx.fillText(`$${price}`, pt.x + 4, pt.y + 4);
+  },
+});
+
+const Flag = createTool('Flag', 'annotation', 1, {
+  hitTest: (state, p, ctx) => PriceLabel.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (!state.points.length) return;
+    const pt = ptToPx(state.points[0], ctx.viewport);
+    ctx.ctx.strokeStyle = '#787B86';
+    ctx.ctx.beginPath(); ctx.ctx.moveTo(pt.x, pt.y); ctx.ctx.lineTo(pt.x, pt.y - 30); ctx.ctx.stroke();
+    ctx.ctx.fillStyle = state.style?.color ?? '#FF5722';
+    ctx.ctx.beginPath(); ctx.ctx.moveTo(pt.x, pt.y - 30); ctx.ctx.lineTo(pt.x + 20, pt.y - 22);
+    ctx.ctx.lineTo(pt.x, pt.y - 14); ctx.ctx.fill();
+  },
+});
+
+const Brush = createTool('Brush', 'freehand', 100, {
+  hitTest: (state, p, ctx) => {
+    const pp = ptToPx(p, ctx.viewport);
+    return state.points.some(pt => {
+      const ppt = ptToPx(pt, ctx.viewport);
+      return Math.hypot(ppt.x - pp.x, ppt.y - pp.y) < 6;
+    });
+  },
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    ctx.ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.ctx.strokeStyle = state.style?.color ?? '#FF9800';
+    ctx.ctx.lineWidth = 3;
+    ctx.ctx.stroke();
+    ctx.ctx.lineWidth = 1;
+  },
+});
+
+const Highlighter = createTool('Highlighter', 'freehand', 100, {
+  hitTest: (state, p, ctx) => Brush.hitTest(state, p, ctx),
+  render: (state, ctx) => {
+    if (state.points.length < 2) return;
+    const pts = state.points.map(pt => ptToPx(pt, ctx.viewport));
+    ctx.ctx.beginPath();
+    ctx.ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.ctx.strokeStyle = state.style?.color ?? 'rgba(255, 235, 59, 0.4)';
+    ctx.ctx.lineWidth = 12;
+    ctx.ctx.lineCap = 'round';
+    ctx.ctx.stroke();
+    ctx.ctx.lineWidth = 1;
+    ctx.ctx.lineCap = 'butt';
+  },
+});
+
+const EmojiSticker = createTool('EmojiSticker', 'annotation', 1, {
+  hitTest: (state, p, ctx) => {
+    if (!state.points.length) return false;
+    const pt = ptToPx(state.points[0], ctx.viewport);
+    const pp = ptToPx(p, ctx.viewport);
+    return Math.hypot(pt.x - pp.x, pt.y - pp.y) < 16;
+  },
+  render: (state, ctx) => {
+    if (!state.points.length) return;
+    const pt = ptToPx(state.points[0], ctx.viewport);
+    ctx.ctx.font = '24px serif';
+    ctx.ctx.fillText(state.text ?? '📍', pt.x - 12, pt.y + 8);
+  },
+});
+
 // ─── REGISTRY ────────────────────────────────────────────────────────────────
 
 export const DRAWING_TOOLS: Record<string, DrawingToolDefinition> = {
   TrendLine,
   Ray,
   ExtendedLine,
+  TrendAngle,
   HorizontalLine,
   VerticalLine,
   CrossLine,
@@ -1320,10 +1867,12 @@ export const DRAWING_TOOLS: Record<string, DrawingToolDefinition> = {
   FibWedge,
   FibCircle,
   Rectangle,
+  RotatedRectangle,
   Circle,
   Ellipse,
   Triangle,
   Polyline,
+  Curve,
   Arc,
   Arrow,
   ArrowMarker,
@@ -1333,8 +1882,34 @@ export const DRAWING_TOOLS: Record<string, DrawingToolDefinition> = {
   GannSquareFixed,
   PriceRange,
   DateRange,
-  Text,
+  DateAndPriceRange,
+  BarsPattern,
+  GhostFeed,
+  Projection,
+  LongPosition,
+  ShortPosition,
+  Forecast,
   Measure,
+  XABCDPattern,
+  CypherPattern,
+  ABCDPattern,
+  ThreeDrives,
+  HeadAndShoulders,
+  ElliottWaveImpulse,
+  ElliottWaveCorrection,
+  ElliottWaveCombo,
+  CyclicLines,
+  TimeCycles,
+  SineLine,
+  Text,
+  Note,
+  AnchoredNote,
+  Callout,
+  PriceLabel,
+  Flag,
+  Brush,
+  Highlighter,
+  EmojiSticker,
 };
 
 export function getDrawingTool(id: string): DrawingToolDefinition | undefined {

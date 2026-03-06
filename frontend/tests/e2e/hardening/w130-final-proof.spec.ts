@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WORKSPACE = join(__dirname, '..', '..', '..', '..');
-const BASE = 'http://localhost:8090';
+const BASE = 'http://localhost:8000';
 
 // ── health endpoints ──────────────────────────────────────────────────────────
 test('w130 /api/v3/ops/health → 200', async ({ request }) => {

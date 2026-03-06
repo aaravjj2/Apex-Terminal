@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// PerformanceUI2 â€” Bloomberg PERF-grade performance analytics terminal
+﻿// PerformanceUI2 — Bloomberg PERF-grade performance analytics terminal
 // Tabs: RETURNS | ATTRIBUTION | PEER COMPARISON | DRAWDOWN | METRICS
 // APIs: /api/v1/performance/dashboard, /api/v1/performance/periods,
 //       /api/v1/performance/strategies, /api/v4/performance/attribution,
@@ -124,12 +124,12 @@ function Td({ children, right, mono, col }: { children: React.ReactNode; right?:
 }
 
 function fmtNum(v: number | null | undefined, dp = 2) {
-  if (v === null || v === undefined) return 'â€”'
+  if (v === null || v === undefined) return '—'
   return v.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })
 }
 
 function fmtPct(v: number | null | undefined, dp = 2) {
-  if (v === null || v === undefined) return 'â€”'
+  if (v === null || v === undefined) return '—'
   return `${v > 0 ? '+' : ''}${v.toFixed(dp)}%`
 }
 
@@ -341,7 +341,7 @@ export function PerformanceUI2() {
         sharpe: Number(p.sharpe ?? 0),
         maxDD: Number(p.max_drawdown ?? 0),
         beta: Number(p.beta ?? 0),
-        aum: p.aum ?? p.market_cap ?? 'â€”',
+        aum: p.aum ?? p.market_cap ?? '—',
         isPortfolio: i === 0 || Boolean(p.is_portfolio),
       })))
     } catch { /* empty */ }
@@ -396,13 +396,13 @@ export function PerformanceUI2() {
 
       {/* â”€â”€ STATS STRIP â”€â”€ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
-        <StatCard label="Total Return" value={dashboard ? fmtPct(dashboard.totalReturn) : 'â€”'} col={dashboard ? (dashboard.totalReturn > 0 ? GREEN : RED) : SUBTLE} />
-        <StatCard label="Total P&L" value={dashboard ? `$${(dashboard.totalPnl / 1000).toFixed(1)}K` : 'â€”'} col={dashboard ? (dashboard.totalPnl > 0 ? GREEN : RED) : SUBTLE} />
-        <StatCard label="Sharpe" value={dashboard ? fmtNum(dashboard.sharpe) : 'â€”'} col={dashboard ? (dashboard.sharpe > 1 ? GREEN : dashboard.sharpe > 0 ? AMBER : RED) : SUBTLE} />
-        <StatCard label="Max Drawdown" value={dashboard ? `${dashboard.maxDrawdown.toFixed(1)}%` : 'â€”'} col={RED} />
-        <StatCard label="Win Rate" value={dashboard ? `${dashboard.winRate.toFixed(1)}%` : 'â€”'} col={dashboard ? (dashboard.winRate > 55 ? GREEN : dashboard.winRate > 45 ? AMBER : RED) : SUBTLE} />
-        <StatCard label="Profit Factor" value={dashboard ? fmtNum(dashboard.profitFactor) : 'â€”'} col={dashboard ? (dashboard.profitFactor > 1.5 ? GREEN : dashboard.profitFactor > 1 ? AMBER : RED) : SUBTLE} />
-        <StatCard label="Volatility" value={dashboard ? `${dashboard.volatility.toFixed(1)}%` : 'â€”'} col={SUBTLE} />
+        <StatCard label="Total Return" value={dashboard ? fmtPct(dashboard.totalReturn) : '—'} col={dashboard ? (dashboard.totalReturn > 0 ? GREEN : RED) : SUBTLE} />
+        <StatCard label="Total P&L" value={dashboard ? `$${(dashboard.totalPnl / 1000).toFixed(1)}K` : '—'} col={dashboard ? (dashboard.totalPnl > 0 ? GREEN : RED) : SUBTLE} />
+        <StatCard label="Sharpe" value={dashboard ? fmtNum(dashboard.sharpe) : '—'} col={dashboard ? (dashboard.sharpe > 1 ? GREEN : dashboard.sharpe > 0 ? AMBER : RED) : SUBTLE} />
+        <StatCard label="Max Drawdown" value={dashboard ? `${dashboard.maxDrawdown.toFixed(1)}%` : '—'} col={RED} />
+        <StatCard label="Win Rate" value={dashboard ? `${dashboard.winRate.toFixed(1)}%` : '—'} col={dashboard ? (dashboard.winRate > 55 ? GREEN : dashboard.winRate > 45 ? AMBER : RED) : SUBTLE} />
+        <StatCard label="Profit Factor" value={dashboard ? fmtNum(dashboard.profitFactor) : '—'} col={dashboard ? (dashboard.profitFactor > 1.5 ? GREEN : dashboard.profitFactor > 1 ? AMBER : RED) : SUBTLE} />
+        <StatCard label="Volatility" value={dashboard ? `${dashboard.volatility.toFixed(1)}%` : '—'} col={SUBTLE} />
       </div>
 
       {/* â”€â”€ TABS â”€â”€ */}
@@ -428,13 +428,13 @@ export function PerformanceUI2() {
             {/* period cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 16 }}>
               {periods.map(p => <PeriodCard key={p.period} p={p} />)}
-              {periods.length === 0 && <div style={{ color: SUBTLE, fontSize: 11, gridColumn: '1/-1' }}>No period data â€” check /api/v1/performance/periods</div>}
+              {periods.length === 0 && <div style={{ color: SUBTLE, fontSize: 11, gridColumn: '1/-1' }}>No period data</div>}
             </div>
 
             {/* strategies table */}
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
               <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 11, color: SUBTLE }}>STRATEGY BREAKDOWN â€” {strategies.length} strategies</span>
+                <span style={{ fontSize: 11, color: SUBTLE }}>STRATEGY BREAKDOWN — {strategies.length} strategies</span>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(['pnl', 'returnPct', 'sharpe', 'winRate'] as const).map(s => (
                     <button key={s} onClick={() => setStratSort(s)}
@@ -456,7 +456,7 @@ export function PerformanceUI2() {
                 <tbody>
                   {sortedStrats.length === 0 && (
                     <tr><td colSpan={10} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No strategies â€” check /api/v1/performance/strategies
+                      No strategies
                     </td></tr>
                   )}
                   {sortedStrats.map(s => (
@@ -495,8 +495,8 @@ export function PerformanceUI2() {
                         const v = monthPeriod?.returnPct ?? null
                         const bg = v === null ? BORDER : v > 0 ? `rgba(38,166,154,${Math.min(0.8, Math.abs(v) / 10)})` : `rgba(239,83,80,${Math.min(0.8, Math.abs(v) / 10)})`
                         return (
-                          <div key={m} title={v !== null ? `${fmtPct(v)}` : 'â€”'} style={{ fontSize: 8, fontFamily: MONO, color: v === null ? SUBTLE : '#fff', textAlign: 'center', padding: 3, background: bg, borderRadius: 2 }}>
-                            {v !== null ? (v > 0 ? '+' : '') + v.toFixed(1) : 'â€”'}
+                          <div key={m} title={v !== null ? `${fmtPct(v)}` : '—'} style={{ fontSize: 8, fontFamily: MONO, color: v === null ? SUBTLE : '#fff', textAlign: 'center', padding: 3, background: bg, borderRadius: 2 }}>
+                            {v !== null ? (v > 0 ? '+' : '') + v.toFixed(1) : '—'}
                           </div>
                         )
                       })}
@@ -548,7 +548,7 @@ export function PerformanceUI2() {
                 <tbody>
                   {attribution.length === 0 && (
                     <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No attribution data â€” select benchmark and run Brinson
+                      No attribution data — select benchmark and run Brinson
                     </td></tr>
                   )}
                   {attribution.map(a => (
@@ -611,7 +611,7 @@ export function PerformanceUI2() {
                 <tbody>
                   {peers.length === 0 && (
                     <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No peer data â€” enter symbols and click Compare
+                      No peer data — enter symbols and click Compare
                     </td></tr>
                   )}
                   {peers.map(p => (
@@ -669,7 +669,7 @@ export function PerformanceUI2() {
             {/* drawdown periods table */}
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
               <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, fontSize: 11, color: SUBTLE }}>
-                TOP DRAWDOWN PERIODS â€” {ddPeriods.length} periods
+                TOP DRAWDOWN PERIODS — {ddPeriods.length} periods
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -681,7 +681,7 @@ export function PerformanceUI2() {
                 <tbody>
                   {ddPeriods.length === 0 && (
                     <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No drawdown data â€” check /api/v4/performance/drawdown
+                      No drawdown data
                     </td></tr>
                   )}
                   {ddPeriods.sort((a, b) => Math.abs(b.drawdown) - Math.abs(a.drawdown)).map((p, i) => (
@@ -694,7 +694,7 @@ export function PerformanceUI2() {
                       <Td right mono col={p.recovery !== null ? (p.recovery > 0 ? GREEN : RED) : AMBER}>
                         {p.recovery !== null ? fmtPct(p.recovery) : 'In progress'}
                       </Td>
-                      <Td right mono col={SUBTLE}>{p.recoveryDays !== null ? `${p.recoveryDays}d` : 'â€”'}</Td>
+                      <Td right mono col={SUBTLE}>{p.recoveryDays !== null ? `${p.recoveryDays}d` : '—'}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -757,7 +757,7 @@ export function PerformanceUI2() {
                   ['Avg Win', `$${fmtNum(dashboard.avgWin)}`, GREEN],
                   ['Avg Loss', `$${fmtNum(Math.abs(dashboard.avgLoss))}`, RED],
                   ['Win/Loss Ratio', `${(Math.abs(dashboard.avgWin) / Math.max(Math.abs(dashboard.avgLoss), 0.01)).toFixed(2)}`, AMBER],
-                  ['Avg Win Days', 'â€”', SUBTLE],
+                  ['Avg Win Days', '—', SUBTLE],
                 ].map(([l, v, c]) => (
                   <div key={l as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
                     <span style={{ fontSize: 12, color: TEXT }}>{l as string}</span>
@@ -786,7 +786,7 @@ export function PerformanceUI2() {
           </>
         )}
         {tab === 'metrics' && !dashboard && !loading && (
-          <div style={{ color: SUBTLE, fontSize: 11 }}>No dashboard data â€” check /api/v1/performance/dashboard</div>
+          <div style={{ color: SUBTLE, fontSize: 11 }}>No dashboard data</div>
         )}
       </div>
     </div>

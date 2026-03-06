@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// EvidenceVaultUI2 â€” Bloomberg EVID immutable regulatory evidence vault
+﻿// EvidenceVaultUI2 — Bloomberg EVID immutable regulatory evidence vault
 // Vault items, collection, chain of custody, reviews, audit
 // Tabs: VAULT | COLLECTION | CUSTODY | REVIEWS | AUDIT
 // APIs: /api/v4/evidence-vault/vault, /collection, /custody, /reviews, /audit
@@ -216,7 +216,7 @@ export function EvidenceVaultUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>EVID</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>EVIDENCE VAULT â€” IMMUTABLE REGULATORY STORAGE + CHAIN OF CUSTODY + REVIEW WORKFLOW</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EVIDENCE VAULT — IMMUTABLE REGULATORY STORAGE + CHAIN OF CUSTODY + REVIEW WORKFLOW</span>
         {expiredItems > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {expiredItems} EXPIRED</span>}
         {highPriorityReviews > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {highPriorityReviews} HIGH PRIORITY REVIEWS</span>}
         {legalHolds > 0 && <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>⚠‘ {legalHolds} LEGAL HOLDS</span>}
@@ -244,7 +244,7 @@ export function EvidenceVaultUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Evidence ID</Th><Th>Title</Th><Th>Type</Th><Th>Classification</Th><Th>Status</Th><Th right>Size (MB)</Th><Th>Regulatory Ref</Th><Th>Custodian</Th><Th>Stored At</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {vault.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No vault items â€” check /api/v4/evidence-vault/vault</td></tr>}
+                {vault.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No vault items</td></tr>}
                 {vault.sort((a, b) => {
                   const ord: Record<string, number> = { expired: 0, pending: 1, sealed: 2, retrieved: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -256,7 +256,7 @@ export function EvidenceVaultUI2() {
                     <Td mono col={v.classification === 'CONFIDENTIAL' ? RED : v.classification === 'RESTRICTED' ? ORANGE : SUBTLE}>{v.classification}</Td>
                     <Td><StatusBadge2 s={v.status} /></Td>
                     <Td right mono col={SUBTLE}>{v.sizeMb.toFixed(2)}</Td>
-                    <Td mono col={BLUE}>{v.regulatoryRef || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{v.regulatoryRef || '—'}</Td>
                     <Td mono col={SUBTLE}>{v.custodian}</Td>
                     <Td mono col={SUBTLE}>{v.storedAt}</Td>
                     <Td mono col={v.status === 'expired' ? RED : SUBTLE}>{v.expiresAt}</Td>
@@ -272,7 +272,7 @@ export function EvidenceVaultUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Collection ID</Th><Th>Evidence ID</Th><Th>Method</Th><Th>Source Sys</Th><Th>Verification</Th><Th>Checksum</Th><Th right>Integrity</Th><Th right>Retention (yrs)</Th><Th>Legal Hold</Th><Th>Collected</Th></tr></thead>
               <tbody>
-                {collection.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No collections â€” check /api/v4/evidence-vault/collection</td></tr>}
+                {collection.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No collections</td></tr>}
                 {collection.map((c, i) => (
                   <tr key={i} style={{ background: c.legalHold ? PURPLE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.collectionId}</Td>
@@ -283,7 +283,7 @@ export function EvidenceVaultUI2() {
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.checksumValid ? GREEN : RED }}>{c.checksumValid ? 'âœ“ VALID' : 'âœ— INVALID'}</span></Td>
                     <Td right mono col={c.integrityScore >= 0.99 ? GREEN : c.integrityScore >= 0.95 ? AMBER : RED}>{(c.integrityScore * 100).toFixed(2)}%</Td>
                     <Td right mono col={SUBTLE}>{c.retentionYears}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.legalHold ? PURPLE : SUBTLE }}>{c.legalHold ? 'HOLD' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.legalHold ? PURPLE : SUBTLE }}>{c.legalHold ? 'HOLD' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{c.collectedAt}</Td>
                   </tr>
                 ))}
@@ -297,7 +297,7 @@ export function EvidenceVaultUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Event ID</Th><Th>Evidence ID</Th><Th>Action</Th><Th>Actor</Th><Th>From</Th><Th>To</Th><Th>Authorized By</Th><Th>Integrity</Th><Th>Reason</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {custody.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No custody events â€” check /api/v4/evidence-vault/custody</td></tr>}
+                {custody.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No custody events</td></tr>}
                 {custody.map((e, i) => (
                   <tr key={i} style={{ background: !e.integrityVerified ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.eventId}</Td>
@@ -308,7 +308,7 @@ export function EvidenceVaultUI2() {
                     <Td mono col={SUBTLE}>{e.toLocation}</Td>
                     <Td mono col={SUBTLE}>{e.authorizedBy}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: e.integrityVerified ? GREEN : RED }}>{e.integrityVerified ? 'âœ“ OK' : 'âœ— FAIL'}</span></Td>
-                    <Td mono col={SUBTLE}>{e.reason || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.reason || '—'}</Td>
                     <Td mono col={SUBTLE}>{e.timestamp}</Td>
                   </tr>
                 ))}
@@ -322,7 +322,7 @@ export function EvidenceVaultUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Review ID</Th><Th>Evidence ID</Th><Th>Type</Th><Th>Reviewer</Th><Th>Priority</Th><Th>Outcome</Th><Th>Linked Case</Th><Th>Regulatory Deadline</Th><Th>Reviewed At</Th></tr></thead>
               <tbody>
-                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews â€” check /api/v4/evidence-vault/reviews</td></tr>}
+                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews</td></tr>}
                 {reviews.sort((a, b) => {
                   const pOrd: Record<string, number> = { high: 0, medium: 1, low: 2 }
                   return (pOrd[a.priority] ?? 3) - (pOrd[b.priority] ?? 3)
@@ -334,7 +334,7 @@ export function EvidenceVaultUI2() {
                     <Td mono col={TEXT}>{r.reviewer}</Td>
                     <Td><PriorityBadge p={r.priority} /></Td>
                     <Td><StatusBadge2 s={r.outcome} /></Td>
-                    <Td mono col={BLUE}>{r.linkedCase || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{r.linkedCase || '—'}</Td>
                     <Td mono col={AMBER}>{r.regulatoryDeadline}</Td>
                     <Td mono col={SUBTLE}>{r.reviewedAt || 'PENDING'}</Td>
                   </tr>
@@ -349,7 +349,7 @@ export function EvidenceVaultUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Evidence ID</Th><Th>Jurisdiction</Th><Th>Outcome</Th><Th>IP Address</Th><Th>Details</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/evidence-vault/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'failure' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

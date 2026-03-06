@@ -142,6 +142,20 @@ def get_strategy(strategy_id: str) -> Optional[StrategyDefinition]:
     """Lookup strategy by ID — checks built-ins first, then strategy lab."""
     if strategy_id in _BUILTIN_STRATEGIES:
         return _BUILTIN_STRATEGIES[strategy_id]
+    # Normalize underscores/hyphens aliases (e.g. sma_cross -> sma-crossover)
+    _ALIASES: Dict[str, str] = {
+        "sma_cross": "sma-crossover",
+        "sma_crossover": "sma-crossover",
+        "rsi_mean_reversion": "rsi-mean-reversion",
+        "ema_crossover": "ema-crossover",
+        "breakout_20d": "breakout-20d",
+    }
+    normalized = strategy_id.replace("-", "_").lower()
+    if normalized in _ALIASES:
+        return _BUILTIN_STRATEGIES.get(_ALIASES[normalized])
+    alias = _ALIASES.get(strategy_id)
+    if alias and alias in _BUILTIN_STRATEGIES:
+        return _BUILTIN_STRATEGIES[alias]
     storage = get_strategy_storage()
     return storage.get(strategy_id)
 

@@ -1,7 +1,7 @@
 ﻿/**
  * Hardening Suite  Gate 1: Health Gates
  *
- * Hits the REAL endpoints on the RUNNING Apex Terminal server (localhost:8090).
+ * Hits the REAL endpoints on the RUNNING Apex Terminal server (localhost:8000).
  * Zero mocks. Fails fast on infra down.
  *
  * Key endpoints (verified live):
@@ -14,7 +14,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090';
+const API = 'http://localhost:8000';
 
 test.describe('Liveness  /health', () => {
   test('GET /health returns 200', async ({ request }) => {

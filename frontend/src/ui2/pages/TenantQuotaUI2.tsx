@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// TenantQuotaUI2 â€” Bloomberg APEX Tenant Quota management terminal
+﻿// TenantQuotaUI2 — Bloomberg APEX Tenant Quota management terminal
 // Resource allocation, burst management, quota enforcement, capacity analytics
 // Tabs: TENANTS | QUOTAS | BURST | USAGE | AUDIT
 // APIs: /api/v4/tenant-quota/tenants, /quotas, /burst, /usage, /audit
@@ -226,7 +226,7 @@ export function TenantQuotaUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>TENANT QUOTA â€” RESOURCE ALLOCATION + BURST MANAGEMENT + CAPACITY ANALYTICS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>TENANT QUOTA — RESOURCE ALLOCATION + BURST MANAGEMENT + CAPACITY ANALYTICS</span>
         {overQuota > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {overQuota} OVER QUOTA</span>}
         {exhaustedQuotas > 0 && <span style={{ fontSize: 10, color: RED }}>⚠‘ {exhaustedQuotas} EXHAUSTED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -253,14 +253,14 @@ export function TenantQuotaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Tenant ID</Th><Th>Name</Th><Th>Plan</Th><Th>Status</Th><Th>Region</Th><Th right>Users</Th><Th>API Calls</Th><Th>Storage</Th><Th>Compute</Th></tr></thead>
               <tbody>
-                {tenants.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No tenants â€” check /api/v4/tenant-quota/tenants</td></tr>}
+                {tenants.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No tenants</td></tr>}
                 {tenants.sort((a, b) => (a.status === 'over_quota' ? -1 : 0)).map((t, i) => (
                   <tr key={i} style={{ background: t.status === 'over_quota' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{t.tenantId}</Td>
                     <Td mono col={TEXT}>{t.name}</Td>
                     <Td><PlanBadge p={t.plan} /></Td>
                     <Td><StatusBadge s={t.status} /></Td>
-                    <Td mono col={SUBTLE}>{t.region || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{t.region || '—'}</Td>
                     <Td right mono col={t.currentUsers > t.totalUsersAllowed ? RED : TEXT}>{t.currentUsers}/{t.totalUsersAllowed}</Td>
                     <Td><UsageBar used={t.apiCallsUsed} limit={t.apiCallsLimit} /></Td>
                     <Td><UsageBar used={t.storageGbUsed} limit={t.storageGbLimit} /></Td>
@@ -277,7 +277,7 @@ export function TenantQuotaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Tenant</Th><Th>Resource</Th><Th>Period</Th><Th right>Limit</Th><Th right>Used</Th><Th>Usage %</Th><Th>Status</Th><Th right>Overage</Th><Th>Reset At</Th></tr></thead>
               <tbody>
-                {quotas.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No quota data â€” check /api/v4/tenant-quota/quotas</td></tr>}
+                {quotas.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No quota data</td></tr>}
                 {quotas.sort((a, b) => b.usagePct - a.usagePct).map((q, i) => (
                   <tr key={i} style={{ background: q.status === 'exhausted' ? RED + '0a' : q.status === 'critical' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{q.tenantName || q.tenantId}</Td>
@@ -288,7 +288,7 @@ export function TenantQuotaUI2() {
                     <Td><UsageBar used={q.used} limit={q.limit} /></Td>
                     <Td><StatusBadge s={q.status} /></Td>
                     <Td right mono col={q.overage > 0 ? RED : TEXT}>{q.overage.toLocaleString()}</Td>
-                    <Td mono col={SUBTLE}>{q.resetAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{q.resetAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -301,7 +301,7 @@ export function TenantQuotaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Burst ID</Th><Th>Tenant</Th><Th>Resource</Th><Th right>Burst Limit</Th><Th right>Used</Th><Th>Approval</Th><Th right>Duration min</Th><Th right>Cost USD</Th><Th>Started At</Th></tr></thead>
               <tbody>
-                {burst.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No burst events â€” check /api/v4/tenant-quota/burst</td></tr>}
+                {burst.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No burst events</td></tr>}
                 {burst.sort((a, b) => a.approvalStatus === 'pending' ? -1 : 0).map((b, i) => (
                   <tr key={i} style={{ background: b.approvalStatus === 'pending' ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.burstId}</Td>
@@ -325,7 +325,7 @@ export function TenantQuotaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Tenant</Th><Th>Resource</Th><Th>Date</Th><Th right>Peak Usage</Th><Th right>Avg Usage</Th><Th right>Burst Count</Th><Th right>Overage Count</Th><Th right>Cost USD</Th></tr></thead>
               <tbody>
-                {usage.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No usage data â€” check /api/v4/tenant-quota/usage</td></tr>}
+                {usage.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No usage data</td></tr>}
                 {usage.sort((a, b) => b.costUsd - a.costUsd).map((u, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{u.tenantName || u.tenantId}</Td>
@@ -348,14 +348,14 @@ export function TenantQuotaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Tenant ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v4/tenant-quota/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={BLUE}>{a.tenantId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

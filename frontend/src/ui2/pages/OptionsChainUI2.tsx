@@ -394,20 +394,59 @@ function UnusualActivity({ chain }: { chain: OptionStrike[] }) {
 /* ══  MAIN                                                          ══ */
 /* ═════════════════════════════════════════════════════════════════════ */
 
+/** Generate the next N monthly options expiry dates (3rd Friday of each month). */
+function futureExpirations(n = 8): string[] {
+  const result: string[] = [];
+  const now = new Date();
+  let year = now.getFullYear();
+  let month = now.getMonth(); // 0-indexed
+  while (result.length < n) {
+    // Find the 3rd Friday of this month
+    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+    const firstFri = (5 - firstDay + 7) % 7 + 1; // day of 1st Friday
+    const thirdFri = firstFri + 14; // 3rd Friday
+    const exp = new Date(year, month, thirdFri);
+    if (exp > now) {
+      result.push(exp.toISOString().slice(0, 10));
+    }
+    month++;
+    if (month > 11) { month = 0; year++; }
+  }
+  return result;
+}
+
 export default function OptionsChainUI2() {
   // ── Hook integration ──
   const [optionsState, optionsActions] = useOptions();
 
   const [symbol] = useState('AAPL');
-  const [spot, setSpot] = useState(192.53);
-  const [expirations] = useState(['2024-07-19', '2024-08-16', '2024-09-20', '2024-10-18', '2024-11-15', '2024-12-20', '2025-01-17', '2025-03-21', '2025-06-20', '2025-12-19']);
-  const [selectedExpiry, setSelectedExpiry] = useState(expirations[2]);
+  const [spot, setSpot] = useState(0);
+  const [spotPct, setSpotPct] = useState(0);
+  const expirations = useMemo(() => futureExpirations(8), []);
+  const [selectedExpiry, setSelectedExpiry] = useState(expirations[2] || expirations[0]);
   const [chain, setChain] = useState<OptionStrike[]>([]);
   const [legs, setLegs] = useState<StrategyLeg[]>([]);
   const [activeTab, setActiveTab] = useState<'CHAIN' | 'STRATEGY' | 'IV' | 'UNUSUAL'>('CHAIN');
 
-  useEffect(() => { setChain(generateChain(spot, selectedExpiry)); }, [spot, selectedExpiry]);
-  useEffect(() => { const interval = setInterval(() => setSpot(p => +(p + (Math.random() - 0.49) * 0.15).toFixed(2)), 3000); return () => clearInterval(interval); }, []);
+  // ── Real market data fetch (no synthetic Math.random) ──
+  useEffect(() => {
+    let mounted = true;
+    async function fetchSpot() {
+      try {
+        const r = await fetch(`/api/market-quote?symbol=${symbol}`);
+        if (!r.ok) return;
+        const d = await r.json();
+        const price = d.price ?? d.last ?? d.close ?? d.latestPrice;
+        const pct = d.changePercent ?? d.change_percent ?? d.pct ?? 0;
+        if (mounted && price) { setSpot(+price.toFixed(2)); setSpotPct(+pct.toFixed(2)); }
+      } catch {}
+    }
+    fetchSpot();
+    const id = setInterval(fetchSpot, 30000);
+    return () => { mounted = false; clearInterval(id); };
+  }, [symbol]);
+
+  useEffect(() => { if (spot > 0) setChain(generateChain(spot, selectedExpiry)); }, [spot, selectedExpiry]);
 
   const handleAddLeg = useCallback((leg: StrategyLeg) => setLegs(prev => [...prev, { ...leg, expiry: selectedExpiry }]), [selectedExpiry]);
   const handleRemoveLeg = useCallback((i: number) => setLegs(prev => prev.filter((_, idx) => idx !== i)), []);
@@ -415,12 +454,12 @@ export default function OptionsChainUI2() {
   const dte = Math.max(0, Math.floor((new Date(selectedExpiry).getTime() - Date.now()) / 86400000));
 
   return (
-    <div data-testid="options-page" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+    <div data-testid="options-main-tab-analytics" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px', background: T.bg1, borderRadius: T.radius, border: `1px solid ${T.border0}` }}>
         <span style={{ fontSize: '14px', fontWeight: 800, color: T.text0, fontFamily: T.fontMono }}>{symbol}</span>
-        <span style={{ fontSize: '14px', fontWeight: 700, color: T.text0, fontFamily: T.fontMono }}>{fmt2(spot)}</span>
-        <span style={{ fontSize: '11px', color: clr(0.45), fontWeight: 600, fontFamily: T.fontMono }}>+0.45%</span>
+        <span style={{ fontSize: '14px', fontWeight: 700, color: T.text0, fontFamily: T.fontMono }}>{spot > 0 ? fmt2(spot) : '—'}</span>
+        <span style={{ fontSize: '11px', color: clr(spotPct), fontWeight: 600, fontFamily: T.fontMono }}>{spotPct >= 0 ? '+' : ''}{spotPct.toFixed(2)}%</span>
         <span style={{ color: T.text3, fontSize: '10px' }}>|</span>
         <div style={{ display: 'flex', gap: '3px', overflow: 'auto', flex: 1 }}>
           {expirations.map(exp => (

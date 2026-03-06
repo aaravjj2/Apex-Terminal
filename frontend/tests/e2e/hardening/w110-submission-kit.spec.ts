@@ -7,7 +7,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const BACKEND = 'http://localhost:8090';
+const BACKEND = 'http://localhost:8000';
 const FRONTEND = 'http://localhost:5100';
 
 // ─────────────────────────────────────────────────────────────────────────────

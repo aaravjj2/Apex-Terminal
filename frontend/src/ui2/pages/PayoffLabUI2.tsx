@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// PayoffLabUI2 â€” Bloomberg PLAB-grade options payoff diagram & strategy lab
+﻿// PayoffLabUI2 — Bloomberg PLAB-grade options payoff diagram & strategy lab
 // Payoff at expiry, Greeks profile, breakeven analysis, strategy comparison
 // Tabs: PAYOFF BUILDER | DIAGRAM | GREEKS PROFILE | BREAKEVEN | COMPARE
 // APIs: /api/v4/payoff-lab/strategies, /payoff, /greeks, /breakeven, /compare
@@ -89,7 +89,7 @@ function StatCard({ label, value, sub, col }: { label: string; value: string | n
 
 // SVG payoff curve renderer
 function PayoffChart({ points, width = 640, height = 220 }: { points: PayoffPoint[]; width?: number; height?: number }) {
-  if (!points.length) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11, background: PANEL, borderRadius: 4 }}>No payoff data â€” check /api/v4/payoff-lab/payoff</div>
+  if (!points.length) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11, background: PANEL, borderRadius: 4 }}>No payoff data</div>
   const pad = { t: 16, b: 30, l: 50, r: 16 }
   const W = width - pad.l - pad.r, H = height - pad.t - pad.b
   const xs = points.map(p => p.underlyingPrice)
@@ -225,7 +225,7 @@ export function PayoffLabUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>PLAB</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>PAYOFF LAB â€” STRATEGY BUILDER + PAYOFF DIAGRAMS + BREAKEVEN ANALYSIS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>PAYOFF LAB — STRATEGY BUILDER + PAYOFF DIAGRAMS + BREAKEVEN ANALYSIS</span>
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
 
@@ -238,9 +238,9 @@ export function PayoffLabUI2() {
           <StatCard label="Max Loss" value={`$${Math.abs(breakevenResult.maxLoss).toFixed(0)}`} col={RED} />
           <StatCard label="P(Profit)" value={(breakevenResult.profitProbability * 100).toFixed(1) + '%'} col={breakevenResult.profitProbability > 0.5 ? GREEN : RED} />
         </> : <>
-          <StatCard label="Max Profit" value="â€”" col={SUBTLE} />
-          <StatCard label="Max Loss" value="â€”" col={SUBTLE} />
-          <StatCard label="P(Profit)" value="â€”" col={SUBTLE} />
+          <StatCard label="Max Profit" value="—" col={SUBTLE} />
+          <StatCard label="Max Loss" value="—" col={SUBTLE} />
+          <StatCard label="P(Profit)" value="—" col={SUBTLE} />
         </>}
       </div>
 
@@ -347,7 +347,7 @@ export function PayoffLabUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th right>Underlying</Th><Th right>Delta</Th><Th right>Gamma</Th><Th right>Theta</Th><Th right>Vega</Th><Th right>Rho</Th></tr></thead>
               <tbody>
-                {greekProfile.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No greek data â€” check /api/v4/payoff-lab/greeks</td></tr>}
+                {greekProfile.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No greek data</td></tr>}
                 {greekProfile.filter((_, i) => i % Math.max(1, Math.floor(greekProfile.length / 20)) === 0).map((g, i) => (
                   <tr key={i}>
                     <Td right mono col={BLUE}>{g.underlyingPrice.toFixed(2)}</Td>
@@ -366,7 +366,7 @@ export function PayoffLabUI2() {
         {/* BREAKEVEN */}
         {tab === 'breakeven' && (
           <>
-            {!breakevenResult ? <div style={{ color: SUBTLE, fontSize: 11 }}>No breakeven data â€” build a strategy first or check /api/v4/payoff-lab/breakeven</div> : (
+            {!breakevenResult ? <div style={{ color: SUBTLE, fontSize: 11 }}>No breakeven data — build a strategy first</div> : (
               <div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
                   <StatCard label="Risk/Reward" value={breakevenResult.riskReward.toFixed(2) + 'x'} col={breakevenResult.riskReward > 1. ? GREEN : RED} />
@@ -399,7 +399,7 @@ export function PayoffLabUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Strategy</Th><Th right>Max Profit</Th><Th right>Max Loss</Th><Th right>Risk/Reward</Th><Th right>P(Profit)</Th><Th right>Total Cost</Th></tr></thead>
               <tbody>
-                {comparedStrategies.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies to compare â€” check /api/v4/payoff-lab/compare</td></tr>}
+                {comparedStrategies.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies to compare</td></tr>}
                 {comparedStrategies.map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.name}</Td>

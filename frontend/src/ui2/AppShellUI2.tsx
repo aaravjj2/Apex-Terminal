@@ -339,6 +339,7 @@ export function AppShellUI2() {
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000,
           background: 'var(--warn, #F59E0B)', color: '#fff', textAlign: 'center',
           padding: '6px 16px', fontSize: '12px', fontWeight: 600,
+          pointerEvents: 'none',
         }}>
           Version mismatch — FE: {FE_GIT_SHA} / BE: {beGitSha}. Hard-refresh recommended.
         </div>

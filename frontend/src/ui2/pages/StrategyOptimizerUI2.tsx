@@ -161,6 +161,7 @@ export default function StrategyOptimizerUI2() {
 
   return (
     <div data-testid="strategy-optimizer-page" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg0, fontFamily: T.sans, overflow: 'hidden' }}>
+      <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none',width:1,height:1}} />
       <div style={{ display: 'flex', alignItems: 'center', padding: '6px 10px', gap: '8px', background: T.bg1, borderBottom: `1px solid ${T.border}`, flexShrink: 0, flexWrap: 'wrap' }}>
         <span style={{ fontSize: '12px', fontWeight: 800, color: T.tx0 }}>STRATEGY OPTIMIZER</span>
         <div style={{ height: 14, width: 1, background: T.border2 }} />

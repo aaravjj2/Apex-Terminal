@@ -179,16 +179,30 @@ async def run_multi_agent_analysis(request: AnalysisRequest):
     """Run multi-agent financial analysis on symbols."""
     symbols = request.symbols or ["AAPL"]
     
-    # Simulate multi-agent analysis
+    # Fetch real prices for analysis; fall back gracefully when unavailable
+    from ._quote_helper import get_real_quote as _get_real_quote
+    import asyncio
+    real_prices: dict[str, float] = {}
+    price_tasks = {sym: _get_real_quote(sym) for sym in symbols[:4]}
+    for sym, coro in price_tasks.items():
+        try:
+            p = await coro
+            if p is not None:
+                real_prices[sym] = p
+        except Exception:
+            pass
+
     analyses = []
     for symbol in symbols[:4]:  # Limit to 4 symbols
+        base_price = real_prices.get(symbol, 0.0)
+        target_mult = 1.0 + (random.random() - 0.3) * 0.2  # ±20% target vs real price
         analyses.append(StockAnalysis(
             symbol=symbol,
-            price=150.0 + random.random() * 200,
+            price=base_price,
             change=(random.random() - 0.5) * 10,
             change_pct=(random.random() - 0.5) * 5,
             recommendation=random.choice(["strong_buy", "buy", "hold", "sell"]),
-            target_price=160.0 + random.random() * 200,
+            target_price=round(base_price * target_mult, 2) if base_price else 0.0,
             analyst_count=int(10 + random.random() * 30),
             news_sentiment=(random.random() - 0.5) * 2,
             technical_score=random.random(),

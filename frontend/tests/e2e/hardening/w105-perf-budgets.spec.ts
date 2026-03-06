@@ -7,7 +7,7 @@
 import { test, expect } from '@playwright/test';
 
 const FRONT = 'http://localhost:5100';
-const API   = 'http://localhost:8090/api/v3/perf';
+const API   = 'http://localhost:8000/api/v3/perf';
 
 // Timing budgets (ms) — generous for dev/CI environments (must match backend)
 const BUDGETS = {

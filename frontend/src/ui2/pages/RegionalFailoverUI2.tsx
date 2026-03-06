@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// RegionalFailoverUI2 â€” Bloomberg APEX regional failover terminal
+﻿// RegionalFailoverUI2 — Bloomberg APEX regional failover terminal
 // Drills, automated failover testing, recovery validation, SLA tracking
 // Tabs: DRILLS | FAILOVERS | REGIONS | RECOVERY | AUDIT
 // APIs: /api/v4/regional-failover/drills, /failovers, /regions, /recovery, /audit
@@ -221,7 +221,7 @@ export function RegionalFailoverUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>REGIONAL FAILOVER â€” DRILLS + AUTOMATED TESTING + RECOVERY VALIDATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>REGIONAL FAILOVER — DRILLS + AUTOMATED TESTING + RECOVERY VALIDATION</span>
         {activeFailovers > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ FAILOVER ACTIVE</span>}
         {offlineRegions > 0 && <span style={{ fontSize: 10, color: RED }}>⚠‘ {offlineRegions} REGION OFFLINE</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -248,7 +248,7 @@ export function RegionalFailoverUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Drill</Th><Th>Type</Th><Th>From</Th><Th>To</Th><Th>Status</Th><Th>RTO Target/Actual</Th><Th>RPO Target/Actual</Th><Th right>Passed</Th><Th right>Failed</Th><Th>Scheduled</Th><Th>Completed</Th></tr></thead>
               <tbody>
-                {drills.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No drills â€” check /api/v4/regional-failover/drills</td></tr>}
+                {drills.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No drills</td></tr>}
                 {drills.map((d, i) => (
                   <tr key={i} style={{ background: d.status === 'failed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{d.name || d.drillId}</Td>
@@ -261,7 +261,7 @@ export function RegionalFailoverUI2() {
                     <Td right mono col={GREEN}>{d.passedTests}</Td>
                     <Td right mono col={d.failedTests > 0 ? RED : SUBTLE}>{d.failedTests}</Td>
                     <Td mono col={SUBTLE}>{d.scheduledAt}</Td>
-                    <Td mono col={SUBTLE}>{d.completedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{d.completedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -274,7 +274,7 @@ export function RegionalFailoverUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Failover ID</Th><Th>Trigger</Th><Th>From</Th><Th>To</Th><Th>Status</Th><Th right>Services</Th><Th right>Traffic %</Th><Th right>Duration m</Th><Th right>Errors</Th><Th>Started</Th><Th>Ended</Th></tr></thead>
               <tbody>
-                {failovers.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No failover events â€” check /api/v4/regional-failover/failovers</td></tr>}
+                {failovers.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No failover events</td></tr>}
                 {failovers.map((f, i) => (
                   <tr key={i} style={{ background: f.status === 'active' ? AMBER + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{f.failoverId}</Td>
@@ -287,7 +287,7 @@ export function RegionalFailoverUI2() {
                     <Td right mono col={f.durationMin > 30 ? RED : f.durationMin > 15 ? AMBER : GREEN}>{f.durationMin.toFixed(1)}</Td>
                     <Td right mono col={f.errors > 0 ? RED : SUBTLE}>{f.errors}</Td>
                     <Td mono col={SUBTLE}>{f.startedAt}</Td>
-                    <Td mono col={SUBTLE}>{f.endedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{f.endedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -300,7 +300,7 @@ export function RegionalFailoverUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Region</Th><Th>Cloud</Th><Th>Primary</Th><Th>Health</Th><Th right>Latency ms</Th><Th right>Availability %</Th><Th right>Capacity %</Th><Th right>SLO Target</Th><Th>Last Failover</Th></tr></thead>
               <tbody>
-                {regions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regions â€” check /api/v4/regional-failover/regions</td></tr>}
+                {regions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regions</td></tr>}
                 {regions.sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0)).map((r, i) => (
                   <tr key={i} style={{ background: r.health === 'offline' ? RED + '0a' : r.isPrimary ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.name}</Td>
@@ -311,7 +311,7 @@ export function RegionalFailoverUI2() {
                     <Td right mono col={r.availabilityPct >= 99.9 ? GREEN : r.availabilityPct >= 99 ? AMBER : RED}>{r.availabilityPct.toFixed(3)}%</Td>
                     <Td right mono col={r.capacityPct > 85 ? RED : r.capacityPct > 70 ? ORANGE : GREEN}>{r.capacityPct.toFixed(1)}%</Td>
                     <Td right mono col={SUBTLE}>{r.sloTargetPct.toFixed(3)}%</Td>
-                    <Td mono col={SUBTLE}>{r.lastFailoverAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.lastFailoverAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -324,7 +324,7 @@ export function RegionalFailoverUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Validation ID</Th><Th>Drill ID</Th><Th>Service</Th><Th>Check Type</Th><Th>Result</Th><Th right>Expected ms</Th><Th right>Actual ms</Th><Th>Detail</Th><Th>Validated At</Th></tr></thead>
               <tbody>
-                {recovery.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No recovery data â€” check /api/v4/regional-failover/recovery</td></tr>}
+                {recovery.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No recovery data</td></tr>}
                 {recovery.sort((a, b) => (a.result === 'fail' ? -1 : 1) - (b.result === 'fail' ? -1 : 1)).map((v, i) => (
                   <tr key={i} style={{ background: v.result === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{v.validationId}</Td>
@@ -334,7 +334,7 @@ export function RegionalFailoverUI2() {
                     <Td><StatusBadge s={v.result} /></Td>
                     <Td right mono col={SUBTLE}>{v.expectedMs}</Td>
                     <Td right mono col={v.actualMs > v.expectedMs * 1.5 ? RED : v.actualMs > v.expectedMs ? AMBER : GREEN}>{v.actualMs}</Td>
-                    <Td mono col={SUBTLE}>{v.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{v.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{v.validatedAt}</Td>
                   </tr>
                 ))}
@@ -348,14 +348,14 @@ export function RegionalFailoverUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Region</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/regional-failover/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={BLUE}>{a.region || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.region || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

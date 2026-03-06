@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// RegimeUI2 â€” Bloomberg REGM-grade market regime detection terminal
+﻿// RegimeUI2 — Bloomberg REGM-grade market regime detection terminal
 // Tabs: CURRENT REGIME | HISTORY | TRANSITIONS | SIGNALS | MACRO OVERLAY
 // APIs: /api/v4/regime/current, /api/v4/regime/history,
 //       /api/v4/regime/transitions, /api/v4/regime/signals, /api/v4/regime/macro
@@ -254,7 +254,7 @@ export function RegimeUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>REGM</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>MARKET REGIME DETECTION â€” ADAPTIVE MACRO INTELLIGENCE</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>MARKET REGIME DETECTION — ADAPTIVE MACRO INTELLIGENCE</span>
         {market && <RegimeBadge regime={market.regime} conf={market.confidence} />}
       </div>
 
@@ -385,7 +385,7 @@ export function RegimeUI2() {
               <tbody>
                 {history.length === 0 && (
                   <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                    No history â€” check /api/v4/regime/history
+                    No history
                   </td></tr>
                 )}
                 {history.map((h, i) => (
@@ -418,7 +418,7 @@ export function RegimeUI2() {
               <tbody>
                 {transitions.length === 0 && (
                   <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                    No transitions â€” check /api/v4/regime/transitions
+                    No transitions
                   </td></tr>
                 )}
                 {[...transitions].sort((a, b) => b.probability - a.probability).map((t, i) => (
@@ -474,7 +474,7 @@ export function RegimeUI2() {
                 <tbody>
                   {signals.length === 0 && (
                     <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No signals â€” check /api/v4/regime/signals
+                      No signals
                     </td></tr>
                   )}
                   {[...signals].sort((a, b) => Math.abs(b.zscore) - Math.abs(a.zscore)).map((s, i) => (
@@ -506,7 +506,7 @@ export function RegimeUI2() {
               <tbody>
                 {macro.length === 0 && (
                   <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                    No macro data â€” check /api/v4/regime/macro
+                    No macro data
                   </td></tr>
                 )}
                 {macro.map((m, i) => {

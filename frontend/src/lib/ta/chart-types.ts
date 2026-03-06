@@ -959,6 +959,75 @@ export function Baseline(
   });
 }
 
+// ─── TICK CHART ──────────────────────────────────────────────────────────────
+
+export interface TickBar {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  ticks: number;
+  direction: 'up' | 'down';
+}
+
+/**
+ * TickChart — aggregates OHLCV bars into tick-count bars.
+ * Each output bar represents exactly `tickCount` trades.
+ */
+export function TickChart(data: OHLCV[], tickCount = 100): TickBar[] {
+  if (!data.length || tickCount < 1) return [];
+  const result: TickBar[] = [];
+  let current: TickBar | null = null;
+  let accTicks = 0;
+
+  for (const bar of data) {
+    // Estimate ticks from volume (each bar ≈ volume ticks)
+    const barTicks = Math.max(1, Math.round(bar.volume / 100));
+    let remaining = barTicks;
+
+    while (remaining > 0) {
+      if (!current) {
+        current = {
+          time: bar.time,
+          open: bar.open,
+          high: bar.high,
+          low: bar.low,
+          close: bar.close,
+          volume: 0,
+          ticks: 0,
+          direction: 'up',
+        };
+        accTicks = 0;
+      }
+
+      const need = tickCount - accTicks;
+      const take = Math.min(need, remaining);
+      accTicks += take;
+      remaining -= take;
+      current.high = Math.max(current.high, bar.high);
+      current.low = Math.min(current.low, bar.low);
+      current.close = bar.close;
+      current.volume += bar.volume * (take / barTicks);
+      current.ticks = accTicks;
+
+      if (accTicks >= tickCount) {
+        current.direction = current.close >= current.open ? 'up' : 'down';
+        result.push(current);
+        current = null;
+      }
+    }
+  }
+
+  if (current) {
+    current.direction = current.close >= current.open ? 'up' : 'down';
+    result.push(current);
+  }
+
+  return result;
+}
+
 // ─── CHART TYPE REGISTRY ────────────────────────────────────────────────────
 
 export const CHART_TYPE_PROCESSORS = {
@@ -973,6 +1042,7 @@ export const CHART_TYPE_PROCESSORS = {
   Kagi,
   LineBreak,
   RangeBars,
+  TickChart,
   VolumeProfileVisible,
   Footprint,
   MarketProfile,
@@ -1000,6 +1070,8 @@ export function processChartType(
       return processor(data as OHLCV[], options?.lineCount as number);
     case 'RangeBars':
       return processor(data as OHLCV[], options?.rangeSize as number | 'atr', options?.atrPeriod as number);
+    case 'TickChart':
+      return processor(data as OHLCV[], options?.tickCount as number);
     case 'VolumeProfileVisible':
       return processor(data as OHLCV[], options as Partial<VolumeProfileConfig>);
     case 'Footprint':

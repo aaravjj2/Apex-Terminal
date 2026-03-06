@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// OrdersUI2 â€” Bloomberg OMON-grade order management terminal
+﻿// OrdersUI2 — Bloomberg OMON-grade order management terminal
 // Tabs: ACTIVE | HISTORY | ENTRY | BLOTTER | TCA
 // APIs: /api/v1/orders, /api/v1/orders/{id}, /api/v1/trading/place-order, /api/v1/market-data/{sym}/quote
 
@@ -173,17 +173,17 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 
 // â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function fmtTime(iso: string) {
-  if (!iso) return 'â€”'
+  if (!iso) return '—'
   const d = new Date(iso)
   return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 function fmtDate(iso: string) {
-  if (!iso) return 'â€”'
+  if (!iso) return '—'
   const d = new Date(iso)
   return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })
 }
 function fmtNum(v: number | null, dp = 2) {
-  if (v === null || v === undefined) return 'â€”'
+  if (v === null || v === undefined) return '—'
   return v.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })
 }
 function fmtBps(v: number) {
@@ -346,7 +346,7 @@ export function OrdersUI2() {
       const r = await fetch('/api/v1/trading/place-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (!r.ok) { const d = await r.json(); throw new Error(d.detail ?? `HTTP ${r.status}`) }
       const d = await r.json()
-      setESuccess(`Order placed â€” ID: ${d.order_id ?? d.id ?? 'OK'}`)
+      setESuccess(`Order placed — ID: ${d.order_id ?? d.id ?? 'OK'}`)
       fetchOrders()
       setEQty('100'); setEPrice(''); setEStop(''); setENote('')
     } catch (e: any) { setEErr(e.message) }
@@ -471,8 +471,8 @@ export function OrdersUI2() {
                       <Td><TypeChip type={o.type} /></Td>
                       <Td right><FillBar filled={o.filled} qty={o.qty} /></Td>
                       <Td right mono>{o.price != null ? `$${fmtNum(o.price)}` : 'MKT'}</Td>
-                      <Td right mono>{o.stopPrice != null ? `$${fmtNum(o.stopPrice)}` : 'â€”'}</Td>
-                      <Td right mono col={o.avgFill ? GREEN : SUBTLE}>{o.avgFill != null ? `$${fmtNum(o.avgFill)}` : 'â€”'}</Td>
+                      <Td right mono>{o.stopPrice != null ? `$${fmtNum(o.stopPrice)}` : '—'}</Td>
+                      <Td right mono col={o.avgFill ? GREEN : SUBTLE}>{o.avgFill != null ? `$${fmtNum(o.avgFill)}` : '—'}</Td>
                       <Td mono>{o.tif.toUpperCase()}</Td>
                       <Td><StatusChip status={o.status} /></Td>
                       <Td>
@@ -498,16 +498,16 @@ export function OrdersUI2() {
               const slip = o.avgFill && o.price ? ((o.avgFill - o.price) / o.price) * (o.side === 'buy' ? 1 : -1) : null
               return (
                 <div style={{ marginTop: 12, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
-                  <div style={{ fontSize: 10, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Order Detail â€” {o.id}</div>
+                  <div style={{ fontSize: 10, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Order Detail — {o.id}</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                     {[
                       ['Symbol', o.symbol, AMBER], ['Side', o.side.toUpperCase(), o.side === 'buy' ? GREEN : RED],
                       ['Type', o.type.toUpperCase(), BLUE], ['Status', o.status.toUpperCase(), TEXT],
                       ['Qty', String(o.qty), TEXT], ['Filled', String(o.filled), TEXT],
-                      ['LimitPrice', o.price != null ? `$${fmtNum(o.price)}` : 'â€”', TEXT],
-                      ['AvgFill', o.avgFill != null ? `$${fmtNum(o.avgFill)}` : 'â€”', GREEN],
-                      ['Slippage', slip != null ? `${(slip * 10000).toFixed(1)} bps` : 'â€”', slip && slip > 0.0005 ? RED : GREEN],
-                      ['VWAP', o.vwap != null ? `$${fmtNum(o.vwap)}` : 'â€”', TEXT],
+                      ['LimitPrice', o.price != null ? `$${fmtNum(o.price)}` : '—', TEXT],
+                      ['AvgFill', o.avgFill != null ? `$${fmtNum(o.avgFill)}` : '—', GREEN],
+                      ['Slippage', slip != null ? `${(slip * 10000).toFixed(1)} bps` : '—', slip && slip > 0.0005 ? RED : GREEN],
+                      ['VWAP', o.vwap != null ? `$${fmtNum(o.vwap)}` : '—', TEXT],
                       ['Commission', `$${fmtNum(o.commission)}`, TEXT],
                       ['Created', fmtTime(o.createdAt), SUBTLE],
                     ].map(([l, v, c]) => (
@@ -527,7 +527,7 @@ export function OrdersUI2() {
         {/* â”€â”€ ORDER ENTRY â”€â”€ */}
         {tab === 'entry' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            {/* left â€” order form */}
+            {/* left — order form */}
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 16 }}>
               <div style={{ fontSize: 11, color: AMBER, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 14, fontWeight: 700 }}>
                 Order Entry
@@ -561,7 +561,7 @@ export function OrdersUI2() {
               <div style={{ background: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: 3, padding: '8px 12px', marginBottom: 12, fontSize: 11 }}>
                 <div style={{ color: SUBTLE, marginBottom: 4 }}>ORDER PREVIEW</div>
                 <div style={{ color: eSide === 'buy' ? GREEN : RED, fontWeight: 700, fontSize: 13 }}>
-                  {eSide.toUpperCase()} {eQty || '0'} {eSymbol || 'â€”'} @ {eType === 'market' ? 'MARKET' : (ePrice ? `$${ePrice}` : 'TBD')}
+                  {eSide.toUpperCase()} {eQty || '0'} {eSymbol || '—'} @ {eType === 'market' ? 'MARKET' : (ePrice ? `$${ePrice}` : 'TBD')}
                 </div>
                 {eType === 'stop_limit' && eStop && <div style={{ color: SUBTLE, fontSize: 10 }}>Stop: ${eStop}</div>}
                 <div style={{ color: SUBTLE, fontSize: 10, marginTop: 2 }}>TIF: {eTIF.toUpperCase()} | {eType.toUpperCase()}</div>
@@ -586,18 +586,18 @@ export function OrdersUI2() {
               </div>
             </div>
 
-            {/* right â€” live quote + quick order presets */}
+            {/* right — live quote + quick order presets */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {/* live quote */}
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
-                <div style={{ fontSize: 10, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Live Quote â€” {eSymbol || 'â€”'}</div>
+                <div style={{ fontSize: 10, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Live Quote — {eSymbol || '—'}</div>
                 {eLiveQuote ? (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                     <StatCard label="Last" value={`$${fmtNum(eLiveQuote.price)}`} />
                     <StatCard label="Bid" value={`$${fmtNum(eLiveQuote.bid)}`} col={GREEN} />
                     <StatCard label="Ask" value={`$${fmtNum(eLiveQuote.ask)}`} col={RED} />
                   </div>
-                ) : <div style={{ color: SUBTLE, fontSize: 11 }}>No quote â€” enter valid symbol</div>}
+                ) : <div style={{ color: SUBTLE, fontSize: 11 }}>No quote — enter valid symbol</div>}
               </div>
 
               {/* quick bracket presets */}
@@ -628,7 +628,7 @@ export function OrdersUI2() {
                   <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: `1px solid ${BORDER}`, fontSize: 11 }}>
                     <span style={{ color: AMBER }}>{o.symbol}</span>
                     <SideChip side={o.side} />
-                    <span style={{ color: TEXT }}>{o.filled} @ ${o.avgFill != null ? fmtNum(o.avgFill) : 'â€”'}</span>
+                    <span style={{ color: TEXT }}>{o.filled} @ ${o.avgFill != null ? fmtNum(o.avgFill) : '—'}</span>
                     <span style={{ color: SUBTLE }}>{fmtTime(o.updatedAt)}</span>
                   </div>
                 ))}
@@ -642,7 +642,7 @@ export function OrdersUI2() {
         {tab === 'blotter' && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
             <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, fontSize: 11, color: SUBTLE, display: 'flex', justifyContent: 'space-between' }}>
-              <span>EXECUTION BLOTTER â€” {blotter.length} records</span>
+              <span>EXECUTION BLOTTER — {blotter.length} records</span>
               <span>Total Value: ${(blotter.reduce((s, x) => s + x.value, 0) / 1e6).toFixed(2)}M</span>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -654,7 +654,7 @@ export function OrdersUI2() {
               </thead>
               <tbody>
                 {blotter.length === 0 && (
-                  <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No executions â€” connect to live broker</td></tr>
+                  <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No executions — connect to live broker</td></tr>
                 )}
                 {blotter.map(x => (
                   <tr key={x.id}>
@@ -701,7 +701,7 @@ export function OrdersUI2() {
                 <tbody>
                   {tca.length === 0 && (
                     <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No TCA data â€” execute orders to build TCA report
+                      No TCA data — execute orders to build TCA report
                     </td></tr>
                   )}
                   {tca.map(x => (

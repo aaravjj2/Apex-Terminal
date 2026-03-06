@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// NewsEnrichmentUI2 â€” Bloomberg NEWS NLP-enriched news terminal
+﻿// NewsEnrichmentUI2 — Bloomberg NEWS NLP-enriched news terminal
 // Live feed, entity extraction, sentiment scoring, alerts, audit
 // Tabs: FEED | ENTITIES | SENTIMENT | ALERTS | AUDIT
 // APIs: /api/v4/news/feed, /entities, /sentiment, /alerts, /audit
@@ -227,7 +227,7 @@ export function NewsEnrichmentUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>NEWS</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>NLP-ENRICHED NEWS FEED â€” ENTITY EXTRACTION + SENTIMENT SCORING + ALERT TRIGGERS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>NLP-ENRICHED NEWS FEED — ENTITY EXTRACTION + SENTIMENT SCORING + ALERT TRIGGERS</span>
         {breakingCount > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {breakingCount} BREAKING</span>}
         {activeAlerts > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeAlerts} ALERTS</span>}
         {negativeCount > 5 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {negativeCount} NEGATIVE</span>}
@@ -255,7 +255,7 @@ export function NewsEnrichmentUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Headline</Th><Th>Source</Th><Th>Category</Th><Th>Sentiment</Th><Th>Score</Th><Th right>Relevance</Th><Th>Tickers</Th><Th right>Entities</Th><Th>Breaking</Th><Th>Published</Th></tr></thead>
               <tbody>
-                {feed.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No news â€” check /api/v4/news/feed</td></tr>}
+                {feed.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No news</td></tr>}
                 {[...feed].sort((a, b) => (b.breaking ? 1 : 0) - (a.breaking ? 1 : 0)).map((n, i) => (
                   <tr key={i} style={{ background: n.breaking ? RED + '0a' : n.sentiment === 'negative' ? RED + '07' : 'transparent' }}>
                     <Td mono col={n.breaking ? RED : AMBER}>{n.headline.slice(0, 60)}{n.headline.length > 60 ? 'â€¦' : ''}</Td>
@@ -264,9 +264,9 @@ export function NewsEnrichmentUI2() {
                     <Td><SentBadge s={n.sentiment} /></Td>
                     <Td><SentBar score={n.sentimentScore} /></Td>
                     <Td right mono col={n.relevanceScore > 0.8 ? GREEN : SUBTLE}>{n.relevanceScore.toFixed(2)}</Td>
-                    <Td mono col={AMBER}>{n.tickers.join(', ') || 'â€”'}</Td>
+                    <Td mono col={AMBER}>{n.tickers.join(', ') || '—'}</Td>
                     <Td right mono col={n.entityCount > 5 ? ORANGE : SUBTLE}>{n.entityCount}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.breaking ? RED : SUBTLE }}>{n.breaking ? '⚠‘ BREAKING' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.breaking ? RED : SUBTLE }}>{n.breaking ? '⚠‘ BREAKING' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{n.publishedAt}</Td>
                   </tr>
                 ))}
@@ -280,12 +280,12 @@ export function NewsEnrichmentUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Entity</Th><Th>Type</Th><Th>Ticker</Th><Th>Category</Th><Th>Trend</Th><Th>Sentiment</Th><Th right>Mentions</Th><Th right>Articles</Th><Th>Last Mentioned</Th></tr></thead>
               <tbody>
-                {entities.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No entities â€” check /api/v4/news/entities</td></tr>}
+                {entities.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No entities</td></tr>}
                 {entities.sort((a, b) => b.mentionCount - a.mentionCount).map((e, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{e.name}</Td>
                     <Td mono col={BLUE}>{e.entityType}</Td>
-                    <Td mono col={ORANGE}>{e.ticker || 'â€”'}</Td>
+                    <Td mono col={ORANGE}>{e.ticker || '—'}</Td>
                     <Td mono col={PURPLE}>{e.category}</Td>
                     <Td><TrendArrow t={e.trend} /></Td>
                     <Td><SentBar score={e.sentimentScore} /></Td>
@@ -304,10 +304,10 @@ export function NewsEnrichmentUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Ticker</Th><Th>Entity</Th><Th>Period</Th><Th>Sentiment</Th><Th>Dominant</Th><Th right>Positive</Th><Th right>Negative</Th><Th right>Neutral</Th><Th right>Volume</Th><Th right>24h Change</Th></tr></thead>
               <tbody>
-                {sentiment.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sentiment data â€” check /api/v4/news/sentiment</td></tr>}
+                {sentiment.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sentiment data</td></tr>}
                 {sentiment.sort((a, b) => Math.abs(b.change24h) - Math.abs(a.change24h)).map((s, i) => (
                   <tr key={i}>
-                    <Td mono col={AMBER}>{s.ticker || 'â€”'}</Td>
+                    <Td mono col={AMBER}>{s.ticker || '—'}</Td>
                     <Td mono col={BLUE}>{s.entity}</Td>
                     <Td mono col={SUBTLE}>{s.period}</Td>
                     <Td><SentBar score={s.overallSentiment} /></Td>
@@ -329,7 +329,7 @@ export function NewsEnrichmentUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Alert ID</Th><Th>Trigger</Th><Th>Headline</Th><Th>Ticker</Th><Th>Severity</Th><Th>Status</Th><Th right>Sentiment Shift</Th><Th right>Mention Spike</Th><Th>Triggered</Th></tr></thead>
               <tbody>
-                {alerts.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts â€” check /api/v4/news/alerts</td></tr>}
+                {alerts.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts</td></tr>}
                 {alerts.sort((a, b) => {
                   const p: Record<string, number> = { high: 0, medium: 1, low: 2 }
                   return (p[a.severity] ?? 3) - (p[b.severity] ?? 3)
@@ -338,7 +338,7 @@ export function NewsEnrichmentUI2() {
                     <Td mono col={AMBER}>{a.alertId}</Td>
                     <Td mono col={ORANGE}>{a.trigger}</Td>
                     <Td mono col={TEXT}>{a.headline.slice(0, 40)}{a.headline.length > 40 ? 'â€¦' : ''}</Td>
-                    <Td mono col={BLUE}>{a.ticker || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.ticker || '—'}</Td>
                     <Td><SevBadge s={a.severity} /></Td>
                     <Td><StatusBadge2 s={a.status} /></Td>
                     <Td right mono col={Math.abs(a.sentimentShift) > 0.3 ? RED : SUBTLE}>{a.sentimentShift > 0 ? '+' : ''}{a.sentimentShift.toFixed(3)}</Td>
@@ -356,7 +356,7 @@ export function NewsEnrichmentUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Target</Th><Th>Outcome</Th><Th>Notes</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/news/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -364,7 +364,7 @@ export function NewsEnrichmentUI2() {
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td mono col={BLUE}>{a.target}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.notes || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.notes || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

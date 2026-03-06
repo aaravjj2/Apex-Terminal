@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// EconomicCalendarUI2 â€” Bloomberg ECON-grade economic calendar terminal
+﻿// EconomicCalendarUI2 — Bloomberg ECON-grade economic calendar terminal
 // Tabs: TODAY | CALENDAR | IMPACT | COUNTRIES | INDICATORS
 // APIs: /api/v4/economic-calendar/events, /api/v4/economic-calendar/events/today,
 //       /api/v4/economic-calendar/impact/{id}, /api/v4/economic-calendar/countries,
@@ -73,7 +73,7 @@ function ImpactDot({ impact }: { impact: Impact }) {
     high:    { color: RED,    label: 'â—â—â—' },
     medium:  { color: AMBER,  label: 'â—â—â—‹' },
     low:     { color: GREEN,  label: 'â—â—‹â—‹' },
-    holiday: { color: SUBTLE, label: 'â€”' },
+    holiday: { color: SUBTLE, label: '—' },
   }
   const { color, label } = cfg[impact]
   return <span style={{ fontFamily: MONO, fontSize: 11, color, fontWeight: 700, letterSpacing: -1 }}>{label}</span>
@@ -96,7 +96,7 @@ function StatusBadge({ status }: { status: EventStatus }) {
 }
 
 function SurpriseBar({ actual, forecast }: { actual: number | null; forecast: number | null }) {
-  if (actual === null || forecast === null) return <span style={{ color: SUBTLE, fontSize: 11 }}>â€”</span>
+  if (actual === null || forecast === null) return <span style={{ color: SUBTLE, fontSize: 11 }}>—</span>
   const diff = actual - forecast
   const pct = forecast !== 0 ? (diff / Math.abs(forecast)) * 100 : 0
   const col = diff > 0 ? GREEN : RED
@@ -137,7 +137,7 @@ function Td({ children, right, mono, col }: { children: React.ReactNode; right?:
 }
 
 function fmtNum(v: number | null, dp = 2, unit = '') {
-  if (v === null || v === undefined) return 'â€”'
+  if (v === null || v === undefined) return '—'
   return `${v.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })}${unit}`
 }
 
@@ -451,16 +451,16 @@ export function EconomicCalendarUI2() {
                   {filteredToday.sort((a, b) => a.time.localeCompare(b.time)).map(e => (
                     <tr key={e.id} onClick={() => setSelectedEvent(selectedEvent === e.id ? null : e.id)}
                       style={{ cursor: 'pointer', background: selectedEvent === e.id ? '#141414' : 'transparent', borderLeft: e.impact === 'high' ? `3px solid ${RED}` : e.impact === 'medium' ? `3px solid ${AMBER}` : `3px solid transparent` }}>
-                      <Td mono col={e.status === 'live' ? AMBER : TEXT}>{e.time || 'â€”'}</Td>
+                      <Td mono col={e.status === 'live' ? AMBER : TEXT}>{e.time || '—'}</Td>
                       <Td><span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}><CountryFlag code={e.countryCode} />{e.countryCode}</span></Td>
                       <Td><div style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{e.name}</div></Td>
                       <Td><ImpactDot impact={e.impact} /></Td>
                       <Td><StatusBadge status={e.status} /></Td>
                       <Td right mono col={e.actual !== null ? (e.actual > (e.forecast ?? e.actual) ? GREEN : e.actual < (e.forecast ?? e.actual) ? RED : TEXT) : SUBTLE}>
-                        {e.actual !== null ? fmtNum(e.actual, 2, e.unit ? ` ${e.unit}` : '') : 'â€”'}
+                        {e.actual !== null ? fmtNum(e.actual, 2, e.unit ? ` ${e.unit}` : '') : '—'}
                       </Td>
-                      <Td right mono col={SUBTLE}>{e.forecast !== null ? fmtNum(e.forecast, 2, e.unit ? ` ${e.unit}` : '') : 'â€”'}</Td>
-                      <Td right mono col={SUBTLE}>{e.previous !== null ? fmtNum(e.previous, 2, e.unit ? ` ${e.unit}` : '') : 'â€”'}</Td>
+                      <Td right mono col={SUBTLE}>{e.forecast !== null ? fmtNum(e.forecast, 2, e.unit ? ` ${e.unit}` : '') : '—'}</Td>
+                      <Td right mono col={SUBTLE}>{e.previous !== null ? fmtNum(e.previous, 2, e.unit ? ` ${e.unit}` : '') : '—'}</Td>
                       <Td><SurpriseBar actual={e.actual} forecast={e.forecast} /></Td>
                     </tr>
                   ))}
@@ -477,13 +477,13 @@ export function EconomicCalendarUI2() {
                   <div style={{ fontSize: 11, color: AMBER, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, fontWeight: 700 }}>{e.name}</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                     {[
-                      ['Country', `${e.countryCode} â€” ${e.country}`, TEXT],
+                      ['Country', `${e.countryCode} — ${e.country}`, TEXT],
                       ['Date / Time', `${e.date} ${e.time}`, SUBTLE],
                       ['Impact', e.impact.toUpperCase(), e.impact === 'high' ? RED : e.impact === 'medium' ? AMBER : GREEN],
                       ['Status', e.status.toUpperCase(), BLUE],
                       ['Actual', e.actual !== null ? fmtNum(e.actual, 2, e.unit) : 'Pending', e.actual !== null ? (e.actual > (e.forecast ?? e.actual) ? GREEN : RED) : SUBTLE],
-                      ['Forecast', e.forecast !== null ? fmtNum(e.forecast, 2, e.unit) : 'â€”', SUBTLE],
-                      ['Previous', e.previous !== null ? fmtNum(e.previous, 2, e.unit) : 'â€”', SUBTLE],
+                      ['Forecast', e.forecast !== null ? fmtNum(e.forecast, 2, e.unit) : '—', SUBTLE],
+                      ['Previous', e.previous !== null ? fmtNum(e.previous, 2, e.unit) : '—', SUBTLE],
                       ['Currency', e.currency, BLUE],
                     ].map(([l, v, c]) => (
                       <div key={l as string} style={{ borderBottom: `1px solid ${BORDER}`, paddingBottom: 6 }}>
@@ -533,7 +533,7 @@ export function EconomicCalendarUI2() {
             {filterBar}
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
               <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, fontSize: 11, color: SUBTLE, display: 'flex', justifyContent: 'space-between' }}>
-                <span>CALENDAR â€” {calDate}</span>
+                <span>CALENDAR — {calDate}</span>
                 <span>{filteredAll.length} events</span>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -551,14 +551,14 @@ export function EconomicCalendarUI2() {
                   )}
                   {filteredAll.sort((a, b) => a.time.localeCompare(b.time)).map(e => (
                     <tr key={e.id} style={{ borderLeft: e.impact === 'high' ? `2px solid ${RED}` : `2px solid transparent` }}>
-                      <Td mono>{e.time || 'â€”'}</Td>
+                      <Td mono>{e.time || '—'}</Td>
                       <Td><span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}><CountryFlag code={e.countryCode} />{e.countryCode}</span></Td>
                       <Td><div style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</div></Td>
                       <Td><ImpactDot impact={e.impact} /></Td>
                       <Td><StatusBadge status={e.status} /></Td>
-                      <Td right mono col={SUBTLE}>{e.forecast !== null ? fmtNum(e.forecast, 2, e.unit) : 'â€”'}</Td>
-                      <Td right mono col={SUBTLE}>{e.previous !== null ? fmtNum(e.previous, 2, e.unit) : 'â€”'}</Td>
-                      <Td right mono col={e.actual !== null ? GREEN : SUBTLE}>{e.actual !== null ? fmtNum(e.actual, 2, e.unit) : 'â€”'}</Td>
+                      <Td right mono col={SUBTLE}>{e.forecast !== null ? fmtNum(e.forecast, 2, e.unit) : '—'}</Td>
+                      <Td right mono col={SUBTLE}>{e.previous !== null ? fmtNum(e.previous, 2, e.unit) : '—'}</Td>
+                      <Td right mono col={e.actual !== null ? GREEN : SUBTLE}>{e.actual !== null ? fmtNum(e.actual, 2, e.unit) : '—'}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -573,7 +573,7 @@ export function EconomicCalendarUI2() {
             {/* surprise index chart */}
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14, marginBottom: 14 }}>
               <div style={{ fontSize: 10, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                Economic Surprise Index â€” Today
+                Economic Surprise Index — Today
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {todayEvents.filter(e => e.actual !== null && e.forecast !== null).map(e => {
@@ -597,7 +597,7 @@ export function EconomicCalendarUI2() {
             {/* high impact breakdown */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
-                <div style={{ fontSize: 10, color: RED, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>High Impact Events â€” This Week</div>
+                <div style={{ fontSize: 10, color: RED, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>High Impact Events — This Week</div>
                 {todayEvents.filter(e => e.impact === 'high').map(e => (
                   <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
                     <div>
@@ -651,7 +651,7 @@ export function EconomicCalendarUI2() {
         {tab === 'countries' && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
             <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, fontSize: 11, color: SUBTLE }}>
-              COUNTRY MONITORING â€” {countries.length} countries
+              COUNTRY MONITORING — {countries.length} countries
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -665,7 +665,7 @@ export function EconomicCalendarUI2() {
               <tbody>
                 {countries.length === 0 && (
                   <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                    No country data â€” check /api/v4/economic-calendar/countries
+                    No country data
                   </td></tr>
                 )}
                 {countries.map(c => (
@@ -674,10 +674,10 @@ export function EconomicCalendarUI2() {
                     <Td mono col={BLUE}>{c.currency}</Td>
                     <Td right mono>{c.eventCount}</Td>
                     <Td right mono col={c.highImpactEvents > 0 ? RED : SUBTLE}>{c.highImpactEvents}</Td>
-                    <Td right mono col={c.gdpGrowth !== null ? (c.gdpGrowth > 0 ? GREEN : RED) : SUBTLE}>{c.gdpGrowth !== null ? `${c.gdpGrowth.toFixed(1)}%` : 'â€”'}</Td>
-                    <Td right mono col={c.cpi !== null ? (c.cpi > 3 ? RED : GREEN) : SUBTLE}>{c.cpi !== null ? `${c.cpi.toFixed(1)}%` : 'â€”'}</Td>
-                    <Td right mono col={c.interestRate !== null ? AMBER : SUBTLE}>{c.interestRate !== null ? `${c.interestRate.toFixed(2)}%` : 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{c.nextEvent || 'â€”'}</Td>
+                    <Td right mono col={c.gdpGrowth !== null ? (c.gdpGrowth > 0 ? GREEN : RED) : SUBTLE}>{c.gdpGrowth !== null ? `${c.gdpGrowth.toFixed(1)}%` : '—'}</Td>
+                    <Td right mono col={c.cpi !== null ? (c.cpi > 3 ? RED : GREEN) : SUBTLE}>{c.cpi !== null ? `${c.cpi.toFixed(1)}%` : '—'}</Td>
+                    <Td right mono col={c.interestRate !== null ? AMBER : SUBTLE}>{c.interestRate !== null ? `${c.interestRate.toFixed(2)}%` : '—'}</Td>
+                    <Td mono col={SUBTLE}>{c.nextEvent || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -714,7 +714,7 @@ export function EconomicCalendarUI2() {
                 <tbody>
                   {filteredIndicators.length === 0 && (
                     <tr><td colSpan={9} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No indicators â€” check /api/v4/economic-calendar/indicators
+                      No indicators
                     </td></tr>
                   )}
                   {filteredIndicators.sort((a, b) => b.importance - a.importance).map(x => (
@@ -724,12 +724,12 @@ export function EconomicCalendarUI2() {
                       <Td><span style={{ fontSize: 10, color: catColor[x.category] || BLUE, background: (catColor[x.category] || BLUE) + '22', padding: '2px 6px', borderRadius: 2 }}>{x.category}</span></Td>
                       <Td mono col={SUBTLE}>{x.frequency}</Td>
                       <Td right mono col={x.lastActual !== null ? (x.lastActual > (x.lastForecast ?? x.lastActual) ? GREEN : RED) : SUBTLE}>
-                        {x.lastActual !== null ? fmtNum(x.lastActual) : 'â€”'}
+                        {x.lastActual !== null ? fmtNum(x.lastActual) : '—'}
                       </Td>
-                      <Td right mono col={SUBTLE}>{x.lastForecast !== null ? fmtNum(x.lastForecast) : 'â€”'}</Td>
-                      <Td right mono col={SUBTLE}>{x.lastPrevious !== null ? fmtNum(x.lastPrevious) : 'â€”'}</Td>
+                      <Td right mono col={SUBTLE}>{x.lastForecast !== null ? fmtNum(x.lastForecast) : '—'}</Td>
+                      <Td right mono col={SUBTLE}>{x.lastPrevious !== null ? fmtNum(x.lastPrevious) : '—'}</Td>
                       <Td><TrendArrow trend={x.trend} /></Td>
-                      <Td mono col={SUBTLE}>{x.nextRelease || 'â€”'}</Td>
+                      <Td mono col={SUBTLE}>{x.nextRelease || '—'}</Td>
                     </tr>
                   ))}
                 </tbody>

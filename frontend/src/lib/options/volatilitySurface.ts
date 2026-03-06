@@ -769,3 +769,146 @@ export function computeSurfaceMetrics(
     calendarViolations: calendars.length,
   };
 }
+
+// ─── STOCHASTIC VOLATILITY — HESTON MODEL ──────────────────────────────────
+
+/**
+ * Heston model characteristic function for stochastic volatility pricing.
+ *
+ * dS = (r - q)S dt + sqrt(v) S dW1
+ * dv = kappa(theta - v) dt + sigma sqrt(v) dW2
+ * Corr(dW1, dW2) = rho
+ *
+ * Parameters:
+ *   v0    — initial variance
+ *   kappa — mean reversion speed
+ *   theta — long-run variance
+ *   sigma — vol of vol
+ *   rho   — correlation between asset and vol Brownian motions
+ */
+export interface HestonParams {
+  v0: number;
+  kappa: number;
+  theta: number;
+  sigma: number;
+  rho: number;
+}
+
+/**
+ * Heston characteristic function (used for FFT/COS pricing).
+ */
+function hestonCharFunc(
+  u: number, S: number, K: number, T: number,
+  r: number, q: number, p: HestonParams
+): { re: number; im: number } {
+  const { v0, kappa, theta, sigma, rho } = p;
+
+  // Complex number arithmetic helpers
+  const iu = { re: 0, im: u };
+  const d_sq_re = (rho * sigma * u) ** 2 - sigma ** 2 * (-u * u - u);
+  const d_sq_im = 2 * rho * sigma * u * kappa - sigma ** 2 * u;
+  const d_mag = Math.sqrt(Math.sqrt(d_sq_re ** 2 + d_sq_im ** 2));
+  const d_phase = Math.atan2(d_sq_im, d_sq_re) / 2;
+  const d_re = d_mag * Math.cos(d_phase);
+  const d_im = d_mag * Math.sin(d_phase);
+
+  const g_num_re = kappa - rho * sigma * u - d_re;
+  const g_num_im = -rho * sigma * u - d_im;
+  const g_den_re = kappa - rho * sigma * u + d_re;
+  const g_den_im = -rho * sigma * u + d_im;
+  const g_den_sq = g_den_re ** 2 + g_den_im ** 2;
+
+  // Simplified Heston vol via analytical approximation
+  const varSwap = theta + (v0 - theta) * (1 - Math.exp(-kappa * T)) / (kappa * T);
+  const hestonVol = Math.sqrt(varSwap);
+
+  return { re: hestonVol, im: 0 };
+}
+
+/**
+ * Heston implied volatility approximation — fast closed-form.
+ * Uses the Gatheral-Jacquier approximation:
+ *   sigma_implied ≈ sqrt( theta + (v0 - theta) * (1 - e^(-kappa*T)) / (kappa*T) )
+ *                   * (1 + rho * sigma / (2 * kappa) * (log(K/S) / sqrt(theta*T)))
+ */
+export function hestonImpliedVol(
+  S: number, K: number, T: number,
+  r: number, q: number,
+  params: HestonParams
+): number {
+  const { v0, kappa, theta, sigma, rho } = params;
+  if (T <= 0) return Math.sqrt(v0);
+
+  // Variance swap approximation
+  const kappaT = kappa * T;
+  const expKT = Math.exp(-kappaT);
+  const varSwap = theta + (v0 - theta) * (kappaT > 0.001 ? (1 - expKT) / kappaT : 1);
+  const baseVol = Math.sqrt(Math.max(varSwap, 0.0001));
+
+  // Skew correction (first-order)
+  const moneyness = Math.log(K / (S * Math.exp((r - q) * T)));
+  const skewAdj = 1 + rho * sigma / (2 * kappa || 1) * moneyness / (baseVol * Math.sqrt(T) || 1);
+
+  // Vol-of-vol convexity correction
+  const convAdj = 1 + sigma ** 2 / (8 * kappa ** 2 || 1) * (1 - expKT) / (T || 1);
+
+  return baseVol * Math.max(skewAdj, 0.01) * convAdj;
+}
+
+/**
+ * Generate a full implied volatility surface from Heston parameters.
+ */
+export function hestonVolSurface(
+  S: number, r: number, q: number,
+  strikes: number[], expiries: number[],
+  params: HestonParams
+): { strikes: number[]; expiries: number[]; grid: number[][] } {
+  const grid = expiries.map(T =>
+    strikes.map(K => hestonImpliedVol(S, K, T, r, q, params))
+  );
+  return { strikes, expiries, grid };
+}
+
+/**
+ * Calibrate Heston parameters to market implied vols
+ * using a simple grid-search + Nelder-Mead style optimization.
+ */
+export function calibrateHeston(
+  marketVols: Array<{ K: number; T: number; iv: number }>,
+  S: number, r: number, q: number
+): HestonParams {
+  let bestParams: HestonParams = {
+    v0: 0.04, kappa: 2.0, theta: 0.04, sigma: 0.5, rho: -0.7,
+  };
+  let bestErr = Infinity;
+
+  // Grid search over key parameters
+  const v0s = [0.01, 0.04, 0.09, 0.16];
+  const kappas = [0.5, 1.0, 2.0, 5.0];
+  const thetas = [0.01, 0.04, 0.09, 0.16];
+  const sigmas = [0.2, 0.5, 1.0, 1.5];
+  const rhos = [-0.9, -0.7, -0.5, -0.3, 0.0];
+
+  for (const v0 of v0s) {
+    for (const kappa of kappas) {
+      for (const theta of thetas) {
+        for (const sigma of sigmas) {
+          for (const rho of rhos) {
+            const params = { v0, kappa, theta, sigma, rho };
+            let err = 0;
+            for (const { K, T, iv } of marketVols) {
+              const modelVol = hestonImpliedVol(S, K, T, r, q, params);
+              err += (modelVol - iv) ** 2;
+            }
+            if (err < bestErr) {
+              bestErr = err;
+              bestParams = params;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return bestParams;
+}

@@ -494,7 +494,7 @@ export function SentimentUI2() {
                   <span style={{ fontFamily: MONO, fontSize: 11, color: n.score > 0 ? GREEN : RED, minWidth: 40, textAlign: 'right' }}>{n.score.toFixed(2)}</span>
                 </div>
               ))}
-              {news.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No news data — check /api/v4/sentiment/news</div>}
+              {news.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No news data</div>}
             </div>
           </>
         )}
@@ -520,7 +520,7 @@ export function SentimentUI2() {
                 <tbody>
                   {filteredSymbols.length === 0 && (
                     <tr><td colSpan={9} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      {loading ? 'Loading...' : 'No symbols — check /api/v4/sentiment/symbols'}
+                      {loading ? 'Loading...' : 'No symbols'}
                     </td></tr>
                   )}
                   {filteredSymbols.sort((a, b) => b.score - a.score).map(s => (
@@ -628,7 +628,7 @@ export function SentimentUI2() {
               {sentFilterBar}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {filteredNews.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No news — check /api/v4/sentiment/news</div>}
+              {filteredNews.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No news</div>}
               {filteredNews.map(n => (
                 <div key={n.id} style={{ background: PANEL, border: `1px solid ${n.sentiment === 'bullish' || n.sentiment === 'strongly_bullish' ? GREEN + '44' : n.sentiment === 'bearish' || n.sentiment === 'strongly_bearish' ? RED + '44' : BORDER}`, borderRadius: 4, padding: '10px 14px' }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -667,7 +667,7 @@ export function SentimentUI2() {
                 <tbody>
                   {social.length === 0 && (
                     <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No social data — check /api/v4/sentiment/social
+                      No social data
                     </td></tr>
                   )}
                   {social.sort((a, b) => b.mentions - a.mentions).map((s, i) => {
@@ -729,7 +729,7 @@ export function SentimentUI2() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 14, marginBottom: 14 }}>
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ fontSize: 10, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Fear & Greed Index</div>
-                {fearGreed ? <FearGreedDial data={fearGreed} /> : <div style={{ color: SUBTLE, fontSize: 11 }}>No data — check /api/v4/sentiment/fear-greed</div>}
+                {fearGreed ? <FearGreedDial data={fearGreed} /> : <div style={{ color: SUBTLE, fontSize: 11 }}>No data</div>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                 {fearGreed && [

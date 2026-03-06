@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ThirdPartyRiskUI2 â€” Bloomberg APEX Third-Party Risk terminal
+﻿// ThirdPartyRiskUI2 — Bloomberg APEX Third-Party Risk terminal
 // Vendor assessment, risk monitoring, due diligence, contract compliance
 // Tabs: VENDORS | ASSESSMENTS | MONITORING | CONTRACTS | AUDIT
 // APIs: /api/v4/third-party-risk/vendors, /assessments, /monitoring, /contracts, /audit
@@ -111,7 +111,7 @@ function CritBadge({ c }: { c: string }) {
   return <span style={{ fontFamily: MONO, fontSize: 9, color: col, background: col + '22', borderRadius: 3, padding: '2px 5px' }}>{c.toUpperCase()}</span>
 }
 function TrendArrow({ t }: { t: string }) {
-  const m: Record<string, [string, string]> = { improving: ['â–²', GREEN], stable: ['â€”', SUBTLE], degrading: ['â–¼', RED] }
+  const m: Record<string, [string, string]> = { improving: ['â–²', GREEN], stable: ['—', SUBTLE], degrading: ['â–¼', RED] }
   const [sym, col] = m[t] ?? ['?', SUBTLE]
   return <span style={{ color: col, fontFamily: MONO, fontSize: 11 }}>{sym}</span>
 }
@@ -232,7 +232,7 @@ export function ThirdPartyRiskUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>THIRD-PARTY RISK â€” VENDOR ASSESSMENT + MONITORING + CONTRACT COMPLIANCE</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>THIRD-PARTY RISK — VENDOR ASSESSMENT + MONITORING + CONTRACT COMPLIANCE</span>
         {flaggedVendors > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {flaggedVendors} FLAGGED</span>}
         {alertMonitors > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {alertMonitors} MONITOR ALERTS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -259,7 +259,7 @@ export function ThirdPartyRiskUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Vendor ID</Th><Th>Name</Th><Th>Category</Th><Th>Criticality</Th><Th>Risk Status</Th><Th right>Risk Score</Th><Th>Country</Th><Th>Data</Th><Th>SOX</Th><Th right>Annual Spend</Th></tr></thead>
               <tbody>
-                {vendors.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No vendors â€” check /api/v4/third-party-risk/vendors</td></tr>}
+                {vendors.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No vendors</td></tr>}
                 {vendors.sort((a, b) => b.riskScore - a.riskScore).map((v, i) => (
                   <tr key={i} style={{ background: v.riskStatus === 'flagged' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{v.vendorId}</Td>
@@ -268,9 +268,9 @@ export function ThirdPartyRiskUI2() {
                     <Td><CritBadge c={v.criticality} /></Td>
                     <Td><StatusBadge s={v.riskStatus} /></Td>
                     <Td right mono col={v.riskScore > 75 ? RED : v.riskScore > 50 ? AMBER : GREEN}>{v.riskScore.toFixed(0)}</Td>
-                    <Td mono col={SUBTLE}>{v.country || 'â€”'}</Td>
-                    <Td mono col={v.dataAccess ? ORANGE : SUBTLE}>{v.dataAccess ? 'âœ“' : 'â€”'}</Td>
-                    <Td mono col={v.soxRelevant ? PURPLE : SUBTLE}>{v.soxRelevant ? 'âœ“' : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{v.country || '—'}</Td>
+                    <Td mono col={v.dataAccess ? ORANGE : SUBTLE}>{v.dataAccess ? 'âœ“' : '—'}</Td>
+                    <Td mono col={v.soxRelevant ? PURPLE : SUBTLE}>{v.soxRelevant ? 'âœ“' : '—'}</Td>
                     <Td right mono col={TEXT}>${(v.annualSpendUsd / 1000).toFixed(0)}K</Td>
                   </tr>
                 ))}
@@ -284,7 +284,7 @@ export function ThirdPartyRiskUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>ID</Th><Th>Vendor</Th><Th>Type</Th><Th>Status</Th><Th>Overall</Th><Th>Security</Th><Th>Compliance</Th><Th>Financial</Th><Th right>Findings</Th><Th>Completed</Th></tr></thead>
               <tbody>
-                {assessments.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No assessments â€” check /api/v4/third-party-risk/assessments</td></tr>}
+                {assessments.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No assessments</td></tr>}
                 {assessments.sort((a, b) => a.overallScore - b.overallScore).map((a, i) => (
                   <tr key={i} style={{ background: a.criticalFindings > 0 ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.assessmentId}</Td>
@@ -296,7 +296,7 @@ export function ThirdPartyRiskUI2() {
                     <Td><ScoreBar score={a.complianceScore} /></Td>
                     <Td><ScoreBar score={a.financialScore} /></Td>
                     <Td right mono col={a.criticalFindings > 0 ? RED : TEXT}>{a.criticalFindings}/{a.findings}</Td>
-                    <Td mono col={SUBTLE}>{a.completedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.completedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -309,7 +309,7 @@ export function ThirdPartyRiskUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Vendor</Th><Th>Metric</Th><Th>Status</Th><Th right>Current</Th><Th right>Threshold</Th><Th>Trend</Th><Th>Last Updated</Th></tr></thead>
               <tbody>
-                {monitoring.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No monitor data â€” check /api/v4/third-party-risk/monitoring</td></tr>}
+                {monitoring.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No monitor data</td></tr>}
                 {monitoring.sort((a, b) => a.status === 'critical' ? -1 : 0).map((m, i) => (
                   <tr key={i} style={{ background: m.status === 'critical' ? RED + '0a' : m.status === 'alert' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{m.vendorName || m.vendorId}</Td>
@@ -331,7 +331,7 @@ export function ThirdPartyRiskUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Contract ID</Th><Th>Vendor</Th><Th>Type</Th><Th>Status</Th><Th>Start</Th><Th>End</Th><Th right>Value USD</Th><Th>DPA</Th><Th>SLA</Th><Th>Auto-Renew</Th></tr></thead>
               <tbody>
-                {contracts.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No contracts â€” check /api/v4/third-party-risk/contracts</td></tr>}
+                {contracts.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No contracts</td></tr>}
                 {contracts.sort((a, b) => a.status === 'expiring_soon' ? -1 : 0).map((c, i) => (
                   <tr key={i} style={{ background: c.status === 'expiring_soon' ? AMBER + '0a' : c.status === 'expired' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.contractId}</Td>
@@ -342,7 +342,7 @@ export function ThirdPartyRiskUI2() {
                     <Td mono col={c.status === 'expiring_soon' ? AMBER : SUBTLE}>{c.endDate}</Td>
                     <Td right mono col={c.valueUsd > 1000000 ? ORANGE : TEXT}>${(c.valueUsd / 1000).toFixed(0)}K</Td>
                     <Td mono col={c.dpaPresent ? GREEN : RED}>{c.dpaPresent ? 'âœ“' : 'âœ—'}</Td>
-                    <Td mono col={c.slaIncluded ? GREEN : SUBTLE}>{c.slaIncluded ? 'âœ“' : 'â€”'}</Td>
+                    <Td mono col={c.slaIncluded ? GREEN : SUBTLE}>{c.slaIncluded ? 'âœ“' : '—'}</Td>
                     <Td mono col={c.autoRenew ? AMBER : SUBTLE}>{c.autoRenew ? 'YES' : 'NO'}</Td>
                   </tr>
                 ))}
@@ -356,14 +356,14 @@ export function ThirdPartyRiskUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Vendor ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v4/third-party-risk/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={BLUE}>{a.vendorId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

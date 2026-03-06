@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ReleaseQualityUI2 â€” Bloomberg APEX release quality terminal
+﻿// ReleaseQualityUI2 — Bloomberg APEX release quality terminal
 // Risk scoring, readiness assessment, regression analysis, gate tracking
 // Tabs: RELEASES | GATES | RISK | REGRESSIONS | AUDIT
 // APIs: /api/v4/release-quality/releases, /gates, /risk, /regressions, /audit
@@ -221,7 +221,7 @@ export function ReleaseQualityUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>RELEASE QUALITY â€” RISK SCORING + READINESS GATES + REGRESSION ANALYSIS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>RELEASE QUALITY — RISK SCORING + READINESS GATES + REGRESSION ANALYSIS</span>
         {blockedReleases > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {blockedReleases} BLOCKED</span>}
         {criticalRisks > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {criticalRisks} CRITICAL RISKS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -248,7 +248,7 @@ export function ReleaseQualityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Version</Th><Th>Service</Th><Th>Env</Th><Th>Status</Th><Th>Quality</Th><Th right>Risk Score</Th><Th>Coverage</Th><Th right>Gates P/F/T</Th><Th>Author</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {releases.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No releases â€” check /api/v4/release-quality/releases</td></tr>}
+                {releases.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No releases</td></tr>}
                 {releases.sort((a, b) => b.riskScore - a.riskScore).map((r, i) => (
                   <tr key={i} style={{ background: r.status === 'blocked' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.version}</Td>
@@ -273,7 +273,7 @@ export function ReleaseQualityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Gate</Th><Th>Category</Th><Th>Release ID</Th><Th>Required</Th><Th>Status</Th><Th right>Threshold</Th><Th right>Actual</Th><Th>Evaluated At</Th></tr></thead>
               <tbody>
-                {gates.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No gates â€” check /api/v4/release-quality/gates</td></tr>}
+                {gates.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No gates</td></tr>}
                 {gates.sort((a, b) => (a.status === 'fail' ? -1 : 1) - (b.status === 'fail' ? -1 : 1)).map((g, i) => (
                   <tr key={i} style={{ background: g.status === 'fail' && g.required ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{g.name}</Td>
@@ -283,7 +283,7 @@ export function ReleaseQualityUI2() {
                     <Td><StatusBadge s={g.status} /></Td>
                     <Td right mono col={SUBTLE}>{g.threshold.toFixed(1)}</Td>
                     <Td right mono col={g.actual >= g.threshold ? GREEN : RED}>{g.actual.toFixed(1)}</Td>
-                    <Td mono col={SUBTLE}>{g.evaluatedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{g.evaluatedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -296,7 +296,7 @@ export function ReleaseQualityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Factor</Th><Th>Release ID</Th><Th>Dimension</Th><Th>Risk</Th><Th right>Score</Th><Th>Description</Th><Th>Mitigated</Th><Th>Recommendation</Th></tr></thead>
               <tbody>
-                {riskFactors.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk factors â€” check /api/v4/release-quality/risk</td></tr>}
+                {riskFactors.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk factors</td></tr>}
                 {riskFactors.sort((a, b) => b.score - a.score).map((r, i) => (
                   <tr key={i} style={{ background: r.riskLevel === 'critical' ? RED + '0a' : 'transparent', opacity: r.mitigated ? 0.6 : 1 }}>
                     <Td mono col={AMBER}>{r.factorId}</Td>
@@ -304,9 +304,9 @@ export function ReleaseQualityUI2() {
                     <Td mono col={PURPLE}>{r.dimension}</Td>
                     <Td><RiskBadge r={r.riskLevel} /></Td>
                     <Td right mono col={r.score > 70 ? RED : r.score > 40 ? ORANGE : GREEN}>{r.score.toFixed(0)}</Td>
-                    <Td mono col={TEXT}>{r.description || 'â€”'}</Td>
+                    <Td mono col={TEXT}>{r.description || '—'}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.mitigated ? GREEN : RED }}>{r.mitigated ? 'âœ“ YES' : 'âœ— NO'}</span></Td>
-                    <Td mono col={SUBTLE}>{r.recommendation || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.recommendation || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -319,15 +319,15 @@ export function ReleaseQualityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Regression ID</Th><Th>Test Name</Th><Th>Suite</Th><Th>Component</Th><Th>Failure Type</Th><Th>Introduced In</Th><Th>Remediated</Th><Th>Confirmed At</Th></tr></thead>
               <tbody>
-                {regressions.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regressions â€” check /api/v4/release-quality/regressions</td></tr>}
+                {regressions.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regressions</td></tr>}
                 {regressions.sort((a, b) => (a.remediated ? 1 : -1) - (b.remediated ? 1 : -1)).map((r, i) => (
                   <tr key={i} style={{ background: !r.remediated ? RED + '0a' : 'transparent', opacity: r.remediated ? 0.6 : 1 }}>
                     <Td mono col={AMBER}>{r.regressionId}</Td>
                     <Td mono col={TEXT}>{r.testName}</Td>
                     <Td mono col={BLUE}>{r.testSuite}</Td>
-                    <Td mono col={PURPLE}>{r.affectedComponent || 'â€”'}</Td>
-                    <Td mono col={ORANGE}>{r.failureType || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{r.introducedIn || 'â€”'}</Td>
+                    <Td mono col={PURPLE}>{r.affectedComponent || '—'}</Td>
+                    <Td mono col={ORANGE}>{r.failureType || '—'}</Td>
+                    <Td mono col={SUBTLE}>{r.introducedIn || '—'}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.remediated ? GREEN : RED }}>{r.remediated ? 'âœ“ YES' : 'âœ— NO'}</span></Td>
                     <Td mono col={SUBTLE}>{r.confirmedAt}</Td>
                   </tr>
@@ -342,14 +342,14 @@ export function ReleaseQualityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Release ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/release-quality/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={BLUE}>{a.releaseId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

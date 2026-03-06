@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// AiGovernanceUI2 â€” Bloomberg AIGV AI release governance terminal
+﻿// AiGovernanceUI2 — Bloomberg AIGV AI release governance terminal
 // Model review, approval gates, deployment controls, policy enforcement, audit
 // Tabs: MODELS | APPROVALS | GATES | DEPLOYMENTS | AUDIT
 // APIs: /api/v4/ai-governance/models, /approvals, /gates, /deployments, /audit
@@ -233,7 +233,7 @@ export function AiGovernanceUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>AIGV</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>AI GOVERNANCE â€” MODEL REVIEW + APPROVAL GATES + DEPLOYMENT CONTROLS + POLICY ENFORCEMENT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>AI GOVERNANCE — MODEL REVIEW + APPROVAL GATES + DEPLOYMENT CONTROLS + POLICY ENFORCEMENT</span>
         {criticalModels > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalModels} CRITICAL</span>}
         {pendingApprovals > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingApprovals} PENDING APPROVALS</span>}
         {closedGates > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {closedGates} GATES CLOSED</span>}
@@ -261,7 +261,7 @@ export function AiGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Provider</Th><Th>Use Case</Th><Th>Risk</Th><Th>Status</Th><Th>Bias Score</Th><Th>Fairness</Th><Th>Explainability</Th><Th>Reviewed By</Th><Th>Next Review</Th></tr></thead>
               <tbody>
-                {models.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No models â€” check /api/v4/ai-governance/models</td></tr>}
+                {models.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No models</td></tr>}
                 {models.sort((a, b) => {
                   const p: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (p[a.riskLevel] ?? 4) - (p[b.riskLevel] ?? 4)
@@ -289,7 +289,7 @@ export function AiGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Approval ID</Th><Th>Model</Th><Th>Request Type</Th><Th>Priority</Th><Th>Status</Th><Th>Requester</Th><Th>Reviewers</Th><Th>Due By</Th><Th>Comments</Th></tr></thead>
               <tbody>
-                {approvals.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No approvals â€” check /api/v4/ai-governance/approvals</td></tr>}
+                {approvals.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No approvals</td></tr>}
                 {approvals.sort((a, b) => {
                   const p: Record<string, number> = { p1: 0, p2: 1, p3: 2 }
                   return (p[a.priority] ?? 3) - (p[b.priority] ?? 3)
@@ -303,7 +303,7 @@ export function AiGovernanceUI2() {
                     <Td mono col={TEXT}>{a.requester}</Td>
                     <Td mono col={SUBTLE}>{a.reviewers.join(', ')}</Td>
                     <Td mono col={AMBER}>{a.dueBy}</Td>
-                    <Td mono col={SUBTLE}>{a.comments ? a.comments.slice(0, 35) + (a.comments.length > 35 ? 'â€¦' : '') : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.comments ? a.comments.slice(0, 35) + (a.comments.length > 35 ? 'â€¦' : '') : '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -316,7 +316,7 @@ export function AiGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Gate ID</Th><Th>Name</Th><Th>Type</Th><Th>Status</Th><Th>Requirement</Th><Th right>Blocked</Th><Th>Auto Release</Th><Th>Last Evaluated</Th><Th>Owner</Th></tr></thead>
               <tbody>
-                {gates.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No gates â€” check /api/v4/ai-governance/gates</td></tr>}
+                {gates.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No gates</td></tr>}
                 {gates.sort((a, b) => {
                   const p: Record<string, number> = { closed: 0, override: 1, open: 2 }
                   return (p[a.status] ?? 3) - (p[b.status] ?? 3)
@@ -328,7 +328,7 @@ export function AiGovernanceUI2() {
                     <Td><StatusBadge2 s={g.status} /></Td>
                     <Td mono col={SUBTLE}>{g.requirement}</Td>
                     <Td right mono col={g.blockedDeployments > 0 ? RED : GREEN}>{g.blockedDeployments}</Td>
-                    <Td mono col={SUBTLE}>{g.autoReleaseOn || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{g.autoReleaseOn || '—'}</Td>
                     <Td mono col={SUBTLE}>{g.lastEvaluated}</Td>
                     <Td mono col={SUBTLE}>{g.owner}</Td>
                   </tr>
@@ -343,7 +343,7 @@ export function AiGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Deployment ID</Th><Th>Model</Th><Th>Environment</Th><Th>Version</Th><Th>Status</Th><Th>Gates</Th><Th right>Traffic %</Th><Th>Deployed By</Th><Th>Rollback</Th><Th>Deployed At</Th></tr></thead>
               <tbody>
-                {deployments.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No deployments â€” check /api/v4/ai-governance/deployments</td></tr>}
+                {deployments.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No deployments</td></tr>}
                 {deployments.sort((a, b) => {
                   const p: Record<string, number> = { failed: 0, 'rolled-back': 1, deploying: 2, staged: 3, active: 4 }
                   return (p[a.status] ?? 5) - (p[b.status] ?? 5)
@@ -371,7 +371,7 @@ export function AiGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Model</Th><Th>Action</Th><Th>Actor</Th><Th>From</Th><Th>To</Th><Th>Outcome</Th><Th>Policy Ref</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/ai-governance/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -381,7 +381,7 @@ export function AiGovernanceUI2() {
                     <Td mono col={SUBTLE}>{a.fromStatus}</Td>
                     <Td mono col={TEXT}>{a.toStatus}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={BLUE}>{a.policyRef || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.policyRef || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

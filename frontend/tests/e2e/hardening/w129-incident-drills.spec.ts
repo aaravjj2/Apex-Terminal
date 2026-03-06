@@ -1,7 +1,7 @@
 // Wave 129 — Incident drills: monitoring endpoints expose recovery data.
 import { test, expect } from '@playwright/test';
 
-const BASE = 'http://localhost:8090';
+const BASE = 'http://localhost:8000';
 
 test('w129 ws health has disconnect_count', async ({ request }) => {
   const r = await request.get(`${BASE}/api/v3/ops/ws/health`);

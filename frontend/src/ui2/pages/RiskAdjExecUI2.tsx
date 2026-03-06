@@ -256,7 +256,7 @@ export function RiskAdjExecUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Order ID</Th><Th>Symbol</Th><Th>Side</Th><Th>Algorithm</Th><Th>Status</Th><Th right>Req Qty</Th><Th right>Adj Qty</Th><Th>Adj Reason</Th><Th right>Fill %</Th><Th right>Slippage bps</Th><Th>VaR %</Th></tr></thead>
               <tbody>
-                {orders.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No orders — check /api/v4/risk-adj-exec/orders</td></tr>}
+                {orders.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No orders</td></tr>}
                 {orders.map((o, i) => (
                   <tr key={i} style={{ background: o.status === 'rejected' ? RED + '0a' : o.status === 'active' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{o.orderId}</Td>
@@ -282,7 +282,7 @@ export function RiskAdjExecUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Parameter</Th><Th>Scope</Th><Th>Type</Th><Th>Status</Th><Th right>Current</Th><Th right>Limit</Th><Th>Utilization</Th><Th>Last Updated</Th></tr></thead>
               <tbody>
-                {riskParams.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk params — check /api/v4/risk-adj-exec/risk-params</td></tr>}
+                {riskParams.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk params</td></tr>}
                 {riskParams.sort((a, b) => b.utilizationPct - a.utilizationPct).map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'breach' ? RED + '0a' : p.status === 'warning' ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.name}</Td>
@@ -305,7 +305,7 @@ export function RiskAdjExecUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Signal</Th><Th>Category</Th><Th>Direction</Th><Th>Strength</Th><Th right>Score</Th><Th right>Value</Th><Th right>Confidence %</Th><Th right>Half-life min</Th><Th right>Weight</Th></tr></thead>
               <tbody>
-                {signals.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No signals — check /api/v4/risk-adj-exec/signals</td></tr>}
+                {signals.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No signals</td></tr>}
                 {signals.sort((a, b) => b.normalizedScore - a.normalizedScore).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.name}</Td>
@@ -329,7 +329,7 @@ export function RiskAdjExecUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Session</Th><Th>Strategy</Th><Th>Date</Th><Th right>Orders</Th><Th right>Notional</Th><Th right>Avg Slippage bps</Th><Th right>Fill Rate %</Th><Th right>VaR Eff %</Th><Th right>Risk Adj Reduction</Th><Th right>Exec PnL</Th></tr></thead>
               <tbody>
-                {performance.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No performance — check /api/v4/risk-adj-exec/performance</td></tr>}
+                {performance.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No performance</td></tr>}
                 {performance.map((p, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{p.sessionId}</Td>
@@ -354,7 +354,7 @@ export function RiskAdjExecUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Order ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log — check /api/v4/risk-adj-exec/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

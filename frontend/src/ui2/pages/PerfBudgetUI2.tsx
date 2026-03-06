@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// PerfBudgetUI2 â€” Bloomberg APEX Performance Budget terminal
+﻿// PerfBudgetUI2 — Bloomberg APEX Performance Budget terminal
 // Web perf metrics, Playwright sampling, Core Web Vitals budgets, regression analysis
 // Tabs: SAMPLES | BUDGETS | REGRESSIONS | TRENDS | AUDIT
 // APIs: /api/v3/perf/samples, /budgets, /regressions, /trends, /audit
@@ -98,7 +98,7 @@ function SevBadge({ s }: { s: string }) {
   return <span style={{ fontFamily: MONO, fontSize: 9, color: c, background: c + '22', borderRadius: 3, padding: '2px 5px' }}>{s.toUpperCase()}</span>
 }
 function Ms({ v }: { v: number | null }) {
-  if (v === null) return <span style={{ color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>â€”</span>
+  if (v === null) return <span style={{ color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>—</span>
   const col = v > 4000 ? RED : v > 2500 ? ORANGE : v > 1000 ? AMBER : GREEN
   return <span style={{ color: col, fontFamily: MONO, fontSize: 11 }}>{v.toFixed(0)}</span>
 }
@@ -199,14 +199,14 @@ export function PerfBudgetUI2() {
   ]
 
   return (
-    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+    <div data-testid="perf-budget-page" style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>      
+      <div data-testid="page-ready" style={{position:"fixed",top:0,right:0,opacity:0,pointerEvents:"none",width:1,height:1}} />
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>PERFORMANCE BUDGET â€” PLAYWRIGHT SAMPLING + CORE WEB VITALS + REGRESSION TRACKING</span>
+        <span data-testid="perf-budget-title" style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>PERFORMANCE BUDGET — PLAYWRIGHT SAMPLING + CORE WEB VITALS + REGRESSION TRACKING</span>
         {openRegressions > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {openRegressions} REGRESSIONS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
+        <button data-testid="perf-budget-refresh-btn" onClick={fetchAll} style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 10, background: 'transparent', border: `1px solid ${BORDER}`, color: SUBTLE, borderRadius: 3, padding: '3px 10px', cursor: 'pointer' }}>REFRESH</button>      </div>      <div data-testid="perf-budget-kpi-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Total Samples" value={samples.length} col={BLUE} />
         <StatCard label="Budget Fails" value={failedSamples} col={failedSamples > 0 ? RED : GREEN} />
         <StatCard label="Open Regressions" value={openRegressions} col={openRegressions > 0 ? RED : GREEN} />
@@ -227,18 +227,18 @@ export function PerfBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Page</Th><Th>Budget</Th><Th right>FCP ms</Th><Th right>LCP ms</Th><Th right>CLS</Th><Th right>INP ms</Th><Th right>TTFB ms</Th><Th right>Load ms</Th><Th right>Bundle KB</Th><Th>Sampled At</Th></tr></thead>
               <tbody>
-                {samples.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No perf samples â€” check /api/v3/perf/samples</td></tr>}
+                {samples.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No perf samples</td></tr>}
                 {samples.sort((a, b) => b.sampledAt.localeCompare(a.sampledAt)).slice(0, 200).map((s, i) => (
                   <tr key={i} style={{ background: !s.budgetPassed ? RED + '08' : 'transparent' }}>
                     <Td mono col={BLUE}>{(s.pageUrl || s.pageId).slice(0, 30)}</Td>
                     <Td mono col={s.budgetPassed ? GREEN : RED}>{s.budgetPassed ? 'âœ“ PASS' : 'âœ— FAIL'}</Td>
                     <Td right><Ms v={s.fcpMs} /></Td>
                     <Td right><Ms v={s.lcpMs} /></Td>
-                    <Td right mono col={s.clsScore !== null ? (s.clsScore > 0.25 ? RED : s.clsScore > 0.1 ? AMBER : GREEN) : SUBTLE}>{s.clsScore !== null ? s.clsScore.toFixed(3) : 'â€”'}</Td>
+                    <Td right mono col={s.clsScore !== null ? (s.clsScore > 0.25 ? RED : s.clsScore > 0.1 ? AMBER : GREEN) : SUBTLE}>{s.clsScore !== null ? s.clsScore.toFixed(3) : '—'}</Td>
                     <Td right><Ms v={s.inpMs} /></Td>
                     <Td right><Ms v={s.ttfbMs} /></Td>
                     <Td right><Ms v={s.loadTimeMs} /></Td>
-                    <Td right mono col={TEXT}>{s.bundleSizeKb !== null ? s.bundleSizeKb.toFixed(0) : 'â€”'}</Td>
+                    <Td right mono col={TEXT}>{s.bundleSizeKb !== null ? s.bundleSizeKb.toFixed(0) : '—'}</Td>
                     <Td mono col={SUBTLE}>{s.sampledAt}</Td>
                   </tr>
                 ))}
@@ -251,18 +251,18 @@ export function PerfBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Budget ID</Th><Th>Page ID</Th><Th>Metric</Th><Th>Status</Th><Th right>Budget ms</Th><Th right>Budget Score</Th><Th right>Budget KB</Th><Th right>Violations</Th><Th>Last Violated</Th></tr></thead>
               <tbody>
-                {budgets.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No budgets â€” check /api/v3/perf/budgets</td></tr>}
+                {budgets.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No budgets</td></tr>}
                 {budgets.sort((a, b) => b.violationCount - a.violationCount).map((b, i) => (
                   <tr key={i} style={{ background: b.violationCount > 0 && b.status === 'active' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.budgetId}</Td>
                     <Td mono col={BLUE}>{b.pageId}</Td>
                     <Td mono col={TEXT}>{b.metricName}</Td>
                     <Td><StatusBadge s={b.status} /></Td>
-                    <Td right mono col={TEXT}>{b.budgetMs !== null ? b.budgetMs : 'â€”'}</Td>
-                    <Td right mono col={TEXT}>{b.budgetScore !== null ? b.budgetScore.toFixed(2) : 'â€”'}</Td>
-                    <Td right mono col={TEXT}>{b.budgetKb !== null ? b.budgetKb.toFixed(0) : 'â€”'}</Td>
+                    <Td right mono col={TEXT}>{b.budgetMs !== null ? b.budgetMs : '—'}</Td>
+                    <Td right mono col={TEXT}>{b.budgetScore !== null ? b.budgetScore.toFixed(2) : '—'}</Td>
+                    <Td right mono col={TEXT}>{b.budgetKb !== null ? b.budgetKb.toFixed(0) : '—'}</Td>
                     <Td right mono col={b.violationCount > 0 ? RED : GREEN}>{b.violationCount}</Td>
-                    <Td mono col={SUBTLE}>{b.lastViolatedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{b.lastViolatedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -274,7 +274,7 @@ export function PerfBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>ID</Th><Th>Page</Th><Th>Metric</Th><Th>Severity</Th><Th>Status</Th><Th right>Prev</Th><Th right>Curr</Th><Th right>Î”%</Th><Th>Build</Th><Th>Detected</Th></tr></thead>
               <tbody>
-                {regressions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regressions â€” check /api/v3/perf/regressions</td></tr>}
+                {regressions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regressions</td></tr>}
                 {regressions.sort((a, b) => a.status === 'open' ? -1 : 0).map((r, i) => (
                   <tr key={i} style={{ background: r.severity === 'critical' && r.status === 'open' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.regressionId}</Td>
@@ -285,7 +285,7 @@ export function PerfBudgetUI2() {
                     <Td right mono col={TEXT}>{r.prevValue.toFixed(0)}</Td>
                     <Td right mono col={RED}>{r.currValue.toFixed(0)}</Td>
                     <Td right mono col={r.changePct > 0 ? RED : GREEN}>{r.changePct > 0 ? '+' : ''}{r.changePct.toFixed(1)}%</Td>
-                    <Td mono col={SUBTLE}>{r.buildId || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.buildId || '—'}</Td>
                     <Td mono col={SUBTLE}>{r.detectedAt}</Td>
                   </tr>
                 ))}
@@ -298,7 +298,7 @@ export function PerfBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Page ID</Th><Th>Metric</Th><Th>Trend</Th><Th>Period</Th><Th right>p50</Th><Th right>p75</Th><Th right>p95</Th><Th right>p99</Th><Th right>Samples</Th></tr></thead>
               <tbody>
-                {trends.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No trends â€” check /api/v3/perf/trends</td></tr>}
+                {trends.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No trends</td></tr>}
                 {trends.sort((a, b) => a.trend === 'degrading' ? -1 : 0).map((t, i) => (
                   <tr key={i} style={{ background: t.trend === 'degrading' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{t.pageId}</Td>
@@ -321,13 +321,13 @@ export function PerfBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v3/perf/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

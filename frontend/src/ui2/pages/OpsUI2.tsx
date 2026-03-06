@@ -119,8 +119,15 @@ interface ServiceStatus {
 }
 
 // ── W88: Live service health hook ──────────────────────────────────────────
+const INITIAL_SERVICES: ServiceStatus[] = [
+  { label: 'Elasticsearch', ready: false, detail: 'Loading…', correlationId: '00000000-0000-0000-0000-000000000000', testId: 'ops-es-card' },
+  { label: 'Broker',        ready: false, detail: 'Loading…', correlationId: '00000000-0000-0000-0000-000000000000', testId: 'ops-broker-card' },
+  { label: 'WebSocket',     ready: false, detail: 'Loading…', correlationId: '00000000-0000-0000-0000-000000000000', testId: 'ops-ws-card' },
+  { label: 'Jobs',          ready: false, detail: 'Loading…', correlationId: '00000000-0000-0000-0000-000000000000', testId: 'ops-jobs-card' },
+];
+
 function useOpsHealth() {
-  const [services, setServices] = useState<ServiceStatus[]>([]);
+  const [services, setServices] = useState<ServiceStatus[]>(INITIAL_SERVICES);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -300,13 +307,7 @@ export function OpsUI2() {
                 </button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                {loading
-                  ? [0,1,2,3].map(i => (
-                    <div key={i} style={{ padding: '14px', background: 'var(--ui2-bg-panel)', border: '1px solid var(--ui2-border)', borderRadius: 'var(--ui2-radius-md)', minHeight: '90px' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--ui2-text-muted)' }}>Loading…</div>
-                    </div>
-                  ))
-                  : services.map(svc => (
+                {services.map(svc => (
                     <div
                       key={svc.testId}
                       data-testid={svc.testId}

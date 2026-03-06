@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ReliabilityEconUI2 â€” Bloomberg APEX reliability economics terminal
+﻿// ReliabilityEconUI2 — Bloomberg APEX reliability economics terminal
 // Error budgets, SLO economics, investment analysis, cost of unreliability
 // Tabs: ERROR BUDGETS | SERVICES | INVESTMENTS | INCIDENTS | AUDIT
 // APIs: /api/v4/reliability-econ/error-budgets, /services, /investments, /incidents, /audit
@@ -234,7 +234,7 @@ export function ReliabilityEconUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>RELIABILITY ECONOMICS â€” ERROR BUDGETS + SLO TRACKING + COST OF UNRELIABILITY</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>RELIABILITY ECONOMICS — ERROR BUDGETS + SLO TRACKING + COST OF UNRELIABILITY</span>
         {exhaustedBudgets > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {exhaustedBudgets} BUDGET EXHAUSTED</span>}
         {criticalBudgets > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {criticalBudgets} CRITICAL BURN</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -261,7 +261,7 @@ export function ReliabilityEconUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Service</Th><Th>SLO</Th><Th right>Target %</Th><Th right>Actual %</Th><Th>Budget Consumed</Th><Th right>Burn Rate x</Th><Th>Status</Th><Th right>$/min Down</Th><Th>Exhaustion</Th></tr></thead>
               <tbody>
-                {errorBudgets.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No error budgets â€” check /api/v4/reliability-econ/error-budgets</td></tr>}
+                {errorBudgets.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No error budgets</td></tr>}
                 {errorBudgets.sort((a, b) => (b.burnRateMultiple) - (a.burnRateMultiple)).map((e, i) => (
                   <tr key={i} style={{ background: e.burnRateStatus === 'exhausted' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.service}</Td>
@@ -272,7 +272,7 @@ export function ReliabilityEconUI2() {
                     <Td right mono col={e.burnRateMultiple > 5 ? RED : e.burnRateMultiple > 2 ? ORANGE : GREEN}>{e.burnRateMultiple.toFixed(2)}x</Td>
                     <Td><BurnStatusBadge s={e.burnRateStatus} /></Td>
                     <Td right><Usd v={e.costPerMinuteDowntime} /></Td>
-                    <Td mono col={e.projectedExhaustionAt ? ORANGE : SUBTLE}>{e.projectedExhaustionAt || 'â€”'}</Td>
+                    <Td mono col={e.projectedExhaustionAt ? ORANGE : SUBTLE}>{e.projectedExhaustionAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -285,7 +285,7 @@ export function ReliabilityEconUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Service</Th><Th>Tier</Th><Th right>Revenue at Risk</Th><Th right>Cost/Unreliab YTD</Th><Th right>Score</Th><Th right>MTTR m</Th><Th right>MTBF h</Th><Th right>Avail %</Th><Th right>Incidents 90d</Th></tr></thead>
               <tbody>
-                {services.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No services â€” check /api/v4/reliability-econ/services</td></tr>}
+                {services.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No services</td></tr>}
                 {services.sort((a, b) => b.costOfUnreliabilityYtd - a.costOfUnreliabilityYtd).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.name}</Td>
@@ -309,7 +309,7 @@ export function ReliabilityEconUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Investment</Th><Th>Type</Th><Th>Status</Th><Th right>Cost</Th><Th right>Projected Savings</Th><Th right>ROI %</Th><Th right>Payback mo</Th><Th right>Reliability Gain</Th><Th right>Priority</Th></tr></thead>
               <tbody>
-                {investments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No investments â€” check /api/v4/reliability-econ/investments</td></tr>}
+                {investments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No investments</td></tr>}
                 {investments.sort((a, b) => b.priorityScore - a.priorityScore).map((inv, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{inv.name}</Td>
@@ -333,7 +333,7 @@ export function ReliabilityEconUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Incident ID</Th><Th>Service</Th><Th>Severity</Th><Th right>Duration m</Th><Th right>Users Impacted</Th><Th right>Revenue Impact</Th><Th right>MTTR m</Th><Th>Root Cause</Th><Th>Started At</Th></tr></thead>
               <tbody>
-                {incidents.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No incidents â€” check /api/v4/reliability-econ/incidents</td></tr>}
+                {incidents.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No incidents</td></tr>}
                 {incidents.sort((a, b) => b.revenueImpactUsd - a.revenueImpactUsd).map((inc, i) => (
                   <tr key={i} style={{ background: inc.severity === 'sev1' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{inc.incidentId}</Td>
@@ -343,7 +343,7 @@ export function ReliabilityEconUI2() {
                     <Td right mono col={TEXT}>{inc.impactedUsers.toLocaleString()}</Td>
                     <Td right><Usd v={inc.revenueImpactUsd} /></Td>
                     <Td right mono col={inc.mttrMin < 15 ? GREEN : inc.mttrMin < 30 ? AMBER : RED}>{inc.mttrMin.toFixed(0)}</Td>
-                    <Td mono col={SUBTLE}>{inc.rootCause || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{inc.rootCause || '—'}</Td>
                     <Td mono col={SUBTLE}>{inc.startedAt}</Td>
                   </tr>
                 ))}
@@ -357,13 +357,13 @@ export function ReliabilityEconUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/reliability-econ/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

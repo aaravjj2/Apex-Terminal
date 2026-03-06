@@ -5,7 +5,7 @@
 import { test, expect } from "@playwright/test";
 
 const UI = "http://localhost:5100";
-const API = "http://localhost:8090";
+const API = "http://localhost:8000";
 
 const ENTITY_TYPES = ["events", "strategies", "backtests", "workflows", "jobs", "tickets", "edges"];
 

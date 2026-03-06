@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// CostProfilerUI2 â€” Bloomberg COSP infrastructure cost profiling terminal
+﻿// CostProfilerUI2 — Bloomberg COSP infrastructure cost profiling terminal
 // Spend breakdown, optimization opportunities, budget tracking, anomaly detection, forecasting
 // Tabs: SPEND OVERVIEW | BREAKDOWN | OPTIMIZATION | BUDGET | ANOMALIES
 // APIs: /api/v4/cost-profiler/overview, /breakdown, /optimization, /budget, /anomalies
@@ -121,7 +121,7 @@ function EffortBadge({ e }: { e: string }) {
 
 function ChangePct({ pct }: { pct: number }) {
   const c = pct > 10 ? RED : pct > 5 ? AMBER : pct < -5 ? GREEN : SUBTLE
-  const icon = pct > 0 ? 'â–²' : pct < 0 ? 'â–¼' : 'â€”'
+  const icon = pct > 0 ? 'â–²' : pct < 0 ? 'â–¼' : '—'
   return <span style={{ fontFamily: MONO, fontSize: 10, color: c }}>{icon} {Math.abs(pct).toFixed(1)}%</span>
 }
 
@@ -223,16 +223,16 @@ export function CostProfilerUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>COSP</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>COST PROFILER â€” SPEND + BREAKDOWN + OPTIMIZATION + BUDGET + ANOMALY DETECTION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>COST PROFILER — SPEND + BREAKDOWN + OPTIMIZATION + BUDGET + ANOMALY DETECTION</span>
         {totalSavings > 0 && <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>â–¼ ${totalSavings.toLocaleString()}/mo SAVINGS AVAILABLE</span>}
         {overBudget > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {overBudget} TEAMS OVER BUDGET</span>}
         {activeAnomalies > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeAnomalies} ACTIVE ANOMALIES</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
-        <StatCard label="MTD Spend" value={overview ? `$${(overview.totalMtd / 1000).toFixed(1)}K` : 'â€”'} col={overview && overview.budgetVariancePct > 10 ? RED : TEXT} />
-        <StatCard label="Budget MTD" value={overview ? `$${(overview.budgetMtd / 1000).toFixed(1)}K` : 'â€”'} col={BLUE} />
-        <StatCard label="Forecast EOM" value={overview ? `$${(overview.forecastEom / 1000).toFixed(1)}K` : 'â€”'} col={AMBER} />
+        <StatCard label="MTD Spend" value={overview ? `$${(overview.totalMtd / 1000).toFixed(1)}K` : '—'} col={overview && overview.budgetVariancePct > 10 ? RED : TEXT} />
+        <StatCard label="Budget MTD" value={overview ? `$${(overview.budgetMtd / 1000).toFixed(1)}K` : '—'} col={BLUE} />
+        <StatCard label="Forecast EOM" value={overview ? `$${(overview.forecastEom / 1000).toFixed(1)}K` : '—'} col={AMBER} />
         <StatCard label="Savings Available" value={totalSavings > 0 ? `$${totalSavings.toLocaleString()}/mo` : '$0'} col={GREEN} />
         <StatCard label="Active Anomalies" value={activeAnomalies} col={activeAnomalies > 0 ? ORANGE : GREEN} />
       </div>
@@ -251,19 +251,19 @@ export function CostProfilerUI2() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
                 <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>MTD vs Budget</div>
-                <div style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: overview?.budgetVariancePct && overview.budgetVariancePct > 10 ? RED : TEXT }}>{overview ? `${currency} ${overview.totalMtd.toLocaleString()}` : 'â€”'}</div>
+                <div style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: overview?.budgetVariancePct && overview.budgetVariancePct > 10 ? RED : TEXT }}>{overview ? `${currency} ${overview.totalMtd.toLocaleString()}` : '—'}</div>
                 <BudgetBar pct={overview ? (overview.totalMtd / overview.budgetMtd) * 100 : 0} />
-                <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 4 }}>Budget: {currency} {overview?.budgetMtd.toLocaleString() ?? 'â€”'}</div>
+                <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 4 }}>Budget: {currency} {overview?.budgetMtd.toLocaleString() ?? '—'}</div>
               </div>
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
                 <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>MoM Change</div>
                 <div style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: overview?.totalMom && overview.totalMom > 0 ? RED : GREEN }}><ChangePct pct={overview?.totalMom ?? 0} /></div>
-                <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 4 }}>YTD: {currency} {overview?.totalYtd.toLocaleString() ?? 'â€”'}</div>
+                <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 4 }}>YTD: {currency} {overview?.totalYtd.toLocaleString() ?? '—'}</div>
               </div>
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
                 <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Year-End Forecast</div>
-                <div style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: AMBER }}>{overview ? `${currency} ${(overview.forecastYe / 1000).toFixed(0)}K` : 'â€”'}</div>
-                <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 4 }}>EOM: {currency} {overview?.forecastEom.toLocaleString() ?? 'â€”'}</div>
+                <div style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: AMBER }}>{overview ? `${currency} ${(overview.forecastYe / 1000).toFixed(0)}K` : '—'}</div>
+                <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 4 }}>EOM: {currency} {overview?.forecastEom.toLocaleString() ?? '—'}</div>
               </div>
             </div>
             {overview && overview.categories.length > 0 && (
@@ -300,7 +300,7 @@ export function CostProfilerUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Service</Th><Th>Category</Th><Th>Team</Th><Th>Environment</Th><Th right>MTD Cost</Th><Th right>Prev MTD</Th><Th right>Change</Th><Th right>Unit Cost</Th></tr></thead>
                 <tbody>
-                  {filteredBreakdown.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No data â€” check /api/v4/cost-profiler/breakdown</td></tr>}
+                  {filteredBreakdown.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No data</td></tr>}
                   {filteredBreakdown.sort((a, b) => b.mtdCost - a.mtdCost).map((b, i) => (
                     <tr key={i}>
                       <Td mono col={AMBER}>{b.service}</Td>
@@ -334,7 +334,7 @@ export function CostProfilerUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Service</Th><Th>Type</Th><Th>Status</Th><Th>Effort</Th><Th right>Current $/mo</Th><Th right>Opt $/mo</Th><Th right>Savings/mo</Th><Th right>Save %</Th></tr></thead>
                 <tbody>
-                  {filteredOpt.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No opportunities â€” check /api/v4/cost-profiler/optimization</td></tr>}
+                  {filteredOpt.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No opportunities</td></tr>}
                   {filteredOpt.sort((a, b) => b.savingsMonthly - a.savingsMonthly).map((o, i) => (
                     <tr key={i}>
                       <Td mono col={AMBER}>{o.service}</Td>
@@ -358,7 +358,7 @@ export function CostProfilerUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Team</Th><Th>Category</Th><Th>Utilization</Th><Th right>Budget/mo</Th><Th right>Spent MTD</Th><Th right>Forecast EOM</Th><Th right>Overage %</Th><Th>Owner</Th></tr></thead>
               <tbody>
-                {budget.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No budget data â€” check /api/v4/cost-profiler/budget</td></tr>}
+                {budget.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No budget data</td></tr>}
                 {budget.sort((a, b) => b.utilizationPct - a.utilizationPct).map((b, i) => (
                   <tr key={i} style={{ background: b.utilizationPct >= 100 ? RED + '0a' : b.utilizationPct >= 85 ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.team}</Td>
@@ -381,7 +381,7 @@ export function CostProfilerUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Service</Th><Th>Date</Th><Th>Severity</Th><Th>Status</Th><Th right>Expected</Th><Th right>Actual</Th><Th right>Deviation</Th><Th>Root Cause</Th></tr></thead>
               <tbody>
-                {anomalies.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No anomalies â€” check /api/v4/cost-profiler/anomalies</td></tr>}
+                {anomalies.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No anomalies</td></tr>}
                 {anomalies.sort((a, b) => b.deviationPct - a.deviationPct).map((a, i) => (
                   <tr key={i} style={{ background: a.severity === 'critical' && a.status !== 'resolved' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.service}</Td>
@@ -391,7 +391,7 @@ export function CostProfilerUI2() {
                     <Td right mono col={SUBTLE}>${a.expectedCost.toLocaleString()}</Td>
                     <Td right mono col={RED}>${a.actualCost.toLocaleString()}</Td>
                     <Td right mono col={RED}>+{a.deviationPct.toFixed(1)}%</Td>
-                    <Td><span style={{ fontSize: 10, color: SUBTLE }}>{a.rootCause ?? 'â€”'}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: SUBTLE }}>{a.rootCause ?? '—'}</span></Td>
                   </tr>
                 ))}
               </tbody>

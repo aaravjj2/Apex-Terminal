@@ -1,12 +1,12 @@
 # Apex Terminal Context Audit
-Date: 2026-03-03
+Date: 2026-03-04
 
 This document consolidates:
 1. Source-of-truth architecture map
 2. `tasks.md` claims vs current code reality
 3. Prioritized risk map
 
-Scope: repository state as inspected on 2026-03-03.
+Scope: repository state as inspected on 2026-03-04.
 
 ---
 
@@ -19,7 +19,7 @@ Scope: repository state as inspected on 2026-03-03.
   - `frontend/src/ui2/routes.tsx`
 - Current observed scale:
   - UI2 route entries: `244`
-  - UI2 page files matching `*UI2.tsx`: `230`
+  - UI2 page files matching `*UI2.tsx`: `239`
   - Backend API route modules (`phase1/services/api/routes/*.py`): `247`
 
 ### 1.2 Frontend structure (actual)
@@ -35,20 +35,23 @@ Scope: repository state as inspected on 2026-03-03.
   - `frontend/vite.config.ts:29-57`
 
 ### 1.3 Frontend data wiring reality
-- Significant portion of `ui2/hooks` is still stub/self-contained:
-  - `frontend/src/ui2/hooks/useMarketData.ts:9-29`
-  - `frontend/src/ui2/hooks/useOrders.ts:9-35`
-  - `frontend/src/ui2/hooks/usePortfolio.ts:9-45`
-- `useMarketData` defaults to mock mode and auto-generates bars:
-  - `frontend/src/ui2/hooks/useMarketData.ts:303`
-  - `frontend/src/ui2/hooks/useMarketData.ts:315-343`
-- Quantified UI2 page data pattern distribution:
-  - Total UI2 pages: `230`
-  - Pages with `fetch(...)`: `127`
-  - Pages with `"/api/"` string: `129`
-  - Pages with `Math.random`: `63`
-  - Pages with `Math.random` and no `fetch`: `50`
-  - Pages with `fetch` and no `Math.random`: `114`
+- Data wiring is mixed:
+  - `useMarketData` is now real-data oriented and API-backed (`/api/v1/bars`, `/api/market-quote`, `/api/v4/screener/run`):
+    - `frontend/src/ui2/hooks/useMarketData.ts:1-13`
+    - `frontend/src/ui2/hooks/useMarketData.ts:317-406`
+  - `useOrders` and `usePortfolio` still include self-contained stub sections:
+    - `frontend/src/ui2/hooks/useOrders.ts:9-35`
+    - `frontend/src/ui2/hooks/usePortfolio.ts:9-45`
+- Flagship pages now show deterministic, non-random placeholders instead of random generators:
+  - `frontend/src/ui2/pages/DashboardUI2.tsx:65-78`
+  - `frontend/src/ui2/pages/TradingUI2.tsx:173-211`
+- Quantified UI2 page data-pattern distribution:
+  - Total UI2 pages: `239`
+  - Pages with `fetch(...)`: `128`
+  - Pages with `"/api/"` string: `131`
+  - Pages with `Math.random`: `73`
+  - Pages with `Math.random` and no `fetch`: `58`
+  - Pages with `fetch` and no `Math.random`: `113`
 
 ### 1.4 Backend composition (actual)
 - API is assembled in one large include block:
@@ -61,9 +64,10 @@ Scope: repository state as inspected on 2026-03-03.
   - `90` route files include text: `"Generated backend API for the 2-year masterplan"`
 
 ### 1.5 Known integration strengths
-- Autopilot UI endpoint wiring is concrete:
-  - `frontend/src/ui2/pages/AutopilotUI2.tsx:69-77`
+- Autopilot UI endpoint wiring remains concrete:
+  - `frontend/src/ui2/pages/AutopilotUI2.tsx:74-84`
 - Matching backend router for `/api/autopilot/*` exists:
+  - `phase1/services/api/routes/autopilot_v3.py:5-18`
   - `phase1/services/api/routes/autopilot_v3.py:33`
 
 ---
@@ -71,19 +75,18 @@ Scope: repository state as inspected on 2026-03-03.
 ## 2) `tasks.md` Reconciliation (Claim vs Current Reality)
 
 Reference source:
-- `tasks.md:10-97`
+- `tasks.md:48-110`
 
 ### 2.1 Claim: "17 UI2 pages rewritten ... real API calls, no demo data"
 - Claimed in:
   - `tasks.md:24-41`
 - Current evidence:
-  - Dashboard still contains local synthetic generators and `Math.random` paths:
-    - `frontend/src/ui2/pages/DashboardUI2.tsx:64-163`
-  - Trading still contains local synthetic generators and `Math.random` paths:
-    - `frontend/src/ui2/pages/TradingUI2.tsx:198-255`
-  - Hook layer used by many pages still defaults to mock data patterns:
-    - `frontend/src/ui2/hooks/useMarketData.ts:303-343`
-- Reconciliation verdict: **Partially true / drifted**.
+  - `useMarketData` is now API-backed (improvement):
+    - `frontend/src/ui2/hooks/useMarketData.ts:317-406`
+  - However, key supporting domain hooks remain stub-based (`useOrders`, `usePortfolio`):
+    - `frontend/src/ui2/hooks/useOrders.ts:9-35`
+    - `frontend/src/ui2/hooks/usePortfolio.ts:9-45`
+- Reconciliation verdict: **Improved but still partially drifted**.
 
 ### 2.2 Claim: Specific page naming in accomplishment log
 - Claimed names include:
@@ -94,20 +97,18 @@ Reference source:
 
 ### 2.3 Claim: "63/64 Playwright passing" as current validated state
 - Claimed in:
-  - `tasks.md:13`, `tasks.md:50-52`, `tasks.md:75`
+  - `tasks.md:48`, `tasks.md:85-87`, `tasks.md:110`
 - Current code reality:
-  - UI page export barrel references missing modules:
-    - `frontend/src/ui2/pages/index.ts:15,49,75,84,88,111,115`
-  - Missing modules currently include:
-    - `RunsUI2`, `ScoringUI2`, `SandboxRunnerUI2`, `LiquidityUI2`, `RiskNetworkUI2`, `MonteCarloV2UI2`, `EsOpsUI2`
-- Reconciliation verdict: **Not aligned with current tree state**.
+  - No missing exports were detected in `frontend/src/ui2/pages/index.ts` against filesystem at audit time.
+  - The repository is highly active (`166` modified/untracked paths), so the historical passing snapshot in `tasks.md` should be treated as point-in-time, not current proof.
+- Reconciliation verdict: **Historically plausible, not current-state evidence**.
 
 ### 2.4 Claim: Autopilot backend/frontend wired and active
 - Claimed in:
   - `tasks.md:43-47`, `tasks.md:73-74`
 - Current evidence:
   - Frontend calls live autopilot endpoints:
-    - `frontend/src/ui2/pages/AutopilotUI2.tsx:69-77`
+    - `frontend/src/ui2/pages/AutopilotUI2.tsx:74-84`
   - Backend router provides those endpoints:
     - `phase1/services/api/routes/autopilot_v3.py:5-18`, `:33`
 - Reconciliation verdict: **Mostly true**.
@@ -121,78 +122,73 @@ Severity scale:
 - P1: High-risk regression and integrity risk
 - P2: Medium maintainability and operational risk
 
-### P0-1: UI2 export/route integrity break risk
-- Evidence:
-  - Route import set depends on page barrel:
-    - `frontend/src/ui2/routes.tsx:7-70`
-  - Page barrel references missing files:
-    - `frontend/src/ui2/pages/index.ts:15,49,75,84,88,111,115`
-- Impact:
-  - Build/startup can fail, or navigation coverage becomes unreliable.
-
-### P0-2: Frontend/backend API contract mismatch (v4 masterplan pages)
-- Cross-account mismatch example:
-  - Frontend expects:
-    - `/positions`, `/exposure`, `/margin`, `/reconciliation`
-    - `frontend/src/ui2/pages/CrossAccountUI2.tsx:138-141`
+### P1-1: API semantics/documentation drift in v4 UI pages
+- Cross-account has been corrected to backend-aligned endpoints (good):
+  - Frontend fetches:
+    - `frontend/src/ui2/pages/CrossAccountUI2.tsx:137-139`
   - Backend exposes:
-    - `/positions/aggregated`, `/limits`, `/compliance`, etc.
-    - `phase1/services/api/routes/w38_cross_account.py:32-80`
-- Model-router mismatch example:
-  - Frontend expects:
-    - `/routes`, `/balancing`, `/fallbacks`, `/cost`, `/audit`
+    - `phase1/services/api/routes/w38_cross_account.py:11-44`
+- Model Router fetches backend-aligned endpoints, but page hints/comments still reference old endpoint names (`/routes`, `/balancing`, `/fallbacks`, `/cost`, `/audit`):
+  - Fetch calls:
     - `frontend/src/ui2/pages/ModelRouterUI2.tsx:137-141`
-  - Backend exposes:
-    - `/models`, `/routing-table`, `/route`, `/costs`, `/latency`
-    - `phase1/services/api/routes/w43_model_router.py:11-80`
+  - Old hints in UI empty states/comments:
+    - `frontend/src/ui2/pages/ModelRouterUI2.tsx:5`
+    - `frontend/src/ui2/pages/ModelRouterUI2.tsx:251,277,303,328,361`
 - Impact:
-  - UI shows persistent empty/error states while appearing "wired."
+  - Operational confusion and false troubleshooting paths even when backend wiring is correct.
 
-### P1-1: Real-vs-mock fidelity gap in flagship experiences
+### P1-2: Real-vs-live fidelity still uneven across UI2 domains
 - Evidence:
-  - `DashboardUI2` and `TradingUI2` still synthesize data heavily:
-    - `frontend/src/ui2/pages/DashboardUI2.tsx:64-163`
-    - `frontend/src/ui2/pages/TradingUI2.tsx:198-255`
-  - Shared hook layer still mock-first in key domains:
-    - `frontend/src/ui2/hooks/useMarketData.ts:303-343`
+  - `useMarketData` now real-data oriented:
+    - `frontend/src/ui2/hooks/useMarketData.ts:1-13`
+  - `useOrders` and `usePortfolio` remain stub-heavy foundations:
     - `frontend/src/ui2/hooks/useOrders.ts:9-35`
     - `frontend/src/ui2/hooks/usePortfolio.ts:9-45`
+  - System-wide signal still shows many random-driven pages (`73`, with `58` random-no-fetch).
 - Impact:
-  - Demo behavior diverges from backend truth and can mask integration failures.
+  - Parts of UI may appear integrated while behavior remains synthetic in certain domains.
 
-### P1-2: Repository hygiene and drift risk
+### P1-3: Repository volatility risk
 - Evidence:
-  - Current modified/untracked entries in worktree snapshot: `92`
-  - `*_Zone.Identifier` artifacts in repo: `1188` (31 under `frontend/src/ui2/pages`)
-  - Backup artifacts (`.old`, `.bak`) under frontend src: `18` total (`17` in pages)
+  - Current modified/untracked entries in worktree snapshot: `166`
 - Impact:
-  - Increased merge conflict, accidental import, and review noise risk.
+  - Increased regression probability, difficult attribution, and harder confidence in one-shot validation.
 
-### P1-3: Encoding/mojibake contamination in UI files
+### P1-4: Encoding/mojibake contamination in UI copy
 - Evidence examples:
-  - `frontend/src/ui2/pages/ModelRouterUI2.tsx:2`
-  - `frontend/src/ui2/pages/CrossAccountUI2.tsx:2`
-  - Multiple files contain garbled text markers (`â€”`, `âš`, BOM artifacts).
+  - `frontend/src/ui2/pages/EntitlementsUI2.tsx:2`
+  - `frontend/src/ui2/pages/ReleaseQualityUI2.tsx:2`
+  - `frontend/src/ui2/pages/BrokerScoringUI2.tsx:2`
 - Impact:
-  - UI copy quality degradation and potential toolchain/editor inconsistencies.
+  - UI text quality issues and maintainability friction.
 
-### P2-1: Backend include complexity and duplicate registration
+### P2-1: Historical claims in `tasks.md` lag current codebase state
 - Evidence:
-  - duplicate websocket include:
-    - `phase1/services/api/main.py:400`
-    - `phase1/services/api/main.py:401`
+  - `tasks.md` retains point-in-time test and completion statements:
+    - `tasks.md:48`, `tasks.md:85-87`, `tasks.md:93`, `tasks.md:110`
 - Impact:
-  - Debugging complexity and potential duplicate event behavior.
+  - Team decision-making can rely on stale confidence signals if not cross-checked.
 
 ---
 
-## 4) Consolidated Conclusion
+## 4) Resolved Since Last Audit
 
-The project has substantial implemented surface area and a broad route/module scaffold, but the current branch state shows active migration drift:
-- Route/export integrity is not fully stable.
-- Several frontend pages and hooks remain synthetic or mock-first.
-- Many v4 page contracts do not match backend route shapes.
-- Task log claims represent a prior point-in-time and are not fully synchronized with current files.
+The following issues from the prior audit are now resolved in current inspection:
+- Missing UI2 export-file mismatch is resolved:
+  - No missing exports detected from `frontend/src/ui2/pages/index.ts` to filesystem.
+- Duplicate `autopilot_ws_router` include is resolved:
+  - Single include now at `phase1/services/api/main.py:400`.
+- Hygiene artifact counts improved:
+  - `*_Zone.Identifier` files in repo: `0`.
+  - `*.old`/`*.bak` under `frontend/src`: `0`.
 
-Autopilot is the strongest integrated vertical in current state; most other domains need contract reconciliation and stabilization before claims of broad parity can be treated as current.
+---
 
+## 5) Consolidated Conclusion
+
+The codebase remains large and highly active, but several concrete blockers from the previous audit have been fixed (export integrity, duplicate websocket include, and artifact-file hygiene).
+
+Current risk has shifted from hard compile breakpoints toward integration fidelity and semantic consistency:
+- Backend/frontend endpoint semantics are improving, but some UI hints/comments remain outdated.
+- Core data plumbing is mixed: `useMarketData` is materially improved, while `useOrders`/`usePortfolio` still rely on stub scaffolding.
+- Given current branch churn (`166` changed/untracked entries), confidence should come from targeted re-validation rather than historical status statements.

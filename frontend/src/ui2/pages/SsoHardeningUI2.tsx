@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// SsoHardeningUI2 â€” Bloomberg APEX SSO Hardening terminal
+﻿// SsoHardeningUI2 — Bloomberg APEX SSO Hardening terminal
 // Enterprise SSO hardening, MFA enforcement, session management, federation analytics
 // Tabs: SESSIONS | MFA | PROVIDERS | POLICIES | AUDIT
 // APIs: /api/v4/sso/sessions, /mfa, /providers, /policies, /audit
@@ -230,7 +230,7 @@ export function SsoHardeningUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>SSO HARDENING â€” MFA ENFORCEMENT + SESSION MANAGEMENT + FEDERATION ANALYTICS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>SSO HARDENING — MFA ENFORCEMENT + SESSION MANAGEMENT + FEDERATION ANALYTICS</span>
         {suspiciousSessions > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {suspiciousSessions} SUSPICIOUS</span>}
         {mfaNotVerified > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {mfaNotVerified} MFA UNVERIFIED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -257,7 +257,7 @@ export function SsoHardeningUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Session ID</Th><Th>Email</Th><Th>Provider</Th><Th>Device</Th><Th>Status</Th><Th>MFA</Th><Th>Method</Th><Th>Risk</Th><Th>Location</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {sessions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sessions â€” check /api/v4/sso/sessions</td></tr>}
+                {sessions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sessions</td></tr>}
                 {sessions.sort((a, b) => a.status === 'suspicious' ? -1 : 0).map((s, i) => (
                   <tr key={i} style={{ background: s.status === 'suspicious' ? RED + '0a' : !s.mfaVerified && s.status === 'active' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.sessionId.slice(0, 14)}â€¦</Td>
@@ -268,7 +268,7 @@ export function SsoHardeningUI2() {
                     <Td mono col={s.mfaVerified ? GREEN : RED}>{s.mfaVerified ? 'âœ“' : 'âœ—'}</Td>
                     <Td><MfaBadge m={s.mfaMethod} /></Td>
                     <Td><RiskBar score={s.riskScore} /></Td>
-                    <Td mono col={SUBTLE}>{s.geoLocation || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{s.geoLocation || '—'}</Td>
                     <Td mono col={SUBTLE}>{s.expiresAt}</Td>
                   </tr>
                 ))}
@@ -282,17 +282,17 @@ export function SsoHardeningUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Enrollment ID</Th><Th>Email</Th><Th>Method</Th><Th>Status</Th><Th>Primary</Th><Th right>Failures</Th><Th>Verified At</Th><Th>Last Used</Th></tr></thead>
               <tbody>
-                {mfaEnrollments.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No MFA enrollments â€” check /api/v4/sso/mfa</td></tr>}
+                {mfaEnrollments.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No MFA enrollments</td></tr>}
                 {mfaEnrollments.sort((a, b) => b.failureCount - a.failureCount).map((m, i) => (
                   <tr key={i} style={{ background: m.status === 'revoked' ? RED + '0a' : m.failureCount > 3 ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{m.enrollmentId}</Td>
                     <Td mono col={TEXT}>{m.email}</Td>
                     <Td><MfaBadge m={m.method} /></Td>
                     <Td><StatusBadge s={m.status} /></Td>
-                    <Td mono col={m.isPrimary ? AMBER : SUBTLE}>{m.isPrimary ? 'PRIMARY' : 'â€”'}</Td>
+                    <Td mono col={m.isPrimary ? AMBER : SUBTLE}>{m.isPrimary ? 'PRIMARY' : '—'}</Td>
                     <Td right mono col={m.failureCount > 3 ? RED : TEXT}>{m.failureCount}</Td>
-                    <Td mono col={SUBTLE}>{m.verifiedAt || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{m.lastUsedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{m.verifiedAt || '—'}</Td>
+                    <Td mono col={SUBTLE}>{m.lastUsedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -305,19 +305,19 @@ export function SsoHardeningUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Provider ID</Th><Th>Name</Th><Th>Protocol</Th><Th>Status</Th><Th>Domain</Th><Th right>Users</Th><Th right>Error %</Th><Th>MFA Enforced</Th><Th>Session min</Th><Th>Last Sync</Th></tr></thead>
               <tbody>
-                {providers.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No providers â€” check /api/v4/sso/providers</td></tr>}
+                {providers.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No providers</td></tr>}
                 {providers.sort((a, b) => a.status === 'degraded' ? -1 : 0).map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'degraded' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.providerId}</Td>
                     <Td mono col={TEXT}>{p.name}</Td>
                     <Td><ProtocolBadge p={p.protocol} /></Td>
                     <Td><StatusBadge s={p.status} /></Td>
-                    <Td mono col={SUBTLE}>{p.domain || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.domain || '—'}</Td>
                     <Td right mono col={TEXT}>{p.usersCount.toLocaleString()}</Td>
                     <Td right mono col={p.errorRatePct > 1 ? RED : GREEN}>{p.errorRatePct.toFixed(2)}%</Td>
                     <Td mono col={p.mfaEnforced ? GREEN : RED}>{p.mfaEnforced ? 'âœ“ YES' : 'âœ— NO'}</Td>
                     <Td right mono col={TEXT}>{p.sessionDurationMinutes}</Td>
-                    <Td mono col={SUBTLE}>{p.lastSyncAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.lastSyncAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -330,7 +330,7 @@ export function SsoHardeningUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Policy ID</Th><Th>Name</Th><Th>Scope</Th><Th>Status</Th><Th>MFA Required</Th><Th>Device Trust</Th><Th right>Max Hours</Th><Th right>Idle min</Th><Th right>Risk Threshold</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {policies.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies â€” check /api/v4/sso/policies</td></tr>}
+                {policies.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies</td></tr>}
                 {policies.map((p, i) => (
                   <tr key={i} style={{ opacity: p.status === 'disabled' ? 0.5 : 1 }}>
                     <Td mono col={AMBER}>{p.policyId}</Td>
@@ -338,11 +338,11 @@ export function SsoHardeningUI2() {
                     <Td mono col={BLUE}>{p.scope.toUpperCase()}</Td>
                     <Td><StatusBadge s={p.status} /></Td>
                     <Td mono col={TEXT}>{p.mfaRequired}</Td>
-                    <Td mono col={p.deviceTrustRequired ? GREEN : SUBTLE}>{p.deviceTrustRequired ? 'âœ“' : 'â€”'}</Td>
+                    <Td mono col={p.deviceTrustRequired ? GREEN : SUBTLE}>{p.deviceTrustRequired ? 'âœ“' : '—'}</Td>
                     <Td right mono col={TEXT}>{p.sessionMaxHours}</Td>
                     <Td right mono col={TEXT}>{p.idleTimeoutMinutes}</Td>
                     <Td right mono col={AMBER}>{(p.riskThreshold * 100).toFixed(0)}</Td>
-                    <Td mono col={SUBTLE}>{p.lastUpdated || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.lastUpdated || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -355,14 +355,14 @@ export function SsoHardeningUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>User ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v4/sso/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={BLUE}>{a.userId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

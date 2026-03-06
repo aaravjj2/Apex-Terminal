@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// LatencyBudgetUI2 â€” Bloomberg LATB latency budget engine terminal
+﻿// LatencyBudgetUI2 — Bloomberg LATB latency budget engine terminal
 // Service budgets, SLO tracking, hot path mapping, violations, audit
 // Tabs: BUDGETS | SLOs | HOT PATHS | VIOLATIONS | AUDIT
 // APIs: /api/v4/latency-budget/budgets, /slos, /hot-paths, /violations, /audit
@@ -231,7 +231,7 @@ export function LatencyBudgetUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>LATB</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>LATENCY BUDGET ENGINE â€” SLO TRACKING + HOT PATH IDENTIFICATION + VIOLATION MONITORING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>LATENCY BUDGET ENGINE — SLO TRACKING + HOT PATH IDENTIFICATION + VIOLATION MONITORING</span>
         {breaching > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {breaching} BREACHING</span>}
         {sloBreached > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {sloBreached} SLO BREACHED</span>}
         {activeViolations > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeViolations} ACTIVE VIOLATIONS</span>}
@@ -259,7 +259,7 @@ export function LatencyBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Service</Th><Th>Endpoint</Th><Th>Tier</Th><Th>Utilization</Th><Th>Status</Th><Th right>Budget ms</Th><Th right>Consumed ms</Th><Th right>Remaining ms</Th><Th right>p50</Th><Th right>p95</Th><Th right>p99</Th><Th>Owner</Th></tr></thead>
               <tbody>
-                {budgets.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No budgets â€” check /api/v4/latency-budget/budgets</td></tr>}
+                {budgets.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No budgets</td></tr>}
                 {budgets.sort((a, b) => b.utilizationPct - a.utilizationPct).map((b, i) => (
                   <tr key={i} style={{ background: b.status === 'exhausted' ? RED + '0a' : b.status === 'breaching' ? ORANGE + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.service}</Td>
@@ -286,7 +286,7 @@ export function LatencyBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>SLO ID</Th><Th>Service</Th><Th>Type</Th><Th>Status</Th><Th right>Target %</Th><Th right>Current %</Th><Th right>Error Budget</Th><Th>Burn Rate</Th><Th right>Window</Th><Th>Alert</Th><Th>Owner</Th></tr></thead>
               <tbody>
-                {slos.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No SLOs â€” check /api/v4/latency-budget/slos</td></tr>}
+                {slos.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No SLOs</td></tr>}
                 {slos.sort((a, b) => {
                   const ord: Record<string, number> = { breached: 0, 'at-risk': 1, met: 2 }
                   return (ord[a.status] ?? 3) - (ord[b.status] ?? 3)
@@ -315,7 +315,7 @@ export function LatencyBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Service</Th><Th>Path</Th><Th>Critical</Th><Th right>Avg ms</Th><Th right>p99 ms</Th><Th right>Calls/min</Th><Th right>Contribution</Th><Th>Bottleneck</Th><Th>Optimized</Th></tr></thead>
               <tbody>
-                {hotPaths.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No hot paths â€” check /api/v4/latency-budget/hot-paths</td></tr>}
+                {hotPaths.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No hot paths</td></tr>}
                 {hotPaths.sort((a, b) => b.contributionPct - a.contributionPct).map((h, i) => (
                   <tr key={i} style={{ background: h.critical && !h.optimizationApplied ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{h.service}</Td>
@@ -325,7 +325,7 @@ export function LatencyBudgetUI2() {
                     <Td right mono col={h.p99Ms > 500 ? RED : h.p99Ms > 200 ? AMBER : SUBTLE}>{h.p99Ms.toFixed(2)}</Td>
                     <Td right mono col={h.callsPerMin > 1000 ? ORANGE : SUBTLE}>{h.callsPerMin.toFixed(0)}</Td>
                     <Td right mono col={h.contributionPct > 20 ? RED : h.contributionPct > 10 ? AMBER : SUBTLE}>{h.contributionPct.toFixed(1)}%</Td>
-                    <Td mono col={h.bottleneck ? ORANGE : SUBTLE}>{h.bottleneck || 'â€”'}</Td>
+                    <Td mono col={h.bottleneck ? ORANGE : SUBTLE}>{h.bottleneck || '—'}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: h.optimizationApplied ? GREEN : SUBTLE }}>{h.optimizationApplied ? 'APPLIED' : 'PENDING'}</span></Td>
                   </tr>
                 ))}
@@ -339,7 +339,7 @@ export function LatencyBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Violation ID</Th><Th>Service</Th><Th>Endpoint</Th><Th>Severity</Th><Th>Status</Th><Th right>Exceeded ms</Th><Th>Duration</Th><Th right>Users</Th><Th>Detected</Th><Th>Resolved</Th></tr></thead>
               <tbody>
-                {violations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations â€” check /api/v4/latency-budget/violations</td></tr>}
+                {violations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations</td></tr>}
                 {violations.sort((a, b) => {
                   const ord: Record<string, number> = { critical: 0, major: 1, minor: 2 }
                   return (ord[a.severity] ?? 3) - (ord[b.severity] ?? 3)
@@ -351,10 +351,10 @@ export function LatencyBudgetUI2() {
                     <Td><SevBadge s={v.severity} /></Td>
                     <Td><StatusBadge2 s={v.status} /></Td>
                     <Td right mono col={RED}>{v.exceededMs.toFixed(1)}</Td>
-                    <Td mono col={ORANGE}>{v.duration || 'â€”'}</Td>
+                    <Td mono col={ORANGE}>{v.duration || '—'}</Td>
                     <Td right mono col={v.affectedUsers > 0 ? RED : SUBTLE}>{v.affectedUsers.toLocaleString()}</Td>
                     <Td mono col={SUBTLE}>{v.detectedAt}</Td>
-                    <Td mono col={v.resolvedAt ? GREEN : SUBTLE}>{v.resolvedAt || 'â€”'}</Td>
+                    <Td mono col={v.resolvedAt ? GREEN : SUBTLE}>{v.resolvedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -367,7 +367,7 @@ export function LatencyBudgetUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Service</Th><Th>Action</Th><Th>Actor</Th><Th right>Old ms</Th><Th right>New ms</Th><Th>Outcome</Th><Th>Notes</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/latency-budget/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -377,7 +377,7 @@ export function LatencyBudgetUI2() {
                     <Td right mono col={SUBTLE}>{a.previousBudgetMs.toFixed(0)}</Td>
                     <Td right mono col={a.newBudgetMs < a.previousBudgetMs ? AMBER : GREEN}>{a.newBudgetMs.toFixed(0)}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.notes || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.notes || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

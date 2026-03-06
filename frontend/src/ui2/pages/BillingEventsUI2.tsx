@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// BillingEventsUI2 â€” Bloomberg APEX billing events terminal
+﻿// BillingEventsUI2 — Bloomberg APEX billing events terminal
 // Billing event processing, invoice generation, payment tracking, reconciliation
 // Tabs: EVENTS | INVOICES | PAYMENTS | RECONCILIATION | AUDIT
 // APIs: /api/v4/billing/events, /invoices, /payments, /reconciliation, /audit
@@ -201,7 +201,7 @@ export function BillingEventsUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>BILLING EVENTS â€” EVENT PROCESSING + INVOICE GENERATION + PAYMENT TRACKING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>BILLING EVENTS — EVENT PROCESSING + INVOICE GENERATION + PAYMENT TRACKING</span>
         {failed > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {failed} FAILED EVENTS</span>}
         {overdue > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {overdue} OVERDUE</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -228,7 +228,7 @@ export function BillingEventsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Event ID</Th><Th>Type</Th><Th>Entity</Th><Th>Entity Type</Th><Th right>Amount</Th><Th>Currency</Th><Th>Status</Th><Th>Period</Th><Th>Invoice</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {events.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events â€” check /api/v4/billing/events</td></tr>}
+                {events.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events</td></tr>}
                 {events.sort((a, b) => (a.status === 'failed' ? -1 : 1) - (b.status === 'failed' ? -1 : 1)).map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'failed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.eventId}</Td>
@@ -239,7 +239,7 @@ export function BillingEventsUI2() {
                     <Td mono col={SUBTLE}>{e.currency}</Td>
                     <Td><StatusBadge2 s={e.status} /></Td>
                     <Td mono col={SUBTLE}>{e.billingPeriod}</Td>
-                    <Td mono col={e.invoiceId ? BLUE : SUBTLE}>{e.invoiceId || 'â€”'}</Td>
+                    <Td mono col={e.invoiceId ? BLUE : SUBTLE}>{e.invoiceId || '—'}</Td>
                     <Td mono col={SUBTLE}>{e.createdAt}</Td>
                   </tr>
                 ))}
@@ -253,7 +253,7 @@ export function BillingEventsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Invoice ID</Th><Th>Entity</Th><Th>Period</Th><Th>Status</Th><Th right>Subtotal</Th><Th right>Tax</Th><Th right>Total</Th><Th right>Items</Th><Th>Due Date</Th><Th>Paid</Th></tr></thead>
               <tbody>
-                {invoices.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No invoices â€” check /api/v4/billing/invoices</td></tr>}
+                {invoices.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No invoices</td></tr>}
                 {invoices.sort((a, b) => (a.status === 'overdue' ? -1 : 1) - (b.status === 'overdue' ? -1 : 1)).map((inv, i) => (
                   <tr key={i} style={{ background: inv.status === 'overdue' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{inv.invoiceId}</Td>
@@ -265,7 +265,7 @@ export function BillingEventsUI2() {
                     <Td right mono col={TEXT}>{fmtCcy(inv.total, inv.currency)}</Td>
                     <Td right mono col={SUBTLE}>{inv.lineItems}</Td>
                     <Td mono col={inv.status === 'overdue' ? RED : SUBTLE}>{inv.dueDate}</Td>
-                    <Td mono col={SUBTLE}>{inv.paidAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{inv.paidAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -278,7 +278,7 @@ export function BillingEventsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Payment ID</Th><Th>Invoice</Th><Th>Entity</Th><Th right>Amount</Th><Th>Method</Th><Th>Status</Th><Th>Ref</Th><Th>Initiated</Th><Th>Cleared</Th></tr></thead>
               <tbody>
-                {payments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No payments â€” check /api/v4/billing/payments</td></tr>}
+                {payments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No payments</td></tr>}
                 {payments.sort((a, b) => (a.status === 'failed' ? -1 : 1) - (b.status === 'failed' ? -1 : 1)).map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'failed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.paymentId}</Td>
@@ -289,7 +289,7 @@ export function BillingEventsUI2() {
                     <Td><StatusBadge2 s={p.status} /></Td>
                     <Td mono col={SUBTLE}>{p.transactionRef}</Td>
                     <Td mono col={SUBTLE}>{p.initiatedAt}</Td>
-                    <Td mono col={SUBTLE}>{p.clearedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.clearedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -302,7 +302,7 @@ export function BillingEventsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Recon ID</Th><Th>Entity</Th><Th>Period</Th><Th>Status</Th><Th right>Invoiced</Th><Th right>Collected</Th><Th right>Variance</Th><Th right>Var %</Th><Th>Reconciled</Th></tr></thead>
               <tbody>
-                {reconciliation.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reconciliation data â€” check /api/v4/billing/reconciliation</td></tr>}
+                {reconciliation.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reconciliation data</td></tr>}
                 {reconciliation.sort((a, b) => Math.abs(b.variancePct) - Math.abs(a.variancePct)).map((r, i) => (
                   <tr key={i} style={{ background: r.status === 'shortfall' ? RED + '0a' : r.status === 'surplus' ? GREEN + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.reconId}</Td>
@@ -313,7 +313,7 @@ export function BillingEventsUI2() {
                     <Td right mono col={SUBTLE}>{fmtCcy(r.collectedAmount)}</Td>
                     <Td right mono col={r.variance < 0 ? RED : r.variance > 0 ? ORANGE : GREEN}>{fmtCcy(Math.abs(r.variance))}</Td>
                     <Td right mono col={Math.abs(r.variancePct) > 5 ? RED : Math.abs(r.variancePct) > 2 ? AMBER : GREEN}>{r.variancePct.toFixed(2)}%</Td>
-                    <Td mono col={SUBTLE}>{r.reconciledAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.reconciledAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -326,7 +326,7 @@ export function BillingEventsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Entity</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/billing/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -334,7 +334,7 @@ export function BillingEventsUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

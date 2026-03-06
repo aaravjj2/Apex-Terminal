@@ -390,7 +390,7 @@ export function FactorModelUI2() {
               <tbody>
                 {exposures.length === 0 && (
                   <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                    No exposure data — check /api/v4/factor-model/exposures
+                    No exposure data
                   </td></tr>
                 )}
                 {exposures.sort((a, b) => b.totalRisk - a.totalRisk).map(e => (
@@ -429,7 +429,7 @@ export function FactorModelUI2() {
                     </div>
                   )
                 })}
-                {riskDecomp.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No risk data — check /api/v4/factor-model/risk</div>}
+                {riskDecomp.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No risk data</div>}
               </div>
               <div>
                 <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
@@ -460,7 +460,7 @@ export function FactorModelUI2() {
             <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 10 }}>Factor covariance matrix — green = positive correlation, red = negative</div>
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
               <CovarianceHeatmap rows={covariance} />
-              {covariance.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No covariance data — check /api/v4/factor-model/covariance</div>}
+              {covariance.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No covariance data</div>}
             </div>
           </>
         )}
@@ -479,7 +479,7 @@ export function FactorModelUI2() {
                 <tbody>
                   {stress.length === 0 && (
                     <tr><td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No stress scenarios — check /api/v4/factor-model/stress
+                      No stress scenarios
                     </td></tr>
                   )}
                   {stress.sort((a, b) => a.portfolioImpact - b.portfolioImpact).map((s, i) => (

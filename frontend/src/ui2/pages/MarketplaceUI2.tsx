@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// MarketplaceUI2 â€” Bloomberg MKTX extension marketplace terminal
+﻿// MarketplaceUI2 — Bloomberg MKTX extension marketplace terminal
 // Listing discovery, reviews, publishers, featured rankings, audit
 // Tabs: LISTINGS | DISCOVERY | REVIEWS | PUBLISHERS | AUDIT
 // APIs: /api/v4/marketplace/listings, /discovery, /reviews, /publishers, /audit
@@ -231,7 +231,7 @@ export function MarketplaceUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>MKTX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>EXTENSION MARKETPLACE â€” LISTING + DISCOVERY + REVIEWS + PUBLISHER MANAGEMENT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EXTENSION MARKETPLACE — LISTING + DISCOVERY + REVIEWS + PUBLISHER MANAGEMENT</span>
         {suspended > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {suspended} SUSPENDED</span>}
         {flaggedReviews > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {flaggedReviews} FLAGGED REVIEWS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -258,7 +258,7 @@ export function MarketplaceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Publisher</Th><Th>Category</Th><Th>Status</Th><Th>Pricing</Th><Th right>Price</Th><Th right>Downloads</Th><Th>Rating</Th><Th right>Reviews</Th><Th>Featured</Th><Th>Version</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {listings.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No listings â€” check /api/v4/marketplace/listings</td></tr>}
+                {listings.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No listings</td></tr>}
                 {listings.sort((a, b) => b.downloads - a.downloads).map((l, i) => (
                   <tr key={i} style={{ background: l.status === 'suspended' ? RED + '0a' : l.featured ? AMBER + '05' : 'transparent' }}>
                     <Td mono col={AMBER}>{l.name}</Td>
@@ -270,7 +270,7 @@ export function MarketplaceUI2() {
                     <Td right mono col={SUBTLE}>{l.downloads.toLocaleString()}</Td>
                     <Td><StarRating r={l.rating} /></Td>
                     <Td right mono col={SUBTLE}>{l.reviews.toLocaleString()}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: l.featured ? AMBER : SUBTLE }}>{l.featured ? 'â˜… FEATURED' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: l.featured ? AMBER : SUBTLE }}>{l.featured ? 'â˜… FEATURED' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{l.version}</Td>
                     <Td mono col={SUBTLE}>{l.updatedAt}</Td>
                   </tr>
@@ -285,15 +285,15 @@ export function MarketplaceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Category</Th><Th>Score</Th><Th>Compatibility</Th><Th>Trending</Th><Th>New</Th><Th right>Rank Change</Th><Th>Reason</Th></tr></thead>
               <tbody>
-                {discovery.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No discovery data â€” check /api/v4/marketplace/discovery</td></tr>}
+                {discovery.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No discovery data</td></tr>}
                 {discovery.sort((a, b) => b.recommendationScore - a.recommendationScore).map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.name}</Td>
                     <Td mono col={PURPLE}>{d.category}</Td>
                     <Td><ScoreBar score={d.recommendationScore} col={BLUE} /></Td>
                     <Td><ScoreBar score={d.compatibilityScore} /></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.trending ? ORANGE : SUBTLE }}>{d.trending ? 'â–² TRENDING' : 'â€”'}</span></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.newlyAdded ? GREEN : SUBTLE }}>{d.newlyAdded ? 'â˜… NEW' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.trending ? ORANGE : SUBTLE }}>{d.trending ? 'â–² TRENDING' : '—'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.newlyAdded ? GREEN : SUBTLE }}>{d.newlyAdded ? 'â˜… NEW' : '—'}</span></Td>
                     <Td right mono col={d.rankChange > 0 ? GREEN : d.rankChange < 0 ? RED : SUBTLE}>{d.rankChange > 0 ? `+${d.rankChange}` : d.rankChange}</Td>
                     <Td mono col={SUBTLE}>{d.reason}</Td>
                   </tr>
@@ -308,7 +308,7 @@ export function MarketplaceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Review ID</Th><Th>Listing</Th><Th>Reviewer</Th><Th>Rating</Th><Th>Status</Th><Th>Verified</Th><Th right>Helpful</Th><Th>Title</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews â€” check /api/v4/marketplace/reviews</td></tr>}
+                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews</td></tr>}
                 {reviews.sort((a, b) => {
                   const p: Record<string, number> = { flagged: 0, pending: 1, rejected: 2, published: 3 }
                   return (p[a.status] ?? 4) - (p[b.status] ?? 4)
@@ -319,9 +319,9 @@ export function MarketplaceUI2() {
                     <Td mono col={TEXT}>{r.reviewer}</Td>
                     <Td><StarRating r={r.rating} /></Td>
                     <Td><StatusBadge2 s={r.status} /></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.verified ? GREEN : SUBTLE }}>{r.verified ? 'âœ“ VERIFIED' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.verified ? GREEN : SUBTLE }}>{r.verified ? 'âœ“ VERIFIED' : '—'}</span></Td>
                     <Td right mono col={r.helpfulVotes > 0 ? GREEN : SUBTLE}>{r.helpfulVotes}</Td>
-                    <Td mono col={TEXT}>{r.title ? r.title.slice(0, 35) + (r.title.length > 35 ? 'â€¦' : '') : 'â€”'}</Td>
+                    <Td mono col={TEXT}>{r.title ? r.title.slice(0, 35) + (r.title.length > 35 ? 'â€¦' : '') : '—'}</Td>
                     <Td mono col={SUBTLE}>{r.createdAt}</Td>
                   </tr>
                 ))}
@@ -335,7 +335,7 @@ export function MarketplaceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Publisher ID</Th><Th>Name</Th><Th>Trust</Th><Th>Verified</Th><Th right>Listings</Th><Th right>Active</Th><Th right>Downloads</Th><Th>Rating</Th><Th right>Revenue</Th><Th>Joined</Th></tr></thead>
               <tbody>
-                {publishers.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No publishers â€” check /api/v4/marketplace/publishers</td></tr>}
+                {publishers.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No publishers</td></tr>}
                 {publishers.sort((a, b) => b.totalDownloads - a.totalDownloads).map((p, i) => (
                   <tr key={i} style={{ background: p.trustLevel === 'suspended' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.publisherId}</Td>
@@ -346,7 +346,7 @@ export function MarketplaceUI2() {
                     <Td right mono col={GREEN}>{p.activeListings}</Td>
                     <Td right mono col={SUBTLE}>{p.totalDownloads.toLocaleString()}</Td>
                     <Td><StarRating r={p.avgRating} /></Td>
-                    <Td right mono col={p.revenue > 0 ? GREEN : SUBTLE}>{p.revenue > 0 ? `$${p.revenue.toLocaleString()}` : 'â€”'}</Td>
+                    <Td right mono col={p.revenue > 0 ? GREEN : SUBTLE}>{p.revenue > 0 ? `$${p.revenue.toLocaleString()}` : '—'}</Td>
                     <Td mono col={SUBTLE}>{p.joinedAt}</Td>
                   </tr>
                 ))}
@@ -360,7 +360,7 @@ export function MarketplaceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Listing</Th><Th>Action</Th><Th>Actor</Th><Th>From</Th><Th>To</Th><Th>Outcome</Th><Th>Notes</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/marketplace/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -370,7 +370,7 @@ export function MarketplaceUI2() {
                     <Td mono col={SUBTLE}>{a.previousStatus}</Td>
                     <Td mono col={TEXT}>{a.newStatus}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.notes || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.notes || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

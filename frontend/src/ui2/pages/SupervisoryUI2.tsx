@@ -237,7 +237,7 @@ export function SupervisoryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Review ID</Th><Th>Subject</Th><Th>Category</Th><Th>Priority</Th><Th>Status</Th><Th>Supervisor</Th><Th>Reviewee</Th><Th right>Days Open</Th><Th right>Flags</Th><Th>Due Date</Th></tr></thead>
               <tbody>
-                {reviews.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews — check /api/v4/supervisory/reviews</td></tr>}
+                {reviews.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews</td></tr>}
                 {reviews.sort((a, b) => b.daysOpen - a.daysOpen).map((r, i) => (
                   <tr key={i} style={{ background: r.priority === 'critical' ? RED + '0a' : r.status === 'escalated' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.reviewId}</Td>
@@ -262,7 +262,7 @@ export function SupervisoryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>KPI Name</Th><Th>Category</Th><Th>Status</Th><Th>Trend</Th><Th right>Current</Th><Th right>Target</Th><Th right>Red Line</Th><Th>Unit</Th><Th>Period</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {kpis.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No KPIs — check /api/v4/supervisory/kpis</td></tr>}
+                {kpis.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No KPIs</td></tr>}
                 {kpis.sort((a, b) => (b.status === 'breach' ? 1 : 0) - (a.status === 'breach' ? 1 : 0)).map((k, i) => (
                   <tr key={i} style={{ background: k.status === 'breach' ? RED + '0a' : k.status === 'warning' ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{k.name}</Td>
@@ -287,7 +287,7 @@ export function SupervisoryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>ID</Th><Th>Review ID</Th><Th>Reason</Th><Th>Severity</Th><Th>Status</Th><Th>Escalated To</Th><Th>By</Th><Th right>Days Open</Th><Th>Reg Notif</Th><Th>Target</Th></tr></thead>
               <tbody>
-                {escalations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No escalations — check /api/v4/supervisory/escalations</td></tr>}
+                {escalations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No escalations</td></tr>}
                 {escalations.sort((a, b) => (a.severity === 'critical' ? -1 : 1) - (b.severity === 'critical' ? -1 : 1)).map((e, i) => (
                   <tr key={i} style={{ background: e.severity === 'critical' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.escalationId}</Td>
@@ -312,7 +312,7 @@ export function SupervisoryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Alert ID</Th><Th>Type</Th><Th>Entity</Th><Th>Severity</Th><Th>Status</Th><Th>Description</Th><Th>Source</Th><Th>Assigned To</Th><Th>Detected</Th></tr></thead>
               <tbody>
-                {surveillance.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts — check /api/v4/supervisory/surveillance</td></tr>}
+                {surveillance.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts</td></tr>}
                 {surveillance.sort((a, b) => (a.severity === 'critical' ? -1 : 1) - (b.severity === 'critical' ? -1 : 1)).map((s, i) => (
                   <tr key={i} style={{ background: s.severity === 'critical' ? RED + '0a' : s.status === 'investigating' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.alertId}</Td>
@@ -336,7 +336,7 @@ export function SupervisoryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Review ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log — check /api/v4/supervisory/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

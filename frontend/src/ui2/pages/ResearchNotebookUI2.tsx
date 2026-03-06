@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ResearchNotebookUI2 â€” Bloomberg APEX research notebook terminal
+﻿// ResearchNotebookUI2 — Bloomberg APEX research notebook terminal
 // Collaborative notebooks, code execution, version management, sharing
 // Tabs: NOTEBOOKS | CELLS | EXECUTIONS | SHARING | AUDIT
 // APIs: /api/v4/notebooks/notebooks, /cells, /executions, /sharing, /audit
@@ -214,7 +214,7 @@ export function ResearchNotebookUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH NOTEBOOKS â€” CODE CELLS + EXECUTION + COLLABORATION + VERSION CONTROL</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH NOTEBOOKS — CODE CELLS + EXECUTION + COLLABORATION + VERSION CONTROL</span>
         {runningNbs > 0 && <span style={{ fontSize: 10, color: AMBER }}>⚠‘ {runningNbs} RUNNING</span>}
         {errorNbs > 0 && <span style={{ fontSize: 10, color: RED }}>⚠‘ {errorNbs} ERROR</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -241,7 +241,7 @@ export function ResearchNotebookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Title</Th><Th>Author</Th><Th>Kernel</Th><Th>Status</Th><Th>Version</Th><Th right>Cells</Th><Th right>Code</Th><Th right>Collaborators</Th><Th>Public</Th><Th>Last Modified</Th></tr></thead>
               <tbody>
-                {notebooks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No notebooks â€” check /api/v4/notebooks/notebooks</td></tr>}
+                {notebooks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No notebooks</td></tr>}
                 {notebooks.sort((a, b) => (b.status === 'running' ? 1 : 0) - (a.status === 'running' ? 1 : 0)).map((n, i) => (
                   <tr key={i} style={{ background: n.status === 'error' ? RED + '0a' : n.status === 'running' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{n.title}</Td>
@@ -252,7 +252,7 @@ export function ResearchNotebookUI2() {
                     <Td right mono col={TEXT}>{n.cellCount}</Td>
                     <Td right mono col={BLUE}>{n.codeCellCount}</Td>
                     <Td right mono col={n.collaborators > 0 ? GREEN : SUBTLE}>{n.collaborators}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.isPublic ? ORANGE : SUBTLE }}>{n.isPublic ? 'âœ“ PUBLIC' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.isPublic ? ORANGE : SUBTLE }}>{n.isPublic ? 'âœ“ PUBLIC' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{n.lastModifiedAt}</Td>
                   </tr>
                 ))}
@@ -266,7 +266,7 @@ export function ResearchNotebookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Cell ID</Th><Th>Notebook</Th><Th>Type</Th><Th right>Order</Th><Th>Status</Th><Th right>Exec Time ms</Th><Th>Output Type</Th><Th>Error</Th><Th>Last Run</Th></tr></thead>
               <tbody>
-                {cells.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No cells â€” check /api/v4/notebooks/cells</td></tr>}
+                {cells.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No cells</td></tr>}
                 {cells.sort((a, b) => (a.hasError ? -1 : 1) - (b.hasError ? -1 : 1)).map((c, i) => (
                   <tr key={i} style={{ background: c.hasError ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.cellId}</Td>
@@ -275,9 +275,9 @@ export function ResearchNotebookUI2() {
                     <Td right mono col={SUBTLE}>{c.executionOrder}</Td>
                     <Td><StatusBadge s={c.executionStatus} /></Td>
                     <Td right mono col={c.executionTime > 5000 ? RED : c.executionTime > 1000 ? ORANGE : GREEN}>{c.executionTime.toFixed(0)}</Td>
-                    <Td mono col={PURPLE}>{c.outputType || 'â€”'}</Td>
-                    <Td mono col={RED}>{c.hasError ? (c.errorMessage || 'Error') : 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{c.lastRunAt || 'â€”'}</Td>
+                    <Td mono col={PURPLE}>{c.outputType || '—'}</Td>
+                    <Td mono col={RED}>{c.hasError ? (c.errorMessage || 'Error') : '—'}</Td>
+                    <Td mono col={SUBTLE}>{c.lastRunAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -290,7 +290,7 @@ export function ResearchNotebookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Execution ID</Th><Th>Notebook</Th><Th>Triggered By</Th><Th>Status</Th><Th right>Cells Total</Th><Th right>Completed</Th><Th right>Failed</Th><Th right>Duration s</Th><Th right>Peak MB</Th><Th>Started At</Th></tr></thead>
               <tbody>
-                {executions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No executions â€” check /api/v4/notebooks/executions</td></tr>}
+                {executions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No executions</td></tr>}
                 {executions.map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'failed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.executionId}</Td>
@@ -315,7 +315,7 @@ export function ResearchNotebookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Share ID</Th><Th>Notebook ID</Th><Th>Shared With</Th><Th>Permission</Th><Th>Shared At</Th><Th>Expires</Th><Th>Last Accessed</Th></tr></thead>
               <tbody>
-                {shares.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No shares â€” check /api/v4/notebooks/sharing</td></tr>}
+                {shares.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No shares</td></tr>}
                 {shares.map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.shareId}</Td>
@@ -323,8 +323,8 @@ export function ResearchNotebookUI2() {
                     <Td mono col={TEXT}>{s.sharedWith}</Td>
                     <Td><PermBadge p={s.permission} /></Td>
                     <Td mono col={SUBTLE}>{s.sharedAt}</Td>
-                    <Td mono col={SUBTLE}>{s.expiresAt || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{s.lastAccessedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{s.expiresAt || '—'}</Td>
+                    <Td mono col={SUBTLE}>{s.lastAccessedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -337,14 +337,14 @@ export function ResearchNotebookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Notebook ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/notebooks/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
-                    <Td mono col={BLUE}>{a.notebookId || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.notebookId || '—'}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

@@ -256,7 +256,7 @@ export function RiskGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Policy</Th><Th>Category</Th><Th>Framework</Th><Th>Owner</Th><Th>Status</Th><Th>Version</Th><Th right>Controls</Th><Th right>Breaches YTD</Th><Th right>Compliance %</Th><Th>Review Date</Th></tr></thead>
               <tbody>
-                {policies.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies — check /api/v4/risk-governance/framework</td></tr>}
+                {policies.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies</td></tr>}
                 {policies.sort((a, b) => b.breachesYtd - a.breachesYtd).map((p, i) => (
                   <tr key={i} style={{ background: p.breachesYtd > 0 ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.name}</Td>
@@ -281,7 +281,7 @@ export function RiskGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Limit Name</Th><Th>Hierarchy</Th><Th>Risk Type</Th><Th>Status</Th><Th right>Limit</Th><Th right>Current</Th><Th>Utilization</Th><Th>Policy Ref</Th><Th>Last Breach</Th></tr></thead>
               <tbody>
-                {limits.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No limits — check /api/v4/risk-governance/limits</td></tr>}
+                {limits.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No limits</td></tr>}
                 {limits.sort((a, b) => b.utilizationPct - a.utilizationPct).map((l, i) => (
                   <tr key={i} style={{ background: l.status === 'breach' ? RED + '0a' : l.status === 'warning' ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{l.name}</Td>
@@ -305,7 +305,7 @@ export function RiskGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Committee</Th><Th>Type</Th><Th>Frequency</Th><Th>Chairperson</Th><Th right>Members</Th><Th right>Pending Items</Th><Th>Quorum</Th><Th>Next Meeting</Th><Th>Last Minutes</Th></tr></thead>
               <tbody>
-                {committees.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No committees — check /api/v4/risk-governance/committees</td></tr>}
+                {committees.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No committees</td></tr>}
                 {committees.sort((a, b) => b.pendingItems - a.pendingItems).map((c, i) => (
                   <tr key={i} style={{ background: c.pendingItems > 5 ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.name}</Td>
@@ -329,7 +329,7 @@ export function RiskGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>ID</Th><Th>Subject</Th><Th>Source Policy</Th><Th>Severity</Th><Th>Status</Th><Th>Assigned To</Th><Th>Raised By</Th><Th right>Days Open</Th><Th>Target Resolution</Th></tr></thead>
               <tbody>
-                {escalations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No escalations — check /api/v4/risk-governance/escalations</td></tr>}
+                {escalations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No escalations</td></tr>}
                 {escalations.sort((a, b) => (a.severity === 'critical' ? -1 : 1) - (b.severity === 'critical' ? -1 : 1)).map((e, i) => (
                   <tr key={i} style={{ background: e.severity === 'critical' ? RED + '0a' : e.severity === 'high' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.escalationId}</Td>
@@ -353,7 +353,7 @@ export function RiskGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Policy ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log — check /api/v4/risk-governance/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

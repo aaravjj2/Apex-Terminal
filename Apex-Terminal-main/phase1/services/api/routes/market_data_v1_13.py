@@ -8,6 +8,8 @@ from typing import List, Optional, Dict, Any, Literal
 from datetime import date
 import os
 
+from ._quote_helper import get_real_quote
+
 from ...market_data.record_replay import (
     get_cache,
     MarketDataSource
@@ -188,16 +190,19 @@ async def get_quote(req: QuoteRequest):
             provenance=provenance
         )
     
-    # LOCAL mode: use bars API or separate quote cache
-    # For simplicity, return mock
+    # LOCAL mode: fetch real price via Alpaca → yfinance
+    real_price = await get_real_quote(req.symbol)
+    if real_price is None:
+        raise HTTPException(status_code=503, detail=f"Quote unavailable for {req.symbol} — no data provider connected")
+
     provenance = ProvenanceInfo(
         source="LOCAL_FETCH",
-        provider="yahoo"
+        provider="alpaca_or_yfinance"
     )
-    
+
     return QuoteResponse(
         symbol=req.symbol,
-        price=150.0,
+        price=real_price,
         provenance=provenance
     )
 

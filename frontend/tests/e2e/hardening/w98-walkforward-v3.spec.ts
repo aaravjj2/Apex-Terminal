@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090/api/v3/walkforward';
+const API = 'http://localhost:8000/api/v3/walkforward';
 const UI = 'http://localhost:5100/ui2/walkforward-v3';
 
 test.beforeEach(async ({ request }) => {

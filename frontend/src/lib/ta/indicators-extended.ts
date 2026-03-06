@@ -1741,6 +1741,84 @@ export function extractOHLCV(
   };
 }
 
+// ─── BREADTH INDICATORS ──────────────────────────────────────────────────────
+
+/**
+ * McClellan Oscillator — breadth momentum from advancing/declining issues.
+ * Uses 19-day / 39-day EMA of A-D difference.
+ */
+export function McClellanOscillator(advances: number[], declines: number[]): number[] {
+  const ad = advances.map((a, i) => a - (declines[i] ?? 0));
+  const ema19 = EMA(ad, 19);
+  const ema39 = EMA(ad, 39);
+  return ema19.map((v, i) => v - (ema39[i] ?? 0));
+}
+
+/**
+ * McClellan Summation Index — cumulative sum of McClellan Oscillator.
+ */
+export function McClellanSummation(advances: number[], declines: number[]): number[] {
+  const osc = McClellanOscillator(advances, declines);
+  const result: number[] = [];
+  let sum = 0;
+  for (const v of osc) { sum += v; result.push(sum); }
+  return result;
+}
+
+/**
+ * Arms Index (TRIN) — Trading Index = (Adv Issues / Dec Issues) / (Adv Volume / Dec Volume).
+ * TRIN > 1 = bearish breadth, < 1 = bullish breadth.
+ */
+export function ArmsIndex(
+  advIssues: number[], decIssues: number[],
+  advVolume: number[], decVolume: number[]
+): number[] {
+  return advIssues.map((ai, i) => {
+    const di = decIssues[i] || 1;
+    const av = advVolume[i] || 1;
+    const dv = decVolume[i] || 1;
+    return (ai / di) / (av / dv);
+  });
+}
+
+/**
+ * Advance/Decline Line — cumulative sum of (advances - declines).
+ */
+export function AdvanceDeclineLine(advances: number[], declines: number[]): number[] {
+  const result: number[] = [];
+  let cum = 0;
+  for (let i = 0; i < advances.length; i++) {
+    cum += (advances[i] ?? 0) - (declines[i] ?? 0);
+    result.push(cum);
+  }
+  return result;
+}
+
+/**
+ * New Highs / New Lows ratio.
+ */
+export function NewHighsLows(newHighs: number[], newLows: number[]): number[] {
+  return newHighs.map((h, i) => {
+    const l = newLows[i] || 1;
+    return h / l;
+  });
+}
+
+/**
+ * Envelope (moving average envelope) — upper/lower bands around an SMA.
+ */
+export function Envelope(
+  data: number[], period = 20, percentShift = 2.5
+): { upper: number[]; lower: number[]; middle: number[] } {
+  const middle = SMA(data, period);
+  const shift = percentShift / 100;
+  return {
+    upper: middle.map(v => v * (1 + shift)),
+    lower: middle.map(v => v * (1 - shift)),
+    middle,
+  };
+}
+
 // ─── EXPORT ALL ──────────────────────────────────────────────────────────────
 
 export const INDICATORS_EXTENDED = {
@@ -1765,5 +1843,7 @@ export const INDICATORS_EXTENDED = {
   PercentagePriceOscillator, PriceOscillator, PriceChannel,
   ProjectionOscillator, RandomWalkIndex, SchaffTrendCycle,
   SmoothedRSI, TwiggsMoneyFlow, UlcerIndex, WoodieCCI,
+  McClellanOscillator, McClellanSummation, ArmsIndex,
+  AdvanceDeclineLine, NewHighsLows, Envelope,
   Crossover, Crossunder, lastValid, extractOHLCV,
 } as const;

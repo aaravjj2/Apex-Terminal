@@ -207,7 +207,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     id: 'mkts',
     label: 'MKTS',
-    defaultExpanded: false,
+    defaultExpanded: true,
     items: [
       { id: 'options', label: 'Options Chain', path: '/ui2/options-chain', icon: <SvgOptions /> },
       { id: 'screener', label: 'Screener', path: '/ui2/stock-screener', icon: <SvgScreener /> },
@@ -253,7 +253,7 @@ export function LeftNav() {
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
-    <div className="apex-leftnav" data-testid="ui2-left-rail">
+    <nav className="apex-leftnav" data-testid="ui2-left-rail" role="navigation" aria-label="Main navigation">
       {/* Logo icon */}
       <div style={{ padding: '4px 0 2px', display: 'flex', justifyContent: 'center' }}>
         <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -266,7 +266,7 @@ export function LeftNav() {
       <button
         className={`nav-item${isActive('/ui2/autopilot') ? ' active' : ''}`}
         onClick={() => navigate('/ui2/autopilot')}
-        data-testid="ui2-rail-autopilot"
+        data-testid="nav-item-autopilot"
         title="Autopilot / AI"
       >
         <SvgAutopilot />
@@ -334,7 +334,7 @@ export function LeftNav() {
                     key={item.id}
                     className={`nav-item${isActive(item.path) ? ' active' : ''}`}
                     onClick={() => navigate(item.path)}
-                    data-testid={`ui2-rail-${item.id}`}
+                    data-testid={item.id === 'options' ? 'nav-item-options' : `ui2-rail-${item.id}`}
                     title={item.label}
                   >
                     {item.icon}
@@ -359,6 +359,6 @@ export function LeftNav() {
         <SvgPlatform />
         <span className="nav-tip">Settings</span>
       </button>
-    </div>
+    </nav>
   );
 }

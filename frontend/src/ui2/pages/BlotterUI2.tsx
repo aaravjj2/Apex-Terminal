@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// BlotterUI2 â€” Bloomberg BLOT-grade execution blotter terminal
+﻿// BlotterUI2 — Bloomberg BLOT-grade execution blotter terminal
 // Tabs: EXECUTIONS | ORDERS | ALLOCATIONS | P&L ATTRIBUTION | AUDIT TRAIL
 // APIs: /api/v4/blotter/executions, /api/v4/blotter/orders,
 //       /api/v4/blotter/allocations, /api/v4/blotter/pnl,
@@ -322,7 +322,7 @@ export function BlotterUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>BLOT</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>EXECUTION BLOTTER â€” PARENT-CHILD LINKING + AUDIT TRAIL</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EXECUTION BLOTTER — PARENT-CHILD LINKING + AUDIT TRAIL</span>
         {workingOrders > 0 && <span style={{ fontSize: 10, color: ORANGE }}>â— {workingOrders} WORKING</span>}
       </div>
 
@@ -386,7 +386,7 @@ export function BlotterUI2() {
             <tbody>
               {filtExecs.length === 0 && (
                 <tr><td colSpan={12} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                  No executions â€” check /api/v4/blotter/executions
+                  No executions
                 </td></tr>
               )}
               {filtExecs.map(e => (
@@ -423,7 +423,7 @@ export function BlotterUI2() {
             <tbody>
               {filtOrders.length === 0 && (
                 <tr><td colSpan={12} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                  No orders â€” check /api/v4/blotter/orders
+                  No orders
                 </td></tr>
               )}
               {filtOrders.map(o => (
@@ -436,8 +436,8 @@ export function BlotterUI2() {
                   <Td right mono>{fmtQty(o.quantity)}</Td>
                   <Td right mono col={o.filled === o.quantity ? GREEN : AMBER}>{fmtQty(o.filled)}</Td>
                   <Td><FillBar filled={o.filled} total={o.quantity} /></Td>
-                  <Td right mono>{o.avgFillPrice > 0 ? '$' + o.avgFillPrice.toFixed(2) : 'â€”'}</Td>
-                  <Td right mono col={SUBTLE}>{o.limitPrice !== undefined ? '$' + o.limitPrice.toFixed(2) : 'â€”'}</Td>
+                  <Td right mono>{o.avgFillPrice > 0 ? '$' + o.avgFillPrice.toFixed(2) : '—'}</Td>
+                  <Td right mono col={SUBTLE}>{o.limitPrice !== undefined ? '$' + o.limitPrice.toFixed(2) : '—'}</Td>
                   <Td mono col={SUBTLE}>{o.venue}</Td>
                   <Td mono col={SUBTLE}>{fmtTime(o.submitTime)}</Td>
                 </tr>
@@ -459,7 +459,7 @@ export function BlotterUI2() {
             <tbody>
               {allocations.length === 0 && (
                 <tr><td colSpan={9} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                  No allocations â€” check /api/v4/blotter/allocations
+                  No allocations
                 </td></tr>
               )}
               {allocations.map(a => (
@@ -496,7 +496,7 @@ export function BlotterUI2() {
             <tbody>
               {pnlData.length === 0 && (
                 <tr><td colSpan={11} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                  No P&L data â€” check /api/v4/blotter/pnl
+                  No P&L data
                 </td></tr>
               )}
               {[...pnlData].sort((a, b) => Math.abs(b.netPnl) - Math.abs(a.netPnl)).map((p, i) => (
@@ -541,7 +541,7 @@ export function BlotterUI2() {
             <tbody>
               {auditTrail.length === 0 && (
                 <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                  No audit events â€” check /api/v4/blotter/audit
+                  No audit events
                 </td></tr>
               )}
               {auditTrail.map((a, i) => (
@@ -551,8 +551,8 @@ export function BlotterUI2() {
                   <Td><span style={{ fontFamily: MONO, fontSize: 9, color: BLUE, background: BLUE + '22', padding: '2px 6px', borderRadius: 2 }}>{a.event}</span></Td>
                   <Td mono col={PURPLE}>{a.user}</Td>
                   <Td mono col={TEXT} style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{a.details}</Td>
-                  <Td mono col={RED} style={{ maxWidth: 120 } as any}>{a.oldValue ?? 'â€”'}</Td>
-                  <Td mono col={GREEN} style={{ maxWidth: 120 } as any}>{a.newValue ?? 'â€”'}</Td>
+                  <Td mono col={RED} style={{ maxWidth: 120 } as any}>{a.oldValue ?? '—'}</Td>
+                  <Td mono col={GREEN} style={{ maxWidth: 120 } as any}>{a.newValue ?? '—'}</Td>
                   <Td mono col={SUBTLE}>{a.ipAddress}</Td>
                 </tr>
               ))}

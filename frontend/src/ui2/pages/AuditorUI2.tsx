@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// AuditorUI2 â€” Bloomberg APEX Audit Log Viewer terminal
+﻿// AuditorUI2 — Bloomberg APEX Audit Log Viewer terminal
 // ES audit trail, event filtering, compliance export, anomaly detection
 // Tabs: EVENTS | ANOMALIES | COMPLIANCE | EXPORT | STATS
 // APIs: /api/v3/audit/events, /anomalies, /compliance, /export, /stats
@@ -189,10 +189,11 @@ export function AuditorUI2() {
   ]
 
   return (
-    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+    <div data-testid="auditor-ui2-page" style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+      <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none',width:1,height:1}} />
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>AUDIT LOG VIEWER â€” ES AUDIT TRAIL + ANOMALY DETECTION + COMPLIANCE EXPORT</span>
+        <span data-testid="page-title" style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>AUDIT LOG VIEWER — ES AUDIT TRAIL + ANOMALY DETECTION + COMPLIANCE EXPORT</span>
         {criticalEvents > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalEvents} CRITICAL</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
@@ -213,8 +214,8 @@ export function AuditorUI2() {
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
         {tab === 'events' && (
-          <div>
-            <div style={{ marginBottom: 8 }}>
+          <div data-testid="auditor-events-table">
+            <div data-testid="data-table-toolbar" style={{ marginBottom: 8 }}>
               <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filter by type / actor / messageâ€¦"
                 style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, color: TEXT, padding: '5px 10px', width: 320 }} />
             </div>
@@ -222,16 +223,16 @@ export function AuditorUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Event ID</Th><Th>Type</Th><Th>Actor</Th><Th>Resource</Th><Th>Sev.</Th><Th>Outcome</Th><Th>IP</Th><Th>Message</Th><Th>Timestamp</Th></tr></thead>
                 <tbody>
-                  {filtered.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit events â€” check /api/v3/audit/events</td></tr>}
+                  {filtered.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit events</td></tr>}
                   {filtered.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 300).map((e, i) => (
                     <tr key={i} style={{ background: e.severity === 'critical' ? RED + '0a' : 'transparent' }}>
                       <Td mono col={AMBER}>{e.eventId.slice(0, 12)}â€¦</Td>
                       <Td mono col={BLUE}>{e.eventType}</Td>
-                      <Td mono col={TEXT}>{e.actor || 'â€”'}</Td>
+                      <Td mono col={TEXT}>{e.actor || '—'}</Td>
                       <Td mono col={SUBTLE}>{(e.resource || '').slice(0, 30)}</Td>
                       <Td><SevBadge s={e.severity} /></Td>
                       <Td><OutcomeBadge o={e.outcome} /></Td>
-                      <Td mono col={SUBTLE}>{e.ipAddress || 'â€”'}</Td>
+                      <Td mono col={SUBTLE}>{e.ipAddress || '—'}</Td>
                       <Td mono col={TEXT}>{(e.message || '').slice(0, 50)}{(e.message || '').length > 50 ? 'â€¦' : ''}</Td>
                       <Td mono col={SUBTLE}>{e.timestamp}</Td>
                     </tr>
@@ -246,7 +247,7 @@ export function AuditorUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Anomaly ID</Th><Th>Event Type</Th><Th>Description</Th><Th>Severity</Th><Th>Status</Th><Th right>Count</Th><Th>Pattern</Th><Th>First Seen</Th><Th>Last Seen</Th></tr></thead>
               <tbody>
-                {anomalies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No anomalies â€” check /api/v3/audit/anomalies</td></tr>}
+                {anomalies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No anomalies</td></tr>}
                 {anomalies.sort((a, b) => a.status === 'open' ? -1 : 0).map((a, i) => (
                   <tr key={i} style={{ background: a.severity === 'critical' && a.status === 'open' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.anomalyId}</Td>
@@ -255,9 +256,9 @@ export function AuditorUI2() {
                     <Td><SevBadge s={a.severity} /></Td>
                     <Td><StatusBadge s={a.status} /></Td>
                     <Td right mono col={TEXT}>{a.count}</Td>
-                    <Td mono col={SUBTLE}>{a.pattern || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.firstSeen || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.lastSeen || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.pattern || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.firstSeen || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.lastSeen || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -269,7 +270,7 @@ export function AuditorUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Framework</Th><Th>Period</Th><Th>Status</Th><Th right>Covered</Th><Th right>Required</Th><Th right>Gaps</Th><Th>Last Audit</Th><Th>Next Review</Th></tr></thead>
               <tbody>
-                {compliance.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance data â€” check /api/v3/audit/compliance</td></tr>}
+                {compliance.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance data</td></tr>}
                 {compliance.map((c, i) => (
                   <tr key={i} style={{ background: c.status === 'non_compliant' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.framework}</Td>
@@ -278,8 +279,8 @@ export function AuditorUI2() {
                     <Td right mono col={GREEN}>{c.coveredEvents.toLocaleString()}</Td>
                     <Td right mono col={TEXT}>{c.totalRequired.toLocaleString()}</Td>
                     <Td right mono col={c.gapCount > 0 ? RED : GREEN}>{c.gapCount}</Td>
-                    <Td mono col={SUBTLE}>{c.lastAuditDate || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{c.nextReview || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{c.lastAuditDate || '—'}</Td>
+                    <Td mono col={SUBTLE}>{c.nextReview || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -293,7 +294,7 @@ export function AuditorUI2() {
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <button onClick={handleExport} disabled={exportStatus === 'running'}
                   style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, borderRadius: 3, padding: '7px 18px', cursor: exportStatus === 'running' ? 'wait' : 'pointer' }}>
-                  {exportStatus === 'running' ? 'EXPORTINGâ€¦' : exportStatus === 'done' ? 'EXPORTED âœ“' : exportStatus === 'error' ? 'ERROR â€” RETRY' : 'EXPORT CSV'}
+                  {exportStatus === 'running' ? 'EXPORTINGâ€¦' : exportStatus === 'done' ? 'EXPORTED âœ“' : exportStatus === 'error' ? 'ERROR — RETRY' : 'EXPORT CSV'}
                 </button>
                 <span style={{ fontSize: 10, color: SUBTLE }}>{events.length} events ready</span>
               </div>
@@ -302,7 +303,7 @@ export function AuditorUI2() {
         )}
         {tab === 'stats' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-            {stats.length === 0 && <div style={{ gridColumn: '1/-1', padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No stats â€” check /api/v3/audit/stats</div>}
+            {stats.length === 0 && <div style={{ gridColumn: '1/-1', padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No stats</div>}
             {stats.map((s, i) => (
               <StatCard key={i} label={s.label} value={s.value.toLocaleString()} sub={`${s.change >= 0 ? '+' : ''}${s.change.toLocaleString()} vs ${s.period}`} col={s.change < 0 ? GREEN : BLUE} />
             ))}

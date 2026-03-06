@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// DataResidencyUI2 â€” Bloomberg DRSD data residency terminal
+﻿// DataResidencyUI2 — Bloomberg DRSD data residency terminal
 // Geographic zones, classification, compliance, transfer controls, audit
 // Tabs: REGIONS | CLASSIFICATION | COMPLIANCE | TRANSFERS | AUDIT
 // APIs: /api/v4/data-residency/regions, /classification, /compliance, /transfers, /audit
@@ -226,7 +226,7 @@ export function DataResidencyUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DRSD</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>DATA RESIDENCY â€” REGIONS + CLASSIFICATION + COMPLIANCE + TRANSFERS + AUDIT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>DATA RESIDENCY — REGIONS + CLASSIFICATION + COMPLIANCE + TRANSFERS + AUDIT</span>
         {nonCompliant > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {nonCompliant} NON-COMPLIANT</span>}
         {blockedTransfers > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {blockedTransfers} BLOCKED TRANSFERS</span>}
         {auditFlags > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {auditFlags} AUDIT FLAGS</span>}
@@ -254,7 +254,7 @@ export function DataResidencyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Region</Th><Th>Jurisdiction</Th><Th>Data Center</Th><Th>Status</Th><Th right>Total Assets</Th><Th right>PII Records</Th><Th>Storage</Th><Th right>Repl Lag (ms)</Th><Th>Frameworks</Th></tr></thead>
               <tbody>
-                {regions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regions â€” check /api/v4/data-residency/regions</td></tr>}
+                {regions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regions</td></tr>}
                 {regions.map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.regionName}</Td>
@@ -278,7 +278,7 @@ export function DataResidencyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Data Type</Th><Th>Classification</Th><Th>Primary Region</Th><Th right>Records</Th><Th right>Retention (d)</Th><Th>Encryption</Th><Th>PII</Th><Th>Owner</Th></tr></thead>
               <tbody>
-                {classification.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No classification â€” check /api/v4/data-residency/classification</td></tr>}
+                {classification.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No classification</td></tr>}
                 {classification.sort((a, b) => {
                   const ord: Record<string, number> = { top_secret: 0, restricted: 1, confidential: 2, internal: 3, public: 4 }
                   return (ord[a.classification] ?? 5) - (ord[b.classification] ?? 5)
@@ -290,7 +290,7 @@ export function DataResidencyUI2() {
                     <Td right mono col={TEXT}>{c.recordCount.toLocaleString()}</Td>
                     <Td right mono col={SUBTLE}>{c.retentionDays}</Td>
                     <Td mono col={SUBTLE} style={{ fontSize: 10 } as any}>{c.encryptionLevel}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.piiContains ? ORANGE : SUBTLE }}>{c.piiContains ? 'PII' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.piiContains ? ORANGE : SUBTLE }}>{c.piiContains ? 'PII' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{c.owner}</Td>
                   </tr>
                 ))}
@@ -304,7 +304,7 @@ export function DataResidencyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Framework</Th><Th>Jurisdiction</Th><Th>Requirement</Th><Th>Status</Th><Th>Affected Types</Th><Th>Last Checked</Th><Th>Due Date</Th><Th>Penalty</Th></tr></thead>
               <tbody>
-                {compliance.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance â€” check /api/v4/data-residency/compliance</td></tr>}
+                {compliance.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance</td></tr>}
                 {compliance.sort((a, b) => {
                   const ord: Record<string, number> = { non_compliant: 0, under_review: 1, compliant: 2, exempt: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -317,7 +317,7 @@ export function DataResidencyUI2() {
                     <Td mono col={SUBTLE} style={{ fontSize: 10 } as any}>{c.affectedDataTypes.slice(0, 3).join(', ')}</Td>
                     <Td mono col={SUBTLE}>{c.lastChecked}</Td>
                     <Td mono col={SUBTLE}>{c.dueDate}</Td>
-                    <Td mono col={c.penalty ? RED : SUBTLE}>{c.penalty || 'â€”'}</Td>
+                    <Td mono col={c.penalty ? RED : SUBTLE}>{c.penalty || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -330,7 +330,7 @@ export function DataResidencyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Source</Th><Th>Destination</Th><Th>Data Type</Th><Th>Status</Th><Th right>Volume (MB)</Th><Th>Mechanism</Th><Th>Legal Basis</Th><Th>Initiated By</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {transfers.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No transfers â€” check /api/v4/data-residency/transfers</td></tr>}
+                {transfers.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No transfers</td></tr>}
                 {transfers.map((t, i) => (
                   <tr key={i} style={{ background: t.status === 'blocked' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={GREEN}>{t.sourceRegion}</Td>
@@ -354,7 +354,7 @@ export function DataResidencyUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Action</Th><Th>Actor</Th><Th>Target Region</Th><Th>Data Type</Th><Th>Outcome</Th><Th>Policy Ref</Th><Th>Reason</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {audit.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit â€” check /api/v4/data-residency/audit</td></tr>}
+                {audit.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit</td></tr>}
                 {audit.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.action}</Td>

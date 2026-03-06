@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// MarketplaceTrustUI2 â€” Bloomberg MKTT marketplace trust & security terminal
+﻿// MarketplaceTrustUI2 — Bloomberg MKTT marketplace trust & security terminal
 // Listing health, malware scanning, signing certificates, reviews, audit
 // Tabs: LISTINGS | SCANNING | SIGNING | REVIEWS | AUDIT
 // APIs: /api/v4/marketplace-trust/listings, /scanning, /signing, /reviews, /audit
@@ -225,7 +225,7 @@ export function MarketplaceTrustUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>MKTT</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>MARKETPLACE TRUST â€” SCANNING + SIGNING + REVIEW SECURITY + MALWARE DETECTION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>MARKETPLACE TRUST — SCANNING + SIGNING + REVIEW SECURITY + MALWARE DETECTION</span>
         {malicious > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {malicious} MALICIOUS</span>}
         {unsigned > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {unsigned} UNSIGNED</span>}
         {flaggedReviews > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {flaggedReviews} FLAGGED REVIEWS</span>}
@@ -254,7 +254,7 @@ export function MarketplaceTrustUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Publisher</Th><Th>Category</Th><Th>Trust Score</Th><Th>Signed</Th><Th>Scan</Th><Th>Rating</Th><Th right>Downloads</Th><Th>Version</Th><Th>Published</Th><Th>Last Scan</Th></tr></thead>
               <tbody>
-                {listings.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No listings â€” check /api/v4/marketplace-trust/listings</td></tr>}
+                {listings.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No listings</td></tr>}
                 {listings.sort((a, b) => {
                   const p: Record<string, number> = { malicious: 0, warning: 1, pending: 2, clean: 3 }
                   return (p[a.scanStatus] ?? 4) - (p[b.scanStatus] ?? 4)
@@ -283,7 +283,7 @@ export function MarketplaceTrustUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Scan ID</Th><Th>Listing</Th><Th>Scan Type</Th><Th>Status</Th><Th right>Threats</Th><Th>Details</Th><Th>Engine</Th><Th>Duration</Th><Th>Scanned</Th></tr></thead>
               <tbody>
-                {scans.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No scans â€” check /api/v4/marketplace-trust/scanning</td></tr>}
+                {scans.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No scans</td></tr>}
                 {scans.sort((a, b) => {
                   const p: Record<string, number> = { malicious: 0, suspicious: 1, failed: 2, pending: 3, clean: 4 }
                   return (p[a.status] ?? 5) - (p[b.status] ?? 5)
@@ -294,7 +294,7 @@ export function MarketplaceTrustUI2() {
                     <Td mono col={PURPLE}>{s.scanType}</Td>
                     <Td><ScanBadge s={s.status} /></Td>
                     <Td right mono col={s.threatsFound > 0 ? RED : GREEN}>{s.threatsFound}</Td>
-                    <Td mono col={s.threatDetails ? RED : SUBTLE}>{s.threatDetails || 'â€”'}</Td>
+                    <Td mono col={s.threatDetails ? RED : SUBTLE}>{s.threatDetails || '—'}</Td>
                     <Td mono col={SUBTLE}>{s.engine}</Td>
                     <Td mono col={SUBTLE}>{s.duration}</Td>
                     <Td mono col={SUBTLE}>{s.scannedAt}</Td>
@@ -310,7 +310,7 @@ export function MarketplaceTrustUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Cert ID</Th><Th>Publisher</Th><Th>Type</Th><Th>Status</Th><Th>Issued By</Th><Th>Valid From</Th><Th>Valid Until</Th><Th right>Days</Th><Th>Fingerprint</Th></tr></thead>
               <tbody>
-                {signing.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No certificates â€” check /api/v4/marketplace-trust/signing</td></tr>}
+                {signing.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No certificates</td></tr>}
                 {signing.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry).map((s, i) => (
                   <tr key={i} style={{ background: s.status === 'revoked' ? RED + '0a' : s.daysUntilExpiry > 0 && s.daysUntilExpiry < 30 ? AMBER + '07' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.certId}</Td>
@@ -334,7 +334,7 @@ export function MarketplaceTrustUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Review ID</Th><Th>Listing</Th><Th>Reviewer</Th><Th>Trust</Th><Th>Resolution</Th><Th>Rating</Th><Th>Flagged</Th><Th>Report</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews â€” check /api/v4/marketplace-trust/reviews</td></tr>}
+                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews</td></tr>}
                 {reviews.sort((a, b) => (b.flagged ? 1 : 0) - (a.flagged ? 1 : 0)).map((r, i) => (
                   <tr key={i} style={{ background: r.flagged ? AMBER + '09' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.reviewId}</Td>
@@ -343,8 +343,8 @@ export function MarketplaceTrustUI2() {
                     <Td><StatusBadge2 s={r.trustRating} /></Td>
                     <Td><StatusBadge2 s={r.resolution} /></Td>
                     <Td><StarRating r={r.rating} /></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.flagged ? RED : SUBTLE }}>{r.flagged ? '⚠‘ FLAGGED' : 'â€”'}</span></Td>
-                    <Td mono col={SUBTLE}>{r.report ? r.report.slice(0, 40) + (r.report.length > 40 ? '...' : '') : 'â€”'}</Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.flagged ? RED : SUBTLE }}>{r.flagged ? '⚠‘ FLAGGED' : '—'}</span></Td>
+                    <Td mono col={SUBTLE}>{r.report ? r.report.slice(0, 40) + (r.report.length > 40 ? '...' : '') : '—'}</Td>
                     <Td mono col={SUBTLE}>{r.createdAt}</Td>
                   </tr>
                 ))}
@@ -358,7 +358,7 @@ export function MarketplaceTrustUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Listing</Th><Th>Action</Th><Th>Actor</Th><Th>From</Th><Th>To</Th><Th>Outcome</Th><Th>Reason</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/marketplace-trust/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -368,7 +368,7 @@ export function MarketplaceTrustUI2() {
                     <Td mono col={SUBTLE}>{a.previousStatus}</Td>
                     <Td mono col={TEXT}>{a.newStatus}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.reason || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.reason || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

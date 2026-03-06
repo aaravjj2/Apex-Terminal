@@ -54,7 +54,7 @@ export function TopBar({ onOpenCommandPalette, connectionStatus, marketOpen, mar
       <div className="tb-sep" />
 
       {/* Mode Badge */}
-      <div className={`mode-badge ${mode}`} onClick={cycleMode} data-testid="ui2-mode-badge">
+      <div className={`mode-badge ${mode}`} onClick={cycleMode} data-testid="mode-badge">
         <div className="mode-dot" />
         {MODE_LABELS[mode]}
       </div>

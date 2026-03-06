@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// DevPortalUI2 â€” Bloomberg DEVP developer portal terminal
+﻿// DevPortalUI2 — Bloomberg DEVP developer portal terminal
 // API catalog, key management, usage analytics, documentation, changelog
 // Tabs: APIS | KEYS | USAGE | DOCS | CHANGELOG
 // APIs: /api/v4/dev-portal/apis, /keys, /usage, /docs, /changelog
@@ -217,7 +217,7 @@ export function DevPortalUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DEVP</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>DEVELOPER PORTAL â€” API CATALOG + KEYS + USAGE ANALYTICS + DOCS + CHANGELOG</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>DEVELOPER PORTAL — API CATALOG + KEYS + USAGE ANALYTICS + DOCS + CHANGELOG</span>
         {highErrorApis > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {highErrorApis} HIGH ERROR RATE</span>}
         {deprecatedApis > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {deprecatedApis} DEPRECATED</span>}
         {breakingChanges > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {breakingChanges} BREAKING CHANGES</span>}
@@ -245,7 +245,7 @@ export function DevPortalUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Method</Th><Th>Path</Th><Th>Category</Th><Th>Status</Th><Th right>P50 (ms)</Th><Th right>P99 (ms)</Th><Th right>Avg RPS</Th><Th right>Error %</Th><Th right>Rate Limit</Th><Th>Auth</Th></tr></thead>
               <tbody>
-                {apis.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No APIs â€” check /api/v4/dev-portal/apis</td></tr>}
+                {apis.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No APIs</td></tr>}
                 {apis.sort((a, b) => b.errorRatePct - a.errorRatePct).map((a, i) => (
                   <tr key={i} style={{ background: a.errorRatePct > 5 ? RED + '0a' : a.status === 'deprecated' ? AMBER + '06' : 'transparent' }}>
                     <Td><MethodBadge m={a.method} /></Td>
@@ -270,7 +270,7 @@ export function DevPortalUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Owner</Th><Th>Status</Th><Th>Scopes</Th><Th right>Total Req</Th><Th right>Today</Th><Th right>Rate Limit</Th><Th>Last Used</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {keys.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No keys â€” check /api/v4/dev-portal/keys</td></tr>}
+                {keys.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No keys</td></tr>}
                 {keys.sort((a, b) => b.requestsToday - a.requestsToday).map((k, i) => (
                   <tr key={i} style={{ background: k.status === 'revoked' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{k.name}</Td>
@@ -294,7 +294,7 @@ export function DevPortalUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Endpoint</Th><Th>Method</Th><Th right>Today</Th><Th right>Week</Th><Th right>Month</Th><Th right>Errors</Th><Th right>Avg Lat (ms)</Th><Th right>Peak RPS</Th><Th>Top Consumer</Th></tr></thead>
               <tbody>
-                {usage.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No usage â€” check /api/v4/dev-portal/usage</td></tr>}
+                {usage.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No usage</td></tr>}
                 {usage.sort((a, b) => b.requestsToday - a.requestsToday).map((u, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{u.endpoint}</Td>
@@ -318,7 +318,7 @@ export function DevPortalUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Title</Th><Th>Category</Th><Th>Version</Th><Th>Status</Th><Th right>Views</Th><Th right>Helpful</Th><Th right>Not Helpful</Th><Th>Last Updated</Th></tr></thead>
               <tbody>
-                {docs.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No docs â€” check /api/v4/dev-portal/docs</td></tr>}
+                {docs.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No docs</td></tr>}
                 {docs.sort((a, b) => b.views - a.views).map((d, i) => {
                   const statusCol = d.status === 'current' ? GREEN : d.status === 'outdated' ? RED : AMBER
                   return (
@@ -344,7 +344,7 @@ export function DevPortalUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Version</Th><Th>Date</Th><Th>Type</Th><Th>Summary</Th><Th>Affected Endpoints</Th><Th>Migration</Th><Th>Author</Th></tr></thead>
               <tbody>
-                {changelog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No changelog â€” check /api/v4/dev-portal/changelog</td></tr>}
+                {changelog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No changelog</td></tr>}
                 {changelog.map((c, i) => (
                   <tr key={i} style={{ background: c.changeType === 'breaking' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.version}</Td>

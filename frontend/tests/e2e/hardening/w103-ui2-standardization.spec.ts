@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090/api/v3/pages';
+const API = 'http://localhost:8000/api/v3/pages';
 
 // Helper: navigate and wait for page-ready sentinel
 async function waitForPageReady(page: import('@playwright/test').Page, url: string) {

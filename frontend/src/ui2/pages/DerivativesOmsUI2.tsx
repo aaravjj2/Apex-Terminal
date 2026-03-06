@@ -352,7 +352,7 @@ export function DerivativesOmsUI2() {
                 <Th>Status</Th><Th>Greeks</Th><Th right>P&L</Th>
               </tr></thead>
               <tbody>
-                {visOrders.length === 0 && <tr><td colSpan={14} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No orders — check /api/v4/derivatives-oms/orders</td></tr>}
+                {visOrders.length === 0 && <tr><td colSpan={14} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No orders</td></tr>}
                 {visOrders.map((o, i) => (
                   <tr key={i}>
                     <Td mono col={SUBTLE} style={{ fontSize: 9 }}>{o.orderId.slice(0, 12)}</Td>
@@ -390,7 +390,7 @@ export function DerivativesOmsUI2() {
                 <Th right>Delta</Th><Th right>Gamma</Th><Th right>Theta</Th><Th right>Vega</Th>
               </tr></thead>
               <tbody>
-                {visPositions.length === 0 && <tr><td colSpan={14} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No positions — check /api/v4/derivatives-oms/positions</td></tr>}
+                {visPositions.length === 0 && <tr><td colSpan={14} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No positions</td></tr>}
                 {visPositions.map((p, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{p.symbol}</Td>
@@ -417,7 +417,7 @@ export function DerivativesOmsUI2() {
         {/* EXPIRY MGMT */}
         {tab === 'expiry' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {expiryEvents.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No expiry events — check /api/v4/derivatives-oms/expiry</div>}
+            {expiryEvents.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No expiry events</div>}
             {[...expiryEvents].sort((a, b) => a.daysToExpiry - b.daysToExpiry).map((e, i) => (
               <div key={i} style={{ background: PANEL, border: `1px solid ${e.daysToExpiry <= 3 ? RED + '66' : BORDER}`, borderRadius: 4, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: AMBER, minWidth: 120 }}>{e.symbol}</span>
@@ -443,7 +443,7 @@ export function DerivativesOmsUI2() {
                 <Th>Expiry</Th><Th right>Qty</Th><Th>Action</Th><Th>Status</Th><Th>Account</Th><Th>Submitted</Th>
               </tr></thead>
               <tbody>
-                {exercises.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exercise entries — check /api/v4/derivatives-oms/exercise</td></tr>}
+                {exercises.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exercise entries</td></tr>}
                 {exercises.map((e, i) => {
                   const ac = e.action === 'exercise' ? GREEN : e.action === 'lapse' ? SUBTLE : RED
                   const sc = e.status === 'confirmed' ? GREEN : e.status === 'pending' ? AMBER : e.status === 'cancelled' ? RED : BLUE
@@ -473,7 +473,7 @@ export function DerivativesOmsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Timestamp</Th><Th>Order ID</Th><Th>Event</Th><Th>User</Th><Th>Details</Th><Th>Status</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries — check /api/v4/derivatives-oms/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={SUBTLE} style={{ fontSize: 10 }}>{a.timestamp}</Td>

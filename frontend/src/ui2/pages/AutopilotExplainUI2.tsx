@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// AutopilotExplainUI2 â€” Bloomberg APEX Autopilot Explainability terminal
+﻿// AutopilotExplainUI2 — Bloomberg APEX Autopilot Explainability terminal
 // Shadow/live mode indicator, decision stream, rejection analysis, explanation rendering, risk scoring
 // Tabs: DECISIONS | REJECTIONS | EXPLANATIONS | RISK SCORES | AUDIT
 // APIs: /api/v4/autopilot/decisions, /rejections, /explanations, /risk, /audit
@@ -189,7 +189,7 @@ export function AutopilotExplainUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>AUTOPILOT EXPLAINABILITY â€” DECISION STREAM + REJECTION ANALYSIS + EXPLANATION ENGINE + RISK SCORING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>AUTOPILOT EXPLAINABILITY — DECISION STREAM + REJECTION ANALYSIS + EXPLANATION ENGINE + RISK SCORING</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
@@ -205,7 +205,7 @@ export function AutopilotExplainUI2() {
         <StatCard label="Total Decisions" value={decisions.length} col={TEXT} />
         <StatCard label="Approved" value={approvedCount} col={GREEN} />
         <StatCard label="Rejected" value={rejectedCount} col={RED} />
-        <StatCard label="Avg Confidence" value={avgConfidence !== null ? `${(avgConfidence * 100).toFixed(1)}%` : 'â€”'} col={avgConfidence !== null ? (avgConfidence >= 0.7 ? GREEN : AMBER) : SUBTLE} />
+        <StatCard label="Avg Confidence" value={avgConfidence !== null ? `${(avgConfidence * 100).toFixed(1)}%` : '—'} col={avgConfidence !== null ? (avgConfidence >= 0.7 ? GREEN : AMBER) : SUBTLE} />
         <StatCard label="Live Mode" value={liveCount} col={liveCount > 0 ? RED : BLUE} sub={liveCount > 0 ? 'active' : 'shadow'} />
       </div>
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
@@ -222,7 +222,7 @@ export function AutopilotExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Decision ID</Th><Th>Symbol</Th><Th>Action</Th><Th>Status</Th><Th>Mode</Th><Th right>Confidence</Th><Th right>Risk Score</Th><Th right>Max Profit</Th><Th right>Max Loss</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {filteredDecisions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No decisions â€” check /api/v4/autopilot/decisions</td></tr>}
+                {filteredDecisions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No decisions</td></tr>}
                 {filteredDecisions.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.decisionId.slice(0, 14)}</Td>
@@ -231,9 +231,9 @@ export function AutopilotExplainUI2() {
                     <Td><StatusBadge s={d.status} /></Td>
                     <Td><ModeBadge m={d.mode} /></Td>
                     <Td right mono col={d.confidence >= 0.7 ? GREEN : d.confidence >= 0.5 ? AMBER : RED}>{(d.confidence * 100).toFixed(1)}%</Td>
-                    <Td right mono col={d.riskScore !== null ? (d.riskScore > 0.7 ? RED : d.riskScore > 0.4 ? AMBER : GREEN) : SUBTLE}>{d.riskScore !== null ? d.riskScore.toFixed(2) : 'â€”'}</Td>
-                    <Td right mono col={GREEN}>{d.maxProfit !== null ? `$${d.maxProfit.toFixed(0)}` : 'â€”'}</Td>
-                    <Td right mono col={RED}>{d.maxLoss !== null ? `$${d.maxLoss.toFixed(0)}` : 'â€”'}</Td>
+                    <Td right mono col={d.riskScore !== null ? (d.riskScore > 0.7 ? RED : d.riskScore > 0.4 ? AMBER : GREEN) : SUBTLE}>{d.riskScore !== null ? d.riskScore.toFixed(2) : '—'}</Td>
+                    <Td right mono col={GREEN}>{d.maxProfit !== null ? `$${d.maxProfit.toFixed(0)}` : '—'}</Td>
+                    <Td right mono col={RED}>{d.maxLoss !== null ? `$${d.maxLoss.toFixed(0)}` : '—'}</Td>
                     <Td mono col={SUBTLE}>{d.timestamp}</Td>
                   </tr>
                 ))}
@@ -246,7 +246,7 @@ export function AutopilotExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rejection Code</Th><Th>Description</Th><Th>Severity</Th><Th right>Count</Th><Th right>Pct</Th><Th>Last Seen</Th></tr></thead>
               <tbody>
-                {rejections.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rejections â€” check /api/v4/autopilot/rejections</td></tr>}
+                {rejections.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rejections</td></tr>}
                 {rejections.sort((a, b) => b.count - a.count).map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.rejectionCode}</Td>
@@ -263,7 +263,7 @@ export function AutopilotExplainUI2() {
         )}
         {tab === 'explanations' && (
           <div>
-            {explanations.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No explanations â€” check /api/v4/autopilot/explanations</div>}
+            {explanations.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No explanations</div>}
             {explanations.map((e, i) => (
               <div key={i} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '12px 16px', marginBottom: 8 }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
@@ -288,7 +288,7 @@ export function AutopilotExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th right>Risk Score</Th><Th right>Max Loss</Th><Th right>Max Profit</Th><Th right>Volatility</Th><Th>Condition</Th><Th>Flags</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {riskScores.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk scores â€” check /api/v4/autopilot/risk</td></tr>}
+                {riskScores.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk scores</td></tr>}
                 {riskScores.sort((a, b) => b.riskScore - a.riskScore).map((r, i) => (
                   <tr key={i}>
                     <Td mono col={TEXT}>{r.symbol}</Td>
@@ -310,13 +310,13 @@ export function AutopilotExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/autopilot/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

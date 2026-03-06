@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// BrokerScoringUI2 â€” Bloomberg BRKR-grade broker quality scoring terminal
+﻿// BrokerScoringUI2 — Bloomberg BRKR-grade broker quality scoring terminal
 // Execution benchmarking, counterparty analytics, commission tracking, SLA monitoring
 // Tabs: BROKER SCORES | EXECUTION BENCHMARKS | COMMISSIONS | COUNTERPARTY RISK | SLA
 // APIs: /api/v4/broker-scoring/scores, /benchmarks, /commissions, /counterparty, /sla
@@ -236,7 +236,7 @@ export function BrokerScoringUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>BRKR</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>BROKER SCORING â€” EXEC BENCHMARKING + COMMISSION TRACKING + COUNTERPARTY RISK + SLA</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>BROKER SCORING — EXEC BENCHMARKING + COMMISSION TRACKING + COUNTERPARTY RISK + SLA</span>
         {restrictedBrokers > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {restrictedBrokers} RESTRICTED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         {loading && <span style={{ fontSize: 10, color: SUBTLE }}>Loading...</span>}
@@ -271,7 +271,7 @@ export function BrokerScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Broker</Th><Th>Tier</Th><Th right>Overall</Th><Th>Fill Quality</Th><Th>Price Impr.</Th><Th>Speed</Th><Th>Reliability</Th><Th>Compliance</Th><Th right>Avg Slip</Th><Th right>Fill Rate</Th></tr></thead>
               <tbody>
-                {scores.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No broker data â€” check /api/v4/broker-scoring/scores</td></tr>}
+                {scores.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No broker data</td></tr>}
                 {scores.sort((a, b) => b.overallScore - a.overallScore).map((b, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{b.brokerName}</Td>
@@ -297,7 +297,7 @@ export function BrokerScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Broker</Th><Th>Symbol</Th><Th>Side</Th><Th right>vs VWAP (bps)</Th><Th right>vs TWAP (bps)</Th><Th right>IS (bps)</Th><Th right>Part. Rate</Th><Th right>Avg Order</Th><Th right>Trades</Th></tr></thead>
               <tbody>
-                {benchmarks.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No benchmark data â€” check /api/v4/broker-scoring/benchmarks</td></tr>}
+                {benchmarks.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No benchmark data</td></tr>}
                 {benchmarks.map((b, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{b.brokerName}</Td>
@@ -322,7 +322,7 @@ export function BrokerScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Broker</Th><Th>Period</Th><Th right>Total Comm</Th><Th right>Hard $</Th><Th right>Soft $</Th><Th right>Rebate</Th><Th right>Net Comm</Th><Th right>Â¢/Share</Th><Th right>Shares</Th></tr></thead>
               <tbody>
-                {commissions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No commission data â€” check /api/v4/broker-scoring/commissions</td></tr>}
+                {commissions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No commission data</td></tr>}
                 {commissions.sort((a, b) => b.totalCommissionUsd - a.totalCommissionUsd).map((c, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{c.brokerName}</Td>
@@ -347,7 +347,7 @@ export function BrokerScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Broker</Th><Th>Credit</Th><Th>Risk Status</Th><Th right>Exposure</Th><Th right>Limit</Th><Th>Utilization</Th><Th right>Pending Sett.</Th><Th right>Failed %</Th><Th right>DTS</Th></tr></thead>
               <tbody>
-                {counterparty.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No counterparty data â€” check /api/v4/broker-scoring/counterparty</td></tr>}
+                {counterparty.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No counterparty data</td></tr>}
                 {counterparty.sort((a, b) => b.utilizationPct - a.utilizationPct).map((c, i) => (
                   <tr key={i} style={{ background: c.riskStatus === 'red' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.brokerName}</Td>
@@ -372,7 +372,7 @@ export function BrokerScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Broker</Th><Th>Metric</Th><Th>Status</Th><Th right>Target</Th><Th right>Actual</Th><Th>Unit</Th><Th right>Breaches 30d</Th></tr></thead>
               <tbody>
-                {sla.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No SLA data â€” check /api/v4/broker-scoring/sla</td></tr>}
+                {sla.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No SLA data</td></tr>}
                 {sla.sort((a, b) => { const o: Record<string, number> = { breach: 0, warning: 1, met: 2 }; return (o[a.slaStatus] ?? 9) - (o[b.slaStatus] ?? 9) }).map((s, i) => (
                   <tr key={i} style={{ background: s.slaStatus === 'breach' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.brokerName}</Td>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// EntityResolutionUI2 â€” Bloomberg ENTR entity resolution terminal
+﻿// EntityResolutionUI2 — Bloomberg ENTR entity resolution terminal
 // Cross-reference matching, deduplication, entity graph, pipeline status, audit
 // Tabs: ENTITIES | MATCHES | PIPELINE | DUPLICATES | AUDIT
 // APIs: /api/v4/entities/entities, /matches, /pipeline, /duplicates, /audit
@@ -229,7 +229,7 @@ export function EntityResolutionUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>ENTR</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>ENTITY RESOLUTION â€” ENTITY GRAPH + MATCHING + PIPELINE + DEDUPLICATION + AUDIT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>ENTITY RESOLUTION — ENTITY GRAPH + MATCHING + PIPELINE + DEDUPLICATION + AUDIT</span>
         {pendingMatches > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingMatches} PENDING REVIEW</span>}
         {failedPipelines > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {failedPipelines} PIPELINE FAILED</span>}
         {lowConfidence > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {lowConfidence} LOW CONFIDENCE</span>}
@@ -257,7 +257,7 @@ export function EntityResolutionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Canonical Name</Th><Th>Type</Th><Th>Confidence</Th><Th>Ticker</Th><Th>ISIN</Th><Th>LEI</Th><Th>Status</Th><Th right>Sources</Th><Th right>Aliases</Th></tr></thead>
               <tbody>
-                {entities.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No entities â€” check /api/v4/entities/entities</td></tr>}
+                {entities.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No entities</td></tr>}
                 {entities.sort((a, b) => b.confidenceScore - a.confidenceScore).map((e, i) => {
                   const stC: Record<string, string> = { active: GREEN, inactive: SUBTLE, merged: BLUE, duplicate: AMBER }
                   return (
@@ -265,9 +265,9 @@ export function EntityResolutionUI2() {
                       <Td mono col={AMBER}>{e.canonicalName}</Td>
                       <Td><EntityTypeBadge t={e.entityType} /></Td>
                       <Td><ConfBar v={e.confidenceScore} /></Td>
-                      <Td mono col={e.ticker ? BLUE : SUBTLE}>{e.ticker || 'â€”'}</Td>
-                      <Td mono col={SUBTLE}>{e.isin || 'â€”'}</Td>
-                      <Td mono col={e.lei ? PURPLE : SUBTLE}>{e.lei || 'â€”'}</Td>
+                      <Td mono col={e.ticker ? BLUE : SUBTLE}>{e.ticker || '—'}</Td>
+                      <Td mono col={SUBTLE}>{e.isin || '—'}</Td>
+                      <Td mono col={e.lei ? PURPLE : SUBTLE}>{e.lei || '—'}</Td>
                       <Td><span style={{ fontFamily: MONO, fontSize: 9, color: stC[e.status] ?? SUBTLE }}>{e.status.toUpperCase()}</span></Td>
                       <Td right mono col={TEXT}>{e.sources}</Td>
                       <Td right mono col={e.aliases > 5 ? ORANGE : SUBTLE}>{e.aliases}</Td>
@@ -284,7 +284,7 @@ export function EntityResolutionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Entity 1</Th><Th>Entity 2</Th><Th>Match Type</Th><Th>Score</Th><Th>Confidence</Th><Th>Fields</Th><Th>Status</Th><Th>Reviewer</Th></tr></thead>
               <tbody>
-                {matches.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No matches â€” check /api/v4/entities/matches</td></tr>}
+                {matches.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No matches</td></tr>}
                 {matches.sort((a, b) => b.matchScore - a.matchScore).map((m, i) => {
                   const stC: Record<string, string> = { confirmed: GREEN, pending_review: AMBER, rejected: RED }
                   return (
@@ -296,7 +296,7 @@ export function EntityResolutionUI2() {
                       <Td><ConfBar v={m.confidence} /></Td>
                       <Td mono col={SUBTLE} style={{ fontSize: 10 } as any}>{m.fields.slice(0, 3).join(', ')}</Td>
                       <Td><span style={{ fontFamily: MONO, fontSize: 9, color: stC[m.status] ?? SUBTLE, background: (stC[m.status] ?? SUBTLE) + '22', borderRadius: 3, padding: '2px 5px' }}>{m.status.replace('_', ' ').toUpperCase()}</span></Td>
-                      <Td mono col={SUBTLE}>{m.reviewer || 'â€”'}</Td>
+                      <Td mono col={SUBTLE}>{m.reviewer || '—'}</Td>
                     </tr>
                   )
                 })}
@@ -310,7 +310,7 @@ export function EntityResolutionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Pipeline</Th><Th>Stage</Th><Th>Status</Th><Th right>Processed</Th><Th right>Total</Th><Th right>Matches</Th><Th right>Dupes Removed</Th><Th right>Errors</Th><Th>Start Time</Th></tr></thead>
               <tbody>
-                {pipeline.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No pipeline â€” check /api/v4/entities/pipeline</td></tr>}
+                {pipeline.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No pipeline</td></tr>}
                 {pipeline.map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'failed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.name}</Td>
@@ -334,7 +334,7 @@ export function EntityResolutionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Canonical Entity</Th><Th right>Members</Th><Th>Sources</Th><Th>Conflict Fields</Th><Th>Auto Merged</Th><Th>Resolved By</Th><Th>Merged At</Th></tr></thead>
               <tbody>
-                {duplicates.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No duplicates â€” check /api/v4/entities/duplicates</td></tr>}
+                {duplicates.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No duplicates</td></tr>}
                 {duplicates.sort((a, b) => b.memberCount - a.memberCount).map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.canonical}</Td>
@@ -356,16 +356,16 @@ export function EntityResolutionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Action</Th><Th>Entity</Th><Th>Changed Fields</Th><Th>Old Value</Th><Th>New Value</Th><Th>Actor</Th><Th>Pipeline</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {audit.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit â€” check /api/v4/entities/audit</td></tr>}
+                {audit.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit</td></tr>}
                 {audit.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.action}</Td>
                     <Td mono col={BLUE}>{a.entityName}</Td>
                     <Td mono col={ORANGE} style={{ fontSize: 10 } as any}>{a.changedFields.join(', ')}</Td>
-                    <Td mono col={RED} style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{a.oldValue || 'â€”'}</Td>
-                    <Td mono col={GREEN} style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{a.newValue || 'â€”'}</Td>
+                    <Td mono col={RED} style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{a.oldValue || '—'}</Td>
+                    <Td mono col={GREEN} style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{a.newValue || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.actor}</Td>
-                    <Td mono col={PURPLE}>{a.pipelineId || 'â€”'}</Td>
+                    <Td mono col={PURPLE}>{a.pipelineId || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

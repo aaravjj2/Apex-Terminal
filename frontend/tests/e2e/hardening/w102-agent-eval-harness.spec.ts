@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090/api/v3/eval';
+const API = 'http://localhost:8000/api/v3/eval';
 
 test.beforeEach(async ({ request }) => {
   await request.delete(`${API}/runs`);

@@ -502,7 +502,7 @@ export function SpreadToolsUI2() {
                 <tbody>
                   {scanResults.length === 0 && (
                     <tr><td colSpan={11} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      {loading ? 'Scanning...' : 'No results — click SCAN or check /api/v4/spread-tools/scan'}
+                      {loading ? 'Scanning...' : 'No results — click SCAN'}
                     </td></tr>
                   )}
                   {scanResults.sort((a, b) => b.score - a.score).map(s => (
@@ -596,7 +596,7 @@ export function SpreadToolsUI2() {
                 </thead>
                 <tbody>
                   {strategies.length === 0 && (
-                    <tr><td colSpan={10} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies — check /api/v4/spread-tools/strategies</td></tr>
+                    <tr><td colSpan={10} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies</td></tr>
                   )}
                   {strategies.map(s => {
                     const rr = s.maxLoss !== 0 ? (s.maxProfit / Math.abs(s.maxLoss)).toFixed(2) : '∞'

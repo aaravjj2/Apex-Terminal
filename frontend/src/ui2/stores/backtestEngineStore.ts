@@ -227,8 +227,10 @@ export const backtestEngineStore = (() => {
       store.setState({ strategiesLoading: true });
       try {
         const r = await fetch(`${API}/strategies`);
-        const data = await safeJson(r) as StrategyInfo[];
-        store.setState({ strategies: data, strategiesLoading: false });
+        if (!r.ok) { store.setState({ strategiesLoading: false }); return; }
+        const data = await safeJson(r);
+        const strategies = Array.isArray(data) ? data : (Array.isArray(data?.strategies) ? data.strategies : []);
+        store.setState({ strategies: strategies as StrategyInfo[], strategiesLoading: false });
       } catch {
         store.setState({ strategiesLoading: false });
       }

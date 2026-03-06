@@ -123,6 +123,17 @@ def lint_strategy(spec: dict[str, Any]) -> list[dict[str, str]]:
 
 async def ensure_strategy_tables() -> None:
     async with aiosqlite.connect(DB_PATH) as db:
+        # Check if strategies table exists and has required columns; recreate if not
+        REQUIRED_COLS = {"id", "name", "strategy_type", "symbols", "start_date", "end_date", "params", "version", "archived"}
+        async with db.execute("PRAGMA table_info(strategies)") as cur:
+            rows = await cur.fetchall()
+        if rows:
+            existing_cols = {r[1] for r in rows}
+            if not REQUIRED_COLS.issubset(existing_cols):
+                await db.execute("DROP TABLE IF EXISTS strategies")
+                await db.execute("DROP TABLE IF EXISTS strategy_history")
+                await db.commit()
+
         await db.execute("""
             CREATE TABLE IF NOT EXISTS strategies (
                 id              TEXT PRIMARY KEY,

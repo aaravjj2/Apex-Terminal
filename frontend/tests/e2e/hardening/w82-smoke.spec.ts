@@ -6,7 +6,7 @@
 import { test, expect } from '@playwright/test';
 
 const BASE = 'http://localhost:5100/ui2';
-const API = 'http://127.0.0.1:8090';
+const API = 'http://localhost:8000';
 
 test.describe('W82 Monorepo Smoke', () => {
   test('dashboard route renders', async ({ page }) => {

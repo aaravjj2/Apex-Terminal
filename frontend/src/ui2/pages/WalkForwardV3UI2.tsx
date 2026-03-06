@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// WalkForwardV3UI2 â€” Bloomberg APEX Walk-Forward V3 terminal
+﻿// WalkForwardV3UI2 — Bloomberg APEX Walk-Forward V3 terminal
 // Walk-forward analysis, fold results, robustness matrix, sensitivity heatmap, parameter optimization
 // Tabs: FOLDS | ROBUSTNESS | HEATMAP | PARAMETER OPT | AUDIT
 // APIs: /api/v3/walkforward/run, /robustness, /heatmap, /optimize, /audit
@@ -225,20 +225,20 @@ export function WalkForwardV3UI2() {
   ]
 
   return (
-    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+    <div data-testid="walkforward-v3-page" style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>WALK-FORWARD V3 â€” FOLD ANALYSIS + ROBUSTNESS MATRIX + SENSITIVITY HEATMAP + PARAM OPTIMIZATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>WALK-FORWARD V3 — FOLD ANALYSIS + ROBUSTNESS MATRIX + SENSITIVITY HEATMAP + PARAM OPTIMIZATION</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>RUNNINGâ€¦</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
-        <StatCard label="Folds" value={walkResult ? walkResult.nFolds : 'â€”'} col={BLUE} />
-        <StatCard label="Avg Train Ret." value={walkResult ? `${(walkResult.avgTrainReturn * 100).toFixed(2)}%` : 'â€”'} col={walkResult ? (walkResult.avgTrainReturn >= 0 ? GREEN : RED) : SUBTLE} />
-        <StatCard label="Avg Test Ret." value={avgTestReturn !== null ? `${(avgTestReturn * 100).toFixed(2)}%` : 'â€”'} col={avgTestReturn !== null ? (avgTestReturn >= 0 ? GREEN : RED) : SUBTLE} />
-        <StatCard label="Overfit Score" value={walkResult?.overfitScore !== null && walkResult?.overfitScore !== undefined ? walkResult.overfitScore.toFixed(3) : 'â€”'} col={AMBER} />
-        <StatCard label="Robustness" value={robResult ? `${(robResult.robustnessScore * 100).toFixed(1)}%` : 'â€”'} col={robResult ? (robResult.robustnessScore >= 0.7 ? GREEN : RED) : SUBTLE} />
-        <StatCard label="Matrix Rows" value={robResult ? robResult.count : 'â€”'} col={PURPLE} />
+        <StatCard label="Folds" value={walkResult ? walkResult.nFolds : '—'} col={BLUE} />
+        <StatCard label="Avg Train Ret." value={walkResult ? `${(walkResult.avgTrainReturn * 100).toFixed(2)}%` : '—'} col={walkResult ? (walkResult.avgTrainReturn >= 0 ? GREEN : RED) : SUBTLE} />
+        <StatCard label="Avg Test Ret." value={avgTestReturn !== null ? `${(avgTestReturn * 100).toFixed(2)}%` : '—'} col={avgTestReturn !== null ? (avgTestReturn >= 0 ? GREEN : RED) : SUBTLE} />
+        <StatCard label="Overfit Score" value={walkResult?.overfitScore !== null && walkResult?.overfitScore !== undefined ? walkResult.overfitScore.toFixed(3) : '—'} col={AMBER} />
+        <StatCard label="Robustness" value={robResult ? `${(robResult.robustnessScore * 100).toFixed(1)}%` : '—'} col={robResult ? (robResult.robustnessScore >= 0.7 ? GREEN : RED) : SUBTLE} />
+        <StatCard label="Matrix Rows" value={robResult ? robResult.count : '—'} col={PURPLE} />
       </div>
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0, alignItems: 'center', gap: 12, padding: '4px 8px' }}>
         {TABS2.map(t => (
@@ -247,32 +247,32 @@ export function WalkForwardV3UI2() {
             {t.label}
           </button>
         ))}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div data-testid="walkforward-controls" style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           <label style={{ fontSize: 10, color: SUBTLE }}>Folds</label>
-          <input type="number" min={2} max={10} value={nFolds} onChange={e => setNFolds(Number(e.target.value))}
+          <input data-testid="n-folds-input" type="number" min={2} max={10} value={nFolds} onChange={e => setNFolds(Number(e.target.value))}
             style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, color: TEXT, padding: '3px 6px', width: 44, borderRadius: 3 }} />
           <label style={{ fontSize: 10, color: SUBTLE }}>Purge</label>
-          <input type="number" min={0} max={10} value={purgeBars} onChange={e => setPurgeBars(Number(e.target.value))}
+          <input data-testid="purge-bars-input" type="number" min={0} max={10} value={purgeBars} onChange={e => setPurgeBars(Number(e.target.value))}
             style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, color: TEXT, padding: '3px 6px', width: 44, borderRadius: 3 }} />
-          {[{ label: 'RUN WALK', onClick: handleRunWalk, col: BLUE }, { label: 'ROBUSTNESS', onClick: handleRobustness, col: PURPLE }, { label: 'HEATMAP', onClick: handleHeatmap, col: GREEN }].map(btn => (
-            <button key={btn.label} onClick={btn.onClick} disabled={loading}
-              style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: btn.col, background: btn.col + '22', border: `1px solid ${btn.col}44`, borderRadius: 3, padding: '4px 10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-              {btn.label}
-            </button>
-          ))}
+          <button data-testid="run-walkforward-btn" onClick={handleRunWalk} disabled={loading}
+            style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: BLUE, background: BLUE + '22', border: `1px solid ${BLUE}44`, borderRadius: 3, padding: '4px 10px', cursor: loading ? 'not-allowed' : 'pointer' }}>RUN WALK</button>
+          <button data-testid="run-robustness-btn" onClick={handleRobustness} disabled={loading}
+            style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: PURPLE, background: PURPLE + '22', border: `1px solid ${PURPLE}44`, borderRadius: 3, padding: '4px 10px', cursor: loading ? 'not-allowed' : 'pointer' }}>ROBUSTNESS</button>
+          <button data-testid="load-heatmap-btn" onClick={handleHeatmap} disabled={loading}
+            style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: GREEN, background: GREEN + '22', border: `1px solid ${GREEN}44`, borderRadius: 3, padding: '4px 10px', cursor: loading ? 'not-allowed' : 'pointer' }}>HEATMAP</button>
         </div>
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
         {tab === 'folds' && (
-          <div>
-            {!walkResult && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No walk-forward results â€” click RUN WALK or check /api/v3/walkforward/run</div>}
+          <div data-testid="folds-panel">
+            {!walkResult && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No walk-forward results â€" click RUN WALK</div>}
             {walkResult && (
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table data-testid="folds-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr><Th right>Fold</Th><Th right>Train Start</Th><Th right>Train End</Th><Th right>Purge</Th><Th right>Test Start</Th><Th right>Test End</Th><Th right>Train Ret.</Th><Th right>Test Ret.</Th><Th right>Sharpe</Th><Th right>Max DD</Th></tr></thead>
                   <tbody>
                     {walkResult.folds.map((f, i) => (
-                      <tr key={i}>
+                      <tr key={i} data-testid={`fold-row-${i}`}>
                         <Td right mono col={AMBER}>{f.foldIdx}</Td>
                         <Td right mono col={SUBTLE}>{f.trainStart}</Td>
                         <Td right mono col={SUBTLE}>{f.trainEnd}</Td>
@@ -281,8 +281,8 @@ export function WalkForwardV3UI2() {
                         <Td right mono col={SUBTLE}>{f.testEnd}</Td>
                         <Td right><Pct v={f.trainReturn} /></Td>
                         <Td right><Pct v={f.testReturn} /></Td>
-                        <Td right mono col={f.sharpe !== null ? (f.sharpe >= 1 ? GREEN : f.sharpe >= 0 ? AMBER : RED) : SUBTLE}>{f.sharpe !== null ? f.sharpe.toFixed(2) : 'â€”'}</Td>
-                        <Td right mono col={f.maxDrawdown !== null && f.maxDrawdown < -0.2 ? RED : AMBER}>{f.maxDrawdown !== null ? `${(f.maxDrawdown * 100).toFixed(1)}%` : 'â€”'}</Td>
+                        <Td right mono col={f.sharpe !== null ? (f.sharpe >= 1 ? GREEN : f.sharpe >= 0 ? AMBER : RED) : SUBTLE}>{f.sharpe !== null ? f.sharpe.toFixed(2) : '—'}</Td>
+                        <Td right mono col={f.maxDrawdown !== null && f.maxDrawdown < -0.2 ? RED : AMBER}>{f.maxDrawdown !== null ? `${(f.maxDrawdown * 100).toFixed(1)}%` : '—'}</Td>
                       </tr>
                     ))}
                   </tbody>
@@ -292,11 +292,11 @@ export function WalkForwardV3UI2() {
           </div>
         )}
         {tab === 'robustness' && (
-          <div>
-            {!robResult && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No robustness results â€” click ROBUSTNESS</div>}
+          <div data-testid="robustness-panel">
+            {!robResult && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No robustness results â€" click ROBUSTNESS</div>}
             {robResult && (
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table data-testid="robustness-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr><Th right>Slippage</Th><Th right>Spread</Th><Th right>Delay Bars</Th><Th right>Liq Cap</Th><Th right>Base Ret.</Th><Th right>Adj Ret.</Th><Th right>Delta</Th></tr></thead>
                   <tbody>
                     {robResult.matrix.map((r, i) => (
@@ -317,11 +317,11 @@ export function WalkForwardV3UI2() {
           </div>
         )}
         {tab === 'heatmap' && (
-          <div>
-            {!heatmap && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No heatmap data â€” click HEATMAP</div>}
+          <div data-testid="heatmap-panel">
+            {!heatmap && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No heatmap data â€" click HEATMAP</div>}
             {heatmap && (
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'auto' }}>
-                <table style={{ borderCollapse: 'collapse' }}>
+                <table data-testid="heatmap-table" style={{ borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
                       <Th>Slip \ Spread</Th>
@@ -351,7 +351,7 @@ export function WalkForwardV3UI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Param Name</Th><Th right>Value</Th><Th right>Train Ret.</Th><Th right>Test Ret.</Th><Th right>Sharpe</Th><Th right>Rank</Th></tr></thead>
               <tbody>
-                {paramOpt.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No optimization results â€” check /api/v3/walkforward/optimize</td></tr>}
+                {paramOpt.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No optimization results</td></tr>}
                 {paramOpt.sort((a, b) => a.rank - b.rank).map((p, i) => (
                   <tr key={i}>
                     <Td mono col={BLUE}>{p.paramName}</Td>
@@ -371,13 +371,13 @@ export function WalkForwardV3UI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v3/walkforward/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

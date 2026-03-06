@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// PlatformDebtUI2 â€” Bloomberg APEX platform technical debt terminal
+﻿// PlatformDebtUI2 — Bloomberg APEX platform technical debt terminal
 // Debt tracking, retirement queues, impact analysis, remediation plans, audit
 // Tabs: ITEMS | RETIREMENT | IMPACT | REMEDIATION | AUDIT
 // APIs: /api/v4/platform-debt/items, /retirement, /impact, /remediation, /audit
@@ -222,7 +222,7 @@ export function PlatformDebtUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>PLATFORM DEBT â€” TECH DEBT RETIREMENT + PRIORITIZATION + IMPACT ANALYSIS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>PLATFORM DEBT — TECH DEBT RETIREMENT + PRIORITIZATION + IMPACT ANALYSIS</span>
         {criticalItems > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalItems} CRITICAL OPEN</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
@@ -230,7 +230,7 @@ export function PlatformDebtUI2() {
         <StatCard label="Open Items" value={openItems} col={openItems > 0 ? ORANGE : GREEN} />
         <StatCard label="Critical" value={criticalItems} col={criticalItems > 0 ? RED : GREEN} />
         <StatCard label="Total Est. Days" value={totalDebtDays} col={AMBER} />
-        <StatCard label="Monthly Cost $" value={totalMonthlyCost > 0 ? `$${(totalMonthlyCost / 1000).toFixed(1)}k` : 'â€”'} col={ORANGE} />
+        <StatCard label="Monthly Cost $" value={totalMonthlyCost > 0 ? `$${(totalMonthlyCost / 1000).toFixed(1)}k` : '—'} col={ORANGE} />
         <StatCard label="Remediations" value={remediation.filter(r => r.status === 'active').length} col={BLUE} />
       </div>
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
@@ -248,7 +248,7 @@ export function PlatformDebtUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Debt Item</Th><Th>Category</Th><Th>Severity</Th><Th>Status</Th><Th right>Est Days</Th><Th right>Age Days</Th><Th right>Interest %</Th><Th>Owner</Th><Th>Systems</Th></tr></thead>
               <tbody>
-                {items.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No debt items â€” check /api/v4/platform-debt/items</td></tr>}
+                {items.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No debt items</td></tr>}
                 {items.sort((a, b) => {
                   const sp: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (sp[a.severity] ?? 4) - (sp[b.severity] ?? 4)
@@ -262,7 +262,7 @@ export function PlatformDebtUI2() {
                     <Td right mono col={item.agedays > 180 ? RED : item.agedays > 90 ? AMBER : SUBTLE}>{item.agedays}</Td>
                     <Td right mono col={item.interestRatePct > 10 ? ORANGE : SUBTLE}>{item.interestRatePct.toFixed(1)}%</Td>
                     <Td mono col={TEXT}>{item.owner}</Td>
-                    <Td mono col={SUBTLE}>{item.affectedSystems.slice(0, 30) || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{item.affectedSystems.slice(0, 30) || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -275,7 +275,7 @@ export function PlatformDebtUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Retirement ID</Th><Th>Debt</Th><Th>Status</Th><Th>Assignee</Th><Th right>Effort Days</Th><Th right>Savings/yr Days</Th><Th>Planned</Th><Th>Completed</Th></tr></thead>
               <tbody>
-                {retirement.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No retirement records â€” check /api/v4/platform-debt/retirement</td></tr>}
+                {retirement.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No retirement records</td></tr>}
                 {retirement.sort((a, b) => a.status === 'slipped' ? -1 : 1).map((r, i) => (
                   <tr key={i} style={{ background: r.status === 'slipped' ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.retirementId}</Td>
@@ -284,8 +284,8 @@ export function PlatformDebtUI2() {
                     <Td mono col={BLUE}>{r.assignee}</Td>
                     <Td right mono col={r.effortDays > 20 ? ORANGE : SUBTLE}>{r.effortDays}</Td>
                     <Td right mono col={GREEN}>{r.savingsPerYearDays}</Td>
-                    <Td mono col={SUBTLE}>{r.plannedDate || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{r.completedDate || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.plannedDate || '—'}</Td>
+                    <Td mono col={SUBTLE}>{r.completedDate || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -298,7 +298,7 @@ export function PlatformDebtUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Debt</Th><Th>System</Th><Th right>Incidents</Th><Th right>Velocity Hit %</Th><Th right>Security Risk</Th><Th>Reliability</Th><Th right>$/mo</Th><Th>Assessed</Th></tr></thead>
               <tbody>
-                {impact.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No impact data â€” check /api/v4/platform-debt/impact</td></tr>}
+                {impact.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No impact data</td></tr>}
                 {impact.sort((a, b) => b.costPerMonthUsd - a.costPerMonthUsd).map((i, idx) => (
                   <tr key={idx} style={{ background: i.reliabilityImpact === 'critical' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{i.debtTitle.slice(0, 28)}{i.debtTitle.length > 28 ? 'â€¦' : ''}</Td>
@@ -307,7 +307,7 @@ export function PlatformDebtUI2() {
                     <Td right mono col={i.velocityImpactPct > 20 ? RED : i.velocityImpactPct > 10 ? AMBER : SUBTLE}>{i.velocityImpactPct.toFixed(1)}%</Td>
                     <Td right mono col={i.securityRiskScore >= 7 ? RED : i.securityRiskScore >= 4 ? AMBER : GREEN}>{i.securityRiskScore.toFixed(1)}</Td>
                     <Td><SevBadge s={i.reliabilityImpact === 'none' ? 'low' : i.reliabilityImpact} /></Td>
-                    <Td right mono col={i.costPerMonthUsd > 10000 ? ORANGE : SUBTLE}>{i.costPerMonthUsd > 0 ? `$${i.costPerMonthUsd.toLocaleString()}` : 'â€”'}</Td>
+                    <Td right mono col={i.costPerMonthUsd > 10000 ? ORANGE : SUBTLE}>{i.costPerMonthUsd > 0 ? `$${i.costPerMonthUsd.toLocaleString()}` : '—'}</Td>
                     <Td mono col={SUBTLE}>{i.assessedAt}</Td>
                   </tr>
                 ))}
@@ -321,7 +321,7 @@ export function PlatformDebtUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Debt</Th><Th>Approach</Th><Th>Status</Th><Th>Owner</Th><Th right>Sprints</Th><Th>Progress</Th><Th>Skills</Th></tr></thead>
               <tbody>
-                {remediation.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No remediation plans â€” check /api/v4/platform-debt/remediation</td></tr>}
+                {remediation.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No remediation plans</td></tr>}
                 {remediation.map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.debtTitle.slice(0, 32)}{r.debtTitle.length > 32 ? 'â€¦' : ''}</Td>
@@ -343,7 +343,7 @@ export function PlatformDebtUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Debt ID</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/platform-debt/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -351,7 +351,7 @@ export function PlatformDebtUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

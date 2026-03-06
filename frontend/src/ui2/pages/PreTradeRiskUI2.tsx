@@ -319,7 +319,7 @@ export function PreTradeRiskUI2() {
                 <Th right>Latency</Th><Th>Message</Th><Th>Time</Th>
               </tr></thead>
               <tbody>
-                {visChecks.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No checks — check /api/v4/pre-trade-risk/checks</td></tr>}
+                {visChecks.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No checks</td></tr>}
                 {[...visChecks].sort((a, b) => {
                   const sOrd: Record<Severity, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
                   const rOrd: Record<CheckResult, number> = { fail: 0, warn: 1, pending: 2, pass: 3 }
@@ -354,7 +354,7 @@ export function PreTradeRiskUI2() {
                 <Th>Utilization</Th><Th>Status</Th><Th>Resets At</Th><Th>Description</Th>
               </tr></thead>
               <tbody>
-                {limits.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No limits — check /api/v4/pre-trade-risk/limits</td></tr>}
+                {limits.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No limits</td></tr>}
                 {[...limits].sort((a, b) => b.utilizationPct - a.utilizationPct).map((l, i) => (
                   <tr key={i} style={{ background: l.breached ? '#1a0808' : 'transparent' }}>
                     <Td mono col={l.breached ? RED : TEXT}>{l.name}</Td>
@@ -383,7 +383,7 @@ export function PreTradeRiskUI2() {
                 <Th>Action</Th><Th right>Triggers</Th><Th>Last Triggered</Th><Th>Affected Symbols</Th><Th>Description</Th>
               </tr></thead>
               <tbody>
-                {rules.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance rules — check /api/v4/pre-trade-risk/compliance</td></tr>}
+                {rules.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance rules</td></tr>}
                 {rules.map((r, i) => {
                   const ac = r.action === 'block' ? RED : r.action === 'flag' ? ORANGE : r.action === 'notify' ? BLUE : AMBER
                   const sc = r.status === 'active' ? GREEN : r.status === 'suspended' ? AMBER : SUBTLE
@@ -409,7 +409,7 @@ export function PreTradeRiskUI2() {
         {/* CIRCUIT BREAKERS */}
         {tab === 'breakers' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {breakers.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No circuit breakers — check /api/v4/pre-trade-risk/circuit-breakers</div>}
+            {breakers.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No circuit breakers</div>}
             {breakers.map(b => {
               const pct = b.threshold > 0 ? (b.currentValue / b.threshold) * 100 : 0
               const c = b.status === 'triggered' ? RED : b.status === 'armed' ? GREEN : SUBTLE
@@ -442,7 +442,7 @@ export function PreTradeRiskUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Timestamp</Th><Th>Symbol</Th><Th>Check</Th><Th>Result</Th><Th>Severity</Th><Th>Message</Th><Th>Resolved</Th></tr></thead>
               <tbody>
-                {history.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history — check /api/v4/pre-trade-risk/history</td></tr>}
+                {history.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history</td></tr>}
                 {history.filter(h => (resultFilter === 'all' || h.result === resultFilter) && (sevFilter === 'all' || h.severity === sevFilter)).map((h, i) => (
                   <tr key={i}>
                     <Td mono col={SUBTLE} style={{ fontSize: 10 }}>{h.timestamp}</Td>

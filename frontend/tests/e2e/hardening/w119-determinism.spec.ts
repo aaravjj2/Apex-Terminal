@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WORKSPACE = join(__dirname, '..', '..', '..', '..');
-const BASE = 'http://localhost:8090';
+const BASE = 'http://localhost:8000';
 
 test('w119 proof/determinism-run1.json exists', async () => {
   const path = join(WORKSPACE, 'proof', 'determinism-run1.json');

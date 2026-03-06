@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// DerivativesGovUI2 â€” Bloomberg DRGT derivatives governance terminal
+﻿// DerivativesGovUI2 — Bloomberg DRGT derivatives governance terminal
 // Position limits, approval workflows, margin, EMIR/DFA reporting, clearing
 // Tabs: POSITIONS | LIMITS | MARGIN | REPORTING | CLEARING
 // APIs: /api/v4/derivatives-gov/positions, /limits, /margin, /reporting, /clearing
@@ -234,7 +234,7 @@ export function DerivativesGovUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DRGT</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>DERIVATIVES GOVERNANCE â€” POSITIONS + LIMITS + MARGIN + EMIR/DFA REPORTING + CLEARING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>DERIVATIVES GOVERNANCE — POSITIONS + LIMITS + MARGIN + EMIR/DFA REPORTING + CLEARING</span>
         {pendingApprovals > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingApprovals} PENDING APPROVALS</span>}
         {flagged > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {flagged} FLAGGED</span>}
         {breachedLimits > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {breachedLimits} LIMIT BREACHES</span>}
@@ -263,7 +263,7 @@ export function DerivativesGovUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Instrument</Th><Th>Type</Th><Th>Dir</Th><Th>Approval</Th><Th right>Qty</Th><Th right>Notional</Th><Th right>MtM</Th><Th right>Delta</Th><Th right>Vega</Th><Th>Book</Th></tr></thead>
               <tbody>
-                {positions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No positions â€” check /api/v4/derivatives-gov/positions</td></tr>}
+                {positions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No positions</td></tr>}
                 {positions.map((p, i) => (
                   <tr key={i} style={{ background: p.approvalStatus === 'flagged' ? ORANGE + '08' : p.approvalStatus === 'pending_approval' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.instrument}</Td>
@@ -288,7 +288,7 @@ export function DerivativesGovUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Limit Type</Th><Th>Scope</Th><Th>Product</Th><Th>Utilization</Th><Th right>Current</Th><Th right>Max</Th><Th>Breached</Th><Th>Approver</Th><Th>Last Review</Th></tr></thead>
               <tbody>
-                {limits.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No limits â€” check /api/v4/derivatives-gov/limits</td></tr>}
+                {limits.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No limits</td></tr>}
                 {limits.sort((a, b) => b.utilizationPct - a.utilizationPct).map((l, i) => (
                   <tr key={i} style={{ background: l.breached ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{l.limitType}</Td>
@@ -312,7 +312,7 @@ export function DerivativesGovUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Counterparty</Th><Th>Portfolio</Th><Th right>VM</Th><Th right>IM</Th><Th right>Margin Call</Th><Th right>Posted</Th><Th right>Haircut %</Th><Th right>Net Exposure</Th><Th>IM Model</Th></tr></thead>
               <tbody>
-                {margin.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No margin â€” check /api/v4/derivatives-gov/margin</td></tr>}
+                {margin.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No margin</td></tr>}
                 {margin.sort((a, b) => Math.abs(b.netExposure) - Math.abs(a.netExposure)).map((m, i) => (
                   <tr key={i} style={{ background: m.marginCall > 0 ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{m.counterparty}</Td>
@@ -336,7 +336,7 @@ export function DerivativesGovUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Regime</Th><Th>Trade ID</Th><Th>Report Type</Th><Th>Status</Th><Th>UTI</Th><Th>Trade Date</Th><Th>Reported</Th><Th>Error</Th></tr></thead>
               <tbody>
-                {reporting.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reporting â€” check /api/v4/derivatives-gov/reporting</td></tr>}
+                {reporting.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reporting</td></tr>}
                 {reporting.map((r, i) => {
                   const sc = r.status === 'accepted' ? GREEN : r.status === 'rejected' ? RED : r.status === 'late' ? ORANGE : AMBER
                   return (
@@ -345,10 +345,10 @@ export function DerivativesGovUI2() {
                       <Td mono col={AMBER}>{r.tradeId}</Td>
                       <Td mono col={BLUE}>{r.reportType}</Td>
                       <Td><span style={{ fontFamily: MONO, fontSize: 9, color: sc, background: sc + '22', borderRadius: 3, padding: '2px 5px' }}>{r.status.toUpperCase()}</span></Td>
-                      <Td mono col={SUBTLE} style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{r.uti || 'â€”'}</Td>
+                      <Td mono col={SUBTLE} style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{r.uti || '—'}</Td>
                       <Td mono col={SUBTLE}>{r.tradeDate}</Td>
                       <Td mono col={SUBTLE}>{r.reportedAt}</Td>
-                      <Td mono col={RED} style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{r.errorDesc || 'â€”'}</Td>
+                      <Td mono col={RED} style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{r.errorDesc || '—'}</Td>
                     </tr>
                   )
                 })}
@@ -362,7 +362,7 @@ export function DerivativesGovUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Trade ID</Th><Th>Instrument</Th><Th>CCP</Th><Th>Clearing Status</Th><Th>Obligation</Th><Th right>Gross Amount</Th><Th>Member ID</Th><Th>Risk Category</Th><Th>Clearing Date</Th></tr></thead>
               <tbody>
-                {clearing.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No clearing â€” check /api/v4/derivatives-gov/clearing</td></tr>}
+                {clearing.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No clearing</td></tr>}
                 {clearing.map((c, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{c.tradeId}</Td>

@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WORKSPACE = join(__dirname, '..', '..', '..', '..');
-const BASE = 'http://localhost:8090';
+const BASE = 'http://localhost:8000';
 const FRONT = 'http://localhost:5100';
 
 test('w120 ONBOARDING.md exists', async () => {

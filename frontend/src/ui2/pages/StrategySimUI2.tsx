@@ -245,7 +245,7 @@ export function StrategySimUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Strategy</Th><Th>Universe</Th><Th>Type</Th><Th>Status</Th><Th right>Return %</Th><Th right>Sharpe</Th><Th right>Max DD %</Th><Th right>Vol %</Th><Th right>Calmar</Th><Th>Period</Th></tr></thead>
               <tbody>
-                {simulations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No simulations — check /api/v4/strategy-sim/simulations</td></tr>}
+                {simulations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No simulations</td></tr>}
                 {simulations.sort((a, b) => b.sharpeRatio - a.sharpeRatio).map((s, i) => (
                   <tr key={i} style={{ background: s.status === 'running' ? AMBER + '06' : s.status === 'failed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.strategyName}</Td>
@@ -270,7 +270,7 @@ export function StrategySimUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Run ID</Th><Th>Sim ID</Th><Th right>Percentile</Th><Th right>Return %</Th><Th right>Max DD %</Th><Th right>Sharpe</Th><Th right>Final Value</Th><Th right>Probability</Th></tr></thead>
               <tbody>
-                {monteCarlo.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No Monte Carlo results — check /api/v4/strategy-sim/monte-carlo</td></tr>}
+                {monteCarlo.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No Monte Carlo results</td></tr>}
                 {monteCarlo.sort((a, b) => b.percentile - a.percentile).map((m, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{m.runId}</Td>
@@ -293,7 +293,7 @@ export function StrategySimUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Window</Th><Th>Sim ID</Th><Th>Period</Th><Th>Pass</Th><Th right>IS Return</Th><Th right>OOS Return</Th><Th right>IS Sharpe</Th><Th right>OOS Sharpe</Th><Th right>Degradation %</Th></tr></thead>
               <tbody>
-                {walkForward.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No walk-forward data — check /api/v4/strategy-sim/walk-forward</td></tr>}
+                {walkForward.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No walk-forward data</td></tr>}
                 {walkForward.map((w, i) => (
                   <tr key={i} style={{ background: !w.passed ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{w.windowId}</Td>
@@ -317,7 +317,7 @@ export function StrategySimUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Scenario</Th><Th>Type</Th><Th>Severity</Th><Th>Shock</Th><Th right>Portfolio Impact</Th><Th right>Max Loss</Th><Th right>Recovery Days</Th><Th right>Probability</Th></tr></thead>
               <tbody>
-                {scenarios.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No scenarios — check /api/v4/strategy-sim/scenarios</td></tr>}
+                {scenarios.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No scenarios</td></tr>}
                 {scenarios.sort((a, b) => b.maxLoss - a.maxLoss).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.name}</Td>
@@ -340,7 +340,7 @@ export function StrategySimUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Sim ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log — check /api/v4/strategy-sim/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

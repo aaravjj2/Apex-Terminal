@@ -33,6 +33,9 @@ test-build:
 test-e2e:
 	cd frontend && npx playwright test
 
+test-e2e-core:
+	cd frontend && ./node_modules/.bin/playwright test tests/e2e/core/ tests/e2e/risk-desk.spec.ts --config=playwright.config.headless.ts --reporter=line
+
 test-e2e-v1-3:
 	cd frontend && npx playwright test tests/e2e/stability-coverage-v1-3.spec.ts
 

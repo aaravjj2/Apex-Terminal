@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// BqlQueryUI2 â€” Bloomberg BQL-grade query terminal
+﻿// BqlQueryUI2 — Bloomberg BQL-grade query terminal
 // Live market data queries, custom formula engine, saved queries, results grid
 // Tabs: QUERY EDITOR | RESULTS | SAVED QUERIES | FORMULA GUIDE | HISTORY
 // APIs: /api/v4/bql/execute, /results, /saved, /formulas, /history
@@ -177,7 +177,7 @@ export function BqlQueryUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>BQL</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>BLOOMBERG QUERY LANGUAGE â€” LIVE DATA RETRIEVAL + FORMULA ENGINE + ANALYTICS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>BLOOMBERG QUERY LANGUAGE — LIVE DATA RETRIEVAL + FORMULA ENGINE + ANALYTICS</span>
         {lastRunMs && <span style={{ fontSize: 10, color: GREEN }}>âœ“ {lastRunMs}ms Â· {results.length} rows</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
@@ -235,7 +235,7 @@ export function BqlQueryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Field</Th><Th right>Value</Th><Th>Type</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {results.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No results yet â€” write a query and click RUN</td></tr>}
+                {results.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No results yet — write a query and click RUN</td></tr>}
                 {results.map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.symbol}</Td>
@@ -253,7 +253,7 @@ export function BqlQueryUI2() {
         {/* SAVED QUERIES */}
         {tab === 'saved' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {savedQueries.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No saved queries â€” check /api/v4/bql/saved</div>}
+            {savedQueries.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No saved queries</div>}
             {savedQueries.map((q, i) => (
               <div key={i} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -291,7 +291,7 @@ export function BqlQueryUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Formula</Th><Th>Category</Th><Th>Return Type</Th><Th>Syntax</Th><Th>Description</Th></tr></thead>
                 <tbody>
-                  {filteredFormulas.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No formulas match â€” check /api/v4/bql/formulas</td></tr>}
+                  {filteredFormulas.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No formulas match</td></tr>}
                   {filteredFormulas.map((f, i) => (
                     <tr key={i}>
                       <Td mono col={AMBER}>{f.name}</Td>
@@ -313,7 +313,7 @@ export function BqlQueryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Status</Th><Th>Query</Th><Th right>Duration</Th><Th right>Rows</Th><Th>Executed At</Th><Th>Action</Th></tr></thead>
               <tbody>
-                {history.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history yet â€” run some queries</td></tr>}
+                {history.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history yet — run some queries</td></tr>}
                 {history.map((h, i) => (
                   <tr key={i}>
                     <Td><RunStatusBadge s={h.status} /></Td>

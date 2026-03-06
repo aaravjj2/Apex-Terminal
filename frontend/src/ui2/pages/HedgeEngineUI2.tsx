@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// HedgeEngineUI2 â€” Bloomberg HEDG-grade hedge recommendation engine
+﻿// HedgeEngineUI2 — Bloomberg HEDG-grade hedge recommendation engine
 // Delta/Gamma/Vega hedge recommendations, cost metrics, live P&L attribution
 // Tabs: EXPOSURES | RECOMMENDATIONS | ACTIVE HEDGES | EFFECTIVENESS | COST ANALYSIS
 // APIs: /api/v4/hedge-engine/exposures, /recommendations, /active, /effectiveness, /cost
@@ -237,7 +237,7 @@ export function HedgeEngineUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>HEDG</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>HEDGE ENGINE â€” DELTA/GAMMA/VEGA HEDGE RECOMMENDATIONS + COST OPTIMIZATION + EFFECTIVENESS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>HEDGE ENGINE — DELTA/GAMMA/VEGA HEDGE RECOMMENDATIONS + COST OPTIMIZATION + EFFECTIVENESS</span>
         {criticalCount > 0 && <span style={{ fontFamily: MONO, fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {criticalCount} CRITICAL</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         {loading && <span style={{ fontSize: 10, color: SUBTLE }}>Loading...</span>}
@@ -272,7 +272,7 @@ export function HedgeEngineUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Asset Class</Th><Th right>Delta</Th><Th right>Gamma</Th><Th right>Vega</Th><Th right>Theta</Th><Th right>Î”$ Dollar</Th><Th right>Î“$ Dollar</Th><Th right>V$ Dollar</Th></tr></thead>
               <tbody>
-                {exposures.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exposure data â€” check /api/v4/hedge-engine/exposures</td></tr>}
+                {exposures.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exposure data</td></tr>}
                 {exposures.map((e, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{e.symbol}</Td>
@@ -339,7 +339,7 @@ export function HedgeEngineUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Instrument</Th><Th>Action</Th><Th right>Qty</Th><Th right>Entry</Th><Th right>Current</Th><Th right>Unrealized P&L</Th><Th>Effectiveness</Th><Th>Type</Th><Th>Opened</Th></tr></thead>
               <tbody>
-                {activeHedges.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No active hedges â€” check /api/v4/hedge-engine/active</td></tr>}
+                {activeHedges.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No active hedges</td></tr>}
                 {activeHedges.map((h, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{h.symbol}</Td>
@@ -377,7 +377,7 @@ export function HedgeEngineUI2() {
                 </div>
               ))}
             </div>
-            {effectiveness.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No effectiveness data â€” check /api/v4/hedge-engine/effectiveness</div>}
+            {effectiveness.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No effectiveness data</div>}
           </div>
         )}
 
@@ -387,7 +387,7 @@ export function HedgeEngineUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Instrument</Th><Th right>Annual Cost (bps)</Th><Th right>Carry (bps)</Th><Th right>IV</Th><Th right>RV</Th><Th right>Vol Premium (bps)</Th><Th right>Total Cost (bps)</Th><Th>Rating</Th></tr></thead>
               <tbody>
-                {costData.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No cost data â€” check /api/v4/hedge-engine/cost</td></tr>}
+                {costData.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No cost data</td></tr>}
                 {costData.sort((a, b) => a.totalCostBps - b.totalCostBps).map((c, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{c.symbol}</Td>

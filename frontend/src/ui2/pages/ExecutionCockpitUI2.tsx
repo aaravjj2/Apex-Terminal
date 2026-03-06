@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ExecutionCockpitUI2 â€” Bloomberg XCKT execution monitoring cockpit
+﻿// ExecutionCockpitUI2 — Bloomberg XCKT execution monitoring cockpit
 // Real-time order flow, fill quality, latency heatmap, venue analysis, slippage tracking
 // Tabs: ORDER FLOW | FILL QUALITY | LATENCY | VENUES | SLIPPAGE
 // APIs: /api/v4/execution-cockpit/flow, /fills, /latency, /venues, /slippage
@@ -238,7 +238,7 @@ export function ExecutionCockpitUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>XCKT</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>EXECUTION COCKPIT â€” REAL-TIME ORDER FLOW + FILL QUALITY + LATENCY + TCA</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EXECUTION COCKPIT — REAL-TIME ORDER FLOW + FILL QUALITY + LATENCY + TCA</span>
         {rejectCount > 0 && <span style={{ fontFamily: MONO, fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {rejectCount} REJECTED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         {loading && <span style={{ fontSize: 10, color: SUBTLE }}>Loading...</span>}
@@ -289,7 +289,7 @@ export function ExecutionCockpitUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Order ID</Th><Th>Symbol</Th><Th>Side</Th><Th>Type</Th><Th right>Qty</Th><Th>Fill</Th><Th right>Price</Th><Th right>Avg Fill</Th><Th>Status</Th><Th>Venue</Th><Th right>Latency</Th></tr></thead>
                 <tbody>
-                  {filteredFlow.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No orders â€” check /api/v4/execution-cockpit/flow</td></tr>}
+                  {filteredFlow.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No orders</td></tr>}
                   {filteredFlow.map((o, i) => (
                     <tr key={i} style={{ background: o.status === 'rejected' ? RED + '11' : 'transparent' }}>
                       <Td mono col={SUBTLE}>{o.orderId.slice(-8)}</Td>
@@ -317,7 +317,7 @@ export function ExecutionCockpitUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Side</Th><Th right>Fill Qty</Th><Th right>Fill Price</Th><Th right>Arrival</Th><Th right>VWAP</Th><Th right>Slippage (bps)</Th><Th right>IS</Th><Th>Venue</Th><Th>Time</Th></tr></thead>
               <tbody>
-                {fills.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No fill data â€” check /api/v4/execution-cockpit/fills</td></tr>}
+                {fills.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No fill data</td></tr>}
                 {fills.map((f, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{f.symbol}</Td>
@@ -343,7 +343,7 @@ export function ExecutionCockpitUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Component</Th><Th>Category</Th><Th right>P50</Th><Th right>P95</Th><Th right>P99</Th><Th right>Max</Th><Th right>Avg</Th><Th right>Breaches</Th><Th right>Threshold</Th></tr></thead>
               <tbody>
-                {latency.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No latency data â€” check /api/v4/execution-cockpit/latency</td></tr>}
+                {latency.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No latency data</td></tr>}
                 {latency.sort((a, b) => b.p99Ms - a.p99Ms).map((l, i) => (
                   <tr key={i} style={{ background: l.breachCount > 0 ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{l.component}</Td>
@@ -368,7 +368,7 @@ export function ExecutionCockpitUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Venue</Th><Th>Status</Th><Th>Type</Th><Th right>Fill Rate</Th><Th right>Avg Latency</Th><Th right>Orders</Th><Th right>Fills</Th><Th right>Avg Slippage</Th><Th right>Reject Rate</Th></tr></thead>
               <tbody>
-                {venues.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No venue data â€” check /api/v4/execution-cockpit/venues</td></tr>}
+                {venues.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No venue data</td></tr>}
                 {venues.sort((a, b) => b.fillRate - a.fillRate).map((v, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{v.venue}</Td>
@@ -393,7 +393,7 @@ export function ExecutionCockpitUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Side</Th><Th>Algo</Th><Th right>Slippage</Th><Th right>Mkt Impact</Th><Th right>Timing</Th><Th right>Spread</Th><Th right>Total Cost</Th><Th right>IS $</Th><Th>Date</Th></tr></thead>
               <tbody>
-                {slippage.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No slippage data â€” check /api/v4/execution-cockpit/slippage</td></tr>}
+                {slippage.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No slippage data</td></tr>}
                 {slippage.sort((a, b) => b.totalCostBps - a.totalCostBps).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.symbol}</Td>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// EvalHarnessUI2 â€” Bloomberg EVLH model evaluation harness terminal
+﻿// EvalHarnessUI2 — Bloomberg EVLH model evaluation harness terminal
 // Benchmark suites, test results, regression detection, model comparisons, eval history
 // Tabs: BENCHMARKS | TEST SUITES | REGRESSION | COMPARISONS | HISTORY
 // APIs: /api/v4/eval-harness/benchmarks, /suites, /regression, /comparisons, /history
@@ -230,7 +230,7 @@ export function EvalHarnessUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>EVLH</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>EVAL HARNESS â€” BENCHMARKS + TEST SUITES + REGRESSION DETECTION + MODEL COMPARISONS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EVAL HARNESS — BENCHMARKS + TEST SUITES + REGRESSION DETECTION + MODEL COMPARISONS</span>
         {criticalRegressions > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalRegressions} CRITICAL REGRESSIONS</span>}
         {failedBenchmarks > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {failedBenchmarks} BENCHMARK FAILURES</span>}
         {failingSuites > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {failingSuites} SUITES WITH FAILURES</span>}
@@ -258,7 +258,7 @@ export function EvalHarnessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Benchmark</Th><Th>Model</Th><Th>Metric</Th><Th>Status</Th><Th right>Score</Th><Th right>Baseline</Th><Th right>Î” Baseline</Th><Th right>Rank</Th><Th>Dataset</Th><Th>Run Date</Th></tr></thead>
               <tbody>
-                {benchmarks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No benchmarks â€” check /api/v4/eval-harness/benchmarks</td></tr>}
+                {benchmarks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No benchmarks</td></tr>}
                 {benchmarks.sort((a, b) => {
                   const ord: Record<string, number> = { fail: 0, regression: 1, pass: 2, improvement: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -286,7 +286,7 @@ export function EvalHarnessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Suite Name</Th><Th>Category</Th><Th>Results</Th><Th right>Total</Th><Th right>Failures</Th><Th right>Coverage %</Th><Th right>Duration (s)</Th><Th>Last Run</Th></tr></thead>
               <tbody>
-                {suites.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No suites â€” check /api/v4/eval-harness/suites</td></tr>}
+                {suites.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No suites</td></tr>}
                 {suites.sort((a, b) => b.failed - a.failed).map((s, i) => (
                   <tr key={i} style={{ background: s.failed > 0 ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.suiteName}</Td>
@@ -309,7 +309,7 @@ export function EvalHarnessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Model</Th><Th>Metric</Th><Th>Severity</Th><Th right>Previous</Th><Th right>Current</Th><Th right>Î” %</Th><Th>Acked</Th><Th>Root Cause</Th><Th>Detected</Th></tr></thead>
               <tbody>
-                {regression.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regressions â€” check /api/v4/eval-harness/regression</td></tr>}
+                {regression.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regressions</td></tr>}
                 {regression.sort((a, b) => {
                   const ord: Record<string, number> = { critical: 0, major: 1, minor: 2 }
                   return (ord[a.severity] ?? 3) - (ord[b.severity] ?? 3)
@@ -322,7 +322,7 @@ export function EvalHarnessUI2() {
                     <Td right mono col={RED}>{r.currentValue.toFixed(4)}</Td>
                     <Td right mono col={r.changePct < 0 ? RED : GREEN}>{r.changePct >= 0 ? '+' : ''}{r.changePct.toFixed(2)}%</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.acknowledged ? GREEN : RED }}>{r.acknowledged ? 'ACKED' : 'OPEN'}</span></Td>
-                    <Td mono col={SUBTLE} style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{r.rootCause || 'â€”'}</Td>
+                    <Td mono col={SUBTLE} style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{r.rootCause || '—'}</Td>
                     <Td mono col={SUBTLE}>{r.detectedAt}</Td>
                   </tr>
                 ))}
@@ -336,7 +336,7 @@ export function EvalHarnessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Model A</Th><Th>Model B</Th><Th>Metric</Th><Th right>Score A</Th><Th right>Score B</Th><Th>Winner</Th><Th right>Delta</Th><Th right>Significance</Th><Th>Dataset</Th></tr></thead>
               <tbody>
-                {comparisons.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No comparisons â€” check /api/v4/eval-harness/comparisons</td></tr>}
+                {comparisons.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No comparisons</td></tr>}
                 {comparisons.map((c, i) => (
                   <tr key={i}>
                     <Td mono col={c.winner === 'A' ? GREEN : TEXT}>{c.modelA} <span style={{ color: SUBTLE, fontSize: 9 }}>v{c.modelAVersion}</span></Td>
@@ -360,7 +360,7 @@ export function EvalHarnessUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Model</Th><Th>Version</Th><Th>Suite</Th><Th right>Score</Th><Th right>Pass %</Th><Th right>Regressions</Th><Th right>Improvements</Th><Th>Triggered By</Th><Th right>Duration (s)</Th><Th>Date</Th></tr></thead>
               <tbody>
-                {history.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history â€” check /api/v4/eval-harness/history</td></tr>}
+                {history.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history</td></tr>}
                 {history.map((h, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{h.modelId}</Td>

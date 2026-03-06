@@ -17,7 +17,7 @@
 import { test, expect } from '@playwright/test';
 
 const ES = 'http://localhost:9200';
-const API = 'http://localhost:8090';
+const API = 'http://localhost:8000';
 
 // ---------------------------------------------------------------------------
 // Direct ES connectivity

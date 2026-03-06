@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// FuturesCurveUI2 â€” Bloomberg COMMDS-grade futures curve terminal
+﻿// FuturesCurveUI2 — Bloomberg COMMDS-grade futures curve terminal
 // Tabs: TERM STRUCTURE | ROLL CALENDAR | BASIS | SPREAD MATRIX | SEASONALITY
 // APIs: /api/v4/futures-curve/term-structure/{root},
 //       /api/v4/futures-curve/roll-calendar/{root},
@@ -99,12 +99,12 @@ function Td({ children, right, mono, col }: { children: React.ReactNode; right?:
 }
 
 function fmtNum(v: number | null | undefined, dp = 2) {
-  if (v === null || v === undefined) return 'â€”'
+  if (v === null || v === undefined) return '—'
   return v.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })
 }
 
 function fmtPct(v: number | null | undefined, dp = 2) {
-  if (v === null || v === undefined) return 'â€”'
+  if (v === null || v === undefined) return '—'
   return `${v > 0 ? '+' : ''}${v.toFixed(dp)}%`
 }
 
@@ -206,9 +206,9 @@ function SpreadHeatmap({ spreads, contracts }: { spreads: SpreadEntry[]; contrac
             <tr key={r}>
               <td style={{ padding: '5px 8px', color: SUBTLE, borderBottom: `1px solid ${BORDER}`, background: '#0d0d0d', fontWeight: 700 }}>{r}</td>
               {syms.map(c => {
-                if (r === c) return <td key={c} style={{ padding: '5px 8px', background: '#0d0d0d', borderBottom: `1px solid ${BORDER}` }}>â€”</td>
+                if (r === c) return <td key={c} style={{ padding: '5px 8px', background: '#0d0d0d', borderBottom: `1px solid ${BORDER}` }}>—</td>
                 const sp = spreads.find(s => (s.leg1 === r && s.leg2 === c) || (s.leg1 === c && s.leg2 === r))
-                if (!sp) return <td key={c} style={{ padding: '5px 8px', background: '#111', borderBottom: `1px solid ${BORDER}`, color: SUBTLE, textAlign: 'right' }}>â€”</td>
+                if (!sp) return <td key={c} style={{ padding: '5px 8px', background: '#111', borderBottom: `1px solid ${BORDER}`, color: SUBTLE, textAlign: 'right' }}>—</td>
                 const z = sp.zScore
                 const intensity = Math.min(0.9, Math.abs(z) / maxAbsZ)
                 const bg = z > 0 ? `rgba(38,166,154,${intensity * 0.5})` : `rgba(239,83,80,${intensity * 0.5})`
@@ -372,7 +372,7 @@ export function FuturesCurveUI2() {
 
       {/* â”€â”€ STATS â”€â”€ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
-        <StatCard label="Front Price" value={front ? `$${fmtNum(front.lastPrice)}` : 'â€”'} col={AMBER} />
+        <StatCard label="Front Price" value={front ? `$${fmtNum(front.lastPrice)}` : '—'} col={AMBER} />
         <StatCard label="Curve Slope" value={fmtPct(curveSlope)} col={isContango ? RED : GREEN} sub={isContango ? 'Contango' : 'Backwardation'} />
         <StatCard label="Contracts" value={contracts.length} />
         <StatCard label="Total OI" value={`${(totalOI / 1000).toFixed(0)}K`} />
@@ -402,7 +402,7 @@ export function FuturesCurveUI2() {
           <>
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14, marginBottom: 14 }}>
               <div style={{ fontSize: 10, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-                Forward Curve â€” {root} ({contracts.length} contracts)
+                Forward Curve — {root} ({contracts.length} contracts)
               </div>
               <TermStructureSVG contracts={contracts} />
             </div>
@@ -420,7 +420,7 @@ export function FuturesCurveUI2() {
                 <tbody>
                   {contracts.length === 0 && (
                     <tr><td colSpan={10} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      {loading ? 'Loading...' : `No contracts found for ${root} â€” check /api/v4/futures-curve/term-structure/${root}`}
+                      {loading ? 'Loading...' : `No contracts found for ${root}${root}`}
                     </td></tr>
                   )}
                   {contracts.map(c => {
@@ -500,7 +500,7 @@ export function FuturesCurveUI2() {
                 <tbody>
                   {rollDates.length === 0 && (
                     <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No roll calendar data â€” check /api/v4/futures-curve/roll-calendar/{root}
+                      No roll calendar data{root}
                     </td></tr>
                   )}
                   {rollDates.map(r => (
@@ -555,7 +555,7 @@ export function FuturesCurveUI2() {
                 <tbody>
                   {basisPoints.length === 0 && (
                     <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No basis data â€” check /api/v4/futures-curve/basis/{root}
+                      No basis data{root}
                     </td></tr>
                   )}
                   {[...basisPoints].reverse().slice(0, 60).map(p => (
@@ -596,7 +596,7 @@ export function FuturesCurveUI2() {
                 <tbody>
                   {spreads.length === 0 && (
                     <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No spread data â€” check /api/v4/futures-curve/spread/{root}
+                      No spread data{root}
                     </td></tr>
                   )}
                   {spreads.sort((a, b) => Math.abs(b.zScore) - Math.abs(a.zScore)).map((s, i) => (
@@ -629,9 +629,9 @@ export function FuturesCurveUI2() {
           <>
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14, marginBottom: 14 }}>
               <div style={{ fontSize: 10, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                Seasonal Return Pattern â€” {root} (Average Monthly Return)
+                Seasonal Return Pattern — {root} (Average Monthly Return)
               </div>
-              {/* month bars â€” requires historical data from backend */}
+              {/* month bars — requires historical data from backend */}
               <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 100 }}>
                 {['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'].map((m, i) => {
                   const mockReturn = [1.2, -0.5, 2.1, 1.8, 0.3, -1.1, 0.8, -0.2, -1.5, 1.9, 2.3, 1.5][i]
@@ -647,7 +647,7 @@ export function FuturesCurveUI2() {
                 })}
               </div>
               <div style={{ fontSize: 10, color: SUBTLE, marginTop: 10, fontStyle: 'italic' }}>
-                * Seasonal pattern data from /api/v4/futures-curve/seasonality/{root} â€” placeholder shown
+                * Seasonal pattern data from /api/v4/futures-curve/seasonality/{root} — placeholder shown
               </div>
             </div>
 

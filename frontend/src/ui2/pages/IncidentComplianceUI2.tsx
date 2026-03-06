@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// IncidentComplianceUI2 â€” Bloomberg ICMP incident-compliance bridge terminal
+﻿// IncidentComplianceUI2 — Bloomberg ICMP incident-compliance bridge terminal
 // Regulatory notifications, compliance obligations, resolution tracking, breach reporting
 // Tabs: INCIDENTS | NOTIFICATIONS | OBLIGATIONS | RESOLUTION | AUDIT
 // APIs: /api/v4/incident-compliance/incidents, /notifications, /obligations, /resolution, /audit
@@ -206,7 +206,7 @@ export function IncidentComplianceUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>ICMP</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>INCIDENT COMPLIANCE â€” REGULATORY NOTIFICATIONS + OBLIGATIONS + BREACH REPORTING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>INCIDENT COMPLIANCE — REGULATORY NOTIFICATIONS + OBLIGATIONS + BREACH REPORTING</span>
         {reportableIncidents > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {reportableIncidents} REPORTABLE</span>}
         {overdueObligations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {overdueObligations} OVERDUE OBLIGATIONS</span>}
         {lateRiskNotifs > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {lateRiskNotifs} LATE RISK NOTIFS</span>}
@@ -234,7 +234,7 @@ export function IncidentComplianceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Incident ID</Th><Th>Title</Th><Th>Type</Th><Th>Severity</Th><Th>Impact</Th><Th>Status</Th><Th right>Deadline (hrs)</Th><Th right>Est. Impact</Th><Th>Detected</Th></tr></thead>
               <tbody>
-                {incidents.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No incidents â€” check /api/v4/incident-compliance/incidents</td></tr>}
+                {incidents.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No incidents</td></tr>}
                 {incidents.sort((a, b) => {
                   const ord: Record<string, number> = { reportable: 0, material: 1, 'non-reportable': 2, immaterial: 3 }
                   return (ord[a.complianceImpact] ?? 4) - (ord[b.complianceImpact] ?? 4)
@@ -261,7 +261,7 @@ export function IncidentComplianceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Notif ID</Th><Th>Incident</Th><Th>Regulator</Th><Th>Jurisdiction</Th><Th>Type</Th><Th>Status</Th><Th>Late Risk</Th><Th>Due</Th><Th>Submitted</Th><Th>Ref #</Th></tr></thead>
               <tbody>
-                {notifications.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No notifications â€” check /api/v4/incident-compliance/notifications</td></tr>}
+                {notifications.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No notifications</td></tr>}
                 {notifications.sort((a, b) => Number(b.lateRisk) - Number(a.lateRisk)).map((n, i) => (
                   <tr key={i} style={{ background: n.lateRisk ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{n.notifId}</Td>
@@ -272,8 +272,8 @@ export function IncidentComplianceUI2() {
                     <Td><StatusBadge2 s={n.status} /></Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.lateRisk ? RED : SUBTLE }}>{n.lateRisk ? '⚠‘ YES' : 'NO'}</span></Td>
                     <Td mono col={AMBER}>{n.dueAt}</Td>
-                    <Td mono col={n.submittedAt ? GREEN : SUBTLE}>{n.submittedAt || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{n.refNumber || 'â€”'}</Td>
+                    <Td mono col={n.submittedAt ? GREEN : SUBTLE}>{n.submittedAt || '—'}</Td>
+                    <Td mono col={SUBTLE}>{n.refNumber || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -286,7 +286,7 @@ export function IncidentComplianceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Obligation ID</Th><Th>Framework</Th><Th>Jurisdiction</Th><Th>Requirement</Th><Th>Status</Th><Th right>Deadline (hrs)</Th><Th>Responsible</Th><Th>Penalty</Th><Th>Incident</Th></tr></thead>
               <tbody>
-                {obligations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No obligations â€” check /api/v4/incident-compliance/obligations</td></tr>}
+                {obligations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No obligations</td></tr>}
                 {obligations.sort((a, b) => {
                   const ord: Record<string, number> = { overdue: 0, open: 1, met: 2, waived: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -299,8 +299,8 @@ export function IncidentComplianceUI2() {
                     <Td><StatusBadge2 s={o.status} /></Td>
                     <Td right mono col={o.deadlineHours < 24 ? RED : AMBER}>{o.deadlineHours}</Td>
                     <Td mono col={SUBTLE}>{o.responsibleParty}</Td>
-                    <Td mono col={o.penalty ? RED : SUBTLE}>{o.penalty || 'â€”'}</Td>
-                    <Td mono col={BLUE}>{o.incidentRef || 'â€”'}</Td>
+                    <Td mono col={o.penalty ? RED : SUBTLE}>{o.penalty || '—'}</Td>
+                    <Td mono col={BLUE}>{o.incidentRef || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -313,17 +313,17 @@ export function IncidentComplianceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Resolution ID</Th><Th>Incident</Th><Th>Type</Th><Th>Summary</Th><Th>Verified By</Th><Th>Reg. Accepted</Th><Th>Completed</Th><Th>Closed</Th></tr></thead>
               <tbody>
-                {resolution.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No resolutions â€” check /api/v4/incident-compliance/resolution</td></tr>}
+                {resolution.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No resolutions</td></tr>}
                 {resolution.map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.resolutionId}</Td>
                     <Td mono col={BLUE}>{r.incidentId}</Td>
                     <Td mono col={PURPLE}>{r.resolutionType}</Td>
                     <Td mono col={TEXT}>{r.summary}</Td>
-                    <Td mono col={SUBTLE}>{r.verifiedBy || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.verifiedBy || '—'}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.regulatoryAccepted ? GREEN : RED }}>{r.regulatoryAccepted ? 'YES' : 'NO'}</span></Td>
-                    <Td mono col={r.completedAt ? GREEN : SUBTLE}>{r.completedAt || 'â€”'}</Td>
-                    <Td mono col={r.closedAt ? GREEN : SUBTLE}>{r.closedAt || 'â€”'}</Td>
+                    <Td mono col={r.completedAt ? GREEN : SUBTLE}>{r.completedAt || '—'}</Td>
+                    <Td mono col={r.closedAt ? GREEN : SUBTLE}>{r.closedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -336,7 +336,7 @@ export function IncidentComplianceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Incident</Th><Th>Action</Th><Th>Actor</Th><Th>Jurisdiction</Th><Th>Outcome</Th><Th>Details</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/incident-compliance/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

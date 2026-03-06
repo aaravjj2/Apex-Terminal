@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// AutopilotPlaybookUI2 â€” Bloomberg APEX autopilot playbook terminal
+﻿// AutopilotPlaybookUI2 — Bloomberg APEX autopilot playbook terminal
 // Autopilot playbook engine with strategy templates and execution rules
 // Tabs: PLAYBOOKS | EXECUTIONS | RULES | TEMPLATES | AUDIT
 // APIs: /api/v4/autopilot-playbook/playbooks, /executions, /rules, /templates, /audit
@@ -202,7 +202,7 @@ export function AutopilotPlaybookUI2() {
 
   const running = executions.filter(e => e.status === 'running').length
   const failed = executions.filter(e => e.status === 'failed').length
-  const avgSuccess = playbooks.length > 0 ? (playbooks.reduce((s, p) => s + p.successRate, 0) / playbooks.length).toFixed(1) : 'â€”'
+  const avgSuccess = playbooks.length > 0 ? (playbooks.reduce((s, p) => s + p.successRate, 0) / playbooks.length).toFixed(1) : '—'
 
   const TABS2 = [
     { id: 'playbooks' as const, label: 'PLAYBOOKS' },
@@ -216,7 +216,7 @@ export function AutopilotPlaybookUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>AUTOPILOT PLAYBOOK â€” STRATEGY TEMPLATES + EXECUTION ENGINE + RULE MANAGEMENT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>AUTOPILOT PLAYBOOK — STRATEGY TEMPLATES + EXECUTION ENGINE + RULE MANAGEMENT</span>
         {running > 0 && <span style={{ fontSize: 10, color: BLUE, fontWeight: 700 }}>⚠¡ {running} RUNNING</span>}
         {failed > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {failed} FAILED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -243,7 +243,7 @@ export function AutopilotPlaybookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Playbook</Th><Th>Category</Th><Th>Status</Th><Th>Risk</Th><Th>Trigger</Th><Th right>Steps</Th><Th right>Runs</Th><Th right>Success %</Th><Th right>Avg Min</Th><Th>Owner</Th><Th>Last Run</Th></tr></thead>
               <tbody>
-                {playbooks.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No playbooks â€” check /api/v4/autopilot-playbook/playbooks</td></tr>}
+                {playbooks.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No playbooks</td></tr>}
                 {playbooks.sort((a, b) => b.runCount - a.runCount).map((p, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{p.name}</Td>
@@ -256,7 +256,7 @@ export function AutopilotPlaybookUI2() {
                     <Td right mono col={p.successRate >= 90 ? GREEN : p.successRate >= 70 ? AMBER : RED}>{p.successRate.toFixed(1)}%</Td>
                     <Td right mono col={SUBTLE}>{p.avgDurationMin.toFixed(0)}</Td>
                     <Td mono col={SUBTLE}>{p.owner}</Td>
-                    <Td mono col={SUBTLE}>{p.lastRun || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.lastRun || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -269,7 +269,7 @@ export function AutopilotPlaybookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Execution ID</Th><Th>Playbook</Th><Th>Status</Th><Th>Progress</Th><Th>Triggered By</Th><Th right>Duration</Th><Th>Outcome</Th><Th>Risk</Th><Th>Started</Th><Th>Completed</Th></tr></thead>
               <tbody>
-                {executions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No executions â€” check /api/v4/autopilot-playbook/executions</td></tr>}
+                {executions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No executions</td></tr>}
                 {executions.sort((a, b) => (a.status === 'running' ? -1 : 1) - (b.status === 'running' ? -1 : 1)).map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'failed' ? RED + '0a' : e.status === 'running' ? BLUE + '07' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.executionId}</Td>
@@ -278,10 +278,10 @@ export function AutopilotPlaybookUI2() {
                     <Td><ProgressBar done={e.stepsCompleted} total={e.stepsTotal} /></Td>
                     <Td mono col={TEXT}>{e.triggeredBy}</Td>
                     <Td right mono col={SUBTLE}>{e.durationMin.toFixed(1)} min</Td>
-                    <Td mono col={SUBTLE}>{e.outcome || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.outcome || '—'}</Td>
                     <Td><RiskBadge r={e.riskLevel} /></Td>
                     <Td mono col={SUBTLE}>{e.startedAt}</Td>
-                    <Td mono col={SUBTLE}>{e.completedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.completedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -294,7 +294,7 @@ export function AutopilotPlaybookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rule</Th><Th>Playbook</Th><Th>Condition</Th><Th>Action</Th><Th right>Priority</Th><Th>Enabled</Th><Th right>Matches</Th><Th>Last Triggered</Th></tr></thead>
               <tbody>
-                {rules.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rules â€” check /api/v4/autopilot-playbook/rules</td></tr>}
+                {rules.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rules</td></tr>}
                 {rules.sort((a, b) => a.priority - b.priority).map((r, i) => (
                   <tr key={i} style={{ opacity: r.enabled ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{r.ruleName}</Td>
@@ -304,7 +304,7 @@ export function AutopilotPlaybookUI2() {
                     <Td right mono col={SUBTLE}>{r.priority}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.enabled ? GREEN : RED }}>{r.enabled ? 'âœ“ ON' : 'âœ— OFF'}</span></Td>
                     <Td right mono col={r.matchCount > 0 ? TEXT : SUBTLE}>{r.matchCount}</Td>
-                    <Td mono col={SUBTLE}>{r.lastTriggered || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.lastTriggered || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -317,7 +317,7 @@ export function AutopilotPlaybookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Template</Th><Th>Category</Th><Th>Risk</Th><Th right>Steps</Th><Th right>Est. Min</Th><Th right>Uses</Th><Th>Version</Th><Th>Author</Th><Th>Description</Th></tr></thead>
               <tbody>
-                {templates.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No templates â€” check /api/v4/autopilot-playbook/templates</td></tr>}
+                {templates.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No templates</td></tr>}
                 {templates.sort((a, b) => b.usageCount - a.usageCount).map((t, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{t.name}</Td>
@@ -341,7 +341,7 @@ export function AutopilotPlaybookUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Playbook</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/autopilot-playbook/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -349,7 +349,7 @@ export function AutopilotPlaybookUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

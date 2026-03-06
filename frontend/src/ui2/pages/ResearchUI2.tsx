@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ResearchUI2 â€” Bloomberg APEX Research Terminal
+﻿// ResearchUI2 — Bloomberg APEX Research Terminal
 // Strategy artifacts, validation, backtest diff viewer, artifact registry, research governance
 // Tabs: STRATEGIES | ARTIFACTS | VALIDATION | DIFF VIEWER | AUDIT
 // APIs: /api/v3/research/strategies, /artifacts, /validation, /diff, /audit
@@ -172,7 +172,7 @@ export function ResearchUI2() {
         body: JSON.stringify({ strategy_id: selectedStrategy }),
       })
       if (r.ok) { const d = await r.json(); setBtMsg(`Backtest queued: ${d.artifact_id ?? d.id ?? 'ok'}`); fetchAll() }
-      else setBtMsg('Backtest failed â€” check backend')
+      else setBtMsg('Backtest failed — check backend')
     } catch (e: any) { setBtMsg(e.message) }
     finally { setBacktesting(false) }
   }
@@ -194,7 +194,7 @@ export function ResearchUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH â€” STRATEGY ARTIFACTS + VALIDATION + BACKTEST DIFF + ARTIFACT REGISTRY</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH — STRATEGY ARTIFACTS + VALIDATION + BACKTEST DIFF + ARTIFACT REGISTRY</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -226,7 +226,7 @@ export function ResearchUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th></Th><Th>ID</Th><Th>Name</Th><Th>Type</Th><Th>Symbol</Th><Th>Status</Th><Th right>Version</Th><Th>Author</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {strategies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies â€” check /api/v3/research/strategies</td></tr>}
+                {strategies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies</td></tr>}
                 {strategies.sort((a, b) => b.updatedAt - a.updatedAt).map((s, i) => (
                   <tr key={i} onClick={() => setSelectedStrategy(selectedStrategy === s.id ? null : s.id)} style={{ cursor: 'pointer', background: selectedStrategy === s.id ? AMBER + '11' : 'transparent' }}>
                     <Td mono col={selectedStrategy === s.id ? AMBER : SUBTLE}>{selectedStrategy === s.id ? 'â–¶' : 'â—‹'}</Td>
@@ -237,7 +237,7 @@ export function ResearchUI2() {
                     <Td><StatusBadge s={s.status} /></Td>
                     <Td right mono col={SUBTLE}>v{s.version}</Td>
                     <Td mono col={SUBTLE}>{s.author}</Td>
-                    <Td mono col={SUBTLE}>{s.updatedAt ? new Date(s.updatedAt).toISOString().slice(0, 10) : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{s.updatedAt ? new Date(s.updatedAt).toISOString().slice(0, 10) : '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -249,7 +249,7 @@ export function ResearchUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Artifact ID</Th><Th>Name</Th><Th>Type</Th><Th>Strategy</Th><Th>Status</Th><Th right>Size</Th><Th>SHA256</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {artifacts.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No artifacts â€” check /api/v3/research/artifacts</td></tr>}
+                {artifacts.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No artifacts</td></tr>}
                 {artifacts.sort((a, b) => b.createdAt - a.createdAt).map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.id.slice(0, 12)}</Td>
@@ -259,7 +259,7 @@ export function ResearchUI2() {
                     <Td><StatusBadge s={a.status} /></Td>
                     <Td right mono col={TEXT}>{fmtBytes(a.sizeBytes)}</Td>
                     <Td mono col={SUBTLE}>{a.sha256.slice(0, 14)}â€¦</Td>
-                    <Td mono col={SUBTLE}>{a.createdAt ? new Date(a.createdAt).toISOString().slice(0, 10) : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.createdAt ? new Date(a.createdAt).toISOString().slice(0, 10) : '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -268,7 +268,7 @@ export function ResearchUI2() {
         )}
         {tab === 'validation' && (
           <div>
-            {validations.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No validations â€” check /api/v3/research/validation</div>}
+            {validations.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No validations</div>}
             {validations.map((v, i) => (
               <div key={i} style={{ background: PANEL, border: `1px solid ${v.passed ? GREEN : RED}33`, borderRadius: 4, padding: '12px 16px', marginBottom: 8 }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
@@ -296,7 +296,7 @@ export function ResearchUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Artifact ID</Th><Th>Name</Th><Th>Change Type</Th><Th>Field</Th><Th>Old Value</Th><Th>New Value</Th><Th right>Change %</Th></tr></thead>
               <tbody>
-                {diffs.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No diffs â€” check /api/v3/research/diff</td></tr>}
+                {diffs.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No diffs</td></tr>}
                 {diffs.map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.artifactId.slice(0, 12)}</Td>
@@ -305,7 +305,7 @@ export function ResearchUI2() {
                     <Td mono col={TEXT}>{d.fieldName}</Td>
                     <Td mono col={RED}>{String(d.oldValue).slice(0, 20)}</Td>
                     <Td mono col={GREEN}>{String(d.newValue).slice(0, 20)}</Td>
-                    <Td right mono col={d.changePct !== null ? (d.changePct > 0 ? GREEN : RED) : SUBTLE}>{d.changePct !== null ? `${d.changePct >= 0 ? '+' : ''}${d.changePct.toFixed(1)}%` : 'â€”'}</Td>
+                    <Td right mono col={d.changePct !== null ? (d.changePct > 0 ? GREEN : RED) : SUBTLE}>{d.changePct !== null ? `${d.changePct >= 0 ? '+' : ''}${d.changePct.toFixed(1)}%` : '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -317,13 +317,13 @@ export function ResearchUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v3/research/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

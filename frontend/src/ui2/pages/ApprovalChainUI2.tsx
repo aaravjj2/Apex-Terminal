@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ApprovalChainUI2 â€” Bloomberg APEX approval chain terminal
+﻿// ApprovalChainUI2 — Bloomberg APEX approval chain terminal
 // Multi-level approval chain with escalation and delegation management
 // Tabs: CHAINS | NODES | ESCALATIONS | DELEGATIONS | AUDIT
 // APIs: /api/v4/approval-chain/chains, /nodes, /escalations, /delegations, /audit
@@ -214,7 +214,7 @@ export function ApprovalChainUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>APPROVAL CHAIN â€” MULTI-LEVEL CHAIN ENGINE + ESCALATION + DELEGATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>APPROVAL CHAIN — MULTI-LEVEL CHAIN ENGINE + ESCALATION + DELEGATION</span>
         {openEscalations > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {openEscalations} OPEN ESCALATIONS</span>}
         {totalPending > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {totalPending} PENDING ITEMS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -241,7 +241,7 @@ export function ApprovalChainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Chain</Th><Th>Risk</Th><Th>Status</Th><Th right>Levels</Th><Th right>SLA</Th><Th right>Passed</Th><Th right>Rejected</Th><Th right>Escalated</Th><Th right>Avg Hours</Th><Th>Owner</Th></tr></thead>
               <tbody>
-                {chains.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No chains â€” check /api/v4/approval-chain/chains</td></tr>}
+                {chains.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No chains</td></tr>}
                 {chains.sort((a, b) => {
                   const p: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (p[a.riskLevel] ?? 4) - (p[b.riskLevel] ?? 4)
@@ -269,7 +269,7 @@ export function ApprovalChainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Chain</Th><Th right>Level</Th><Th>Type</Th><Th>Assignee</Th><Th right>SLA</Th><Th>Delegate</Th><Th>Escalate</Th><Th right>Pending</Th><Th>Auto-Approve</Th></tr></thead>
               <tbody>
-                {nodes.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No nodes â€” check /api/v4/approval-chain/nodes</td></tr>}
+                {nodes.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No nodes</td></tr>}
                 {nodes.sort((a, b) => a.chainName.localeCompare(b.chainName) || a.level - b.level).map((n, i) => (
                   <tr key={i} style={{ background: n.pendingItems > 0 ? AMBER + '07' : 'transparent' }}>
                     <Td mono col={AMBER}>{n.chainName}</Td>
@@ -280,7 +280,7 @@ export function ApprovalChainUI2() {
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.canDelegate ? GREEN : SUBTLE }}>{n.canDelegate ? 'âœ“ YES' : 'âœ— NO'}</span></Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.canEscalate ? BLUE : SUBTLE }}>{n.canEscalate ? 'âœ“ YES' : 'âœ— NO'}</span></Td>
                     <Td right mono col={n.pendingItems > 0 ? AMBER : SUBTLE}>{n.pendingItems}</Td>
-                    <Td mono col={SUBTLE}>{n.autoApproveCondition || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{n.autoApproveCondition || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -293,7 +293,7 @@ export function ApprovalChainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Escalation ID</Th><Th>Chain</Th><Th>Item</Th><Th right>From</Th><Th right>To</Th><Th>Triggered By</Th><Th>Status</Th><Th>Reason</Th><Th>Escalated</Th><Th>Resolved</Th></tr></thead>
               <tbody>
-                {escalations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No escalations â€” check /api/v4/approval-chain/escalations</td></tr>}
+                {escalations.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No escalations</td></tr>}
                 {escalations.sort((a, b) => (a.status === 'open' ? -1 : 1) - (b.status === 'open' ? -1 : 1)).map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'open' ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.escalationId}</Td>
@@ -305,7 +305,7 @@ export function ApprovalChainUI2() {
                     <Td><StatusBadge2 s={e.status} /></Td>
                     <Td mono col={SUBTLE}>{e.reason.slice(0, 40)}{e.reason.length > 40 ? 'â€¦' : ''}</Td>
                     <Td mono col={SUBTLE}>{e.escalatedAt}</Td>
-                    <Td mono col={SUBTLE}>{e.resolvedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.resolvedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -318,7 +318,7 @@ export function ApprovalChainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Delegation ID</Th><Th>Chain</Th><Th>From</Th><Th>To</Th><Th>Scope</Th><Th>Status</Th><Th>Valid From</Th><Th>Valid To</Th><Th>Reason</Th></tr></thead>
               <tbody>
-                {delegations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No delegations â€” check /api/v4/approval-chain/delegations</td></tr>}
+                {delegations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No delegations</td></tr>}
                 {delegations.sort((a, b) => (a.status === 'active' ? -1 : 1) - (b.status === 'active' ? -1 : 1)).map((d, i) => (
                   <tr key={i} style={{ opacity: d.status !== 'active' ? 0.6 : 1 }}>
                     <Td mono col={AMBER}>{d.delegationId}</Td>
@@ -342,7 +342,7 @@ export function ApprovalChainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Chain</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/approval-chain/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -350,7 +350,7 @@ export function ApprovalChainUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

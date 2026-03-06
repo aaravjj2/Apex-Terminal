@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// KriScoringUI2 â€” Bloomberg KRIS key risk indicator scoring terminal
+﻿// KriScoringUI2 — Bloomberg KRIS key risk indicator scoring terminal
 // KRI monitoring, control effectiveness, breach alerts, trend analysis, audit
 // Tabs: INDICATORS | CONTROLS | ALERTS | TRENDS | AUDIT
 // APIs: /api/v4/kri-scoring/indicators, /controls, /alerts, /trends, /audit
@@ -243,7 +243,7 @@ export function KriScoringUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>KRIS</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>KEY RISK INDICATORS â€” SCORING + CONTROL EFFECTIVENESS + BREACH ALERTS + TREND ANALYSIS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>KEY RISK INDICATORS — SCORING + CONTROL EFFECTIVENESS + BREACH ALERTS + TREND ANALYSIS</span>
         {redIndicators > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {redIndicators} RED KRIs</span>}
         {amberIndicators > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {amberIndicators} AMBER KRIs</span>}
         {ineffectiveControls > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {ineffectiveControls} INEFFECTIVE CONTROLS</span>}
@@ -271,7 +271,7 @@ export function KriScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>KRI Name</Th><Th>Category</Th><Th>Risk Domain</Th><Th>Status</Th><Th>Trend</Th><Th>Score</Th><Th right>Current</Th><Th right>Amber</Th><Th right>Red</Th><Th>Owner</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {indicators.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No KRIs â€” check /api/v4/kri-scoring/indicators</td></tr>}
+                {indicators.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No KRIs</td></tr>}
                 {indicators.sort((a, b) => {
                   const ord: Record<string, number> = { breach: 0, red: 1, amber: 2, green: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -300,7 +300,7 @@ export function KriScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Control ID</Th><Th>Name</Th><Th>KRI Ref</Th><Th>Type</Th><Th>Effectiveness</Th><Th>Status</Th><Th>Gaps</Th><Th>Owner</Th><Th>Test Date</Th><Th>Remediation</Th></tr></thead>
               <tbody>
-                {controls.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls â€” check /api/v4/kri-scoring/controls</td></tr>}
+                {controls.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls</td></tr>}
                 {controls.sort((a, b) => {
                   const ord: Record<string, number> = { failed: 0, low: 1, medium: 2, high: 3 }
                   return (ord[a.effectiveness] ?? 4) - (ord[b.effectiveness] ?? 4)
@@ -312,10 +312,10 @@ export function KriScoringUI2() {
                     <Td mono col={PURPLE}>{c.controlType}</Td>
                     <Td><EffBadge e={c.effectiveness} /></Td>
                     <Td><EffBadge e={c.status} /></Td>
-                    <Td mono col={c.gaps ? RED : SUBTLE}>{c.gaps || 'â€”'}</Td>
+                    <Td mono col={c.gaps ? RED : SUBTLE}>{c.gaps || '—'}</Td>
                     <Td mono col={SUBTLE}>{c.owner}</Td>
                     <Td mono col={SUBTLE}>{c.testDate}</Td>
-                    <Td mono col={AMBER}>{c.remediationDue || 'â€”'}</Td>
+                    <Td mono col={AMBER}>{c.remediationDue || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -328,7 +328,7 @@ export function KriScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Alert ID</Th><Th>KRI Name</Th><Th>Type</Th><Th>Severity</Th><Th>Resolution</Th><Th>Risk Domain</Th><Th>Breach Duration</Th><Th>Acked</Th><Th>Escalated To</Th><Th>Triggered</Th></tr></thead>
               <tbody>
-                {alerts.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts â€” check /api/v4/kri-scoring/alerts</td></tr>}
+                {alerts.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts</td></tr>}
                 {alerts.sort((a, b) => {
                   const ord: Record<string, number> = { critical: 0, major: 1, minor: 2 }
                   return (ord[a.severity] ?? 3) - (ord[b.severity] ?? 3)
@@ -340,9 +340,9 @@ export function KriScoringUI2() {
                     <Td><SevBadge s={a.severity} /></Td>
                     <Td><StatusB s={a.resolution} /></Td>
                     <Td mono col={SUBTLE}>{a.affectedRiskDomain}</Td>
-                    <Td mono col={ORANGE}>{a.breachDuration || 'â€”'}</Td>
+                    <Td mono col={ORANGE}>{a.breachDuration || '—'}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.acknowledged ? GREEN : RED }}>{a.acknowledged ? 'ACKED' : 'OPEN'}</span></Td>
-                    <Td mono col={SUBTLE}>{a.escalatedTo || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.escalatedTo || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.triggeredAt}</Td>
                   </tr>
                 ))}
@@ -356,7 +356,7 @@ export function KriScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>KRI</Th><Th>Period</Th><Th>Direction</Th><Th right>Avg</Th><Th right>Min</Th><Th right>Max</Th><Th right>Breaches</Th><Th right>Improving %</Th><Th right>Deteriorating %</Th><Th>Significance</Th></tr></thead>
               <tbody>
-                {trends.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No trends â€” check /api/v4/kri-scoring/trends</td></tr>}
+                {trends.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No trends</td></tr>}
                 {trends.map((t, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{t.kriId}</Td>
@@ -381,7 +381,7 @@ export function KriScoringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>KRI</Th><Th>Action</Th><Th>Actor</Th><Th right>Previous</Th><Th right>New</Th><Th>Outcome</Th><Th>Notes</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/kri-scoring/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -391,7 +391,7 @@ export function KriScoringUI2() {
                     <Td right mono col={SUBTLE}>{a.previousValue.toFixed(2)}</Td>
                     <Td right mono col={a.newValue > a.previousValue ? RED : GREEN}>{a.newValue.toFixed(2)}</Td>
                     <Td><StatusB s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.notes || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.notes || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

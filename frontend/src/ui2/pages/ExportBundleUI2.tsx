@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ExportBundleUI2 â€” Bloomberg APEX Export Bundle terminal
+import { flushSync } from 'react-dom'
+﻿// ExportBundleUI2 — Bloomberg APEX Export Bundle terminal
 // One-click judge bundle: manifest, ES templates, DB tables, integrity hashing
 // Tabs: BUNDLES | MANIFEST | TEMPLATES | DATABASE | AUDIT
 // APIs: /api/v3/export/bundles, /manifest, /templates, /database, /audit
@@ -107,6 +108,7 @@ export function ExportBundleUI2() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
   const [buildStatus, setBuildStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [buildResult, setBuildResult] = useState<{ bundle_hash?: string; filename?: string; manifest?: { bundle_hash?: string; files?: Record<string, { sha256: string; size_bytes: number }> | Array<{ name: string; sha256: string; size_bytes: number }> } } | null>(null)
 
   const fetchAll = useCallback(async () => {
     try {
@@ -182,13 +184,20 @@ export function ExportBundleUI2() {
   useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
   const handleBuild = useCallback(async () => {
-    setBuildStatus('running')
+    flushSync(() => {
+      setBuildStatus('running')
+      setBuildResult(null)
+    })
     try {
-      const r = await fetch('/api/v3/export', { method: 'POST' })
-      if (r.ok) { setBuildStatus('done'); setTimeout(fetchAll, 2000) }
-      else setBuildStatus('error')
+      const r = await fetch('/api/v3/export/bundle', { method: 'POST' })
+      if (r.ok) {
+        const data = await r.json()
+        setBuildResult(data)
+        setBuildStatus('done')
+        setTimeout(fetchAll, 2000)
+      } else setBuildStatus('error')
     } catch { setBuildStatus('error') }
-    finally { setTimeout(() => setBuildStatus('idle'), 5000) }
+    finally { setTimeout(() => setBuildStatus(s => s === 'done' ? 'done' : 'idle'), 5000) }
   }, [fetchAll])
 
   const readyBundles = bundles.filter(b => b.status === 'ready').length
@@ -205,12 +214,13 @@ export function ExportBundleUI2() {
   ]
 
   return (
-    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
-      <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>EXPORT BUNDLE â€” JUDGE BUNDLE BUILDER + MANIFEST + ES TEMPLATES + DB TABLES</span>
-        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
-        <button onClick={handleBuild} disabled={buildStatus === 'running'} style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 11, fontWeight: 700, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, borderRadius: 3, padding: '5px 14px', cursor: buildStatus === 'running' ? 'wait' : 'pointer' }}>
+    <div data-testid="export-bundle-page" style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>      
+      <div data-testid="page-ready" style={{position:"fixed",top:0,right:0,opacity:0,pointerEvents:"none",width:1,height:1}} />
+      <div data-testid="export-control-panel" style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+        <span data-testid="export-bundle-title" style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EXPORT BUNDLE â€" JUDGE BUNDLE BUILDER + MANIFEST + ES TEMPLATES + DB TABLES</span>
+        {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
+        <button data-testid="create-bundle-btn" onClick={handleBuild} disabled={buildStatus === 'running'} style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 11, fontWeight: 700, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, borderRadius: 3, padding: '5px 14px', cursor: buildStatus === 'running' ? 'wait' : 'pointer' }}>
           {buildStatus === 'running' ? 'BUILDINGâ€¦' : buildStatus === 'done' ? 'BUILT âœ“' : buildStatus === 'error' ? 'ERROR' : 'BUILD BUNDLE'}
         </button>
       </div>
@@ -230,22 +240,56 @@ export function ExportBundleUI2() {
         ))}
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {(buildResult || buildStatus === 'running') && (
+          <div data-testid="bundle-result" style={{ background: PANEL, border: `1px solid ${AMBER}44`, borderRadius: 4, padding: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <span style={{ fontSize: 11, color: AMBER, fontFamily: MONO, fontWeight: 700 }}>{buildStatus === 'running' ? 'BUILDING…' : 'BUNDLE READY'}</span>
+              <span style={{ fontSize: 10, color: SUBTLE, fontFamily: MONO }}>Hash: {buildResult ? (buildResult?.bundle_hash || buildResult?.manifest?.bundle_hash || '').slice(0, 24) + '…' : 'pending…'}</span>
+              <a
+                data-testid="download-bundle-btn"
+                href="/api/v3/export/bundle/download"
+                download
+                style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: 10, color: GREEN, background: GREEN + '22', border: `1px solid ${GREEN}44`, borderRadius: 3, padding: '3px 10px', textDecoration: 'none', cursor: 'pointer' }}
+              >DOWNLOAD</a>
+            </div>
+            <div data-testid="manifest-files-list" style={{ background: BG, borderRadius: 3, padding: 8 }}>
+              {(() => {
+                const rawFiles = buildResult?.manifest?.files
+                const fileArr: Array<{ name: string; sha256: string; size_bytes: number }> = Array.isArray(rawFiles)
+                  ? rawFiles
+                  : rawFiles && typeof rawFiles === 'object'
+                    ? Object.entries(rawFiles).map(([name, v]: [string, any]) => ({ name, sha256: v.sha256 ?? '', size_bytes: v.size_bytes ?? 0 }))
+                    : []
+                return fileArr.map((f) => {
+                  const safeName = (f.name || '').replace(/\./g, '-')
+                  return (
+                    <div key={f.name} data-testid={`manifest-file-${safeName}`} style={{ display: 'flex', gap: 16, padding: '3px 0', fontFamily: MONO, fontSize: 11, borderBottom: `1px solid #161616` }}>
+                      <span style={{ color: BLUE, minWidth: 200 }}>{f.name}</span>
+                      <span style={{ color: SUBTLE, fontSize: 10 }}>{f.sha256?.slice(0, 20)}…</span>
+                      <span style={{ color: TEXT, fontSize: 10 }}>{fmtBytes(f.size_bytes ?? 0)}</span>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          </div>
+        )}
         {tab === 'bundles' && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Bundle ID</Th><Th>Version</Th><Th>Status</Th><Th>Schema</Th><Th right>Files</Th><Th right>Size</Th><Th>Bundle Hash</Th><Th>Created By</Th><Th>Created At</Th></tr></thead>
               <tbody>
-                {bundles.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bundles â€” check /api/v3/export/bundles or build one</td></tr>}
+                {bundles.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bundles or build one</td></tr>}
                 {bundles.map((b, i) => (
                   <tr key={i} style={{ background: b.status === 'failed' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.bundleId}</Td>
                     <Td mono col={TEXT}>{b.version}</Td>
                     <Td><StatusBadge s={b.status} /></Td>
-                    <Td mono col={SUBTLE}>{b.schemaVersion || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{b.schemaVersion || '—'}</Td>
                     <Td right mono col={TEXT}>{b.fileCount}</Td>
                     <Td right mono col={TEXT}>{fmtBytes(b.sizeBytes)}</Td>
                     <Td mono col={SUBTLE}>{b.bundleHash.slice(0, 16)}â€¦</Td>
-                    <Td mono col={SUBTLE}>{b.createdBy || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{b.createdBy || '—'}</Td>
                     <Td mono col={SUBTLE}>{b.createdAt}</Td>
                   </tr>
                 ))}
@@ -255,14 +299,14 @@ export function ExportBundleUI2() {
         )}
         {tab === 'manifest' && (
           <div>
-            {manifests.length === 0 && <div style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No manifests â€” check /api/v3/export/manifest</div>}
+            {manifests.length === 0 && <div style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No manifests</div>}
             {manifests.map((m, idx) => (
               <div key={idx} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden', marginBottom: 12 }}>
                 <div style={{ padding: '8px 12px', borderBottom: `1px solid ${BORDER}`, display: 'flex', gap: 16, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: AMBER, fontFamily: MONO }}>{m.bundleId}</span>
                   <span style={{ fontSize: 10, color: SUBTLE }}>v{m.version}</span>
                   <span style={{ fontSize: 10, color: SUBTLE }}>Hash: {m.bundleHash.slice(0, 20)}â€¦</span>
-                  <span style={{ fontSize: 10, color: GREEN }}>Signed: {m.signedAt || 'â€”'}</span>
+                  <span style={{ fontSize: 10, color: GREEN }}>Signed: {m.signedAt || '—'}</span>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr><Th>File Name</Th><Th>Type</Th><Th right>Size</Th><Th>SHA-256</Th></tr></thead>
@@ -270,7 +314,7 @@ export function ExportBundleUI2() {
                     {m.files.map((f, fi) => (
                       <tr key={fi}>
                         <Td mono col={BLUE}>{f.name}</Td>
-                        <Td mono col={SUBTLE}>{f.type || 'â€”'}</Td>
+                        <Td mono col={SUBTLE}>{f.type || '—'}</Td>
                         <Td right mono col={TEXT}>{fmtBytes(f.sizeBytes)}</Td>
                         <Td mono col={SUBTLE}>{f.sha256.slice(0, 24)}â€¦</Td>
                       </tr>
@@ -286,13 +330,13 @@ export function ExportBundleUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Template ID</Th><Th>Name</Th><Th>Index Pattern</Th><Th>Mapping Ver.</Th><Th>Status</Th><Th right>Shards</Th><Th right>Replicas</Th><Th right>Docs</Th><Th right>Size</Th></tr></thead>
               <tbody>
-                {templates.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No ES templates â€” check /api/v3/export/templates</td></tr>}
+                {templates.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No ES templates</td></tr>}
                 {templates.map((t, i) => (
                   <tr key={i} style={{ opacity: t.status === 'deprecated' ? 0.6 : 1 }}>
                     <Td mono col={AMBER}>{t.templateId}</Td>
                     <Td mono col={TEXT}>{t.name}</Td>
                     <Td mono col={BLUE}>{t.indexPattern}</Td>
-                    <Td mono col={SUBTLE}>{t.mappingVersion || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{t.mappingVersion || '—'}</Td>
                     <Td><StatusBadge s={t.status} /></Td>
                     <Td right mono col={TEXT}>{t.shards}</Td>
                     <Td right mono col={TEXT}>{t.replicas}</Td>
@@ -309,15 +353,15 @@ export function ExportBundleUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Table Name</Th><Th>Schema Ver.</Th><Th right>Row Count</Th><Th right>Size</Th><Th>Included</Th><Th>Last Modified</Th></tr></thead>
               <tbody>
-                {tables.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No database tables â€” check /api/v3/export/database</td></tr>}
+                {tables.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No database tables</td></tr>}
                 {tables.map((t, i) => (
                   <tr key={i} style={{ opacity: t.included ? 1 : 0.4 }}>
                     <Td mono col={AMBER}>{t.tableName}</Td>
-                    <Td mono col={SUBTLE}>{t.schemaVersion || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{t.schemaVersion || '—'}</Td>
                     <Td right mono col={TEXT}>{t.rowCount.toLocaleString()}</Td>
                     <Td right mono col={TEXT}>{fmtBytes(t.sizeBytes)}</Td>
                     <Td mono col={t.included ? GREEN : SUBTLE}>{t.included ? 'âœ“ YES' : 'âœ— NO'}</Td>
-                    <Td mono col={SUBTLE}>{t.lastModified || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{t.lastModified || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -329,14 +373,14 @@ export function ExportBundleUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Bundle ID</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v3/export/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={BLUE}>{a.bundleId || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.bundleId || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

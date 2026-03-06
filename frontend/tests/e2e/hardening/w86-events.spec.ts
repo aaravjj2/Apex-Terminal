@@ -9,7 +9,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const API = 'http://127.0.0.1:8090';
+const API = 'http://localhost:8000';
 const ES  = 'http://localhost:9200';
 const UI  = 'http://localhost:5100';
 

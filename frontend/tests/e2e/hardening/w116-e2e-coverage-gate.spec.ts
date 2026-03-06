@@ -15,7 +15,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const API = 'http://localhost:8090';
+const API = 'http://localhost:8000';
 
 test.describe('W116 — E2E coverage gate (200+ high-signal tests)', () => {
 

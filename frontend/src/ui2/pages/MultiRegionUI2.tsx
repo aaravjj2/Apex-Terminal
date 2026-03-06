@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// MultiRegionUI2 â€” Bloomberg APEX multi-region terminal
+﻿// MultiRegionUI2 — Bloomberg APEX multi-region terminal
 // Global traffic steering, geo-routing, failover, region health, audit
 // Tabs: REGIONS | TRAFFIC | ROUTING | FAILOVER | AUDIT
 // APIs: /api/v4/multi-region/regions, /traffic, /routing, /failover, /audit
@@ -216,7 +216,7 @@ export function MultiRegionUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>MULTI-REGION â€” GLOBAL TRAFFIC STEERING + GEO-ROUTING + FAILOVER MANAGEMENT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>MULTI-REGION — GLOBAL TRAFFIC STEERING + GEO-ROUTING + FAILOVER MANAGEMENT</span>
         {degradedRegions > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {degradedRegions} DEGRADED</span>}
         {activeFailovers > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeFailovers} ACTIVE FAILOVER</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -243,7 +243,7 @@ export function MultiRegionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Region</Th><Th>Provider</Th><Th>Zone</Th><Th>Status</Th><Th right>Health</Th><Th right>Latency ms</Th><Th>Load</Th><Th right>Traffic %</Th><Th right>Error %</Th><Th>Last Check</Th></tr></thead>
               <tbody>
-                {regions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regions â€” check /api/v4/multi-region/regions</td></tr>}
+                {regions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No regions</td></tr>}
                 {regions.sort((a, b) => {
                   const p: Record<string, number> = { primary: 0, secondary: 1, standby: 2, degraded: 3, offline: 4 }
                   return (p[a.status] ?? 5) - (p[b.status] ?? 5)
@@ -271,7 +271,7 @@ export function MultiRegionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Source</Th><Th>Dest</Th><Th>Protocol</Th><Th>Status</Th><Th right>RPS</Th><Th right>BW Mbps</Th><Th right>Latency ms</Th><Th right>Error %</Th><Th right>Weight</Th></tr></thead>
               <tbody>
-                {traffic.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No traffic data â€” check /api/v4/multi-region/traffic</td></tr>}
+                {traffic.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No traffic data</td></tr>}
                 {traffic.sort((a, b) => b.requestsPerSec - a.requestsPerSec).map((t, i) => (
                   <tr key={i} style={{ background: t.errorPct > 1 ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{t.sourceRegion}</Td>
@@ -295,7 +295,7 @@ export function MultiRegionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rule</Th><Th right>Priority</Th><Th>Target Region</Th><Th>Method</Th><Th right>Weight</Th><Th>Enabled</Th><Th>Condition</Th><Th right>Matches</Th><Th>Last Eval</Th></tr></thead>
               <tbody>
-                {routing.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No routing rules â€” check /api/v4/multi-region/routing</td></tr>}
+                {routing.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No routing rules</td></tr>}
                 {routing.sort((a, b) => a.priority - b.priority).map((r, i) => (
                   <tr key={i} style={{ opacity: r.enabled ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{r.ruleName}</Td>
@@ -306,7 +306,7 @@ export function MultiRegionUI2() {
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.enabled ? GREEN : RED }}>{r.enabled ? 'âœ“ ON' : 'âœ— OFF'}</span></Td>
                     <Td mono col={SUBTLE}>{r.condition.slice(0, 40)}{r.condition.length > 40 ? 'â€¦' : ''}</Td>
                     <Td right mono col={r.matchCount > 0 ? TEXT : SUBTLE}>{r.matchCount}</Td>
-                    <Td mono col={SUBTLE}>{r.lastEvaluated || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.lastEvaluated || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -319,7 +319,7 @@ export function MultiRegionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Failover ID</Th><Th>From</Th><Th>To</Th><Th>Status</Th><Th>Trigger</Th><Th right>Duration</Th><Th right>Requests Migrated</Th><Th>Triggered</Th><Th>Recovered</Th></tr></thead>
               <tbody>
-                {failover.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No failover records â€” check /api/v4/multi-region/failover</td></tr>}
+                {failover.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No failover records</td></tr>}
                 {failover.sort((a, b) => (a.status === 'active' ? -1 : 1) - (b.status === 'active' ? -1 : 1)).map((f, i) => (
                   <tr key={i} style={{ background: f.status === 'active' ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{f.failoverId}</Td>
@@ -330,7 +330,7 @@ export function MultiRegionUI2() {
                     <Td right mono col={f.durationMin > 30 ? ORANGE : SUBTLE}>{f.durationMin.toFixed(1)} min</Td>
                     <Td right mono col={TEXT}>{f.requestsMigrated.toLocaleString()}</Td>
                     <Td mono col={SUBTLE}>{f.triggeredAt}</Td>
-                    <Td mono col={SUBTLE}>{f.recoveredAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{f.recoveredAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -343,7 +343,7 @@ export function MultiRegionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Region</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/multi-region/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -351,7 +351,7 @@ export function MultiRegionUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

@@ -1,5 +1,5 @@
-﻿/**
- * BacktesterV3UI2 â€” Bloomberg-Grade Backtesting Terminal
+/**
+ * BacktesterV3UI2 — Bloomberg-Grade Backtesting Terminal
  * =======================================================
  * Full institutional backtesting suite using /api/v4/backtest:
  *  â€¢ Single-backtest run with equity curve + drawdown SVG tearsheet
@@ -80,9 +80,9 @@ const td: CSSProperties = {
   borderBottom: `1px solid ${BORDER}22`, whiteSpace: 'nowrap',
 };
 
-const fmtPct = (v: number | undefined) => v == null ? 'â€”' : `${(v * 100).toFixed(2)}%`;
-const fmt    = (v: number | undefined, d = 3) => v == null ? 'â€”' : v.toFixed(d);
-const fmtK   = (v: number | undefined) => v == null ? 'â€”' : v > 1e6 ? `$${(v/1e6).toFixed(2)}M` : `$${v.toLocaleString('en', { maximumFractionDigits: 0 })}`;
+const fmtPct = (v: number | undefined) => v == null ? '—' : `${(v * 100).toFixed(2)}%`;
+const fmt    = (v: number | undefined, d = 3) => v == null ? '—' : v.toFixed(d);
+const fmtK   = (v: number | undefined) => v == null ? '—' : v > 1e6 ? `$${(v/1e6).toFixed(2)}M` : `$${v.toLocaleString('en', { maximumFractionDigits: 0 })}`;
 
 // â”€â”€â”€ Equity Curve SVG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -226,8 +226,8 @@ function TradeLog({ trades }: { trades: Trade[] }) {
               <tr key={i} style={{ background: i % 2 === 0 ? '#0d0d0d' : 'transparent' }}>
                 <td style={{ ...td, textAlign: 'left', color: SUBTLE }}>{page * PAGE + i + 1}</td>
                 <td style={{ ...td, textAlign: 'left', color: t.side === 'long' ? GREEN : RED, fontWeight: 700 }}>{t.side?.toUpperCase()}</td>
-                <td style={{ ...td, fontSize: 10, color: SUBTLE }}>{t.entry_time ? new Date(t.entry_time * 1000).toLocaleDateString() : 'â€”'}</td>
-                <td style={{ ...td, fontSize: 10, color: SUBTLE }}>{t.exit_time  ? new Date(t.exit_time  * 1000).toLocaleDateString() : 'â€”'}</td>
+                <td style={{ ...td, fontSize: 10, color: SUBTLE }}>{t.entry_time ? new Date(t.entry_time * 1000).toLocaleDateString() : '—'}</td>
+                <td style={{ ...td, fontSize: 10, color: SUBTLE }}>{t.exit_time  ? new Date(t.exit_time  * 1000).toLocaleDateString() : '—'}</td>
                 <td style={td}>{t.entry_price?.toFixed(2)}</td>
                 <td style={td}>{t.exit_price?.toFixed(2)}</td>
                 <td style={td}>{t.quantity}</td>
@@ -478,7 +478,7 @@ export function BacktesterV3UI2() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '6px 14px', background: '#0d0d0d', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
         <span style={{ color: AMBER, fontWeight: 700, fontSize: 14 }}>BACKTESTER v4</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>Bloomberg-Grade Event-Driven Engine</span>
-        {result && <span style={{ fontSize: 10, color: GREEN }}>â–² {result.strategy_name} â€” {fmtPct(result.total_return)} total return</span>}
+        {result && <span style={{ fontSize: 10, color: GREEN }}>â–² {result.strategy_name} — {fmtPct(result.total_return)} total return</span>}
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 10, color: SUBTLE }}>Engine: backtest_engine.py</span>
       </div>
@@ -549,7 +549,7 @@ export function BacktesterV3UI2() {
               </div>
               {/* Preview */}
               <div style={{ background: '#0d0d0d', borderRadius: 4, padding: '8px 10px', marginTop: 4 }}>
-                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 6 }}>COST PREVIEW â€” 100 SHARES @ $150</div>
+                <div style={{ fontSize: 9, color: SUBTLE, marginBottom: 6 }}>COST PREVIEW — 100 SHARES @ $150</div>
                 {[
                   ['Commission', commType === 'per_share' ? `$${(commValue * 100).toFixed(2)}` : commType === 'pct_of_trade' ? `$${(commValue / 100 * 150 * 100).toFixed(2)}` : `$${commValue.toFixed(2)}`],
                   ['Slippage', `$${(150 * 100 * slipBps / 10000).toFixed(2)}`],
@@ -596,7 +596,7 @@ export function BacktesterV3UI2() {
                 {result.trades?.length > 0 && (
                   <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ padding: '5px 10px', background: '#141414', borderBottom: `1px solid ${BORDER}`, fontSize: 10, color: SUBTLE, fontWeight: 700 }}>
-                      TRADE LOG â€” {result.trades.length} TRADES
+                      TRADE LOG — {result.trades.length} TRADES
                     </div>
                     <TradeLog trades={result.trades} />
                   </div>
@@ -621,7 +621,7 @@ export function BacktesterV3UI2() {
             {wfoResult && (
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ padding: '5px 10px', background: '#141414', borderBottom: `1px solid ${BORDER}`, fontSize: 10, color: SUBTLE, fontWeight: 700 }}>
-                  WFO RESULTS â€” {wfoWindows} WINDOWS
+                  WFO RESULTS — {wfoWindows} WINDOWS
                 </div>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -688,7 +688,7 @@ export function BacktesterV3UI2() {
               <>
                 <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
                   <div style={{ padding: '5px 10px', background: '#141414', borderBottom: `1px solid ${BORDER}`, fontSize: 10, color: SUBTLE, fontWeight: 700 }}>
-                    MC EQUITY PATHS â€” P10 / <span style={{ color: AMBER }}>P50</span> / P90
+                    MC EQUITY PATHS — P10 / <span style={{ color: AMBER }}>P50</span> / P90
                   </div>
                   <div style={{ padding: '8px 14px' }}>
                     <MCSvg p10={mcResult.p10} p50={mcResult.p50} p90={mcResult.p90} />
@@ -739,7 +739,7 @@ export function BacktesterV3UI2() {
             {compareResult && compareResult.length > 0 && (
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ padding: '5px 10px', background: '#141414', borderBottom: `1px solid ${BORDER}`, fontSize: 10, color: SUBTLE, fontWeight: 700 }}>
-                  STRATEGY COMPARISON â€” {compareResult.length} STRATEGIES
+                  STRATEGY COMPARISON — {compareResult.length} STRATEGIES
                 </div>
                 <table style={{ borderCollapse: 'collapse', width: '100%' }}>
                   <thead>

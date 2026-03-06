@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090/api/v3/backtest-contract';
+const API = 'http://localhost:8000/api/v3/backtest-contract';
 const UI = 'http://localhost:5100/ui2/backtest-contract';
 const GOLDEN_IDS = ['GOLDEN_MA_CROSS_001', 'GOLDEN_MR_001', 'GOLDEN_HOLD_001'];
 

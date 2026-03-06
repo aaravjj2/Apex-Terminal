@@ -363,7 +363,7 @@ export function PnlExplainUI2() {
                 <tbody>
                   {waterfall.length === 0 && (
                     <tr><td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      {loading ? 'Loading...' : 'No waterfall data — check /api/v4/pnl-explain/waterfall'}
+                      {loading ? 'Loading...' : 'No waterfall data'}
                     </td></tr>
                   )}
                   {waterfall.map((w, i) => {
@@ -407,7 +407,7 @@ export function PnlExplainUI2() {
                 <tbody>
                   {greeks.length === 0 && (
                     <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No greek P&L — check /api/v4/pnl-explain/greeks
+                      No greek P&L
                     </td></tr>
                   )}
                   {greeks.sort((a, b) => Math.abs(b.totalGreek) - Math.abs(a.totalGreek)).map(g => (
@@ -443,7 +443,7 @@ export function PnlExplainUI2() {
                 <tbody>
                   {marketRisk.length === 0 && (
                     <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No market risk data — check /api/v4/pnl-explain/market-risk
+                      No market risk data
                     </td></tr>
                   )}
                   {marketRisk.sort((a, b) => Math.abs(b.pnlImpact) - Math.abs(a.pnlImpact)).map((r, i) => (
@@ -480,7 +480,7 @@ export function PnlExplainUI2() {
                 <tbody>
                   {positions.length === 0 && (
                     <tr><td colSpan={13} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No positions — check /api/v4/pnl-explain/positions
+                      No positions
                     </td></tr>
                   )}
                   {positions.sort((a, b) => Math.abs(b.pnlDay) - Math.abs(a.pnlDay)).map(p => (
@@ -514,7 +514,7 @@ export function PnlExplainUI2() {
                 style={{ fontFamily: MONO, fontSize: 11, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, padding: '4px 8px', width: 240, outline: 'none' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {filteredLogs.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No events — check /api/v4/pnl-explain/log</div>}
+              {filteredLogs.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No events</div>}
               {filteredLogs.map((l, i) => (
                 <div key={i} style={{ background: PANEL, border: `1px solid ${l.pnlImpact > 0 ? GREEN + '33' : l.pnlImpact < 0 ? RED + '33' : BORDER}`, borderRadius: 4, padding: '8px 12px', display: 'flex', gap: 12, alignItems: 'center' }}>
                   <span style={{ fontSize: 9, color: SUBTLE, minWidth: 80 }}>{fmtTime(l.timestamp)}</span>

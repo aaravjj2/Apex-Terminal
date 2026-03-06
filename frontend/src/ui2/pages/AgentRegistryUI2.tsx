@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// AgentRegistryUI2 â€” Bloomberg APEX agent registry terminal
+﻿// AgentRegistryUI2 — Bloomberg APEX agent registry terminal
 // AI agent lifecycle, capability discovery, health, versioning, audit
 // Tabs: AGENTS | CAPABILITIES | DEPLOYMENTS | HEALTH | AUDIT
 // APIs: /api/v4/agent-registry/agents, /capabilities, /deployments, /health, /audit
@@ -205,7 +205,7 @@ export function AgentRegistryUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>AGENT REGISTRY â€” AI AGENT LIFECYCLE + CAPABILITY DISCOVERY + HEALTH MONITORING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>AGENT REGISTRY — AI AGENT LIFECYCLE + CAPABILITY DISCOVERY + HEALTH MONITORING</span>
         {degraded > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {degraded} DEGRADED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
@@ -231,7 +231,7 @@ export function AgentRegistryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Agent</Th><Th>Type</Th><Th>Version</Th><Th>Status</Th><Th>Framework</Th><Th right>Caps</Th><Th right>Deploys</Th><Th right>Req Today</Th><Th right>Latency ms</Th><Th right>Error %</Th><Th>Owner</Th></tr></thead>
               <tbody>
-                {agents.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No agents â€” check /api/v4/agent-registry/agents</td></tr>}
+                {agents.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No agents</td></tr>}
                 {agents.sort((a, b) => b.requestsToday - a.requestsToday).map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.name}</Td>
@@ -257,7 +257,7 @@ export function AgentRegistryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Capability</Th><Th>Agent</Th><Th>Category</Th><Th>Version</Th><Th>Enabled</Th><Th right>Called Today</Th><Th right>Avg Score</Th><Th>Description</Th></tr></thead>
               <tbody>
-                {capabilities.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No capabilities â€” check /api/v4/agent-registry/capabilities</td></tr>}
+                {capabilities.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No capabilities</td></tr>}
                 {capabilities.sort((a, b) => b.calledToday - a.calledToday).map((c, i) => (
                   <tr key={i} style={{ opacity: c.enabled ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{c.capability}</Td>
@@ -280,7 +280,7 @@ export function AgentRegistryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Deployment ID</Th><Th>Agent</Th><Th>Env</Th><Th>Status</Th><Th>Health</Th><Th right>Replicas</Th><Th>Endpoint</Th><Th>Deployed</Th><Th>Last Health Check</Th></tr></thead>
               <tbody>
-                {deployments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No deployments â€” check /api/v4/agent-registry/deployments</td></tr>}
+                {deployments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No deployments</td></tr>}
                 {deployments.sort((a, b) => (a.environment === 'production' ? -1 : 1) - (b.environment === 'production' ? -1 : 1)).map((d, i) => (
                   <tr key={i} style={{ background: d.healthStatus === 'down' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{d.deploymentId}</Td>
@@ -304,7 +304,7 @@ export function AgentRegistryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Agent</Th><Th>Status</Th><Th right>Uptime %</Th><Th right>Req/min</Th><Th right>Errors/hr</Th><Th right>P99 ms</Th><Th right>CPU %</Th><Th right>Mem MB</Th><Th>Last Check</Th></tr></thead>
               <tbody>
-                {health.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No health data â€” check /api/v4/agent-registry/health</td></tr>}
+                {health.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No health data</td></tr>}
                 {health.sort((a, b) => {
                   const p: Record<string, number> = { down: 0, degraded: 1, healthy: 2 }
                   return (p[a.status] ?? 3) - (p[b.status] ?? 3)
@@ -331,7 +331,7 @@ export function AgentRegistryUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Agent</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/agent-registry/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -339,7 +339,7 @@ export function AgentRegistryUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

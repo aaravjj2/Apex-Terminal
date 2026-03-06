@@ -1103,7 +1103,7 @@ export default function AutopilotUI2() {
             <div style={{ ...panel, overflow: 'hidden' }}>
               <div style={{ display: 'flex', borderBottom: `1px solid ${T.border0}`, flexShrink: 0 }}>
                 {DATA_TABS.map(t => (
-                  <button key={t.k} onClick={() => setTab(t.k)}
+                  <button key={t.k} data-testid={`autopilot-tab-${t.k}`} onClick={() => setTab(t.k)}
                     style={{ background: tab === t.k ? T.bg2 : 'transparent', color: tab === t.k ? T.text0 : T.text3, border: 'none', borderBottom: tab === t.k ? `2px solid ${T.brand}` : '2px solid transparent', padding: '4px 10px', fontSize: '9px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' }}>
                     {t.l}
                   </button>

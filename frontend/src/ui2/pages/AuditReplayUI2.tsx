@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// AuditReplayUI2 â€” Bloomberg APEX audit replay terminal
+﻿// AuditReplayUI2 — Bloomberg APEX audit replay terminal
 // Audit event replay, timeline, forensic analysis, session reconstruction
 // Tabs: SESSIONS | EVENTS | TIMELINE | FORENSICS | AUDIT
 // APIs: /api/v4/audit-replay/sessions, /events, /timeline, /forensics, /audit
@@ -213,7 +213,7 @@ export function AuditReplayUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>AUDIT REPLAY â€” EVENT REPLAY + TIMELINE RECONSTRUCTION + FORENSIC ANALYSIS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>AUDIT REPLAY — EVENT REPLAY + TIMELINE RECONSTRUCTION + FORENSIC ANALYSIS</span>
         {running > 0 && <span style={{ fontSize: 10, color: BLUE, fontWeight: 700 }}>⚠¡ {running} RUNNING</span>}
         {criticalFindings > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalFindings} CRITICAL FINDINGS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -240,7 +240,7 @@ export function AuditReplayUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Session ID</Th><Th>Type</Th><Th>Status</Th><Th>Severity</Th><Th right>Events</Th><Th right>Anomalies</Th><Th>Duration</Th><Th>Created By</Th><Th>Start Time</Th></tr></thead>
               <tbody>
-                {sessions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sessions â€” check /api/v4/audit-replay/sessions</td></tr>}
+                {sessions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sessions</td></tr>}
                 {sessions.sort((a, b) => {
                   const p: Record<string, number> = { running: 0, queued: 1, completed: 2, failed: 3 }
                   return (p[a.status] ?? 4) - (p[b.status] ?? 4)
@@ -267,7 +267,7 @@ export function AuditReplayUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th right>#</Th><Th>Event Type</Th><Th>Actor</Th><Th>Resource</Th><Th>Action</Th><Th>Outcome</Th><Th>Risk</Th><Th>IP Address</Th><Th>Correlation</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {events.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events â€” check /api/v4/audit-replay/events</td></tr>}
+                {events.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events</td></tr>}
                 {events.sort((a, b) => a.sequenceNum - b.sequenceNum).map((e, i) => (
                   <tr key={i} style={{ background: e.outcome === 'failure' ? RED + '0a' : e.outcome === 'blocked' ? ORANGE + '0a' : 'transparent' }}>
                     <Td right mono col={SUBTLE}>{e.sequenceNum}</Td>
@@ -292,14 +292,14 @@ export function AuditReplayUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th right>Offset (s)</Th><Th>Actor</Th><Th>Event Type</Th><Th>Impact</Th><Th>Anomaly</Th><Th right>Related</Th><Th>Description</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {timeline.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No timeline â€” check /api/v4/audit-replay/timeline</td></tr>}
+                {timeline.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No timeline</td></tr>}
                 {timeline.sort((a, b) => a.timeOffset - b.timeOffset).map((t, i) => (
                   <tr key={i} style={{ background: t.anomaly ? RED + '0a' : 'transparent' }}>
                     <Td right mono col={SUBTLE}>{t.timeOffset.toFixed(3)}</Td>
                     <Td mono col={TEXT}>{t.actor}</Td>
                     <Td mono col={PURPLE}>{t.eventType}</Td>
                     <Td><SevBadge s={t.impact} /></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: t.anomaly ? RED : SUBTLE }}>{t.anomaly ? '⚠‘ ANOMALY' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: t.anomaly ? RED : SUBTLE }}>{t.anomaly ? '⚠‘ ANOMALY' : '—'}</span></Td>
                     <Td right mono col={t.relatedEvents > 0 ? BLUE : SUBTLE}>{t.relatedEvents}</Td>
                     <Td mono col={SUBTLE}>{t.description.slice(0, 50)}{t.description.length > 50 ? 'â€¦' : ''}</Td>
                     <Td mono col={SUBTLE}>{t.timestamp}</Td>
@@ -315,7 +315,7 @@ export function AuditReplayUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Finding ID</Th><Th>Category</Th><Th>Severity</Th><Th right>Confidence</Th><Th>Status</Th><Th>Affected Resources</Th><Th>Description</Th><Th>Recommendation</Th></tr></thead>
               <tbody>
-                {forensics.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No findings â€” check /api/v4/audit-replay/forensics</td></tr>}
+                {forensics.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No findings</td></tr>}
                 {forensics.sort((a, b) => {
                   const p: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (p[a.severity] ?? 4) - (p[b.severity] ?? 4)
@@ -341,7 +341,7 @@ export function AuditReplayUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Session</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/audit-replay/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -349,7 +349,7 @@ export function AuditReplayUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

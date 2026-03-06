@@ -10,7 +10,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090';
+const API = 'http://localhost:8000';
 
 test.describe('W113 — WS stability monitor', () => {
   test('w113-01 ws/health returns 200', async ({ request }) => {

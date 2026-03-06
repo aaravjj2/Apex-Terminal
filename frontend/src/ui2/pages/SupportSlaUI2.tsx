@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// SupportSlaUI2 â€” Bloomberg APEX support SLA management terminal
+﻿// SupportSlaUI2 — Bloomberg APEX support SLA management terminal
 // Triage automation, escalation tracking, SLA compliance, ticket analytics
 // Tabs: TICKETS | SLA METRICS | TRIAGE | ESCALATIONS | AUDIT
 // APIs: /api/v4/support-sla/tickets, /sla-metrics, /triage, /escalations, /audit
@@ -228,7 +228,7 @@ export function SupportSlaUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>SUPPORT SLA â€” TRIAGE AUTOMATION + ESCALATION TRACKING + COMPLIANCE</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>SUPPORT SLA — TRIAGE AUTOMATION + ESCALATION TRACKING + COMPLIANCE</span>
         {slaBreached > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {slaBreached} SLA BREACH</span>}
         {p1Open > 0 && <span style={{ fontSize: 10, color: RED }}>⚠‘ {p1Open} P1 OPEN</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -255,7 +255,7 @@ export function SupportSlaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Ticket ID</Th><Th>Title</Th><Th>Category</Th><Th>Priority</Th><Th>Status</Th><Th>Team</Th><Th>SLA Status</Th><Th>SLA Progress</Th><Th>Product</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {tickets.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No tickets â€” check /api/v4/support-sla/tickets</td></tr>}
+                {tickets.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No tickets</td></tr>}
                 {tickets.sort((a, b) => (a.priority < b.priority ? -1 : 1)).map((t, i) => (
                   <tr key={i} style={{ background: t.slaComplianceStatus === 'breached' ? RED + '0a' : t.priority === 'p1' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{t.ticketId}</Td>
@@ -263,10 +263,10 @@ export function SupportSlaUI2() {
                     <Td><CatBadge c={t.category} /></Td>
                     <Td><PrioBadge p={t.priority} /></Td>
                     <Td><StatusBadge s={t.status} /></Td>
-                    <Td mono col={BLUE}>{t.assignedTeam || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{t.assignedTeam || '—'}</Td>
                     <Td><StatusBadge s={t.slaComplianceStatus} /></Td>
                     <Td><SlaBar elapsed={t.slaElapsedHours} target={t.slaTargetHours} /></Td>
-                    <Td mono col={SUBTLE}>{t.product || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{t.product || '—'}</Td>
                     <Td mono col={SUBTLE}>{t.createdAt}</Td>
                   </tr>
                 ))}
@@ -280,11 +280,11 @@ export function SupportSlaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Category</Th><Th>Priority</Th><Th>Period</Th><Th right>Total</Th><Th right>Within SLA</Th><Th right>Compliance %</Th><Th right>Avg Res Hours</Th><Th right>P95 Hours</Th><Th right>1st Resp min</Th><Th right>CSAT</Th></tr></thead>
               <tbody>
-                {slaMetrics.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No SLA metrics â€” check /api/v4/support-sla/sla-metrics</td></tr>}
+                {slaMetrics.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No SLA metrics</td></tr>}
                 {slaMetrics.sort((a, b) => a.slaCompliancePct - b.slaCompliancePct).map((m, i) => (
                   <tr key={i} style={{ background: m.slaCompliancePct < 75 ? RED + '0a' : 'transparent' }}>
-                    <Td mono col={AMBER}>{m.category || 'â€”'}</Td>
-                    <Td mono col={ORANGE}>{m.priority || 'â€”'}</Td>
+                    <Td mono col={AMBER}>{m.category || '—'}</Td>
+                    <Td mono col={ORANGE}>{m.priority || '—'}</Td>
                     <Td mono col={SUBTLE}>{m.period}</Td>
                     <Td right mono col={TEXT}>{m.totalTickets}</Td>
                     <Td right mono col={TEXT}>{m.resolvedWithinSla}</Td>
@@ -305,18 +305,18 @@ export function SupportSlaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rule Name</Th><Th>Condition</Th><Th>Action</Th><Th>Target Team</Th><Th>Priority</Th><Th>Enabled</Th><Th right>Trigger Count</Th><Th right>Accuracy %</Th><Th>Last Triggered</Th></tr></thead>
               <tbody>
-                {triage.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No triage rules â€” check /api/v4/support-sla/triage</td></tr>}
+                {triage.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No triage rules</td></tr>}
                 {triage.sort((a, b) => b.triggerCount - a.triggerCount).map((t, i) => (
                   <tr key={i} style={{ opacity: t.enabled ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{t.name}</Td>
                     <Td mono col={SUBTLE}>{t.condition.length > 30 ? t.condition.slice(0, 30) + 'â€¦' : t.condition}</Td>
                     <Td mono col={BLUE}>{t.action.replace('_', ' ').toUpperCase()}</Td>
-                    <Td mono col={TEXT}>{t.targetTeam || 'â€”'}</Td>
+                    <Td mono col={TEXT}>{t.targetTeam || '—'}</Td>
                     <Td><PrioBadge p={t.priority || 'p3'} /></Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: t.enabled ? GREEN : RED }}>{t.enabled ? 'âœ“ ON' : 'âœ— OFF'}</span></Td>
                     <Td right mono col={TEXT}>{t.triggerCount.toLocaleString()}</Td>
                     <Td right mono col={t.accuracy > 90 ? GREEN : t.accuracy > 75 ? AMBER : RED}>{t.accuracy.toFixed(1)}%</Td>
-                    <Td mono col={SUBTLE}>{t.lastTriggeredAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{t.lastTriggeredAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -329,18 +329,18 @@ export function SupportSlaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>ID</Th><Th>Ticket ID</Th><Th>Reason</Th><Th>Status</Th><Th>Previous</Th><Th>New Assignee</Th><Th>Escalated By</Th><Th>At</Th><Th>Notes</Th></tr></thead>
               <tbody>
-                {escalations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No escalations â€” check /api/v4/support-sla/escalations</td></tr>}
+                {escalations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No escalations</td></tr>}
                 {escalations.map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'open' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.escalationId}</Td>
                     <Td mono col={BLUE}>{e.ticketId}</Td>
                     <Td mono col={ORANGE}>{e.reason.replace(/_/g, ' ').toUpperCase()}</Td>
                     <Td><StatusBadge s={e.status} /></Td>
-                    <Td mono col={SUBTLE}>{e.previousAssignee || 'â€”'}</Td>
-                    <Td mono col={TEXT}>{e.newAssignee || 'â€”'}</Td>
-                    <Td mono col={TEXT}>{e.escalatedBy || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.previousAssignee || '—'}</Td>
+                    <Td mono col={TEXT}>{e.newAssignee || '—'}</Td>
+                    <Td mono col={TEXT}>{e.escalatedBy || '—'}</Td>
                     <Td mono col={SUBTLE}>{e.escalatedAt}</Td>
-                    <Td mono col={SUBTLE}>{e.resolutionNotes || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.resolutionNotes || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -353,14 +353,14 @@ export function SupportSlaUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Ticket ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/support-sla/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
-                    <Td mono col={BLUE}>{a.ticketId || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.ticketId || '—'}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// CapacityPlanUI2 â€” Bloomberg CAPA-grade capacity planning terminal
+﻿// CapacityPlanUI2 — Bloomberg CAPA-grade capacity planning terminal
 // Resource utilization, forecasting, allocation, budget constraints, scaling recommendations
 // Tabs: UTILIZATION | FORECAST | ALLOCATION | CONSTRAINTS | SCALING
 // APIs: /api/v4/capacity-plan/utilization, /forecast, /allocation, /constraints, /scaling
@@ -116,7 +116,7 @@ function UrgencyBadge({ u }: { u: string }) {
 }
 
 function TrendIndicator({ trend, pct }: { trend: string; pct: number }) {
-  return <span style={{ fontFamily: MONO, fontSize: 10, color: trend === 'up' ? RED : trend === 'down' ? GREEN : SUBTLE }}>{trend === 'up' ? 'â–²' : trend === 'down' ? 'â–¼' : 'â€”'} {Math.abs(pct).toFixed(1)}%</span>
+  return <span style={{ fontFamily: MONO, fontSize: 10, color: trend === 'up' ? RED : trend === 'down' ? GREEN : SUBTLE }}>{trend === 'up' ? 'â–²' : trend === 'down' ? 'â–¼' : '—'} {Math.abs(pct).toFixed(1)}%</span>
 }
 
 
@@ -216,7 +216,7 @@ export function CapacityPlanUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CAPA</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>CAPACITY PLANNING â€” UTILIZATION + FORECAST + ALLOCATION + CONSTRAINTS + SCALING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CAPACITY PLANNING — UTILIZATION + FORECAST + ALLOCATION + CONSTRAINTS + SCALING</span>
         {critical > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {critical} CRITICAL RESOURCES</span>}
         {immediateScaling > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {immediateScaling} IMMEDIATE SCALING NEEDED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -252,7 +252,7 @@ export function CapacityPlanUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Resource</Th><Th>Category</Th><Th>Env</Th><Th>Utilization</Th><Th right>Used</Th><Th right>Capacity</Th><Th>Trend</Th><Th right>Peak %</Th></tr></thead>
                 <tbody>
-                  {filteredUtil.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No data â€” check /api/v4/capacity-plan/utilization</td></tr>}
+                  {filteredUtil.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No data</td></tr>}
                   {filteredUtil.sort((a, b) => b.utilizationPct - a.utilizationPct).map((u, i) => (
                     <tr key={i} style={{ background: u.utilizationPct >= 90 ? RED + '0a' : u.utilizationPct >= 70 ? AMBER + '06' : 'transparent' }}>
                       <Td mono col={AMBER}>{u.resource}</Td>
@@ -276,7 +276,7 @@ export function CapacityPlanUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Resource</Th><Th right>Current</Th><Th right>30d Forecast</Th><Th right>90d Forecast</Th><Th right>180d Forecast</Th><Th right>Growth/mo</Th><Th right>Days to Cap</Th><Th right>Confidence</Th></tr></thead>
               <tbody>
-                {forecast.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No forecast â€” check /api/v4/capacity-plan/forecast</td></tr>}
+                {forecast.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No forecast</td></tr>}
                 {forecast.sort((a, b) => a.daysUntilCapacity - b.daysUntilCapacity).map((f, i) => (
                   <tr key={i} style={{ background: f.daysUntilCapacity < 30 ? RED + '0a' : f.daysUntilCapacity < 90 ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{f.resource}</Td>
@@ -299,7 +299,7 @@ export function CapacityPlanUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Team</Th><Th>Project</Th><Th>Resource</Th><Th right>Allocated</Th><Th right>Used</Th><Th>Efficiency</Th><Th right>Cost USD</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {allocation.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No allocation â€” check /api/v4/capacity-plan/allocation</td></tr>}
+                {allocation.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No allocation</td></tr>}
                 {allocation.sort((a, b) => b.costUsd - a.costUsd).map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.team}</Td>
@@ -322,7 +322,7 @@ export function CapacityPlanUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Resource</Th><Th>Constraint</Th><Th>Severity</Th><Th right>Current</Th><Th right>Limit</Th><Th right>Margin</Th></tr></thead>
               <tbody>
-                {constraints.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No constraints â€” check /api/v4/capacity-plan/constraints</td></tr>}
+                {constraints.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No constraints</td></tr>}
                 {constraints.sort((a, b) => { const o: Record<string, number> = { critical: 0, warning: 1, ok: 2 }; return (o[a.severity] ?? 9) - (o[b.severity] ?? 9) }).map((c, i) => (
                   <tr key={i} style={{ background: c.severity === 'critical' ? RED + '0a' : c.severity === 'warning' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.resource}</Td>
@@ -343,7 +343,7 @@ export function CapacityPlanUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Resource</Th><Th>Urgency</Th><Th right>Current</Th><Th right>Recommended</Th><Th right>Cost Impact</Th><Th right>Confidence</Th><Th>Reasoning</Th></tr></thead>
               <tbody>
-                {scaling.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No scaling recommendations â€” check /api/v4/capacity-plan/scaling</td></tr>}
+                {scaling.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No scaling recommendations</td></tr>}
                 {scaling.sort((a, b) => { const o: Record<string, number> = { immediate: 0, soon: 1, planned: 2, low: 3 }; return (o[a.urgency] ?? 9) - (o[b.urgency] ?? 9) }).map((s, i) => (
                   <tr key={i} style={{ background: s.urgency === 'immediate' ? RED + '0a' : s.urgency === 'soon' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.resource}</Td>

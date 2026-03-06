@@ -61,7 +61,7 @@ class PerfSampleIn(BaseModel):
 
 
 @router.post("/samples", status_code=201)
-async def post_perf_sample(body: PerfSampleIn):
+def post_perf_sample(body: PerfSampleIn):
     sample = save_perf_sample(
         page_id=body.page_id,
         page_url=body.page_url,
@@ -81,7 +81,7 @@ async def post_perf_sample(body: PerfSampleIn):
 
 
 @router.get("/samples")
-async def get_perf_samples(page_id: Optional[str] = Query(default=None)):
+def get_perf_samples(page_id: Optional[str] = Query(default=None)):
     return list_perf_samples(page_id=page_id)
 
 
@@ -90,7 +90,7 @@ async def get_perf_samples(page_id: Optional[str] = Query(default=None)):
 # ---------------------------------------------------------------------------
 
 @router.get("/summary")
-async def get_summary():
+def get_summary():
     return get_perf_summary()
 
 
@@ -99,6 +99,6 @@ async def get_summary():
 # ---------------------------------------------------------------------------
 
 @router.delete("/data", status_code=200)
-async def delete_perf_data():
+def delete_perf_data():
     deleted = clear_perf_data()
     return {"deleted": deleted}

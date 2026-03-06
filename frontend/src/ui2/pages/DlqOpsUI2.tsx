@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
-﻿// DlqOpsUI2 â€” Bloomberg APEX DLQ Operations â€” ElastiHack Waves 011-020, 061-070
+﻿// DlqOpsUI2 — Bloomberg APEX DLQ Operations — ElastiHack Waves 011-020, 061-070
 // Dead-letter queue mgmt, ingest bulk metrics, lag timeline, drain, latency, integrity
 // Tabs: DLQ ENTRIES | INGEST | LAG TIMELINE | LATENCY | INTEGRITY | INDICES
 // APIs: /api/v4/elastihack/dlq, /ingest, /lag, /latency, /integrity, /indices
@@ -207,7 +207,7 @@ export function DlqOpsUI2() {
     try {
       const r = await fetch(`${EH}/dlq/drain`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 100 }) })
       if (r.ok) { const d = await r.json(); setDrainMsg(`Drained ${d.drained ?? 0} entries`); fetchAll() }
-      else setDrainMsg('Drain failed â€” check backend logs')
+      else setDrainMsg('Drain failed — check backend logs')
     } catch (e: any) { setDrainMsg(e.message) }
     finally { setDraining(false) }
   }
@@ -232,7 +232,7 @@ export function DlqOpsUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>DLQ OPERATIONS â€” ELASTIHACK WAVES 011-020 / 061-070 â€” DEAD-LETTER QUEUE + INGEST OPS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>DLQ OPERATIONS — ELASTIHACK WAVES 011-020 / 061-070 — DEAD-LETTER QUEUE + INGEST OPS</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
@@ -248,8 +248,8 @@ export function DlqOpsUI2() {
         <StatCard label="Dead Entries" value={deadCount} col={deadCount > 0 ? RED : GREEN} />
         <StatCard label="Pending Drain" value={pendingCount} col={AMBER} />
         <StatCard label="SLO Failures" value={sloFailCount} col={sloFailCount > 0 ? RED : GREEN} />
-        <StatCard label="Docs/sec" value={ingest ? ingest.docsPerSec.toFixed(0) : 'â€”'} col={BLUE} />
-        <StatCard label="Integrity Score" value={avgIntegrity !== null ? `${(avgIntegrity * 100).toFixed(1)}%` : 'â€”'} col={avgIntegrity !== null && avgIntegrity >= 0.99 ? GREEN : RED} />
+        <StatCard label="Docs/sec" value={ingest ? ingest.docsPerSec.toFixed(0) : '—'} col={BLUE} />
+        <StatCard label="Integrity Score" value={avgIntegrity !== null ? `${(avgIntegrity * 100).toFixed(1)}%` : '—'} col={avgIntegrity !== null && avgIntegrity >= 0.99 ? GREEN : RED} />
       </div>
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
         {TABS2.map(t => (
@@ -265,7 +265,7 @@ export function DlqOpsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>ID</Th><Th>Entity Type</Th><Th>Severity</Th><Th>Status</Th><Th right>Retries</Th><Th>Error</Th><Th>Created</Th><Th>Last Attempt</Th></tr></thead>
               <tbody>
-                {dlqEntries.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No DLQ entries â€” backend at {EH}/dlq</td></tr>}
+                {dlqEntries.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No DLQ entries — backend at {EH}/dlq</td></tr>}
                 {dlqEntries.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.id.slice(0, 12)}</Td>
@@ -292,19 +292,19 @@ export function DlqOpsUI2() {
               <StatCard label="Docs/sec" value={ingest.docsPerSec.toFixed(1)} col={BLUE} />
               <StatCard label="Indexed Last 1h" value={ingest.indexedLast1h.toLocaleString()} col={GREEN} />
               <StatCard label="Failed Last 1h" value={ingest.failedLast1h.toLocaleString()} col={ingest.failedLast1h > 0 ? RED : GREEN} />
-              <StatCard label="Last Bulk At" value={ingest.lastBulkAt ? ingest.lastBulkAt.slice(0, 19) : 'â€”'} col={SUBTLE} />
+              <StatCard label="Last Bulk At" value={ingest.lastBulkAt ? ingest.lastBulkAt.slice(0, 19) : '—'} col={SUBTLE} />
             </div>
           </div>
         )}
         {tab === 'ingest' && !ingest && (
-          <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No ingest metrics â€” check {EH}/ingest</div>
+          <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No ingest metrics — check {EH}/ingest</div>
         )}
         {tab === 'lag' && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Entity Type</Th><Th right>DB Count</Th><Th right>ES Count</Th><Th right>Lag (docs)</Th><Th right>Lag %</Th><Th>SLO</Th></tr></thead>
               <tbody>
-                {lag.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No lag data â€” check {EH}/lag</td></tr>}
+                {lag.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No lag data — check {EH}/lag</td></tr>}
                 {lag.sort((a, b) => b.lag - a.lag).map((l, i) => (
                   <tr key={i} style={{ background: !l.sloMet ? RED + '08' : 'transparent' }}>
                     <Td mono col={BLUE}>{l.entityType}</Td>
@@ -324,7 +324,7 @@ export function DlqOpsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Endpoint</Th><Th right>P50 ms</Th><Th right>P75 ms</Th><Th right>P95 ms</Th><Th right>P99 ms</Th><Th right>Samples</Th></tr></thead>
               <tbody>
-                {latency.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No latency data â€” check {EH}/latency</td></tr>}
+                {latency.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No latency data — check {EH}/latency</td></tr>}
                 {latency.sort((a, b) => b.p99 - a.p99).map((l, i) => (
                   <tr key={i}>
                     <Td mono col={BLUE}>{l.endpoint}</Td>
@@ -347,19 +347,19 @@ export function DlqOpsUI2() {
               <StatCard label="Orphan Docs" value={integrity.orphanDocs} col={integrity.orphanDocs > 0 ? RED : GREEN} />
               <StatCard label="Duplicate Keys" value={integrity.duplicateKeys} col={integrity.duplicateKeys > 0 ? AMBER : GREEN} />
               <StatCard label="Corrupted Docs" value={integrity.corruptedDocs} col={integrity.corruptedDocs > 0 ? RED : GREEN} />
-              <StatCard label="Last Check" value={integrity.lastCheckedAt ? integrity.lastCheckedAt.slice(0, 19) : 'â€”'} col={SUBTLE} />
+              <StatCard label="Last Check" value={integrity.lastCheckedAt ? integrity.lastCheckedAt.slice(0, 19) : '—'} col={SUBTLE} />
             </div>
           </div>
         )}
         {tab === 'integrity' && !integrity && (
-          <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No integrity data â€” check {EH}/integrity</div>
+          <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No integrity data — check {EH}/integrity</div>
         )}
         {tab === 'indices' && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Index</Th><Th>Entity Type</Th><Th right>Docs</Th><Th>Store Size</Th><Th>ILM Phase</Th><Th>ILM Policy</Th><Th right>Shards</Th><Th right>Replicas</Th></tr></thead>
               <tbody>
-                {indices.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No indices â€” check {EH}/indices</td></tr>}
+                {indices.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No indices — check {EH}/indices</td></tr>}
                 {indices.sort((a, b) => b.docCount - a.docCount).map((ix, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{ix.index}</Td>

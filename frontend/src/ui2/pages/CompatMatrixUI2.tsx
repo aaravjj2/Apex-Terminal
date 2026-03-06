@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// CompatMatrixUI2 â€” Bloomberg CMPX compatibility matrix terminal
+﻿// CompatMatrixUI2 — Bloomberg CMPX compatibility matrix terminal
 // API versioning, breaking changes, deprecation, client compatibility, migration paths
 // Tabs: COMPAT MATRIX | BREAKING CHANGES | DEPRECATIONS | CLIENT VERSIONS | MIGRATION
 // APIs: /api/v4/compat-matrix/matrix, /breaking, /deprecations, /clients, /migration
@@ -216,7 +216,7 @@ export function CompatMatrixUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CMPX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>COMPATIBILITY MATRIX â€” API VERSIONS + BREAKING CHANGES + EOL + CLIENT TRACKING + MIGRATION PATHS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>COMPATIBILITY MATRIX — API VERSIONS + BREAKING CHANGES + EOL + CLIENT TRACKING + MIGRATION PATHS</span>
         {criticalBreaking > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalBreaking} CRITICAL BREAKING</span>}
         {criticalClients > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalClients} INCOMPATIBLE CLIENTS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -243,17 +243,17 @@ export function CompatMatrixUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Component</Th><Th>Version</Th><Th>Status</Th><Th>Release Date</Th><Th>EOL</Th><Th right>Breaking</Th><Th right>Issues</Th><Th>Compatible With</Th></tr></thead>
               <tbody>
-                {matrix.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No matrix â€” check /api/v4/compat-matrix/matrix</td></tr>}
+                {matrix.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No matrix</td></tr>}
                 {matrix.sort((a, b) => { const o: Record<string, number> = { stable: 0, beta: 1, deprecated: 2, eol: 3 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) }).map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'eol' ? RED + '0a' : e.status === 'deprecated' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.component}</Td>
                     <Td mono col={BLUE}>{e.version}</Td>
                     <Td><VerStatusBadge s={e.status} /></Td>
                     <Td mono col={SUBTLE}>{e.releaseDate}</Td>
-                    <Td mono col={e.eolDate ? RED : SUBTLE}>{e.eolDate ?? 'â€”'}</Td>
+                    <Td mono col={e.eolDate ? RED : SUBTLE}>{e.eolDate ?? '—'}</Td>
                     <Td right mono col={e.breakingChanges > 0 ? RED : GREEN}>{e.breakingChanges}</Td>
                     <Td right mono col={e.knownIssues > 0 ? AMBER : GREEN}>{e.knownIssues}</Td>
-                    <Td><span style={{ fontSize: 9, color: SUBTLE }}>{e.compatibleWith.join(', ') || 'â€”'}</span></Td>
+                    <Td><span style={{ fontSize: 9, color: SUBTLE }}>{e.compatibleWith.join(', ') || '—'}</span></Td>
                   </tr>
                 ))}
               </tbody>
@@ -266,7 +266,7 @@ export function CompatMatrixUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Component</Th><Th>From â†’ To</Th><Th>Type</Th><Th>Severity</Th><Th right>Affected</Th><Th>Description</Th><Th>Mitigation</Th></tr></thead>
               <tbody>
-                {breaking.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No breaking changes â€” check /api/v4/compat-matrix/breaking</td></tr>}
+                {breaking.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No breaking changes</td></tr>}
                 {breaking.sort((a, b) => { const o: Record<string, number> = { critical: 0, major: 1, minor: 2 }; return (o[a.severity] ?? 9) - (o[b.severity] ?? 9) }).map((b, i) => (
                   <tr key={i} style={{ background: b.severity === 'critical' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.component}</Td>
@@ -275,7 +275,7 @@ export function CompatMatrixUI2() {
                     <Td><SeverityBadge s={b.severity} /></Td>
                     <Td right mono col={b.affectedClients > 10 ? RED : TEXT}>{b.affectedClients}</Td>
                     <Td><span style={{ fontSize: 10, color: TEXT }}>{b.description}</span></Td>
-                    <Td><span style={{ fontSize: 10, color: GREEN }}>{b.mitigationPath || 'â€”'}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: GREEN }}>{b.mitigationPath || '—'}</span></Td>
                   </tr>
                 ))}
               </tbody>
@@ -288,14 +288,14 @@ export function CompatMatrixUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Component</Th><Th>Feature</Th><Th>Deprecated In</Th><Th>Removed In</Th><Th>Replacement</Th><Th right>Affected</Th><Th right>Ack'd</Th><Th>Reason</Th></tr></thead>
               <tbody>
-                {deprecations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No deprecations â€” check /api/v4/compat-matrix/deprecations</td></tr>}
+                {deprecations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No deprecations</td></tr>}
                 {deprecations.sort((a, b) => b.affectedClients - a.affectedClients).map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.component}</Td>
                     <Td mono col={RED}>{d.feature}</Td>
                     <Td mono col={SUBTLE}>{d.deprecatedIn}</Td>
                     <Td mono col={RED}>{d.removedIn}</Td>
-                    <Td mono col={GREEN}>{d.replacement || 'â€”'}</Td>
+                    <Td mono col={GREEN}>{d.replacement || '—'}</Td>
                     <Td right mono col={d.affectedClients > 0 ? ORANGE : SUBTLE}>{d.affectedClients}</Td>
                     <Td right mono col={d.acknowledged >= d.affectedClients ? GREEN : AMBER}>{d.acknowledged}</Td>
                     <Td><span style={{ fontSize: 10, color: SUBTLE }}>{d.reason}</span></Td>
@@ -311,7 +311,7 @@ export function CompatMatrixUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Client</Th><Th>Current Version</Th><Th>Latest</Th><Th>Status</Th><Th right>Behind</Th><Th right>Pending Breaking</Th><Th>Last Updated</Th></tr></thead>
               <tbody>
-                {clients.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No clients â€” check /api/v4/compat-matrix/clients</td></tr>}
+                {clients.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No clients</td></tr>}
                 {clients.sort((a, b) => b.versionsBehind - a.versionsBehind).map((c, i) => (
                   <tr key={i} style={{ background: c.status === 'critical' || c.status === 'incompatible' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.clientName}</Td>
@@ -333,7 +333,7 @@ export function CompatMatrixUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Component</Th><Th>From â†’ To</Th><Th>Status</Th><Th>Effort</Th><Th right>Auto Steps</Th><Th right>Manual Steps</Th><Th>Rollback</Th><Th>Tested By</Th></tr></thead>
               <tbody>
-                {migration.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No migration paths â€” check /api/v4/compat-matrix/migration</td></tr>}
+                {migration.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No migration paths</td></tr>}
                 {migration.map((m, i) => (
                   <tr key={i} style={{ background: m.status === 'blocked' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{m.component}</Td>
@@ -343,7 +343,7 @@ export function CompatMatrixUI2() {
                     <Td right mono col={GREEN}>{m.automatedSteps}</Td>
                     <Td right mono col={m.manualSteps > 5 ? RED : AMBER}>{m.manualSteps}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: m.rollbackSupported ? GREEN : RED }}>{m.rollbackSupported ? 'YES' : 'NO'}</span></Td>
-                    <Td><span style={{ fontSize: 9, color: SUBTLE }}>{m.testedBy.join(', ') || 'â€”'}</span></Td>
+                    <Td><span style={{ fontSize: 9, color: SUBTLE }}>{m.testedBy.join(', ') || '—'}</span></Td>
                   </tr>
                 ))}
               </tbody>

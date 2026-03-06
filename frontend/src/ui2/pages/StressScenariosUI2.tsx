@@ -306,7 +306,7 @@ export function StressScenariosUI2() {
                   </div>
                 </div>
               ))}
-              {visScenarios.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No scenarios — check /api/v4/stress-scenarios/list</div>}
+              {visScenarios.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No scenarios</div>}
             </div>
           </>
         )}
@@ -314,7 +314,7 @@ export function StressScenariosUI2() {
         {/* RESULTS */}
         {tab === 'results' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {results.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No results — run a scenario first or check /api/v4/stress-scenarios/results</div>}
+            {results.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No results — run a scenario first</div>}
             {[...results].sort((a, b) => a.portfolioLoss - b.portfolioLoss).map((r, i) => (
               <div key={i} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 14 }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
@@ -390,7 +390,7 @@ export function StressScenariosUI2() {
                 <Th right>SPX Return</Th><Th right>VIX Peak</Th><Th right>Portfolio Impact</Th><Th right>Recovery Days</Th>
               </tr></thead>
               <tbody>
-                {historicalEvents.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No historical events — check /api/v4/stress-scenarios/historical</td></tr>}
+                {historicalEvents.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No historical events</td></tr>}
                 {[...historicalEvents].sort((a, b) => a.spxReturn - b.spxReturn).map((e, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{e.name}</Td>
@@ -412,7 +412,7 @@ export function StressScenariosUI2() {
         {tab === 'comparison' && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
             {comparison.length === 0 ? (
-              <div style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No comparison data — check /api/v4/stress-scenarios/comparison</div>
+              <div style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No comparison data</div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>

@@ -102,7 +102,7 @@ function Pct({ v, pos }: { v: number | null; pos?: boolean }) {
 
 
 export function StrategyStudioV3UI2() {
-  const [tab, setTab] = useState<'strategies' | 'templates' | 'backtest' | 'analytics' | 'audit'>('strategies')
+  const [tab, setTab] = useState<'strategies' | 'templates' | 'backtest' | 'analytics' | 'audit'>('templates')
   const [strategies, setStrategies] = useState<StrategyV3[]>([])
   const [templates, setTemplates] = useState<StrategyTemplate[]>([])
   const [backtests, setBacktests] = useState<BacktestResult[]>([])
@@ -111,6 +111,12 @@ export function StrategyStudioV3UI2() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  // Strategy editor state
+  const [editorName, setEditorName] = useState('')
+  const [editorType, setEditorType] = useState('ma_cross')
+  const [editorSymbols, setEditorSymbols] = useState('')
+  const [lintErrors, setLintErrors] = useState<string[]>([])
+  const [creating, setCreating] = useState(false)
 
   const fetchAll = useCallback(async () => {
     try {
@@ -192,6 +198,39 @@ export function StrategyStudioV3UI2() {
 
   useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
+  const handleLint = async () => {
+    try {
+      const r = await fetch('/api/v3/strategy-studio/lint', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editorName, strategy_type: editorType, symbols: editorSymbols ? editorSymbols.split(',').map(s => s.trim()) : [], start_date: '2024-01-01', end_date: '2024-12-31' }),
+      })
+      const d = await r.json()
+      if (d.valid) { setLintErrors([]) }
+      else {
+        const errs: string[] = Array.isArray(d.errors)
+          ? d.errors.map((e: any) => (typeof e === 'string' ? e : (e.message ?? JSON.stringify(e))))
+          : ['Validation failed']
+        setLintErrors(errs.length > 0 ? errs : ['Validation failed'])
+      }
+    } catch (e: any) {
+      setLintErrors([`Lint error: ${e.message}`])
+    }
+  }
+
+  const handleCreate = async () => {
+    setCreating(true)
+    try {
+      const r = await fetch('/api/v3/strategy-studio/strategies', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editorName, strategy_type: editorType, symbols: editorSymbols ? editorSymbols.split(',').map(s => s.trim()) : ['AAPL'], start_date: '2024-01-01', end_date: '2024-12-31' }),
+      })
+      if (r.ok) { await fetchAll(); setEditorName(''); setEditorSymbols(''); setLintErrors([]); setTab('strategies') }
+      else { const e = await r.json(); setErr(e.detail ?? 'Create failed') }
+    } finally { setCreating(false) }
+  }
+
+  const handleSearch = () => { /* triggers re-render via `filtered` */ }
+
   const activeStrats = strategies.filter(s => s.status === 'active').length
   const avgSharpe = backtests.length ? (backtests.reduce((s, b) => s + b.sharpeRatio, 0) / backtests.length).toFixed(2) : '—'
   const bestReturn = backtests.length ? Math.max(...backtests.map(b => b.totalReturn)) : null
@@ -206,7 +245,7 @@ export function StrategyStudioV3UI2() {
   ]
 
   return (
-    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+    <div data-testid="strategy-studio-page" style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
         <span style={{ fontSize: 10, color: SUBTLE }}>STRATEGY STUDIO V3 — AUTHORING + BACKTEST + PARAMETER OPTIMIZATION + VERSION HISTORY</span>
@@ -227,45 +266,75 @@ export function StrategyStudioV3UI2() {
           </button>
         ))}
       </div>
-      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
-        {tab === 'strategies' && (
-          <div>
-            <div style={{ marginBottom: 8 }}>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name / type…"
-                style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, color: TEXT, padding: '5px 10px', width: 280 }} />
-            </div>
-            <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr><Th>ID</Th><Th>Name</Th><Th>Type</Th><Th>Symbols</Th><Th>Status</Th><Th>Ver.</Th><Th right>Total Ret.</Th><Th right>Sharpe</Th><Th right>Max DD</Th><Th>Updated</Th></tr></thead>
-                <tbody>
-                  {filtered.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No strategies — check /api/v3/strategy-studio/strategies</td></tr>}
-                  {filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((s, i) => (
-                    <tr key={i} style={{ opacity: s.archived ? 0.5 : 1 }}>
-                      <Td mono col={AMBER}>{s.strategyId}</Td>
-                      <Td mono col={TEXT}>{s.name.slice(0, 30)}</Td>
-                      <Td mono col={BLUE}>{s.strategyType}</Td>
-                      <Td mono col={SUBTLE}>{s.symbols.slice(0, 3).join(', ')}{s.symbols.length > 3 ? `+${s.symbols.length - 3}` : ''}</Td>
-                      <Td><StatusBadge s={s.status} /></Td>
-                      <Td mono col={SUBTLE}>v{s.version}</Td>
-                      <Td right><Pct v={s.totalReturn} pos /></Td>
-                      <Td right mono col={s.sharpeRatio !== null ? (s.sharpeRatio >= 1 ? GREEN : s.sharpeRatio >= 0 ? AMBER : RED) : SUBTLE}>{s.sharpeRatio !== null ? s.sharpeRatio.toFixed(2) : '—'}</Td>
-                      <Td right mono col={s.maxDrawdown !== null && s.maxDrawdown < -0.2 ? RED : AMBER}>{s.maxDrawdown !== null ? `${(s.maxDrawdown * 100).toFixed(1)}%` : '—'}</Td>
-                      <Td mono col={SUBTLE}>{s.updatedAt || s.createdAt || '—'}</Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      {/* ── Strategy editor (always visible) ── */}
+      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+        <div data-testid="strategy-editor" style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: 12, marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+            <input data-testid="strategy-name-input" value={editorName} onChange={e => setEditorName(e.target.value)} placeholder="Strategy name…"
+              style={{ fontFamily: MONO, fontSize: 11, background: BG, border: `1px solid ${BORDER}`, color: TEXT, padding: '5px 10px', borderRadius: 3, width: 200 }} />
+            <select data-testid="strategy-type-select" value={editorType} onChange={e => setEditorType(e.target.value)}
+              style={{ fontFamily: MONO, fontSize: 11, background: BG, border: `1px solid ${BORDER}`, color: TEXT, padding: '5px 8px', borderRadius: 3 }}>
+              {['ma_cross', 'rsi', 'momentum', 'mean_reversion', 'breakout', 'buy_and_hold'].map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <input data-testid="strategy-symbols-input" value={editorSymbols} onChange={e => setEditorSymbols(e.target.value)} placeholder="Symbols (AAPL,MSFT)…"
+              style={{ fontFamily: MONO, fontSize: 11, background: BG, border: `1px solid ${BORDER}`, color: TEXT, padding: '5px 10px', borderRadius: 3, width: 180 }} />
+            <button data-testid="lint-strategy-btn" onClick={handleLint}
+              style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: AMBER, background: AMBER + '22', border: `1px solid ${AMBER}44`, borderRadius: 3, padding: '5px 12px', cursor: 'pointer' }}>LINT</button>
+            <button data-testid="create-strategy-btn" onClick={handleCreate} disabled={creating}
+              style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: GREEN, background: GREEN + '22', border: `1px solid ${GREEN}44`, borderRadius: 3, padding: '5px 12px', cursor: creating ? 'not-allowed' : 'pointer' }}>CREATE</button>
           </div>
+          {lintErrors.length > 0 && (
+            <div data-testid="lint-errors-panel" style={{ background: RED + '11', border: `1px solid ${RED}44`, borderRadius: 3, padding: 8, marginTop: 6 }}>
+              {lintErrors.map((e, i) => (
+                <div key={i} data-testid={`lint-error-${i}`} style={{ fontFamily: MONO, fontSize: 11, color: RED, marginBottom: 2 }}>✗ {e}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {/* Strategies section — always visible */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
+            <input data-testid="strategy-search-input" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name / type…"
+              style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, color: TEXT, padding: '5px 10px', width: 280 }} />
+            <button data-testid="strategy-search-btn" onClick={handleSearch}
+              style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: BLUE, background: BLUE + '22', border: `1px solid ${BLUE}44`, borderRadius: 3, padding: '5px 12px', cursor: 'pointer' }}>SEARCH</button>
+          </div>
+          <div data-testid="strategies-list" style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><Th>ID</Th><Th>Name</Th><Th>Type</Th><Th>Symbols</Th><Th>Status</Th><Th>Ver.</Th><Th right>Total Ret.</Th><Th right>Sharpe</Th><Th right>Max DD</Th><Th>Updated</Th></tr></thead>
+              <tbody>
+                {filtered.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }} data-testid="strategies-empty">No strategies found</td></tr>}
+                {filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((s, i) => (
+                  <tr key={i} data-testid={`strategy-row-${s.strategyId}`} style={{ opacity: s.archived ? 0.5 : 1 }}>
+                    <Td mono col={AMBER}>{s.strategyId}</Td>
+                    <Td mono col={TEXT}>{s.name.slice(0, 30)}</Td>
+                    <Td mono col={BLUE}>{s.strategyType}</Td>
+                    <Td mono col={SUBTLE}>{s.symbols.slice(0, 3).join(', ')}{s.symbols.length > 3 ? `+${s.symbols.length - 3}` : ''}</Td>
+                    <Td><StatusBadge s={s.status} /></Td>
+                    <Td mono col={SUBTLE}>v{s.version}</Td>
+                    <Td right><Pct v={s.totalReturn} pos /></Td>
+                    <Td right mono col={s.sharpeRatio !== null ? (s.sharpeRatio >= 1 ? GREEN : s.sharpeRatio >= 0 ? AMBER : RED) : SUBTLE}>{s.sharpeRatio !== null ? s.sharpeRatio.toFixed(2) : '—'}</Td>
+                    <Td right mono col={s.maxDrawdown !== null && s.maxDrawdown < -0.2 ? RED : AMBER}>{s.maxDrawdown !== null ? `${(s.maxDrawdown * 100).toFixed(1)}%` : '—'}</Td>
+                    <Td mono col={SUBTLE}>{s.updatedAt || s.createdAt || '—'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {tab === 'strategies' && (
+          <div />
         )}
         {tab === 'templates' && (
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
+          <div data-testid="template-gallery" style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Template ID</Th><Th>Name</Th><Th>Type</Th><Th>Description</Th><Th>Default Symbols</Th><Th right>Usage</Th></tr></thead>
               <tbody>
-                {templates.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No templates — check /api/v3/strategy-studio/templates</td></tr>}
+                {templates.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No templates</td></tr>}
                 {templates.sort((a, b) => b.usageCount - a.usageCount).map((t, i) => (
-                  <tr key={i}>
+                  <tr key={i} data-testid={`template-row-${t.templateId}`}>
                     <Td mono col={AMBER}>{t.templateId}</Td>
                     <Td mono col={TEXT}>{t.name}</Td>
                     <Td mono col={BLUE}>{t.strategyType}</Td>
@@ -283,7 +352,7 @@ export function StrategyStudioV3UI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Backtest ID</Th><Th>Strategy</Th><Th>Status</Th><Th right>Total Ret.</Th><Th right>Annlzd Ret.</Th><Th right>Sharpe</Th><Th right>Sortino</Th><Th right>Max DD</Th><Th right>Win %</Th><Th right>Trades</Th></tr></thead>
               <tbody>
-                {backtests.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No backtest results — check /api/v3/strategy-studio/backtest</td></tr>}
+                {backtests.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No backtest results</td></tr>}
                 {backtests.sort((a, b) => b.sharpeRatio - a.sharpeRatio).map((b, i) => (
                   <tr key={i} style={{ background: b.status === 'failed' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.backtestId}</Td>
@@ -307,7 +376,7 @@ export function StrategyStudioV3UI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Strategy ID</Th><Th>Strategy Name</Th><Th>Metric</Th><Th>Period</Th><Th right>Value</Th><Th right>Rank</Th><Th right>Percentile</Th></tr></thead>
               <tbody>
-                {analytics.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No analytics — check /api/v3/strategy-studio/analytics</td></tr>}
+                {analytics.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No analytics</td></tr>}
                 {analytics.sort((a, b) => b.percentile - a.percentile).map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.strategyId}</Td>
@@ -328,7 +397,7 @@ export function StrategyStudioV3UI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries — check /api/v3/strategy-studio/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

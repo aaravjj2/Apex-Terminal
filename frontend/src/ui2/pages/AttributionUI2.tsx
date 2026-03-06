@@ -372,7 +372,7 @@ export function AttributionUI2() {
                 <tbody>
                   {brinson.length === 0 && (
                     <tr><td colSpan={10} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      {loading ? 'Loading...' : 'No data — check /api/v4/attribution/brinson'}
+                      {loading ? 'Loading...' : 'No data'}
                     </td></tr>
                   )}
                   {brinson.sort((a, b) => Math.abs(b.totalEffect) - Math.abs(a.totalEffect)).map(r => (
@@ -431,7 +431,7 @@ export function AttributionUI2() {
                 <tbody>
                   {factors.length === 0 && (
                     <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No factor data — check /api/v4/attribution/factor
+                      No factor data
                     </td></tr>
                   )}
                   {factors.sort((a, b) => Math.abs(b.return_contribution) - Math.abs(a.return_contribution)).map(f => (
@@ -467,7 +467,7 @@ export function AttributionUI2() {
                 <tbody>
                   {selection.length === 0 && (
                     <tr><td colSpan={9} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No selection data — check /api/v4/attribution/selection
+                      No selection data
                     </td></tr>
                   )}
                   {selection.sort((a, b) => b.selectionEffect - a.selectionEffect).map(s => (
@@ -508,7 +508,7 @@ export function AttributionUI2() {
                 <tbody>
                   {currency.length === 0 && (
                     <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No currency data — check /api/v4/attribution/currency
+                      No currency data
                     </td></tr>
                   )}
                   {currency.map(c => (
@@ -547,7 +547,7 @@ export function AttributionUI2() {
                 <tbody>
                   {riskContrib.length === 0 && (
                     <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      No risk data — check /api/v4/attribution/risk
+                      No risk data
                     </td></tr>
                   )}
                   {riskContrib.sort((a, b) => b.percentVaR - a.percentVaR).map(r => {

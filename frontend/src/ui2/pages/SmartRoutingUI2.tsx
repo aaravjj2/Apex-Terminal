@@ -315,7 +315,7 @@ export function SmartRoutingUI2() {
                 <Th>Status</Th><Th>Routed</Th>
               </tr></thead>
               <tbody>
-                {visOrders.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No orders — check /api/v4/smart-routing/orders</td></tr>}
+                {visOrders.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No orders</td></tr>}
                 {visOrders.map((o, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{o.symbol}</Td>
@@ -347,7 +347,7 @@ export function SmartRoutingUI2() {
                 <Th right>Dark Pool %</Th><Th right>Cost bps</Th><Th right>Quality</Th>
               </tr></thead>
               <tbody>
-                {venues.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No venues — check /api/v4/smart-routing/venues</td></tr>}
+                {venues.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No venues</td></tr>}
                 {[...venues].sort((a, b) => b.qualityScore - a.qualityScore).map((v, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{v.name}</Td>
@@ -377,7 +377,7 @@ export function SmartRoutingUI2() {
                 <Th right>Mkt Impact</Th><Th right>Timing</Th><Th right>Commission</Th><Th right>Total bps</Th>
               </tr></thead>
               <tbody>
-                {tcaRecords.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No TCA records — check /api/v4/smart-routing/tca</td></tr>}
+                {tcaRecords.length === 0 && <tr><td colSpan={12} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No TCA records</td></tr>}
                 {tcaRecords.map((t, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{t.symbol}</Td>
@@ -408,7 +408,7 @@ export function SmartRoutingUI2() {
                 <Th right>Avg Completion</Th><Th right>Avg Duration</Th><Th right>Win Rate</Th><Th right>Total Notional</Th>
               </tr></thead>
               <tbody>
-                {algoStats.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No algo stats — check /api/v4/smart-routing/algos</td></tr>}
+                {algoStats.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No algo stats</td></tr>}
                 {[...algoStats].sort((a, b) => a.avgSlippageBps - b.avgSlippageBps).map((a, i) => (
                   <tr key={i}>
                     <Td><AlgoBadge algo={a.algo} /></Td>
@@ -434,7 +434,7 @@ export function SmartRoutingUI2() {
                 <Th>Condition</Th><Th>Action</Th><Th right>Matches</Th><Th>Description</Th>
               </tr></thead>
               <tbody>
-                {rules.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No routing rules — check /api/v4/smart-routing/rules</td></tr>}
+                {rules.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No routing rules</td></tr>}
                 {[...rules].sort((a, b) => a.priority - b.priority).map((r, i) => (
                   <tr key={i}>
                     <Td right mono col={SUBTLE}>{r.priority}</Td>

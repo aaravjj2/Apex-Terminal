@@ -252,7 +252,7 @@ export function SdkApiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>SDK Name</Th><Th>Language</Th><Th>Status</Th><Th>Current</Th><Th>Latest</Th><Th right>Downloads Total</Th><Th right>Weekly DLs</Th><Th right>Open Issues</Th><Th>License</Th><Th>Published</Th></tr></thead>
               <tbody>
-                {sdks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No SDKs — check /api/v4/sdk/sdks</td></tr>}
+                {sdks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No SDKs</td></tr>}
                 {sdks.sort((a, b) => b.weeklyDownloads - a.weeklyDownloads).map((s, i) => (
                   <tr key={i} style={{ opacity: s.status === 'eol' ? 0.5 : 1, background: s.status === 'deprecated' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{s.name}</Td>
@@ -277,7 +277,7 @@ export function SdkApiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>SDK ID</Th><Th>Version</Th><Th>Release Type</Th><Th>Status</Th><Th>API Version</Th><Th>Breaking</Th><Th right>Downloads</Th><Th right>Active Users</Th><Th>Released</Th></tr></thead>
               <tbody>
-                {versions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No versions — check /api/v4/sdk/versions</td></tr>}
+                {versions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No versions</td></tr>}
                 {versions.sort((a, b) => b.activeUsers - a.activeUsers).map((v, i) => (
                   <tr key={i} style={{ background: v.breakingChanges ? RED + '0a' : 'transparent' }}>
                     <Td mono col={BLUE}>{v.sdkId}</Td>
@@ -301,7 +301,7 @@ export function SdkApiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>SDK</Th><Th>Version</Th><Th>Endpoint</Th><Th>Period</Th><Th right>Calls</Th><Th right>Errors</Th><Th>Error Rate</Th><Th right>Avg ms</Th><Th right>P99 ms</Th><Th right>Consumers</Th></tr></thead>
               <tbody>
-                {usage.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No usage data — check /api/v4/sdk/usage</td></tr>}
+                {usage.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No usage data</td></tr>}
                 {usage.sort((a, b) => b.callCount - a.callCount).map((u, i) => (
                   <tr key={i} style={{ background: u.errorRatePct > 5 ? RED + '08' : 'transparent' }}>
                     <Td mono col={BLUE}>{u.sdkId}</Td>
@@ -326,7 +326,7 @@ export function SdkApiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>SDK</Th><Th>SDK Version</Th><Th>API Version</Th><Th>Platform</Th><Th>Compatible</Th><Th>Issues</Th><Th>Migration Guide</Th><Th>Tested At</Th></tr></thead>
               <tbody>
-                {compatibility.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compatibility data — check /api/v4/sdk/compatibility</td></tr>}
+                {compatibility.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compatibility data</td></tr>}
                 {compatibility.sort((a, b) => (a.compatible ? 1 : -1) - (b.compatible ? 1 : -1)).map((c, i) => (
                   <tr key={i} style={{ background: !c.compatible ? RED + '0a' : 'transparent' }}>
                     <Td mono col={BLUE}>{c.sdkId}</Td>
@@ -349,7 +349,7 @@ export function SdkApiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>SDK ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log — check /api/v4/sdk/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

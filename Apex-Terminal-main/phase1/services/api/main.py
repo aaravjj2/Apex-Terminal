@@ -5,8 +5,19 @@ FastAPI application for REST and WebSocket APIs.
 # Load environment before any other imports that might read os.environ
 from pathlib import Path
 from dotenv import load_dotenv
-_keys_path = Path(__file__).parent.parent.parent / "keys.env"
-if _keys_path.exists():
+
+def _find_keys_env() -> Path | None:
+    """Search from __file__ upward (up to 6 levels) for a keys.env file."""
+    p = Path(__file__).resolve()
+    for _ in range(6):
+        candidate = p / "keys.env"
+        if candidate.exists():
+            return candidate
+        p = p.parent
+    return None
+
+_keys_path = _find_keys_env()
+if _keys_path:
     load_dotenv(_keys_path)
 
 import asyncio
@@ -19,7 +30,7 @@ import structlog
 
 from ..config import get_settings
 from ..persistence import init_database, get_database
-from .routes import bars, ingest, parity, debug, clock, drawings, strategies, portfolio, alerts, versions, runs, packages, metrics, incidents, notes, reports, options, profiles, patterns, fundamentals, automation, forecast, intelligence, risk_desk, strategy_lab, strategy_artifacts, backtest, unified_runs, ticker, market_data_v1_13, cache, provider_registry, citations, search, agents, watchlist, correlation, journal, notifications, audit_log, attribution, risk_scenarios, data_quality, strategy_compare, platform_health
+from .routes import bars, ingest, parity, debug, clock, drawings, strategies, portfolio, alerts, versions, runs, packages, metrics, incidents, notes, reports, options, profiles, patterns, fundamentals, automation, forecast, intelligence, risk_desk, strategy_lab, strategy_artifacts, backtest, unified_runs, ticker, market_data_v1_13, cache, provider_registry, citations, search, agents, watchlist, correlation, journal, notifications, audit_log, attribution, risk_scenarios, data_quality, strategy_compare, platform_health, compat_shim
 from .websocket import router as ws_router
 from .health_router import router as health_router
 from .verification_routes import router as verification_router
@@ -255,7 +266,9 @@ def create_app() -> FastAPI:
     app.include_router(strategy_compare.router, tags=["strategy-compare"])
     # v1.50: Platform Health Dashboard
     app.include_router(platform_health.router, tags=["platform-health"])
-    
+    # compat shim — missing API paths (market-quote, ops, v3, backtest/strategies)
+    app.include_router(compat_shim.router, tags=["compat-shim"])
+
     # ElevenLabs TTS
     from .tts_routes import router as tts_router
     app.include_router(tts_router, prefix="/api/v1/tts", tags=["tts"])

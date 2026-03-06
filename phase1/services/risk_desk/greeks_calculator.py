@@ -9,6 +9,8 @@ snapshot fixture.  Fully deterministic — no LLM, no API keys.
 from __future__ import annotations
 
 import math
+import os
+import time
 from typing import Optional
 
 from .schemas import PortfolioRow, Snapshot, SnapshotEntry
@@ -99,26 +101,63 @@ _RISK_FREE_RATE = 0.05
 # Default time-to-expiry in years
 _DEFAULT_T = 0.15
 
+# Short-lived price cache: {symbol: (price, fetched_ts)}
+# TTL = 10 seconds — long enough to make back-to-back calls deterministic while
+# still refreshing over multiple distinct pipeline runs.
+_PRICE_CACHE: dict[str, tuple[float, float]] = {}
+_PRICE_CACHE_TTL = 10.0
+
 
 def _get_underlying_price(symbol: str) -> Optional[float]:
-    """Fetch real-time underlying price from market data provider.
+    """Fetch real-time underlying price.
 
-    Returns None if no price is available - caller MUST handle this.
-    No hardcoded fallback prices allowed.
+    Priority: in-process cache (10s TTL) → Alpaca (sync HTTP) → yfinance (sync).
+    The TTL cache ensures that two consecutive calls within the same pipeline run
+    return identical prices (determinism requirement), while still serving real
+    market prices on new runs.
+
+    Returns None only if all sources fail — no hardcoded fallback.
     """
+    now = time.monotonic()
+    cached = _PRICE_CACHE.get(symbol)
+    if cached is not None:
+        price, ts = cached
+        if now - ts < _PRICE_CACHE_TTL:
+            return price
+
+    price: Optional[float] = None
+
+    # 1. Try Alpaca via synchronous requests
     try:
-        from ..market_data.providers import get_provider
-        provider = get_provider()
-        if provider is None:
-            return None
-        quote = provider.get_quote(symbol)
-        if quote and hasattr(quote, 'price') and quote.price:
-            return float(quote.price)
-        if quote and hasattr(quote, 'last') and quote.last:
-            return float(quote.last)
-        return None
+        import requests as _req
+        key    = os.getenv("APCA_API_KEY_ID", "")
+        secret = os.getenv("APCA_API_SECRET_KEY", "")
+        if key and secret:
+            url = f"https://data.alpaca.markets/v2/stocks/{symbol}/trades/latest"
+            headers = {"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": secret}
+            r = _req.get(url, headers=headers, timeout=5)
+            if r.status_code == 200:
+                p = r.json().get("trade", {}).get("p")
+                if p:
+                    price = float(p)
     except Exception:
-        return None
+        pass
+
+    # 2. yfinance fallback (always available, no API key needed)
+    if price is None:
+        try:
+            import yfinance as yf
+            info = yf.Ticker(symbol).fast_info
+            p = getattr(info, "last_price", None) or getattr(info, "regularMarketPrice", None)
+            if p:
+                price = float(p)
+        except Exception:
+            pass
+
+    if price is not None:
+        _PRICE_CACHE[symbol] = (price, now)
+
+    return price
 
 
 def calculate_greeks(

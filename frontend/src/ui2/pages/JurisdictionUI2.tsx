@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// JurisdictionUI2 â€” Bloomberg JURIS jurisdiction ruleset terminal
+﻿// JurisdictionUI2 — Bloomberg JURIS jurisdiction ruleset terminal
 // Regulatory mapping, trade restrictions, exemptions, compliance automation
 // Tabs: RULESETS | MAPPING | RESTRICTIONS | EXEMPTIONS | AUDIT
 // APIs: /api/v4/jurisdiction/rulesets, /mapping, /restrictions, /exemptions, /audit
@@ -203,7 +203,7 @@ export function JurisdictionUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>JURIS</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>JURISDICTION â€” RULESET ENGINE + ENTITY MAPPING + TRADE RESTRICTIONS + EXEMPTIONS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>JURISDICTION — RULESET ENGINE + ENTITY MAPPING + TRADE RESTRICTIONS + EXEMPTIONS</span>
         {disputedMappings > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {disputedMappings} DISPUTED MAPPINGS</span>}
         {activeRestrictions > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeRestrictions} ACTIVE RESTRICTIONS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -230,7 +230,7 @@ export function JurisdictionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Ruleset ID</Th><Th>Name</Th><Th>Jurisdiction</Th><Th>Framework</Th><Th>Version</Th><Th>Status</Th><Th right>Rules</Th><Th>Owner</Th><Th>Effective</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {rulesets.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rulesets â€” check /api/v4/jurisdiction/rulesets</td></tr>}
+                {rulesets.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rulesets</td></tr>}
                 {rulesets.sort((a, b) => Number(b.status === 'active') - Number(a.status === 'active')).map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.rulesetId}</Td>
@@ -242,7 +242,7 @@ export function JurisdictionUI2() {
                     <Td right mono col={SUBTLE}>{r.ruleCount}</Td>
                     <Td mono col={SUBTLE}>{r.owner}</Td>
                     <Td mono col={SUBTLE}>{r.effectiveDate}</Td>
-                    <Td mono col={SUBTLE}>{r.expiryDate || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.expiryDate || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -255,7 +255,7 @@ export function JurisdictionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Entity</Th><Th>Type</Th><Th>Primary Jurisdiction</Th><Th>Complexity</Th><Th>Status</Th><Th>Mapping Basis</Th><Th>Reviewed By</Th><Th>Reviewed At</Th></tr></thead>
               <tbody>
-                {mapping.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No mappings â€” check /api/v4/jurisdiction/mapping</td></tr>}
+                {mapping.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No mappings</td></tr>}
                 {mapping.sort((a, b) => {
                   const ord: Record<string, number> = { disputed: 0, pending: 1, override: 2, mapped: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -267,8 +267,8 @@ export function JurisdictionUI2() {
                     <Td><ComplexityBadge c={m.complexity} /></Td>
                     <Td><StatusBadge2 s={m.status} /></Td>
                     <Td mono col={SUBTLE}>{m.mappingBasis}</Td>
-                    <Td mono col={SUBTLE}>{m.reviewedBy || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{m.reviewedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{m.reviewedBy || '—'}</Td>
+                    <Td mono col={SUBTLE}>{m.reviewedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -281,7 +281,7 @@ export function JurisdictionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Restriction ID</Th><Th>Jurisdiction</Th><Th>Type</Th><Th>Asset Class</Th><Th>Scope</Th><Th>Status</Th><Th>Authority</Th><Th right>Affected</Th><Th>Penalty</Th><Th>Effective</Th></tr></thead>
               <tbody>
-                {restrictions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No restrictions â€” check /api/v4/jurisdiction/restrictions</td></tr>}
+                {restrictions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No restrictions</td></tr>}
                 {restrictions.sort((a, b) => Number(b.status === 'active') - Number(a.status === 'active')).map((r, i) => (
                   <tr key={i} style={{ background: r.status === 'active' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.restrictionId}</Td>
@@ -292,7 +292,7 @@ export function JurisdictionUI2() {
                     <Td><StatusBadge2 s={r.status} /></Td>
                     <Td mono col={SUBTLE}>{r.authority}</Td>
                     <Td right mono col={r.affectedEntities > 100 ? ORANGE : SUBTLE}>{r.affectedEntities.toLocaleString()}</Td>
-                    <Td mono col={r.penalty ? RED : SUBTLE}>{r.penalty || 'â€”'}</Td>
+                    <Td mono col={r.penalty ? RED : SUBTLE}>{r.penalty || '—'}</Td>
                     <Td mono col={SUBTLE}>{r.effectiveDate}</Td>
                   </tr>
                 ))}
@@ -306,7 +306,7 @@ export function JurisdictionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Exemption ID</Th><Th>Entity</Th><Th>Jurisdiction</Th><Th>Type</Th><Th>Status</Th><Th>Granted By</Th><Th right>Review Period (days)</Th><Th>Conditions</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {exemptions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exemptions â€” check /api/v4/jurisdiction/exemptions</td></tr>}
+                {exemptions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exemptions</td></tr>}
                 {exemptions.sort((a, b) => {
                   const ord: Record<string, number> = { revoked: 0, expired: 1, pending: 2, active: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -319,8 +319,8 @@ export function JurisdictionUI2() {
                     <Td><StatusBadge2 s={e.status} /></Td>
                     <Td mono col={SUBTLE}>{e.grantedBy}</Td>
                     <Td right mono col={e.reviewPeriodDays < 90 ? AMBER : SUBTLE}>{e.reviewPeriodDays}</Td>
-                    <Td mono col={SUBTLE}>{e.conditions || 'â€”'}</Td>
-                    <Td mono col={AMBER}>{e.expiresAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.conditions || '—'}</Td>
+                    <Td mono col={AMBER}>{e.expiresAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -333,14 +333,14 @@ export function JurisdictionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Jurisdiction</Th><Th>Ruleset Ref</Th><Th>Outcome</Th><Th>Details</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/jurisdiction/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td mono col={BLUE}>{a.jurisdiction}</Td>
-                    <Td mono col={SUBTLE}>{a.rulesetRef || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.rulesetRef || '—'}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
                     <Td mono col={SUBTLE}>{a.details}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>

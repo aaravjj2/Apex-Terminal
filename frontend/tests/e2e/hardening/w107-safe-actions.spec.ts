@@ -6,7 +6,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090/api/v3/tickets';
+const API = 'http://localhost:8000/api/v3/tickets';
 const UI  = 'http://localhost:5100/ui2/safe-actions';
 
 // Clean tickets before every test

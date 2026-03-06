@@ -5,7 +5,7 @@
  */
 import { test, expect, request as playwrightRequest } from '@playwright/test';
 
-const API = 'http://localhost:8090';
+const API = 'http://localhost:8000';
 const UI = 'http://localhost:5100/ui2/search-v3';
 
 test.describe('W96 Search UX v3 — UI', () => {

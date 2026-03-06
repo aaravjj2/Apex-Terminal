@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// CorporateActionsUI2 â€” Bloomberg CACT-grade corporate actions terminal
+﻿// CorporateActionsUI2 — Bloomberg CACT-grade corporate actions terminal
 // Dividends, splits, mergers, spin-offs, rights issues, tender offers
 // Tabs: UPCOMING ACTIONS | DIVIDENDS | CORPORATE EVENTS | M&A | PROCESSING
 // APIs: /api/v4/corporate-actions/upcoming, /dividends, /events, /ma, /processing
@@ -113,7 +113,7 @@ function StatusBadgeCA({ s }: { s: string }) {
 function ImpactBadge({ imp }: { imp: string }) {
   const m: Record<string, string> = { positive: GREEN, negative: RED, neutral: SUBTLE }
   const c = m[imp] ?? SUBTLE
-  return <span style={{ fontFamily: MONO, fontSize: 9, color: c }}>{'â–²' === 'positive' ? 'â–²' : imp === 'positive' ? 'â–²' : imp === 'negative' ? 'â–¼' : 'â€”'} {imp.toUpperCase()}</span>
+  return <span style={{ fontFamily: MONO, fontSize: 9, color: c }}>{'â–²' === 'positive' ? 'â–²' : imp === 'positive' ? 'â–²' : imp === 'negative' ? 'â–¼' : '—'} {imp.toUpperCase()}</span>
 }
 
 function DealStatusBadge({ s }: { s: string }) {
@@ -221,7 +221,7 @@ export function CorporateActionsUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CACT</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>CORPORATE ACTIONS â€” DIVIDENDS + SPLITS + M&A + RIGHTS + TENDER OFFERS + PROCESSING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CORPORATE ACTIONS — DIVIDENDS + SPLITS + M&A + RIGHTS + TENDER OFFERS + PROCESSING</span>
         {imminent > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {imminent} EX IN â‰¤7 DAYS</span>}
         {failedProc > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠  {failedProc} FAILED PROCESSING</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -265,7 +265,7 @@ export function CorporateActionsUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Symbol</Th><Th>Action</Th><Th>Status</Th><Th>Ex Date</Th><Th right>Ex In</Th><Th>Pay Date</Th><Th right>Amount</Th><Th>Description</Th></tr></thead>
                 <tbody>
-                  {filteredUpcoming.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No upcoming actions â€” check /api/v4/corporate-actions/upcoming</td></tr>}
+                  {filteredUpcoming.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No upcoming actions</td></tr>}
                   {filteredUpcoming.sort((a, b) => a.daysUntilEx - b.daysUntilEx).map((a, i) => (
                     <tr key={i} style={{ background: a.daysUntilEx <= 3 ? RED + '0a' : a.daysUntilEx <= 7 ? ORANGE + '08' : 'transparent' }}>
                       <Td mono col={AMBER}>{a.symbol}</Td>
@@ -274,7 +274,7 @@ export function CorporateActionsUI2() {
                       <Td mono col={SUBTLE}>{a.exDate}</Td>
                       <Td right><DteCountdown days={a.daysUntilEx} /></Td>
                       <Td mono col={SUBTLE}>{a.payDate}</Td>
-                      <Td right mono col={GREEN}>{a.amount !== undefined ? `${a.currency ?? 'USD'} ${a.amount.toFixed(4)}` : a.ratio ?? 'â€”'}</Td>
+                      <Td right mono col={GREEN}>{a.amount !== undefined ? `${a.currency ?? 'USD'} ${a.amount.toFixed(4)}` : a.ratio ?? '—'}</Td>
                       <Td><span style={{ fontSize: 10, color: SUBTLE }}>{a.description}</span></Td>
                     </tr>
                   ))}
@@ -290,7 +290,7 @@ export function CorporateActionsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Type</Th><Th>Ex Date</Th><Th right>Amount</Th><Th>Frequency</Th><Th right>Yield %</Th><Th right>Payout %</Th><Th right>Ex-Adj Price</Th></tr></thead>
               <tbody>
-                {dividends.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No dividend data â€” check /api/v4/corporate-actions/dividends</td></tr>}
+                {dividends.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No dividend data</td></tr>}
                 {dividends.map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.symbol}</Td>
@@ -314,7 +314,7 @@ export function CorporateActionsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Event Type</Th><Th>Date</Th><Th>Impact</Th><Th>Magnitude</Th><Th>Processing</Th><Th>Description</Th></tr></thead>
               <tbody>
-                {events.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events â€” check /api/v4/corporate-actions/events</td></tr>}
+                {events.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No events</td></tr>}
                 {events.map((e, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{e.symbol}</Td>
@@ -337,7 +337,7 @@ export function CorporateActionsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Acquirer</Th><Th>Target</Th><Th>Deal Type</Th><Th>Status</Th><Th right>Deal Value</Th><Th right>Premium %</Th><Th right>Synergies</Th><Th>Expected Close</Th></tr></thead>
               <tbody>
-                {maRecords.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No M&A data â€” check /api/v4/corporate-actions/ma</td></tr>}
+                {maRecords.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No M&A data</td></tr>}
                 {maRecords.map((m, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{m.acquirer}</Td>
@@ -361,15 +361,15 @@ export function CorporateActionsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Action Type</Th><Th>Status</Th><Th>Processed At</Th><Th>Adjustments Applied</Th><Th>Errors</Th></tr></thead>
               <tbody>
-                {processing.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No processing data â€” check /api/v4/corporate-actions/processing</td></tr>}
+                {processing.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No processing data</td></tr>}
                 {processing.sort((a, b) => { const o: Record<string, number> = { failed: 0, manual_review: 1, pending: 2, processed: 3 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) }).map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'failed' ? RED + '0a' : p.status === 'manual_review' ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.symbol}</Td>
                     <Td><ActionTypeBadge t={p.actionType} /></Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: p.status === 'processed' ? GREEN : p.status === 'pending' ? AMBER : RED }}>{p.status.replace(/_/g, ' ').toUpperCase()}</span></Td>
                     <Td mono col={SUBTLE}>{p.processedAt}</Td>
-                    <Td><span style={{ fontSize: 10, color: GREEN }}>{p.adjustmentsApplied.join(', ') || 'â€”'}</span></Td>
-                    <Td><span style={{ fontSize: 10, color: p.errors.length > 0 ? RED : SUBTLE }}>{p.errors.join(', ') || 'â€”'}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: GREEN }}>{p.adjustmentsApplied.join(', ') || '—'}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: p.errors.length > 0 ? RED : SUBTLE }}>{p.errors.join(', ') || '—'}</span></Td>
                   </tr>
                 ))}
               </tbody>

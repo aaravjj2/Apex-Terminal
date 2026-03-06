@@ -4,17 +4,17 @@
  * Tests the REAL WebSocket endpoints on the running Apex Terminal server.
  *
  * WS endpoints (confirmed):
- *   ws://127.0.0.1:8090/ws/autopilot
- *   ws://127.0.0.1:8090/ws/bars/{symbol}/{timeframe}
+ *   ws://localhost:8000/ws/autopilot
+ *   ws://localhost:8000/ws/bars/{symbol}/{timeframe}
  *
  * Status API:
  *   GET /api/v1/autopilot/ws_status -> {connections, subscriptions, heartbeat_running}
  */
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090';
-const WS_AUTOPILOT = 'ws://127.0.0.1:8090/ws/autopilot';
-const WS_BARS = 'ws://127.0.0.1:8090/ws/bars/AAPL/1m';
+const API = 'http://localhost:8000';
+const WS_AUTOPILOT = 'ws://localhost:8000/ws/autopilot';
+const WS_BARS = 'ws://localhost:8000/ws/bars/AAPL/1m';
 
 // ---------------------------------------------------------------------------
 // WS Status API

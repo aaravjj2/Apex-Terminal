@@ -92,6 +92,16 @@ GOLDEN_RUNS: dict[str, GoldenRunDef] = {
 
 async def ensure_backtest_tables() -> None:
     async with aiosqlite.connect(DB_PATH) as db:
+        # Check if table exists with incompatible old schema (id as INTEGER, run_id column)
+        async with db.execute("PRAGMA table_info(backtest_runs)") as cur:
+            rows = await cur.fetchall()
+        existing_cols = {row[1] for row in rows}
+        required_cols = {"golden_id", "strategy_type", "total_return", "trade_count",
+                         "sharpe", "final_equity", "invariant_ok", "invariant_errors"}
+        # If table exists with old incompatible schema (run_id instead of golden_id), drop and recreate
+        if existing_cols and required_cols - existing_cols:
+            await db.execute("DROP TABLE backtest_runs")
+            await db.commit()
         await db.execute("""
             CREATE TABLE IF NOT EXISTS backtest_runs (
                 id              TEXT PRIMARY KEY,

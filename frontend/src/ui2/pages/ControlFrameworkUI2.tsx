@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ControlFrameworkUI2 â€” Bloomberg CTFW control framework terminal
+﻿// ControlFrameworkUI2 — Bloomberg CTFW control framework terminal
 // Maturity assessment, control objectives, gap analysis, evidence tracking, signoff
 // Tabs: CONTROLS | MATURITY | GAPS | EVIDENCE | SIGNOFFS
 // APIs: /api/v4/control-framework/controls, /maturity, /gaps, /evidence, /signoffs
@@ -223,7 +223,7 @@ export function ControlFrameworkUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CTFW</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>CONTROL FRAMEWORK â€” CONTROLS + MATURITY + GAP ANALYSIS + EVIDENCE + SIGNOFFS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CONTROL FRAMEWORK — CONTROLS + MATURITY + GAP ANALYSIS + EVIDENCE + SIGNOFFS</span>
         {ineffective > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {ineffective} INEFFECTIVE CONTROLS</span>}
         {critGaps > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {critGaps} CRITICAL GAPS</span>}
         {pendingSignoffs > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingSignoffs} PENDING SIGNOFFS</span>}
@@ -260,7 +260,7 @@ export function ControlFrameworkUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Domain</Th><Th>Objective</Th><Th>Type</Th><Th>Status</Th><Th>Frequency</Th><Th>Owner</Th><Th>Last Tested</Th><Th>Framework</Th></tr></thead>
                 <tbody>
-                  {filteredControls.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls â€” check /api/v4/control-framework/controls</td></tr>}
+                  {filteredControls.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls</td></tr>}
                   {filteredControls.map((c, i) => (
                     <tr key={i} style={{ background: c.status === 'ineffective' ? RED + '0a' : 'transparent' }}>
                       <Td mono col={AMBER}>{c.domain}</Td>
@@ -284,7 +284,7 @@ export function ControlFrameworkUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Domain</Th><Th>Maturity Level</Th><Th right>Gap</Th><Th right>Score</Th><Th right>Roadmap Items</Th><Th>Strength</Th><Th>Weakness</Th></tr></thead>
               <tbody>
-                {maturity.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No maturity data â€” check /api/v4/control-framework/maturity</td></tr>}
+                {maturity.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No maturity data</td></tr>}
                 {maturity.sort((a, b) => b.gap - a.gap).map((m, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{m.domain}</Td>
@@ -292,8 +292,8 @@ export function ControlFrameworkUI2() {
                     <Td right mono col={m.gap > 1 ? RED : m.gap > 0 ? AMBER : GREEN}>{m.gap.toFixed(1)}</Td>
                     <Td right mono col={m.score >= 80 ? GREEN : m.score >= 60 ? AMBER : RED}>{m.score.toFixed(0)}</Td>
                     <Td right mono col={m.roadmapItems > 0 ? BLUE : SUBTLE}>{m.roadmapItems}</Td>
-                    <Td><span style={{ fontSize: 10, color: GREEN }}>{m.strength || 'â€”'}</span></Td>
-                    <Td><span style={{ fontSize: 10, color: ORANGE }}>{m.weakness || 'â€”'}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: GREEN }}>{m.strength || '—'}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: ORANGE }}>{m.weakness || '—'}</span></Td>
                   </tr>
                 ))}
               </tbody>
@@ -315,7 +315,7 @@ export function ControlFrameworkUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Domain</Th><Th>Requirement</Th><Th>Severity</Th><Th>Status</Th><Th>Owner</Th><Th>Effort</Th><Th>Target Date</Th></tr></thead>
                 <tbody>
-                  {filteredGaps.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No gaps â€” check /api/v4/control-framework/gaps</td></tr>}
+                  {filteredGaps.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No gaps</td></tr>}
                   {filteredGaps.sort((a, b) => { const o: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }; return (o[a.severity] ?? 9) - (o[b.severity] ?? 9) }).map((g, i) => (
                     <tr key={i} style={{ background: g.severity === 'critical' && g.status !== 'remediated' ? RED + '0a' : 'transparent' }}>
                       <Td mono col={AMBER}>{g.domain}</Td>
@@ -338,7 +338,7 @@ export function ControlFrameworkUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Control</Th><Th>Evidence Type</Th><Th>Status</Th><Th>Collected By</Th><Th>Collected At</Th><Th>Reviewed By</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {evidence.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence â€” check /api/v4/control-framework/evidence</td></tr>}
+                {evidence.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence</td></tr>}
                 {evidence.map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'rejected' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.controlName || e.controlId}</Td>
@@ -346,7 +346,7 @@ export function ControlFrameworkUI2() {
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: e.status === 'accepted' ? GREEN : e.status === 'rejected' ? RED : AMBER }}>{e.status.replace(/_/g, ' ').toUpperCase()}</span></Td>
                     <Td mono col={BLUE}>{e.collectedBy}</Td>
                     <Td mono col={SUBTLE}>{e.collectedAt}</Td>
-                    <Td mono col={SUBTLE}>{e.reviewedBy ?? 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.reviewedBy ?? '—'}</Td>
                     <Td mono col={SUBTLE}>{e.expiresAt}</Td>
                   </tr>
                 ))}
@@ -360,16 +360,16 @@ export function ControlFrameworkUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Framework</Th><Th>Scope</Th><Th>Period</Th><Th>Status</Th><Th>Signed By</Th><Th>Role</Th><Th>Signed At</Th><Th>Next Due</Th></tr></thead>
               <tbody>
-                {signoffs.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No signoffs â€” check /api/v4/control-framework/signoffs</td></tr>}
+                {signoffs.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No signoffs</td></tr>}
                 {signoffs.sort((a, b) => { const o: Record<string, number> = { pending: 0, expired: 1, signed: 2, rejected: 3 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) }).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.framework}</Td>
                     <Td mono col={SUBTLE}>{s.scope}</Td>
                     <Td mono col={SUBTLE}>{s.period}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: s.status === 'signed' ? GREEN : s.status === 'pending' ? AMBER : s.status === 'expired' ? ORANGE : RED }}>{s.status.toUpperCase()}</span></Td>
-                    <Td mono col={BLUE}>{s.signedBy || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{s.signedBy || '—'}</Td>
                     <Td mono col={PURPLE}>{s.role}</Td>
-                    <Td mono col={SUBTLE}>{s.signedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{s.signedAt || '—'}</Td>
                     <Td mono col={SUBTLE}>{s.nextDue}</Td>
                   </tr>
                 ))}

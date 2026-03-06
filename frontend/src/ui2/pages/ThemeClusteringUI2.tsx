@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ThemeClusteringUI2 â€” Bloomberg APEX ML Theme Clustering terminal
+﻿// ThemeClusteringUI2 — Bloomberg APEX ML Theme Clustering terminal
 // Thematic clustering of market sectors, narratives, factor exposures, cluster evolution
 // Tabs: CLUSTERS | NARRATIVES | EXPOSURE | EVOLUTION | AUDIT
 // APIs: /api/v4/themes/clusters, /narratives, /exposure, /evolution, /audit
@@ -233,7 +233,7 @@ export function ThemeClusteringUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>THEME CLUSTERING â€” ML THEMATIC SECTOR + NARRATIVE MOMENTUM + EXPOSURE ANALYTICS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>THEME CLUSTERING — ML THEMATIC SECTOR + NARRATIVE MOMENTUM + EXPOSURE ANALYTICS</span>
         {unstableClusters > 0 && <span style={{ fontSize: 10, color: AMBER }}>⚠‘ {unstableClusters} UNSTABLE CLUSTERS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
@@ -259,12 +259,12 @@ export function ThemeClusteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Cluster ID</Th><Th>Name</Th><Th>Sector</Th><Th>Algorithm</Th><Th>Status</Th><Th right>Members</Th><Th right>Silhouette</Th><Th right>Ret YTD</Th><Th right>Vol</Th><Th>Keywords</Th></tr></thead>
               <tbody>
-                {clusters.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No clusters â€” check /api/v4/themes/clusters</td></tr>}
+                {clusters.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No clusters</td></tr>}
                 {clusters.sort((a, b) => b.silhouetteScore - a.silhouetteScore).map((c, i) => (
                   <tr key={i} style={{ background: c.status === 'dissolving' ? RED + '0a' : c.status === 'splitting' ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.clusterId}</Td>
                     <Td mono col={TEXT}>{c.name}</Td>
-                    <Td mono col={BLUE}>{c.sector || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{c.sector || '—'}</Td>
                     <Td><AlgoBadge a={c.algorithmType} /></Td>
                     <Td><StatusBadge s={c.status} /></Td>
                     <Td right mono col={TEXT}>{c.memberCount}</Td>
@@ -284,7 +284,7 @@ export function ThemeClusteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Theme</Th><Th>Headline</Th><Th>Direction</Th><Th>Horizon</Th><Th right>Momentum</Th><Th>Sentiment</Th><Th right>Buy-Side %</Th><Th right>Clusters</Th><Th>Media</Th></tr></thead>
               <tbody>
-                {narratives.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No narratives â€” check /api/v4/themes/narratives</td></tr>}
+                {narratives.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No narratives</td></tr>}
                 {narratives.sort((a, b) => b.momentum - a.momentum).map((n, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{n.theme}</Td>
@@ -308,7 +308,7 @@ export function ThemeClusteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Portfolio</Th><Th>Cluster</Th><Th right>Exposure %</Th><Th right>Value USD</Th><Th right>Beta</Th><Th right>Corr</Th><Th right>Active Wt</Th><Th right>Bmk Wt</Th><Th right>Risk Contrib</Th></tr></thead>
               <tbody>
-                {exposure.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exposure data â€” check /api/v4/themes/exposure</td></tr>}
+                {exposure.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exposure data</td></tr>}
                 {exposure.sort((a, b) => b.exposurePct - a.exposurePct).map((e, i) => (
                   <tr key={i} style={{ background: e.exposurePct > 15 ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.portfolioName || e.portfolioId}</Td>
@@ -332,7 +332,7 @@ export function ThemeClusteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Event ID</Th><Th>Cluster</Th><Th>Event Type</Th><Th>Description</Th><Th right>Symbols</Th><Th right>Impact</Th><Th>Occurred At</Th></tr></thead>
               <tbody>
-                {evolution.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evolution events â€” check /api/v4/themes/evolution</td></tr>}
+                {evolution.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evolution events</td></tr>}
                 {evolution.sort((a, b) => b.impactScore - a.impactScore).map((e, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{e.evolutionId}</Td>
@@ -354,14 +354,14 @@ export function ThemeClusteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Cluster ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v4/themes/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={BLUE}>{a.clusterId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

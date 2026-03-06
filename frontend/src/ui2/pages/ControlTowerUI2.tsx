@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ControlTowerUI2 â€” Bloomberg CTWR-grade autopilot control tower
+﻿// ControlTowerUI2 — Bloomberg CTWR-grade autopilot control tower
 // Real-time agent status, intervention controls, health monitoring, system state
 // Tabs: SYSTEM STATUS | AGENTS | INTERVENTIONS | ALERTS | AUDIT LOG
 // APIs: /api/v4/control-tower/status, /agents, /interventions, /alerts, /audit
@@ -238,10 +238,10 @@ export function ControlTowerUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CTWR</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>CONTROL TOWER â€” AUTOPILOT STATUS + AGENTS + INTERVENTIONS + ALERTS + AUDIT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CONTROL TOWER — AUTOPILOT STATUS + AGENTS + INTERVENTIONS + ALERTS + AUDIT</span>
         {sysStatus && (
           <span style={{ fontSize: 10, color: overallColor, fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-            <HealthDot status={sysStatus.overall} />{sysStatus.overall.toUpperCase()} â€” {sysStatus.uptimePct.toFixed(3)}% UPTIME
+            <HealthDot status={sysStatus.overall} />{sysStatus.overall.toUpperCase()} — {sysStatus.uptimePct.toFixed(3)}% UPTIME
           </span>
         )}
         {critAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {critAlerts} CRITICAL UNACK</span>}
@@ -251,11 +251,11 @@ export function ControlTowerUI2() {
 
       {/* STATS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
-        <StatCard label="System" value={sysStatus?.overall?.toUpperCase() ?? 'â€”'} col={overallColor} />
+        <StatCard label="System" value={sysStatus?.overall?.toUpperCase() ?? '—'} col={overallColor} />
         <StatCard label="Active Agents" value={sysStatus?.activeAgents ?? agents.filter(a => a.state === 'running').length} col={GREEN} />
         <StatCard label="Pending Interventions" value={pendingCount} col={pendingCount > 0 ? ORANGE : GREEN} />
         <StatCard label="Critical Alerts" value={critAlerts} col={critAlerts > 0 ? RED : GREEN} />
-        <StatCard label="Uptime" value={sysStatus ? `${sysStatus.uptimePct.toFixed(2)}%` : 'â€”'} col={GREEN} />
+        <StatCard label="Uptime" value={sysStatus ? `${sysStatus.uptimePct.toFixed(2)}%` : '—'} col={GREEN} />
       </div>
 
       {/* TABS */}
@@ -276,13 +276,13 @@ export function ControlTowerUI2() {
         {tab === 'status' && (
           <div>
             <div style={{ marginBottom: 12, fontSize: 10, fontFamily: MONO, color: SUBTLE, textTransform: 'uppercase', letterSpacing: 1 }}>
-              SERVICE HEALTH â€” Last check: {sysStatus?.lastCheckAt ?? 'â€”'}
+              SERVICE HEALTH — Last check: {sysStatus?.lastCheckAt ?? '—'}
             </div>
             <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Service</Th><Th>Status</Th><Th right>Latency (ms)</Th><Th right>Error Rate %</Th><Th right>Req/min</Th><Th>Last Success</Th></tr></thead>
                 <tbody>
-                  {(!sysStatus || sysStatus.services.length === 0) && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No services â€” check /api/v4/control-tower/status</td></tr>}
+                  {(!sysStatus || sysStatus.services.length === 0) && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No services</td></tr>}
                   {sysStatus?.services.map((s, i) => (
                     <tr key={i} style={{ background: s.status === 'offline' ? RED + '0a' : s.status === 'degraded' ? AMBER + '06' : 'transparent' }}>
                       <Td mono col={AMBER}><span style={{ display: 'flex', alignItems: 'center' }}><HealthDot status={s.status} />{s.name}</span></Td>
@@ -315,7 +315,7 @@ export function ControlTowerUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Agent</Th><Th>Type</Th><Th>State</Th><Th right>Current Tasks</Th><Th right>Completed</Th><Th right>Failed</Th><Th>CPU</Th><Th>Memory</Th><Th>Last Heartbeat</Th></tr></thead>
                 <tbody>
-                  {filteredAgents.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No agents â€” check /api/v4/control-tower/agents</td></tr>}
+                  {filteredAgents.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No agents</td></tr>}
                   {filteredAgents.map((a, i) => (
                     <tr key={i} style={{ background: a.state === 'error' ? RED + '0a' : 'transparent' }}>
                       <Td mono col={AMBER}>{a.name}</Td>
@@ -341,7 +341,7 @@ export function ControlTowerUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Agent</Th><Th>Type</Th><Th>Priority</Th><Th>Status</Th><Th>Requested By</Th><Th>Requested At</Th><Th>Approved By</Th><Th>Reason</Th></tr></thead>
               <tbody>
-                {interventions.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No interventions â€” check /api/v4/control-tower/interventions</td></tr>}
+                {interventions.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No interventions</td></tr>}
                 {interventions.sort((a, b) => { const o: Record<string, number> = { pending: 0, approved: 1, executed: 2, rejected: 3 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) }).map((iv, i) => (
                   <tr key={i} style={{ background: iv.priority === 'critical' && iv.status === 'pending' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{iv.agentName}</Td>
@@ -350,7 +350,7 @@ export function ControlTowerUI2() {
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: iv.status === 'approved' ? GREEN : iv.status === 'pending' ? AMBER : iv.status === 'rejected' ? RED : SUBTLE }}>{iv.status.toUpperCase()}</span></Td>
                     <Td mono col={BLUE}>{iv.requestedBy}</Td>
                     <Td mono col={SUBTLE}>{iv.requestedAt}</Td>
-                    <Td mono col={SUBTLE}>{iv.approvedBy ?? 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{iv.approvedBy ?? '—'}</Td>
                     <Td><span style={{ fontSize: 10, color: SUBTLE }}>{iv.reason}</span></Td>
                   </tr>
                 ))}
@@ -374,7 +374,7 @@ export function ControlTowerUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Source</Th><Th>Severity</Th><Th>Message</Th><Th right>Count</Th><Th>Timestamp</Th><Th>Ack</Th><Th>Resolved</Th></tr></thead>
                 <tbody>
-                  {filteredAlerts.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts â€” check /api/v4/control-tower/alerts</td></tr>}
+                  {filteredAlerts.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts</td></tr>}
                   {filteredAlerts.sort((a, b) => { const o: Record<string, number> = { critical: 0, warning: 1, info: 2 }; return (o[a.severity] ?? 9) - (o[b.severity] ?? 9) }).map((a, i) => (
                     <tr key={i} style={{ background: a.severity === 'critical' && !a.acknowledged ? RED + '0a' : 'transparent' }}>
                       <Td mono col={AMBER}>{a.source}</Td>
@@ -383,7 +383,7 @@ export function ControlTowerUI2() {
                       <Td right mono col={a.count > 1 ? ORANGE : SUBTLE}>{a.count}</Td>
                       <Td mono col={SUBTLE}>{a.timestamp}</Td>
                       <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.acknowledged ? GREEN : AMBER }}>{a.acknowledged ? 'ACK' : 'UNACK'}</span></Td>
-                      <Td mono col={SUBTLE}>{a.resolvedAt ?? 'â€”'}</Td>
+                      <Td mono col={SUBTLE}>{a.resolvedAt ?? '—'}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -398,7 +398,7 @@ export function ControlTowerUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Actor</Th><Th>Action</Th><Th>Target</Th><Th>Outcome</Th><Th>Timestamp</Th><Th>IP</Th><Th>Details</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v4/control-tower/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((e, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{e.actor}</Td>

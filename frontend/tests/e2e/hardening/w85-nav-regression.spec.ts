@@ -8,7 +8,7 @@
 import { test, expect } from '@playwright/test';
 
 const UI  = 'http://localhost:5100';
-const API = 'http://127.0.0.1:8090';
+const API = 'http://localhost:8000';
 
 const UI2_ROUTES = [
   { path: '/ui2/dashboard',   testId: 'dashboard-ui2-page' },

@@ -1,7 +1,7 @@
 // Wave 117 — Visual stability: pages load without crash, no unresolved animations.
 import { test, expect } from '@playwright/test';
 
-const BASE = 'http://localhost:8090';
+const BASE = 'http://localhost:8000';
 const FRONT = 'http://localhost:5100';
 
 const PAGES = [

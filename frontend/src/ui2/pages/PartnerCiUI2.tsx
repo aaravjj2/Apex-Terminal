@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// PartnerCiUI2 â€” Bloomberg APEX partner CI terminal
+﻿// PartnerCiUI2 — Bloomberg APEX partner CI terminal
 // Partner certification, test suites, compatibility validation, pipeline runs, audit
 // Tabs: PARTNERS | PIPELINES | TEST SUITES | COMPATIBILITY | AUDIT
 // APIs: /api/v4/partner-ci/partners, /pipelines, /test-suites, /compatibility, /audit
@@ -217,7 +217,7 @@ export function PartnerCiUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>PARTNER CI â€” CERTIFICATION + TEST SUITES + COMPATIBILITY VALIDATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>PARTNER CI — CERTIFICATION + TEST SUITES + COMPATIBILITY VALIDATION</span>
         {failedPartners > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {failedPartners} FAILED</span>}
         {criticalCompat > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {criticalCompat} COMPAT CRITICAL</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -244,7 +244,7 @@ export function PartnerCiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Partner</Th><Th>Tier</Th><Th>Cert Status</Th><Th>SDK Version</Th><Th right>Pass Rate</Th><Th right>Blockers</Th><Th right>Pipelines</Th><Th>Last Run</Th></tr></thead>
               <tbody>
-                {partners.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No partners â€” check /api/v4/partner-ci/partners</td></tr>}
+                {partners.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No partners</td></tr>}
                 {partners.sort((a, b) => {
                   const tp: Record<string, number> = { platinum: 0, gold: 1, silver: 2, bronze: 3 }
                   return (tp[a.tier] ?? 4) - (tp[b.tier] ?? 4)
@@ -253,11 +253,11 @@ export function PartnerCiUI2() {
                     <Td mono col={AMBER}>{p.name}</Td>
                     <Td><TierBadge t={p.tier} /></Td>
                     <Td><StatusBadge s={p.certStatus} /></Td>
-                    <Td mono col={PURPLE}>{p.sdkVersion || 'â€”'}</Td>
+                    <Td mono col={PURPLE}>{p.sdkVersion || '—'}</Td>
                     <Td right mono col={p.passRatePct >= 95 ? GREEN : p.passRatePct >= 80 ? AMBER : RED}>{p.passRatePct.toFixed(1)}%</Td>
                     <Td right mono col={p.openBlockers > 0 ? RED : GREEN}>{p.openBlockers}</Td>
                     <Td right mono col={SUBTLE}>{p.totalPipelines}</Td>
-                    <Td mono col={SUBTLE}>{p.lastRunAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.lastRunAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -270,7 +270,7 @@ export function PartnerCiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Run ID</Th><Th>Partner</Th><Th>Branch</Th><Th>Status</Th><Th right>Total</Th><Th right>Passed</Th><Th right>Failed</Th><Th right>Skipped</Th><Th right>Duration min</Th><Th>Triggered</Th></tr></thead>
               <tbody>
-                {pipelines.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No pipeline runs â€” check /api/v4/partner-ci/pipelines</td></tr>}
+                {pipelines.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No pipeline runs</td></tr>}
                 {pipelines.sort((a, b) => (a.status === 'running' ? -1 : 1)).map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'failed' ? RED + '0a' : p.status === 'running' ? AMBER + '07' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.runId}</Td>
@@ -295,7 +295,7 @@ export function PartnerCiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Suite</Th><Th>Category</Th><Th>Required</Th><Th right>Tests</Th><Th right>Pass Rate</Th><Th right>Avg s</Th><Th>Last Run</Th></tr></thead>
               <tbody>
-                {suites.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No test suites â€” check /api/v4/partner-ci/test-suites</td></tr>}
+                {suites.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No test suites</td></tr>}
                 {suites.sort((a, b) => (a.required === b.required ? a.suiteName.localeCompare(b.suiteName) : a.required ? -1 : 1)).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.suiteName}</Td>
@@ -304,7 +304,7 @@ export function PartnerCiUI2() {
                     <Td right mono col={SUBTLE}>{s.testCount}</Td>
                     <Td><PassBar pass={s.passRatePct} total={100} /></Td>
                     <Td right mono col={SUBTLE}>{s.avgDurationSec.toFixed(1)}</Td>
-                    <Td mono col={SUBTLE}>{s.lastRunAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{s.lastRunAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -317,7 +317,7 @@ export function PartnerCiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Partner</Th><Th>Integration</Th><Th>Version</Th><Th>Compatible</Th><Th>Severity</Th><Th right>Issues</Th><Th>Checked</Th></tr></thead>
               <tbody>
-                {compat.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compat data â€” check /api/v4/partner-ci/compatibility</td></tr>}
+                {compat.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compat data</td></tr>}
                 {compat.sort((a, b) => {
                   const sp: Record<string, number> = { critical: 0, major: 1, minor: 2, none: 3 }
                   return (sp[a.severity] ?? 4) - (sp[b.severity] ?? 4)
@@ -342,7 +342,7 @@ export function PartnerCiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Partner</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/partner-ci/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -350,7 +350,7 @@ export function PartnerCiUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

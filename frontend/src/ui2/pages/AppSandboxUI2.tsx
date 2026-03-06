@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// AppSandboxUI2 â€” Bloomberg APEX app sandbox security terminal
+﻿// AppSandboxUI2 — Bloomberg APEX app sandbox security terminal
 // Sandbox management, resource limits, security boundaries, violations, audit
 // Tabs: SANDBOXES | RESOURCES | SECURITY | VIOLATIONS | AUDIT
 // APIs: /api/v4/app-sandbox/sandboxes, /resources, /security, /violations, /audit
@@ -222,7 +222,7 @@ export function AppSandboxUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>APP SANDBOX â€” ISOLATION + RESOURCE LIMITS + SECURITY BOUNDARIES + VIOLATION MONITORING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>APP SANDBOX — ISOLATION + RESOURCE LIMITS + SECURITY BOUNDARIES + VIOLATION MONITORING</span>
         {errorSandboxes > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {errorSandboxes} ERROR</span>}
         {criticalViolations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalViolations} CRITICAL VIOLATIONS</span>}
         {overloadedBoxes > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {overloadedBoxes} OVERLOADED</span>}
@@ -250,7 +250,7 @@ export function AppSandboxUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Sandbox ID</Th><Th>App</Th><Th>Version</Th><Th>State</Th><Th>Isolation</Th><Th right>CPU Limit</Th><Th right>Mem Limit</Th><Th>Network Policy</Th><Th right>Violations</Th><Th>Owner</Th><Th>Last Activity</Th></tr></thead>
               <tbody>
-                {sandboxes.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sandboxes â€” check /api/v4/app-sandbox/sandboxes</td></tr>}
+                {sandboxes.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No sandboxes</td></tr>}
                 {sandboxes.sort((a, b) => {
                   const p: Record<string, number> = { error: 0, suspended: 1, running: 2, idle: 3, stopped: 4 }
                   return (p[a.state] ?? 5) - (p[b.state] ?? 5)
@@ -279,7 +279,7 @@ export function AppSandboxUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>App</Th><Th>CPU Usage</Th><Th>Mem Usage</Th><Th right>CPU %</Th><Th right>Mem MB</Th><Th right>Disk IO</Th><Th right>Network</Th><Th right>CPU Limit</Th><Th right>Mem Limit</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {resources.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No resource data â€” check /api/v4/app-sandbox/resources</td></tr>}
+                {resources.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No resource data</td></tr>}
                 {resources.sort((a, b) => b.cpuUtilization - a.cpuUtilization).map((r, i) => (
                   <tr key={i} style={{ background: r.cpuUtilization > 90 ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.appName}</Td>
@@ -304,7 +304,7 @@ export function AppSandboxUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rule</Th><Th>Type</Th><Th>Scope</Th><Th>Enforcement</Th><Th>Status</Th><Th>Severity</Th><Th right>Matches</Th><Th>Owner</Th><Th>Last Triggered</Th></tr></thead>
               <tbody>
-                {security.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rules â€” check /api/v4/app-sandbox/security</td></tr>}
+                {security.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rules</td></tr>}
                 {security.sort((a, b) => {
                   const p: Record<string, number> = { critical: 0, major: 1, minor: 2 }
                   return (p[a.severity] ?? 3) - (p[b.severity] ?? 3)
@@ -318,7 +318,7 @@ export function AppSandboxUI2() {
                     <Td><SevBadge s={r.severity} /></Td>
                     <Td right mono col={r.matchCount > 0 ? ORANGE : SUBTLE}>{r.matchCount}</Td>
                     <Td mono col={SUBTLE}>{r.owner}</Td>
-                    <Td mono col={SUBTLE}>{r.lastTriggered || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.lastTriggered || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -331,7 +331,7 @@ export function AppSandboxUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Violation ID</Th><Th>App</Th><Th>Type</Th><Th>Severity</Th><Th>Action</Th><Th>Status</Th><Th>Detail</Th><Th>Detected</Th></tr></thead>
               <tbody>
-                {violations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations â€” check /api/v4/app-sandbox/violations</td></tr>}
+                {violations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations</td></tr>}
                 {violations.sort((a, b) => {
                   const p: Record<string, number> = { critical: 0, major: 1, minor: 2 }
                   return (p[a.severity] ?? 3) - (p[b.severity] ?? 3)
@@ -357,7 +357,7 @@ export function AppSandboxUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Sandbox</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/app-sandbox/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -365,7 +365,7 @@ export function AppSandboxUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

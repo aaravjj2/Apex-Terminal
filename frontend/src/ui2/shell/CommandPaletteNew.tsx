@@ -39,6 +39,16 @@ export function CommandPaletteNew({ isOpen, onClose, items }: CommandPaletteNewP
     }
   }, [isOpen]);
 
+  // Global Escape handler — catches Escape even when input is not focused
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
+
   const filtered = query.trim()
     ? items.filter(item => {
         const q = query.toLowerCase();
@@ -117,6 +127,7 @@ export function CommandPaletteNew({ isOpen, onClose, items }: CommandPaletteNewP
       className={`cmd-overlay${isOpen ? ' open' : ''}`}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       data-testid="command-palette"
+      data-state={isOpen ? 'open' : 'closed'}
       role="dialog"
       aria-modal="true"
       aria-label="Command palette"
@@ -156,6 +167,7 @@ export function CommandPaletteNew({ isOpen, onClose, items }: CommandPaletteNewP
                   <div
                     key={item.id}
                     id={`cmd-item-${idx}`}
+                    data-testid={`command-palette-item-${item.id}`}
                     className={`cmd-item${isSel ? ' sel' : ''}`}
                     onClick={() => handleSelect(item)}
                     onMouseEnter={() => setSelectedIdx(idx)}

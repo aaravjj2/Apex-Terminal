@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ControlsDomainUI2 â€” Bloomberg APEX Controls Domain terminal
+﻿// ControlsDomainUI2 — Bloomberg APEX Controls Domain terminal
 // AP/AR reconciliation controls, evidence graph, ES-first search, risk assessment
 // Tabs: CONTROLS | EVIDENCE | RECONCILIATION | RISK | AUDIT
 // APIs: /api/v3/controls/items, /evidence, /reconciliation, /risk, /audit
@@ -100,7 +100,7 @@ function RiskBadge({ r }: { r: string }) {
 
 
 export function ControlsDomainUI2() {
-  const [tab, setTab] = useState<'controls' | 'evidence' | 'reconciliation' | 'risk' | 'audit'>('controls')
+  const [tab, setTab] = useState<'search' | 'controls' | 'evidence' | 'reconciliation' | 'risk' | 'audit'>('search')
   const [controls, setControls] = useState<ControlDoc[]>([])
   const [evidence, setEvidence] = useState<ControlEvidence[]>([])
   const [reconciliation, setReconciliation] = useState<ReconciliationItem[]>([])
@@ -109,6 +109,12 @@ export function ControlsDomainUI2() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  // Search & evidence graph state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; doc_type: string; data: Record<string, unknown> }>>([])
+  const [selectedControlId, setSelectedControlId] = useState<string | null>(null)
+  const [edges, setEdges] = useState<Array<{ from_id: string; to_id: string; edge_type: string; metadata?: Record<string, unknown> }>>([])
+  const [searchErr, setSearchErr] = useState<string | null>(null)
 
   const fetchAll = useCallback(async () => {
     try {
@@ -185,6 +191,27 @@ export function ControlsDomainUI2() {
 
   useEffect(() => { fetchAll(); const id = setInterval(fetchAll, 30000); return () => clearInterval(id) }, [fetchAll])
 
+  const handleSearch = useCallback(async () => {
+    setSearchErr(null)
+    try {
+      const res = await fetch(`/api/v3/controls/controls/search?q=${encodeURIComponent(searchQuery)}`)
+      if (!res.ok) throw new Error(`${res.status}`)
+      const data = await res.json()
+      const hits = Array.isArray(data.hits) ? data.hits : []
+      setSearchResults(hits.map((h: any) => ({ id: h.id ?? h._id ?? '', doc_type: h.doc_type ?? '', data: h.data ?? {} })))
+    } catch (e: any) { setSearchErr(e.message) }
+  }, [searchQuery])
+
+  const handleSelectControl = useCallback(async (id: string) => {
+    setSelectedControlId(id)
+    try {
+      const res = await fetch(`/api/v3/controls/edges?from_id=${encodeURIComponent(id)}`)
+      if (!res.ok) throw new Error(`${res.status}`)
+      const data = await res.json()
+      setEdges(Array.isArray(data.edges) ? data.edges : [])
+    } catch { setEdges([]) }
+  }, [])
+
   const failedControls = controls.filter(c => c.testResult === 'fail').length
   const deficientControls = controls.filter(c => c.deficiencies > 0).length
   const openExceptions = reconciliation.filter(r => r.status === 'exception').length
@@ -192,6 +219,7 @@ export function ControlsDomainUI2() {
   const filtered = controls.filter(c => !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.domain.includes(search.toLowerCase()))
 
   const TABS2 = [
+    { id: 'search' as const, label: 'SEARCH & EVIDENCE' },
     { id: 'controls' as const, label: 'CONTROLS' },
     { id: 'evidence' as const, label: 'EVIDENCE' },
     { id: 'reconciliation' as const, label: 'RECONCILIATION' },
@@ -200,10 +228,11 @@ export function ControlsDomainUI2() {
   ]
 
   return (
-    <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
+    <div data-testid="controls-domain-page" style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>      
+      <div data-testid="page-ready" style={{position:"fixed",top:0,right:0,opacity:0,pointerEvents:"none",width:1,height:1}} />
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>CONTROLS DOMAIN â€” AP/AR RECONCILIATION + EVIDENCE GRAPH + ES-FIRST SEARCH</span>
+        <span data-testid="controls-domain-title" style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CONTROLS DOMAIN — AP/AR RECONCILIATION + EVIDENCE GRAPH + ES-FIRST SEARCH</span>
         {failedControls > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {failedControls} FAILED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
@@ -223,6 +252,66 @@ export function ControlsDomainUI2() {
         ))}
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {tab === 'search' && (
+          <div>
+            <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                data-testid="controls-search-input"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                placeholder="Search controls by reference / type…"
+                style={{ fontFamily: MONO, fontSize: 11, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 3, color: TEXT, padding: '5px 10px', width: 320 }}
+              />
+              <button
+                data-testid="controls-search-btn"
+                onClick={handleSearch}
+                style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, background: AMBER + '22', border: `1px solid ${AMBER}`, color: AMBER, borderRadius: 3, padding: '5px 14px', cursor: 'pointer' }}
+              >SEARCH</button>
+              {searchErr && <span style={{ fontSize: 10, color: RED }}>{searchErr}</span>}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div data-testid="controls-results-list" style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden', minHeight: 200 }}>
+                <div style={{ padding: '6px 10px', borderBottom: `1px solid ${BORDER}`, fontSize: 9, fontFamily: MONO, color: SUBTLE, letterSpacing: 1 }}>SEARCH RESULTS ({searchResults.length})</div>
+                {searchResults.length === 0 && (
+                  <div style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>Run a search to see results</div>
+                )}
+                {searchResults.map((r) => (
+                  <div
+                    key={r.id}
+                    data-testid={`controls-result-${r.id}`}
+                    onClick={() => handleSelectControl(r.id)}
+                    style={{ padding: '8px 10px', borderBottom: `1px solid #161616`, cursor: 'pointer', background: selectedControlId === r.id ? AMBER + '11' : 'transparent' }}
+                  >
+                    <span style={{ fontFamily: MONO, fontSize: 11, color: AMBER }}>{r.id.slice(0, 16)}…</span>
+                    <span style={{ fontFamily: MONO, fontSize: 10, color: BLUE, marginLeft: 8 }}>{r.doc_type}</span>
+                  </div>
+                ))}
+              </div>
+              <div data-testid="controls-evidence-panel" style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden', minHeight: 200 }}>
+                <div style={{ padding: '6px 10px', borderBottom: `1px solid ${BORDER}`, fontSize: 9, fontFamily: MONO, color: SUBTLE, letterSpacing: 1 }}>
+                  EVIDENCE GRAPH {selectedControlId ? `— ${selectedControlId.slice(0, 16)}…` : ''}
+                </div>
+                <div data-testid="controls-edges-list" style={{ padding: 8 }}>
+                  {!selectedControlId && (
+                    <div style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>Select a result to see linked edges</div>
+                  )}
+                  {selectedControlId && edges.length === 0 && (
+                    <div style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No edges found for this control</div>
+                  )}
+                  {edges.map((e, i) => (
+                    <div key={i} style={{ padding: '6px 8px', borderBottom: `1px solid #161616`, fontFamily: MONO, fontSize: 11 }}>
+                      <span style={{ color: BLUE }}>{e.from_id.slice(0, 12)}</span>
+                      <span style={{ color: SUBTLE, margin: '0 6px' }}>→</span>
+                      <span style={{ color: GREEN }}>{e.to_id.slice(0, 12)}</span>
+                      <span style={{ color: PURPLE, marginLeft: 8, fontSize: 10 }}>{e.edge_type}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {tab === 'controls' && (
           <div>
             <div style={{ marginBottom: 8 }}>
@@ -233,7 +322,7 @@ export function ControlsDomainUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Control ID</Th><Th>Title</Th><Th>Domain</Th><Th>Category</Th><Th>Frequency</Th><Th>Status</Th><Th>Test Result</Th><Th>Risk</Th><Th right>Evidence</Th><Th right>Deficiencies</Th></tr></thead>
                 <tbody>
-                  {filtered.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls â€” check /api/v3/controls/items</td></tr>}
+                  {filtered.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls</td></tr>}
                   {filtered.sort((a, b) => a.deficiencies > 0 ? -1 : 0).map((c, i) => (
                     <tr key={i} style={{ background: c.testResult === 'fail' ? RED + '08' : c.deficiencies > 0 ? ORANGE + '06' : 'transparent' }}>
                       <Td mono col={AMBER}>{c.controlId}</Td>
@@ -258,7 +347,7 @@ export function ControlsDomainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Evidence ID</Th><Th>Control ID</Th><Th>Title</Th><Th>Type</Th><Th>Status</Th><Th>Reviewer</Th><Th>Reviewed At</Th><Th>Expires At</Th></tr></thead>
               <tbody>
-                {evidence.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence â€” check /api/v3/controls/evidence</td></tr>}
+                {evidence.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence</td></tr>}
                 {evidence.sort((a, b) => a.status === 'rejected' ? -1 : 0).map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'rejected' ? RED + '08' : e.status === 'expired' ? ORANGE + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.evidenceId}</Td>
@@ -266,9 +355,9 @@ export function ControlsDomainUI2() {
                     <Td mono col={TEXT}>{e.title.slice(0, 40)}{e.title.length > 40 ? 'â€¦' : ''}</Td>
                     <Td mono col={PURPLE}>{e.type.replace(/_/g, ' ')}</Td>
                     <Td><StatusBadge s={e.status} /></Td>
-                    <Td mono col={SUBTLE}>{e.reviewer || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{e.reviewedAt || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{e.expiresAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.reviewer || '—'}</Td>
+                    <Td mono col={SUBTLE}>{e.reviewedAt || '—'}</Td>
+                    <Td mono col={SUBTLE}>{e.expiresAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -280,7 +369,7 @@ export function ControlsDomainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Recon ID</Th><Th>Entity</Th><Th>Type</Th><Th>Period</Th><Th>Status</Th><Th right>Open Items</Th><Th right>Exception Amt</Th><Th>Ccy</Th><Th>Due Date</Th><Th>Approved By</Th></tr></thead>
               <tbody>
-                {reconciliation.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reconciliation items â€” check /api/v3/controls/reconciliation</td></tr>}
+                {reconciliation.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reconciliation items</td></tr>}
                 {reconciliation.sort((a, b) => a.status === 'exception' ? -1 : 0).map((r, i) => (
                   <tr key={i} style={{ background: r.status === 'exception' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.reconId}</Td>
@@ -291,8 +380,8 @@ export function ControlsDomainUI2() {
                     <Td right mono col={r.openItems > 0 ? ORANGE : GREEN}>{r.openItems}</Td>
                     <Td right mono col={r.exceptionAmount > 0 ? RED : GREEN}>{r.exceptionAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Td>
                     <Td mono col={SUBTLE}>{r.currency}</Td>
-                    <Td mono col={SUBTLE}>{r.dueDate || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{r.approvedBy || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.dueDate || '—'}</Td>
+                    <Td mono col={SUBTLE}>{r.approvedBy || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -304,7 +393,7 @@ export function ControlsDomainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Risk ID</Th><Th>Control ID</Th><Th>Description</Th><Th>Type</Th><Th>Likelihood</Th><Th>Impact</Th><Th>Residual</Th><Th>Mitigation</Th><Th>Owner</Th><Th>Due</Th></tr></thead>
               <tbody>
-                {risks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk items â€” check /api/v3/controls/risk</td></tr>}
+                {risks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No risk items</td></tr>}
                 {risks.sort((a, b) => a.residualRisk === 'high' ? -1 : 0).map((r, i) => (
                   <tr key={i} style={{ background: r.residualRisk === 'high' ? RED + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.riskId}</Td>
@@ -315,8 +404,8 @@ export function ControlsDomainUI2() {
                     <Td><RiskBadge r={r.impact} /></Td>
                     <Td><RiskBadge r={r.residualRisk} /></Td>
                     <Td><StatusBadge s={r.mitigationStatus} /></Td>
-                    <Td mono col={SUBTLE}>{r.owner || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{r.dueDate || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.owner || '—'}</Td>
+                    <Td mono col={SUBTLE}>{r.dueDate || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -328,13 +417,13 @@ export function ControlsDomainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v3/controls/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

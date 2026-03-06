@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ROOT = path.resolve(__dirname, '../../../../');
-const PYTHON = 'C:\\Python314\\python.exe';
+const PYTHON = process.platform === 'win32' ? 'C:\\Python314\\python.exe' : (process.env.PYTHON_BIN ?? 'python3');
 
 function runScript(script: string): { stdout: string; stderr: string; status: number } {
   const scriptPath = path.join(ROOT, 'scripts', script);

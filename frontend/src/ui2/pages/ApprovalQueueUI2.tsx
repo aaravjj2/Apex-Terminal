@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ApprovalQueueUI2 â€” Bloomberg APEX approval queue terminal
+﻿// ApprovalQueueUI2 — Bloomberg APEX approval queue terminal
 // Human-in-the-loop queue for high-risk AI decisions, review, policy enforcement
 // Tabs: QUEUE | REVIEWERS | DECISIONS | POLICIES | AUDIT
 // APIs: /api/v4/approval-queue/items, /reviewers, /decisions, /policies, /audit
@@ -215,7 +215,7 @@ export function ApprovalQueueUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>APPROVAL QUEUE â€” HUMAN-IN-THE-LOOP HIGH-RISK AI DECISION MANAGEMENT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>APPROVAL QUEUE — HUMAN-IN-THE-LOOP HIGH-RISK AI DECISION MANAGEMENT</span>
         {critical > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {critical} CRITICAL</span>}
         {breached > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {breached} SLA BREACHED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -242,7 +242,7 @@ export function ApprovalQueueUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Item ID</Th><Th>Type</Th><Th>Risk</Th><Th>Status</Th><Th right>Priority</Th><Th>AI Confidence</Th><Th>Requestor</Th><Th>Assigned</Th><Th>Due By</Th><Th>SLA</Th><Th>Description</Th></tr></thead>
               <tbody>
-                {items.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No queue items â€” check /api/v4/approval-queue/items</td></tr>}
+                {items.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No queue items</td></tr>}
                 {items.sort((a, b) => {
                   if (a.slaBreached !== b.slaBreached) return a.slaBreached ? -1 : 1
                   const p: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
@@ -272,7 +272,7 @@ export function ApprovalQueueUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Role</Th><Th>Department</Th><Th>Status</Th><Th right>Active</Th><Th right>Total</Th><Th right>Approval Rate</Th><Th right>Avg Time</Th><Th right>SLA %</Th></tr></thead>
               <tbody>
-                {reviewers.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviewers â€” check /api/v4/approval-queue/reviewers</td></tr>}
+                {reviewers.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviewers</td></tr>}
                 {reviewers.sort((a, b) => b.activeItems - a.activeItems).map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.name}</Td>
@@ -296,7 +296,7 @@ export function ApprovalQueueUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Decision ID</Th><Th>Item</Th><Th>Type</Th><Th>Reviewer</Th><Th>Outcome</Th><Th>Risk</Th><Th right>Review Time</Th><Th>Conditions</Th><Th>Rationale</Th><Th>Decided</Th></tr></thead>
               <tbody>
-                {decisions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No decisions â€” check /api/v4/approval-queue/decisions</td></tr>}
+                {decisions.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No decisions</td></tr>}
                 {decisions.map((d, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{d.decisionId}</Td>
@@ -306,7 +306,7 @@ export function ApprovalQueueUI2() {
                     <Td><StatusBadge2 s={d.outcome} /></Td>
                     <Td><RiskBadge r={d.riskLevel} /></Td>
                     <Td right mono col={d.reviewTimeMin > 60 ? ORANGE : SUBTLE}>{d.reviewTimeMin.toFixed(0)} min</Td>
-                    <Td mono col={d.conditions ? AMBER : SUBTLE}>{d.conditions || 'â€”'}</Td>
+                    <Td mono col={d.conditions ? AMBER : SUBTLE}>{d.conditions || '—'}</Td>
                     <Td mono col={SUBTLE}>{d.rationale.slice(0, 40)}{d.rationale.length > 40 ? 'â€¦' : ''}</Td>
                     <Td mono col={SUBTLE}>{d.decidedAt}</Td>
                   </tr>
@@ -321,7 +321,7 @@ export function ApprovalQueueUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Policy</Th><Th>Risk Triggers</Th><Th>Required Level</Th><Th right>Min Reviewers</Th><Th right>SLA Hours</Th><Th right>Auto Escalate</Th><Th>Status</Th><Th right>Matches</Th><Th>Owner</Th></tr></thead>
               <tbody>
-                {policies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies â€” check /api/v4/approval-queue/policies</td></tr>}
+                {policies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies</td></tr>}
                 {policies.map((p, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{p.policyName}</Td>
@@ -345,7 +345,7 @@ export function ApprovalQueueUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Item</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/approval-queue/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -353,7 +353,7 @@ export function ApprovalQueueUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

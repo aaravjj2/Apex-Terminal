@@ -248,7 +248,7 @@ export function SearchExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Query ID</Th><Th>Query Text</Th><Th>Index</Th><Th>Type</Th><Th>Feedback</Th><Th right>Hits</Th><Th right>Avg Score</Th><Th right>Latency ms</Th><Th>User</Th><Th>Executed</Th></tr></thead>
               <tbody>
-                {queries.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No queries — check /api/v4/search-explain/queries</td></tr>}
+                {queries.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No queries</td></tr>}
                 {queries.map((q, i) => (
                   <tr key={i} style={{ background: q.relevanceFeedback === 'negative' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{q.queryId}</Td>
@@ -273,7 +273,7 @@ export function SearchExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Query ID</Th><Th>Doc ID</Th><Th>Field</Th><Th>Field Type</Th><Th>Match Type</Th><Th>Query Term</Th><Th>Contribution</Th><Th right>TF-IDF</Th><Th right>Boost</Th></tr></thead>
               <tbody>
-                {scoring.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No scoring data — check /api/v4/search-explain/scoring</td></tr>}
+                {scoring.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No scoring data</td></tr>}
                 {scoring.sort((a, b) => b.contribution - a.contribution).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.queryId}</Td>
@@ -297,7 +297,7 @@ export function SearchExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Tuning ID</Th><Th>Field</Th><Th>Type</Th><Th>Status</Th><Th right>Prev Boost</Th><Th right>New Boost</Th><Th right>Impact Score</Th><Th>Approved By</Th><Th>Applied</Th></tr></thead>
               <tbody>
-                {tuning.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No tuning data — check /api/v4/search-explain/tuning</td></tr>}
+                {tuning.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No tuning data</td></tr>}
                 {tuning.sort((a, b) => b.impactScore - a.impactScore).map((t, i) => (
                   <tr key={i} style={{ background: t.status === 'rolled_back' ? ORANGE + '09' : 'transparent' }}>
                     <Td mono col={AMBER}>{t.tuningId}</Td>
@@ -321,7 +321,7 @@ export function SearchExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Experiment</Th><Th>Type</Th><Th>Status</Th><Th right>Traffic %</Th><Th right>Control NDCG</Th><Th right>Treatment NDCG</Th><Th right>Delta</Th><Th right>p-value</Th><Th>Started</Th></tr></thead>
               <tbody>
-                {experiments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No experiments — check /api/v4/search-explain/experiments</td></tr>}
+                {experiments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No experiments</td></tr>}
                 {experiments.map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'running' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.name}</Td>
@@ -345,7 +345,7 @@ export function SearchExplainUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Query ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log — check /api/v4/search-explain/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

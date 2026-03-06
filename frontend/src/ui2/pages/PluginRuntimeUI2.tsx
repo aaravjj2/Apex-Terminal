@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// PluginRuntimeUI2 â€” Bloomberg APEX plugin sandbox runtime terminal
+﻿// PluginRuntimeUI2 — Bloomberg APEX plugin sandbox runtime terminal
 // Plugin instances, capabilities, resources, violations, audit
 // Tabs: PLUGINS | CAPABILITIES | RESOURCES | VIOLATIONS | AUDIT
 // APIs: /api/v4/plugins/instances, /capabilities, /resources, /violations, /audit
@@ -216,7 +216,7 @@ export function PluginRuntimeUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>PLUGIN RUNTIME â€” SANDBOX EXECUTION + CAPABILITY MODEL + RESOURCE ISOLATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>PLUGIN RUNTIME — SANDBOX EXECUTION + CAPABILITY MODEL + RESOURCE ISOLATION</span>
         {crashedPlugins > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {crashedPlugins} CRASHED</span>}
         {criticalViolations > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {criticalViolations} CRITICAL VIOLATIONS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -243,7 +243,7 @@ export function PluginRuntimeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Plugin</Th><Th>Vendor</Th><Th>Version</Th><Th>Sandbox</Th><Th>Status</Th><Th>Isolation</Th><Th right>CPU %</Th><Th right>Mem MB</Th><Th right>Uptime h</Th><Th right>Reqs/day</Th><Th right>Err %</Th></tr></thead>
               <tbody>
-                {plugins.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No plugins â€” check /api/v4/plugins/instances</td></tr>}
+                {plugins.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No plugins</td></tr>}
                 {plugins.sort((a, b) => a.status === 'crashed' ? -1 : 1).map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'crashed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.name}</Td>
@@ -269,7 +269,7 @@ export function PluginRuntimeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Plugin</Th><Th>Capability</Th><Th>Granted</Th><Th>Scope</Th><Th>Risk</Th><Th right>Usage Count</Th><Th>Last Used</Th></tr></thead>
               <tbody>
-                {capabilities.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No capabilities â€” check /api/v4/plugins/capabilities</td></tr>}
+                {capabilities.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No capabilities</td></tr>}
                 {capabilities.sort((a, b) => {
                   const sp: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (sp[a.riskLevel] ?? 4) - (sp[b.riskLevel] ?? 4)
@@ -281,7 +281,7 @@ export function PluginRuntimeUI2() {
                     <Td mono col={SUBTLE}>{c.scope}</Td>
                     <Td><SevBadge s={c.riskLevel} /></Td>
                     <Td right mono col={c.usageCount > 0 ? TEXT : SUBTLE}>{c.usageCount.toLocaleString()}</Td>
-                    <Td mono col={SUBTLE}>{c.lastUsed || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{c.lastUsed || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -294,12 +294,12 @@ export function PluginRuntimeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Plugin</Th><Th>Resource</Th><Th>Throttled</Th><Th>Usage</Th><Th right>Allocated</Th><Th right>Limit</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {resources.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No resource data â€” check /api/v4/plugins/resources</td></tr>}
+                {resources.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No resource data</td></tr>}
                 {resources.sort((a, b) => (a.throttled === b.throttled ? 0 : a.throttled ? -1 : 1)).map((r, i) => (
                   <tr key={i} style={{ background: r.throttled ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.pluginName}</Td>
                     <Td mono col={BLUE}>{r.resourceType}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.throttled ? ORANGE : GREEN }}>{r.throttled ? '⚠‘ YES' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.throttled ? ORANGE : GREEN }}>{r.throttled ? '⚠‘ YES' : '—'}</span></Td>
                     <Td><UsageBar used={r.used} limit={r.limit} unit={r.unit} /></Td>
                     <Td right mono col={SUBTLE}>{r.allocated}{r.unit}</Td>
                     <Td right mono col={SUBTLE}>{r.limit}{r.unit}</Td>
@@ -316,7 +316,7 @@ export function PluginRuntimeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Violation ID</Th><Th>Plugin</Th><Th>Type</Th><Th>Severity</Th><Th>Action</Th><Th>Status</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {violations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations â€” check /api/v4/plugins/violations</td></tr>}
+                {violations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations</td></tr>}
                 {violations.sort((a, b) => {
                   const sp: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (sp[a.severity] ?? 4) - (sp[b.severity] ?? 4)
@@ -328,7 +328,7 @@ export function PluginRuntimeUI2() {
                     <Td><SevBadge s={v.severity} /></Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: v.action === 'blocked' || v.action === 'terminated' ? RED : v.action === 'quarantined' ? ORANGE : SUBTLE, background: (v.action === 'blocked' || v.action === 'terminated' ? RED : v.action === 'quarantined' ? ORANGE : SUBTLE) + '22', borderRadius: 3, padding: '2px 5px' }}>{v.action.toUpperCase()}</span></Td>
                     <Td><StatusBadge s={v.status} /></Td>
-                    <Td mono col={SUBTLE}>{v.detail.slice(0, 40) || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{v.detail.slice(0, 40) || '—'}</Td>
                     <Td mono col={SUBTLE}>{v.timestamp}</Td>
                   </tr>
                 ))}
@@ -342,7 +342,7 @@ export function PluginRuntimeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Plugin</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/plugins/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -350,7 +350,7 @@ export function PluginRuntimeUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

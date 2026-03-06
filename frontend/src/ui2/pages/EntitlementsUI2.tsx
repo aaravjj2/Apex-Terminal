@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// EntitlementsUI2 â€” Bloomberg ENTL entitlements terminal
+﻿// EntitlementsUI2 — Bloomberg ENTL entitlements terminal
 // Role-based access matrix, permission grants, policy enforcement, approval queue, audit
 // Tabs: MATRIX | ROLES | POLICIES | REQUESTS | AUDIT
 // APIs: /api/v4/entitlements/matrix, /roles, /policies, /requests, /audit
@@ -216,7 +216,7 @@ export function EntitlementsUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>ENTL</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>ENTITLEMENTS â€” ACCESS MATRIX + ROLES + POLICIES + APPROVALS + AUDIT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>ENTITLEMENTS — ACCESS MATRIX + ROLES + POLICIES + APPROVALS + AUDIT</span>
         {pendingRequests > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingRequests} PENDING</span>}
         {highRiskRoles > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {highRiskRoles} HIGH-RISK ROLES</span>}
         {expiredEntitlements > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {expiredEntitlements} EXPIRED</span>}
@@ -244,7 +244,7 @@ export function EntitlementsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Principal</Th><Th>Type</Th><Th>Resource</Th><Th>Class</Th><Th>Permissions</Th><Th>Grant</Th><Th>Granted By</Th><Th>Active</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {matrix.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No entitlements â€” check /api/v4/entitlements/matrix</td></tr>}
+                {matrix.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No entitlements</td></tr>}
                 {matrix.map((e, i) => (
                   <tr key={i} style={{ opacity: e.active ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{e.principal}</Td>
@@ -255,7 +255,7 @@ export function EntitlementsUI2() {
                     <Td mono col={e.grantType === 'delegated' ? ORANGE : SUBTLE}>{e.grantType}</Td>
                     <Td mono col={SUBTLE}>{e.grantedBy}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: e.active ? GREEN : RED }}>{e.active ? 'ACTIVE' : 'INACTIVE'}</span></Td>
-                    <Td mono col={e.expiresAt && new Date(e.expiresAt) < new Date() ? RED : SUBTLE}>{e.expiresAt || 'â€”'}</Td>
+                    <Td mono col={e.expiresAt && new Date(e.expiresAt) < new Date() ? RED : SUBTLE}>{e.expiresAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -268,7 +268,7 @@ export function EntitlementsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Role Name</Th><Th>Risk</Th><Th>Class</Th><Th right>Members</Th><Th right>Permissions</Th><Th>Owner</Th><Th>Inherits From</Th><Th>Last Review</Th></tr></thead>
               <tbody>
-                {roles.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No roles â€” check /api/v4/entitlements/roles</td></tr>}
+                {roles.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No roles</td></tr>}
                 {roles.sort((a, b) => {
                   const ord: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (ord[a.riskLevel] ?? 4) - (ord[b.riskLevel] ?? 4)
@@ -280,7 +280,7 @@ export function EntitlementsUI2() {
                     <Td right mono col={r.memberCount > 50 ? ORANGE : TEXT}>{r.memberCount.toLocaleString()}</Td>
                     <Td right mono col={r.permCount > 100 ? RED : TEXT}>{r.permCount.toLocaleString()}</Td>
                     <Td mono col={SUBTLE}>{r.owner}</Td>
-                    <Td mono col={r.inheritedFrom ? BLUE : SUBTLE}>{r.inheritedFrom || 'â€”'}</Td>
+                    <Td mono col={r.inheritedFrom ? BLUE : SUBTLE}>{r.inheritedFrom || '—'}</Td>
                     <Td mono col={SUBTLE}>{r.lastReviewed}</Td>
                   </tr>
                 ))}
@@ -294,7 +294,7 @@ export function EntitlementsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Policy Name</Th><Th>Type</Th><Th>Effect</Th><Th>Scope</Th><Th>Classifications</Th><Th right>Principals</Th><Th right>Resources</Th><Th>Active</Th><Th>Modified</Th></tr></thead>
               <tbody>
-                {policies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies â€” check /api/v4/entitlements/policies</td></tr>}
+                {policies.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No policies</td></tr>}
                 {policies.map((p, i) => {
                   const typeC: Record<string, string> = { permission: GREEN, restriction: RED, condition: AMBER, data_mask: PURPLE }
                   return (
@@ -321,7 +321,7 @@ export function EntitlementsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Requestor</Th><Th>Target</Th><Th>Resource</Th><Th>Permissions</Th><Th>Status</Th><Th right>Risk Score</Th><Th>Reviewer</Th><Th>Requested</Th><Th>Resolved</Th></tr></thead>
               <tbody>
-                {requests.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No requests â€” check /api/v4/entitlements/requests</td></tr>}
+                {requests.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No requests</td></tr>}
                 {requests.sort((a, b) => {
                   const ord: Record<string, number> = { pending: 0, approved: 1, rejected: 2, expired: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -335,9 +335,9 @@ export function EntitlementsUI2() {
                       <Td mono col={GREEN} style={{ fontSize: 10 } as any}>{r.permissions.slice(0, 2).join(', ')}</Td>
                       <Td><span style={{ fontFamily: MONO, fontSize: 9, color: stC[r.status] ?? SUBTLE, background: (stC[r.status] ?? SUBTLE) + '22', borderRadius: 3, padding: '2px 5px' }}>{r.status.toUpperCase()}</span></Td>
                       <Td right mono col={r.riskScore >= 0.8 ? RED : r.riskScore >= 0.5 ? AMBER : GREEN}>{r.riskScore.toFixed(2)}</Td>
-                      <Td mono col={SUBTLE}>{r.reviewer || 'â€”'}</Td>
+                      <Td mono col={SUBTLE}>{r.reviewer || '—'}</Td>
                       <Td mono col={SUBTLE}>{r.requestedAt}</Td>
-                      <Td mono col={SUBTLE}>{r.resolvedAt || 'â€”'}</Td>
+                      <Td mono col={SUBTLE}>{r.resolvedAt || '—'}</Td>
                     </tr>
                   )
                 })}
@@ -351,7 +351,7 @@ export function EntitlementsUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Action</Th><Th>Actor</Th><Th>Target</Th><Th>Resource</Th><Th>Outcome</Th><Th>Policy Applied</Th><Th>IP Address</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {audit.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit â€” check /api/v4/entitlements/audit</td></tr>}
+                {audit.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit</td></tr>}
                 {audit.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.action}</Td>

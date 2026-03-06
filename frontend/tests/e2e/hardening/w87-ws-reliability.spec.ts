@@ -4,7 +4,7 @@
  */
 import { test, expect, APIRequestContext } from "@playwright/test";
 
-const API = "http://localhost:8090";
+const API = "http://localhost:8000";
 const UI = "http://localhost:5100";
 
 test.describe("W87 WS Health API", () => {

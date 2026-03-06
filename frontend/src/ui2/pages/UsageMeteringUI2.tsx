@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// UsageMeteringUI2 â€” Bloomberg APEX Usage Metering terminal
+﻿// UsageMeteringUI2 — Bloomberg APEX Usage Metering terminal
 // Real-time tracking, quota enforcement, billing attribution, pipeline health
 // Tabs: METERS | PIPELINE | QUOTAS | BILLING | AUDIT
 // APIs: /api/v4/usage-metering/meters, /pipeline, /quotas, /billing, /audit
@@ -125,7 +125,7 @@ function UsageBar({ used, limit }: { used: number; limit: number }) {
 }
 function ChgArrow({ pct }: { pct: number }) {
   const col = pct > 0 ? GREEN : pct < 0 ? RED : SUBTLE
-  return <span style={{ fontFamily: MONO, fontSize: 11, color: col }}>{pct > 0 ? 'â–²' : pct < 0 ? 'â–¼' : 'â€”'}{Math.abs(pct).toFixed(1)}%</span>
+  return <span style={{ fontFamily: MONO, fontSize: 11, color: col }}>{pct > 0 ? 'â–²' : pct < 0 ? 'â–¼' : '—'}{Math.abs(pct).toFixed(1)}%</span>
 }
 
 
@@ -236,7 +236,7 @@ export function UsageMeteringUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>USAGE METERING â€” REAL-TIME TRACKING + QUOTA ENFORCEMENT + BILLING ATTRIBUTION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>USAGE METERING — REAL-TIME TRACKING + QUOTA ENFORCEMENT + BILLING ATTRIBUTION</span>
         {unhealthyNodes > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {unhealthyNodes} NODES DOWN</span>}
         {overQuota > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {overQuota} OVER 90%</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -263,7 +263,7 @@ export function UsageMeteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Meter ID</Th><Th>Tenant</Th><Th>Metric</Th><Th>Type</Th><Th right>Current</Th><Th>Change</Th><Th>Quota</Th><Th right>Rate/hr</Th><Th right>Billed USD</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {meters.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No meters â€” check /api/v4/usage-metering/meters</td></tr>}
+                {meters.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No meters</td></tr>}
                 {meters.sort((a, b) => b.quotaUsedPct - a.quotaUsedPct).map((m, i) => (
                   <tr key={i} style={{ background: m.quotaUsedPct > 95 ? RED + '0a' : m.quotaUsedPct > 80 ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{m.meterId}</Td>
@@ -288,14 +288,14 @@ export function UsageMeteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Node ID</Th><Th>Name</Th><Th>Type</Th><Th>Status</Th><Th>Region</Th><Th right>EPS</Th><Th right>Latency ms</Th><Th right>Error %</Th><Th right>Backlog</Th><Th>CPU/Mem</Th></tr></thead>
               <tbody>
-                {pipeline.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No pipeline nodes â€” check /api/v4/usage-metering/pipeline</td></tr>}
+                {pipeline.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No pipeline nodes</td></tr>}
                 {pipeline.sort((a, b) => a.status === 'down' ? -1 : 0).map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'down' ? RED + '0a' : p.status === 'degraded' ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.nodeId}</Td>
                     <Td mono col={TEXT}>{p.name}</Td>
                     <Td mono col={BLUE}>{p.type}</Td>
                     <Td><StatusBadge s={p.status} /></Td>
-                    <Td mono col={SUBTLE}>{p.region || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.region || '—'}</Td>
                     <Td right mono col={TEXT}>{p.eventsPerSecond.toLocaleString()}</Td>
                     <Td right mono col={p.latencyMs > 100 ? RED : p.latencyMs > 50 ? AMBER : GREEN}>{p.latencyMs.toFixed(1)}</Td>
                     <Td right mono col={p.errorRatePct > 1 ? RED : GREEN}>{p.errorRatePct.toFixed(2)}%</Td>
@@ -313,19 +313,19 @@ export function UsageMeteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Tenant</Th><Th>Resource</Th><Th>Plan</Th><Th right>Soft Limit</Th><Th right>Hard Limit</Th><Th right>Current</Th><Th>Soft Used</Th><Th>Hard Used</Th><Th>Enforcement</Th><Th>Reset</Th></tr></thead>
               <tbody>
-                {quotas.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No quota data â€” check /api/v4/usage-metering/quotas</td></tr>}
+                {quotas.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No quota data</td></tr>}
                 {quotas.sort((a, b) => b.hardUsedPct - a.hardUsedPct).map((q, i) => (
                   <tr key={i} style={{ background: q.hardUsedPct > 90 ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{q.tenantName || q.tenantId}</Td>
                     <Td mono col={BLUE}>{q.resource.replace(/_/g, ' ')}</Td>
-                    <Td mono col={PURPLE}>{q.plan || 'â€”'}</Td>
+                    <Td mono col={PURPLE}>{q.plan || '—'}</Td>
                     <Td right mono col={TEXT}>{q.softLimit.toLocaleString()}</Td>
                     <Td right mono col={TEXT}>{q.hardLimit.toLocaleString()}</Td>
                     <Td right mono col={TEXT}>{q.currentUsage.toLocaleString()}</Td>
                     <Td><UsageBar used={q.softUsedPct} limit={100} /></Td>
                     <Td><UsageBar used={q.hardUsedPct} limit={100} /></Td>
                     <Td mono col={q.enforcementMode === 'block' ? RED : q.enforcementMode === 'throttle' ? AMBER : SUBTLE}>{q.enforcementMode.toUpperCase()}</Td>
-                    <Td mono col={SUBTLE}>{q.nextReset || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{q.nextReset || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -338,13 +338,13 @@ export function UsageMeteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>ID</Th><Th>Tenant</Th><Th>Product</Th><Th>SKU</Th><Th right>Qty</Th><Th right>Unit $</Th><Th right>Subtotal</Th><Th right>Disc %</Th><Th right>Final USD</Th><Th>Invoice</Th></tr></thead>
               <tbody>
-                {billing.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No billing data â€” check /api/v4/usage-metering/billing</td></tr>}
+                {billing.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No billing data</td></tr>}
                 {billing.sort((a, b) => b.finalAmountUsd - a.finalAmountUsd).map((b, i) => (
                   <tr key={i} style={{ background: b.invoiceStatus === 'overdue' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.attributionId}</Td>
                     <Td mono col={TEXT}>{b.tenantName || b.tenantId}</Td>
-                    <Td mono col={BLUE}>{b.product || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{b.sku || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{b.product || '—'}</Td>
+                    <Td mono col={SUBTLE}>{b.sku || '—'}</Td>
                     <Td right mono col={TEXT}>{b.quantity.toLocaleString()}</Td>
                     <Td right mono col={TEXT}>${b.unitPrice.toFixed(4)}</Td>
                     <Td right mono col={TEXT}>${b.subtotalUsd.toFixed(2)}</Td>
@@ -363,14 +363,14 @@ export function UsageMeteringUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Tenant ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v4/usage-metering/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={BLUE}>{a.tenantId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

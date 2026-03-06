@@ -49,8 +49,31 @@ PAGES_UNDER_TEST = [
 EXCLUDED_RULES = ["color-contrast", "scrollable-region-focusable", "button-name", "select-name"]
 
 
+class _AiosqliteWAL:
+    """Async context manager that opens aiosqlite with WAL mode + busy_timeout."""
+    def __init__(self, path: str):
+        self._path = path
+        self._conn: aiosqlite.Connection | None = None
+
+    async def __aenter__(self) -> "aiosqlite.Connection":
+        self._conn = await aiosqlite.connect(self._path, timeout=30)
+        await self._conn.execute("PRAGMA journal_mode=WAL")
+        await self._conn.execute("PRAGMA busy_timeout=30000")
+        return self._conn
+
+    async def __aexit__(self, *args):
+        if self._conn:
+            await self._conn.close()
+            self._conn = None
+
+
+def _open_db() -> _AiosqliteWAL:
+    """Return an async context manager that yields an aiosqlite connection with WAL+timeout."""
+    return _AiosqliteWAL(DB_PATH)
+
+
 async def _ensure_schema() -> None:
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with _open_db() as db:
         await db.execute(_SCHEMA)
         await db.commit()
 
@@ -78,7 +101,7 @@ async def save_audit_run(
     moderate = sum(1 for v in violations if v.get("impact") == "moderate")
     minor    = sum(1 for v in violations if v.get("impact") == "minor")
 
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with _open_db() as db:
         await db.execute(
             """INSERT INTO a11y_audit_runs
                (id, page_id, page_url, timestamp,
@@ -125,7 +148,7 @@ def _format_run(
 
 async def list_audit_runs(page_id: Optional[str] = None, limit: int = 200) -> list:
     await _ensure_schema()
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with _open_db() as db:
         db.row_factory = aiosqlite.Row
         if page_id:
             cur = await db.execute(
@@ -152,7 +175,7 @@ async def list_audit_runs(page_id: Optional[str] = None, limit: int = 200) -> li
 async def get_audit_summary() -> dict:
     """Aggregate latest run per page."""
     await _ensure_schema()
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with _open_db() as db:
         db.row_factory = aiosqlite.Row
         cur = await db.execute(
             """SELECT page_id,
@@ -190,7 +213,7 @@ async def get_audit_summary() -> dict:
 
 async def clear_audit_runs() -> dict:
     await _ensure_schema()
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with _open_db() as db:
         await db.execute("DELETE FROM a11y_audit_runs")
         await db.commit()
     return {"deleted": True}

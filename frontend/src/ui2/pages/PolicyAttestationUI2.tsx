@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// PolicyAttestationUI2 â€” Bloomberg APEX policy attestation terminal
+﻿// PolicyAttestationUI2 — Bloomberg APEX policy attestation terminal
 // Attestation packs, evidence collection, compliance reporting, policy lifecycle, audit
 // Tabs: PACKS | ATTESTATIONS | EVIDENCE | COMPLIANCE | AUDIT
 // APIs: /api/v4/policy-attestation/packs, /attestations, /evidence, /compliance, /audit
@@ -211,7 +211,7 @@ export function PolicyAttestationUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>POLICY ATTESTATION â€” PACKS + EVIDENCE COLLECTION + COMPLIANCE REPORTING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>POLICY ATTESTATION — PACKS + EVIDENCE COLLECTION + COMPLIANCE REPORTING</span>
         {failedAttestations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {failedAttestations} FAILED ATTESTATIONS</span>}
         {expiredEvidence > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {expiredEvidence} EXPIRED EVIDENCE</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -220,7 +220,7 @@ export function PolicyAttestationUI2() {
         <StatCard label="Active Packs" value={activePacks} col={BLUE} />
         <StatCard label="Failed Attestations" value={failedAttestations} col={failedAttestations > 0 ? RED : GREEN} />
         <StatCard label="Expired Evidence" value={expiredEvidence} col={expiredEvidence > 0 ? ORANGE : GREEN} />
-        <StatCard label="Avg Score" value={avgScore > 0 ? `${avgScore.toFixed(1)}%` : 'â€”'} col={avgScore >= 90 ? GREEN : avgScore >= 70 ? AMBER : RED} />
+        <StatCard label="Avg Score" value={avgScore > 0 ? `${avgScore.toFixed(1)}%` : '—'} col={avgScore >= 90 ? GREEN : avgScore >= 70 ? AMBER : RED} />
         <StatCard label="Reports" value={compliance.filter(c => c.status === 'final').length} col={PURPLE} />
       </div>
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
@@ -238,7 +238,7 @@ export function PolicyAttestationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Pack</Th><Th>Framework</Th><Th>Category</Th><Th>Status</Th><Th right>Controls</Th><Th>Completion</Th><Th>Team</Th><Th>Due Date</Th></tr></thead>
               <tbody>
-                {packs.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No packs â€” check /api/v4/policy-attestation/packs</td></tr>}
+                {packs.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No packs</td></tr>}
                 {packs.sort((a, b) => a.completionPct - b.completionPct).map((p, i) => (
                   <tr key={i} style={{ background: p.completionPct < 50 ? AMBER + '07' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.name}</Td>
@@ -248,7 +248,7 @@ export function PolicyAttestationUI2() {
                     <Td right mono col={SUBTLE}>{p.attestedCount}/{p.controlCount}</Td>
                     <Td><ProgressBar pct={p.completionPct} /></Td>
                     <Td mono col={TEXT}>{p.owningTeam}</Td>
-                    <Td mono col={SUBTLE}>{p.dueDate || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.dueDate || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -261,7 +261,7 @@ export function PolicyAttestationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Control</Th><Th>Pack</Th><Th>Attested By</Th><Th>Outcome</Th><Th right>Evidence</Th><Th>Attested</Th><Th>Expires</Th><Th>Comment</Th></tr></thead>
               <tbody>
-                {attestations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No attestations â€” check /api/v4/policy-attestation/attestations</td></tr>}
+                {attestations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No attestations</td></tr>}
                 {attestations.sort((a, b) => a.outcome === 'fail' ? -1 : 1).map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.controlName.slice(0, 32)}{a.controlName.length > 32 ? 'â€¦' : ''}</Td>
@@ -270,8 +270,8 @@ export function PolicyAttestationUI2() {
                     <Td><OutcomeBadge s={a.outcome} /></Td>
                     <Td right mono col={a.evidenceCount === 0 ? ORANGE : GREEN}>{a.evidenceCount}</Td>
                     <Td mono col={SUBTLE}>{a.attestedAt}</Td>
-                    <Td mono col={SUBTLE}>{a.expiresAt || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.comment.slice(0, 28) || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.expiresAt || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.comment.slice(0, 28) || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -284,16 +284,16 @@ export function PolicyAttestationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Title</Th><Th>Type</Th><Th>Source</Th><Th>Status</Th><Th>Collected By</Th><Th>Collected</Th><Th>Valid Until</Th></tr></thead>
               <tbody>
-                {evidence.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence â€” check /api/v4/policy-attestation/evidence</td></tr>}
+                {evidence.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No evidence</td></tr>}
                 {evidence.sort((a, b) => a.status === 'expired' ? -1 : 1).map((e, i) => (
                   <tr key={i} style={{ background: e.status === 'expired' ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.title.slice(0, 36)}{e.title.length > 36 ? 'â€¦' : ''}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: e.evidenceType === 'auto_generated' ? PURPLE : BLUE, background: (e.evidenceType === 'auto_generated' ? PURPLE : BLUE) + '22', borderRadius: 3, padding: '2px 5px' }}>{e.evidenceType.replace('_', ' ').toUpperCase()}</span></Td>
-                    <Td mono col={SUBTLE}>{e.source.slice(0, 32) || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{e.source.slice(0, 32) || '—'}</Td>
                     <Td><OutcomeBadge s={e.status} /></Td>
                     <Td mono col={TEXT}>{e.collectedBy}</Td>
                     <Td mono col={SUBTLE}>{e.collectedAt}</Td>
-                    <Td mono col={e.status === 'expired' ? ORANGE : SUBTLE}>{e.validUntil || 'â€”'}</Td>
+                    <Td mono col={e.status === 'expired' ? ORANGE : SUBTLE}>{e.validUntil || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -306,7 +306,7 @@ export function PolicyAttestationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Framework</Th><Th>Period</Th><Th>Status</Th><Th right>Score</Th><Th right>Passed</Th><Th right>Failed</Th><Th right>Exceptions</Th><Th right>N/A</Th><Th>Generated</Th></tr></thead>
               <tbody>
-                {compliance.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance reports â€” check /api/v4/policy-attestation/compliance</td></tr>}
+                {compliance.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No compliance reports</td></tr>}
                 {compliance.sort((a, b) => b.overallScore - a.overallScore).map((c, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{c.framework}</Td>
@@ -330,7 +330,7 @@ export function PolicyAttestationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Pack</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/policy-attestation/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -338,7 +338,7 @@ export function PolicyAttestationUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><OutcomeBadge s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

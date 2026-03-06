@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ExportUI2 â€” Bloomberg APEX Export Bundle V3 terminal
+﻿// ExportUI2 — Bloomberg APEX Export Bundle V3 terminal
 // Judge bundle builder, artifact manifest, export state, format config, audit
 // Tabs: EXPORT | MANIFEST | ARTIFACTS | FORMATS | AUDIT
 // APIs: /api/v3/export/bundle, /manifest, /artifacts, /formats, /audit
@@ -182,7 +182,7 @@ export function ExportUI2() {
     try {
       const r = await fetch('/api/v3/export/bundle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format: 'zip' }) })
       if (r.ok) { const d = await r.json(); setBuildMsg(`Bundle built: ${d.bundle_id ?? d.filename ?? 'ok'}`); fetchAll() }
-      else setBuildMsg('Build failed â€” check backend')
+      else setBuildMsg('Build failed — check backend')
     } catch (e: any) { setBuildMsg(e.message) }
     finally { setBuilding(false) }
   }
@@ -205,7 +205,7 @@ export function ExportUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>EXPORT BUNDLE V3 â€” JUDGE BUNDLE BUILDER + MANIFEST + ARTIFACT REGISTRY + INTEGRITY</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EXPORT BUNDLE V3 — JUDGE BUNDLE BUILDER + MANIFEST + ARTIFACT REGISTRY + INTEGRITY</span>
         {loading && <span style={{ fontSize: 10, color: AMBER }}>LOADINGâ€¦</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -237,7 +237,7 @@ export function ExportUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Bundle ID</Th><Th>Name</Th><Th>Status</Th><Th>Version</Th><Th right>Files</Th><Th right>Size</Th><Th>Hash</Th><Th>Created</Th><Th>Action</Th></tr></thead>
               <tbody>
-                {bundles.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bundles â€” POST to /api/v3/export/bundle to build</td></tr>}
+                {bundles.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bundles — POST to /api/v3/export/bundle to build</td></tr>}
                 {bundles.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((b, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{b.bundleId.slice(0, 12)}</Td>
@@ -259,14 +259,14 @@ export function ExportUI2() {
         )}
         {tab === 'manifest' && (
           <div>
-            {!manifest && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No manifest â€” check /api/v3/export/manifest</div>}
+            {!manifest && <div style={{ padding: 32, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No manifest</div>}
             {manifest && (
               <div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
                   <StatCard label="Bundle ID" value={manifest.bundleId.slice(0, 12)} col={AMBER} />
                   <StatCard label="Export Version" value={manifest.exportVersion} col={BLUE} />
                   <StatCard label="Available" value={manifest.available ? 'YES' : 'NO'} col={manifest.available ? GREEN : RED} />
-                  <StatCard label="Signer Key" value={manifest.signerKey.slice(0, 14) || 'â€”'} col={PURPLE} />
+                  <StatCard label="Signer Key" value={manifest.signerKey.slice(0, 14) || '—'} col={PURPLE} />
                 </div>
                 <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -292,14 +292,14 @@ export function ExportUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Artifact ID</Th><Th>Name</Th><Th>Type</Th><Th>Status</Th><Th right>Rows</Th><Th right>Size</Th><Th>SHA256</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {artifacts.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No artifacts â€” check /api/v3/export/artifacts</td></tr>}
+                {artifacts.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No artifacts</td></tr>}
                 {artifacts.sort((a, b) => b.sizeBytes - a.sizeBytes).map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.artifactId.slice(0, 10)}</Td>
                     <Td mono col={TEXT}>{a.name.slice(0, 28)}</Td>
                     <Td mono col={BLUE}>{a.type}</Td>
                     <Td><StatusBadge s={a.status} /></Td>
-                    <Td right mono col={TEXT}>{a.rowCount !== null ? a.rowCount.toLocaleString() : 'â€”'}</Td>
+                    <Td right mono col={TEXT}>{a.rowCount !== null ? a.rowCount.toLocaleString() : '—'}</Td>
                     <Td right mono col={TEXT}>{fmtBytes(a.sizeBytes)}</Td>
                     <Td mono col={SUBTLE}>{a.sha256.slice(0, 14)}â€¦</Td>
                     <Td mono col={SUBTLE}>{a.createdAt}</Td>
@@ -314,7 +314,7 @@ export function ExportUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Format ID</Th><Th>Name</Th><Th>Extension</Th><Th>Compression</Th><Th>Description</Th><Th>Supported</Th></tr></thead>
               <tbody>
-                {formats.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No formats â€” check /api/v3/export/formats</td></tr>}
+                {formats.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No formats</td></tr>}
                 {formats.map((f, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{f.formatId}</Td>
@@ -334,13 +334,13 @@ export function ExportUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v3/export/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

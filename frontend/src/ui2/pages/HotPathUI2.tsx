@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// HotPathUI2 â€” Bloomberg HPTH hot path profiling terminal
+﻿// HotPathUI2 — Bloomberg HPTH hot path profiling terminal
 // Flame graph analysis, bottleneck detection, CPU/memory profiles, optimization guides
 // Tabs: FLAMEGRAPH | BOTTLENECKS | PROFILES | OPTIMIZATION | HISTORY
 // APIs: /api/v4/hot-path/flamegraph, /bottlenecks, /profiles, /optimization, /history
@@ -229,10 +229,10 @@ export function HotPathUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>HPTH</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>HOT PATH â€” FLAME GRAPH + BOTTLENECK DETECTION + CPU PROFILES + OPTIMIZATION GUIDES</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>HOT PATH — FLAME GRAPH + BOTTLENECK DETECTION + CPU PROFILES + OPTIMIZATION GUIDES</span>
         {criticalBottlenecks > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalBottlenecks} CRITICAL BOTTLENECKS</span>}
         {hotNodes > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {hotNodes} HOT NODES</span>}
-        {openGuides > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {openGuides} OPEN â€” est. {totalSavings.toFixed(0)}% savings</span>}
+        {openGuides > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {openGuides} OPEN — est. {totalSavings.toFixed(0)}% savings</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
@@ -257,7 +257,7 @@ export function HotPathUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Function</Th><Th>Module</Th><Th>Self Time %</Th><Th>Total Time %</Th><Th right>Self (ms)</Th><Th right>Total (ms)</Th><Th right>Calls</Th><Th right>Avg (ms)</Th><Th right>Depth</Th><Th>Hot</Th></tr></thead>
               <tbody>
-                {flame.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No flame data â€” check /api/v4/hot-path/flamegraph</td></tr>}
+                {flame.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No flame data</td></tr>}
                 {flame.sort((a, b) => b.selfTimePct - a.selfTimePct).map((n, i) => (
                   <tr key={i} style={{ background: n.isHot ? RED + '08' : 'transparent' }}>
                     <Td mono col={n.isHot ? RED : TEXT}>{n.funcName}</Td>
@@ -269,7 +269,7 @@ export function HotPathUI2() {
                     <Td right mono col={n.calls > 10000 ? ORANGE : SUBTLE}>{n.calls.toLocaleString()}</Td>
                     <Td right mono col={n.avgCallMs > 10 ? AMBER : SUBTLE}>{n.avgCallMs.toFixed(3)}</Td>
                     <Td right mono col={SUBTLE}>{n.depth}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.isHot ? RED : SUBTLE }}>{n.isHot ? 'ðŸ”¥ HOT' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.isHot ? RED : SUBTLE }}>{n.isHot ? 'ðŸ”¥ HOT' : '—'}</span></Td>
                   </tr>
                 ))}
               </tbody>
@@ -282,7 +282,7 @@ export function HotPathUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Category</Th><Th>Location</Th><Th>Function</Th><Th>Impact</Th><Th right>CPU %</Th><Th right>Memory (MB)</Th><Th right>Calls</Th><Th right>Avg Latency</Th><Th right>Est. Saving %</Th><Th>Suggestion</Th></tr></thead>
               <tbody>
-                {bottlenecks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bottlenecks â€” check /api/v4/hot-path/bottlenecks</td></tr>}
+                {bottlenecks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bottlenecks</td></tr>}
                 {bottlenecks.sort((a, b) => {
                   const ord: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (ord[a.impact] ?? 4) - (ord[b.impact] ?? 4)
@@ -310,7 +310,7 @@ export function HotPathUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Snapshot ID</Th><Th>Type</Th><Th>CPU Avg %</Th><Th right>CPU Peak %</Th><Th right>Mem (MB)</Th><Th right>GC Pause (ms)</Th><Th right>Samples</Th><Th right>Hot Fns</Th><Th>Trigger</Th><Th>Captured</Th></tr></thead>
               <tbody>
-                {profiles.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No profiles â€” check /api/v4/hot-path/profiles</td></tr>}
+                {profiles.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No profiles</td></tr>}
                 {profiles.map((p, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{p.snapshotId}</Td>
@@ -335,7 +335,7 @@ export function HotPathUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Guide</Th><Th>Category</Th><Th>Priority</Th><Th>Status</Th><Th right>Est. Saving %</Th><Th right>Effort (hrs)</Th><Th>Assigned</Th><Th>Description</Th></tr></thead>
               <tbody>
-                {guides.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No optimization guides â€” check /api/v4/hot-path/optimization</td></tr>}
+                {guides.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No optimization guides</td></tr>}
                 {guides.sort((a, b) => {
                   const pOrd: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (pOrd[a.priority] ?? 4) - (pOrd[b.priority] ?? 4)
@@ -347,7 +347,7 @@ export function HotPathUI2() {
                     <Td><GuideStatusBadge s={g.status} /></Td>
                     <Td right mono col={g.estimatedSavingPct > 20 ? GREEN : AMBER}>{g.estimatedSavingPct.toFixed(0)}%</Td>
                     <Td right mono col={g.effortHours > 40 ? ORANGE : SUBTLE}>{g.effortHours}</Td>
-                    <Td mono col={SUBTLE}>{g.assignedTo || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{g.assignedTo || '—'}</Td>
                     <Td mono col={SUBTLE}>{g.description}</Td>
                   </tr>
                 ))}
@@ -361,7 +361,7 @@ export function HotPathUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Run ID</Th><Th>Type</Th><Th right>P50 CPU %</Th><Th right>P95 CPU %</Th><Th right>P50 Mem (MB)</Th><Th right>Hot Fns</Th><Th right>Regressions</Th><Th right>Improvements</Th><Th>Trigger</Th><Th>Captured</Th></tr></thead>
               <tbody>
-                {history.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history â€” check /api/v4/hot-path/history</td></tr>}
+                {history.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history</td></tr>}
                 {history.map((h, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{h.runId}</Td>

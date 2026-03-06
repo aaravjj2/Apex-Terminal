@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ExtObservabilityUI2 â€” Bloomberg EXOB extension observability terminal
+﻿// ExtObservabilityUI2 — Bloomberg EXOB extension observability terminal
 // Distributed traces, performance metrics, logs, dependency map, alerts
 // Tabs: TRACES | METRICS | LOGS | DEPENDENCIES | ALERTS
 // APIs: /api/v4/ext-observability/traces, /metrics, /logs, /dependencies, /alerts
@@ -218,7 +218,7 @@ export function ExtObservabilityUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>EXOB</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>EXT OBSERVABILITY â€” TRACES + PERFORMANCE METRICS + LOGS + DEPENDENCY HEALTH + ALERTS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>EXT OBSERVABILITY — TRACES + PERFORMANCE METRICS + LOGS + DEPENDENCY HEALTH + ALERTS</span>
         {criticalAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalAlerts} CRITICAL ALERTS</span>}
         {downDeps > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {downDeps} DEPS DOWN</span>}
         {errorTraces > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {errorTraces} TRACE ERRORS</span>}
@@ -246,7 +246,7 @@ export function ExtObservabilityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Trace ID</Th><Th>Extension</Th><Th>Operation</Th><Th>Service</Th><Th>Status</Th><Th right>Duration</Th><Th right>Spans</Th><Th right>Errors</Th><Th>User Impact</Th><Th>Start</Th></tr></thead>
               <tbody>
-                {traces.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No traces â€” check /api/v4/ext-observability/traces</td></tr>}
+                {traces.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No traces</td></tr>}
                 {traces.sort((a, b) => {
                   const ord: Record<string, number> = { error: 0, timeout: 1, slow: 2, ok: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -274,7 +274,7 @@ export function ExtObservabilityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Extension</Th><Th>Metric</Th><Th>Trend</Th><Th right>Value</Th><Th right>Threshold</Th><Th right>P50</Th><Th right>P95</Th><Th right>P99</Th><Th>Breached</Th><Th>Interval</Th></tr></thead>
               <tbody>
-                {metrics.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No metrics â€” check /api/v4/ext-observability/metrics</td></tr>}
+                {metrics.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No metrics</td></tr>}
                 {metrics.sort((a, b) => Number(b.breached) - Number(a.breached)).map((m, i) => (
                   <tr key={i} style={{ background: m.breached ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{m.extensionId}</Td>
@@ -299,7 +299,7 @@ export function ExtObservabilityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Level</Th><Th>Extension</Th><Th>Service</Th><Th>Message</Th><Th right>Count</Th><Th>Trace ID</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {logs.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No logs â€” check /api/v4/ext-observability/logs</td></tr>}
+                {logs.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No logs</td></tr>}
                 {logs.sort((a, b) => {
                   const ord: Record<string, number> = { error: 0, warn: 1, info: 2, debug: 3 }
                   return (ord[a.level] ?? 4) - (ord[b.level] ?? 4)
@@ -310,7 +310,7 @@ export function ExtObservabilityUI2() {
                     <Td mono col={BLUE}>{l.service}</Td>
                     <Td mono col={l.level === 'error' ? RED : TEXT} style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{l.message}</Td>
                     <Td right mono col={l.count > 10 ? ORANGE : SUBTLE}>{l.count.toLocaleString()}</Td>
-                    <Td mono col={SUBTLE}>{l.traceId ? l.traceId.slice(0, 10) + 'â€¦' : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{l.traceId ? l.traceId.slice(0, 10) + 'â€¦' : '—'}</Td>
                     <Td mono col={SUBTLE}>{l.timestamp}</Td>
                   </tr>
                 ))}
@@ -324,7 +324,7 @@ export function ExtObservabilityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Extension</Th><Th>Depends On</Th><Th>Type</Th><Th>Status</Th><Th>Latency</Th><Th right>Error Rate %</Th><Th>Version</Th><Th>Critical</Th><Th>Last Checked</Th></tr></thead>
               <tbody>
-                {deps.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No dependencies â€” check /api/v4/ext-observability/dependencies</td></tr>}
+                {deps.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No dependencies</td></tr>}
                 {deps.sort((a, b) => {
                   const ord: Record<string, number> = { down: 0, degraded: 1, unknown: 2, healthy: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -336,8 +336,8 @@ export function ExtObservabilityUI2() {
                     <Td><StatusBadge2 s={d.status} /></Td>
                     <Td><LatBar val={d.latencyMs} max={500} /></Td>
                     <Td right mono col={d.errorRate > 5 ? RED : d.errorRate > 1 ? AMBER : GREEN}>{d.errorRate.toFixed(2)}%</Td>
-                    <Td mono col={SUBTLE}>{d.version || 'â€”'}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.critical ? RED : SUBTLE }}>{d.critical ? '⚠‘ CRITICAL' : 'â€”'}</span></Td>
+                    <Td mono col={SUBTLE}>{d.version || '—'}</Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: d.critical ? RED : SUBTLE }}>{d.critical ? '⚠‘ CRITICAL' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{d.lastChecked}</Td>
                   </tr>
                 ))}
@@ -351,7 +351,7 @@ export function ExtObservabilityUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Alert ID</Th><Th>Extension</Th><Th>Severity</Th><Th>Type</Th><Th>Message</Th><Th right>Affected Users</Th><Th>SLO Violation</Th><Th>Acked</Th><Th>Resolved</Th><Th>Triggered</Th></tr></thead>
               <tbody>
-                {alerts.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts â€” check /api/v4/ext-observability/alerts</td></tr>}
+                {alerts.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts</td></tr>}
                 {alerts.sort((a, b) => {
                   const ord: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (ord[a.severity] ?? 4) - (ord[b.severity] ?? 4)

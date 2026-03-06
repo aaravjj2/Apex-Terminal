@@ -5,7 +5,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090/api/v3/cockpit';
+const API = 'http://localhost:8000/api/v3/cockpit';
 
 test.beforeEach(async ({ request }) => {
   await request.delete(`${API}/data`);

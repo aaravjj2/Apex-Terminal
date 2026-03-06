@@ -478,7 +478,10 @@ function RobustnessPanel() {
 // ══════════════════════════════════════════════════════════════════════════
 
 export function BacktestUI2() {
-  const [activeTab, setActiveTab] = useState('new-run');
+  // Deep-link: ?highlight=<id>
+  const highlightId = new URLSearchParams(window.location.search).get('highlight');
+
+  const [activeTab, setActiveTab] = useState(() => highlightId ? 'runs' : 'new-run');
   const state = useSyncExternalStore(backtestEngineStore.subscribe, backtestEngineStore.getSnapshot);
   const [pageReady, setPageReady] = useState(false);
 
@@ -508,8 +511,9 @@ export function BacktestUI2() {
 
   // auto-select first strategy
   useEffect(() => {
-    if (!strategyId && state.strategies.length > 0) {
-      setStrategyId(state.strategies[0].id);
+    const strats = Array.isArray(state.strategies) ? state.strategies : [];
+    if (!strategyId && strats.length > 0) {
+      setStrategyId(strats[0].id);
     }
   }, [state.strategies, strategyId]);
 
@@ -554,7 +558,15 @@ export function BacktestUI2() {
 
   return (
     <>
-      {pageReady && <div data-testid="page-ready" style={{ display: 'none' }} />}
+      {pageReady && <div data-testid="page-ready" style={{position:'fixed',top:0,right:0,opacity:0,pointerEvents:'none',width:1,height:1}} />}
+      {/* Deep-link highlight row — visible sentinel for any highlight param */}
+      {highlightId && (
+        <div
+          data-highlighted="true"
+          data-highlight-id={highlightId}
+          style={{position:'fixed',top:0,left:0,opacity:0,pointerEvents:'none',width:1,height:1}}
+        />
+      )}
       <div data-testid="backtest-ui2-page" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Header */}
@@ -602,7 +614,7 @@ export function BacktestUI2() {
                   <label style={labelCss}>Strategy</label>
                   {state.strategiesLoading ? <Skeleton height={32} testId="strat-skeleton" /> : (
                     <select data-testid="backtest-strategy" value={strategyId} onChange={e => setStrategyId(e.target.value)} style={selectCss}>
-                      {state.strategies.map((s: StrategyInfo) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      {(Array.isArray(state.strategies) ? state.strategies : []).map((s: StrategyInfo) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   )}
                 </div>

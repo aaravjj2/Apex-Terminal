@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// CrossAssetQuoteUI2 â€” Bloomberg XASQ-grade cross-asset quote matrix terminal
+﻿// CrossAssetQuoteUI2 — Bloomberg XASQ-grade cross-asset quote matrix terminal
 // Tabs: QUOTE MATRIX | WATCHLIST | HEATMAP | SPREADS | ANALYTICS
 // APIs: /api/v4/quotes/matrix, /api/v4/quotes/watchlist,
 //       /api/v4/quotes/heatmap, /api/v4/quotes/spreads,
@@ -112,7 +112,7 @@ function ChangeCell({ v }: { v: number }) {
 }
 
 function fmtPrice(v: number, ac?: AssetClass) {
-  if (!v && v !== 0) return 'â€”'
+  if (!v && v !== 0) return '—'
   if (ac === 'fx') return v.toFixed(5)
   if (ac === 'rates') return v.toFixed(3)
   return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -211,7 +211,7 @@ export function CrossAssetQuoteUI2() {
   useEffect(() => {
     setLoading(true)
     fetchAll().finally(() => setLoading(false))
-    pollRef.current = setInterval(fetchAll, 3000)  // real-time quotes â€” 3s poll
+    pollRef.current = setInterval(fetchAll, 3000)  // real-time quotes — 3s poll
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [fetchAll])
 
@@ -249,7 +249,7 @@ export function CrossAssetQuoteUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>XASQ</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>CROSS-ASSET QUOTE MATRIX â€” MULTI-EXCHANGE REAL-TIME FEEDS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CROSS-ASSET QUOTE MATRIX — MULTI-EXCHANGE REAL-TIME FEEDS</span>
         {alertCount > 0 && <span style={{ fontSize: 10, color: RED }}>⚠¡ {alertCount} ALERTS</span>}
         {loading && <span style={{ fontSize: 9, color: SUBTLE }}>â—</span>}
       </div>
@@ -312,7 +312,7 @@ export function CrossAssetQuoteUI2() {
             <tbody>
               {filtQuotes.length === 0 && (
                 <tr><td colSpan={12} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                  No quotes â€” check /api/v4/quotes/matrix
+                  No quotes
                 </td></tr>
               )}
               {filtQuotes.map(q => (
@@ -338,7 +338,7 @@ export function CrossAssetQuoteUI2() {
         {/* â”€â”€ HEATMAP â”€â”€ */}
         {tab === 'heatmap' && (
           <div style={{ padding: 16 }}>
-            {heatmap.length === 0 ? <div style={{ color: SUBTLE, fontSize: 11 }}>No heatmap data â€” check /api/v4/quotes/heatmap</div> : (
+            {heatmap.length === 0 ? <div style={{ color: SUBTLE, fontSize: 11 }}>No heatmap data</div> : (
               (() => {
                 const sectors = [...new Set(heatmap.map(c => c.sector ?? c.assetClass))]
                 return (
@@ -387,7 +387,7 @@ export function CrossAssetQuoteUI2() {
             <tbody>
               {spreadData.length === 0 && (
                 <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                  No spread data â€” check /api/v4/quotes/spreads
+                  No spread data
                 </td></tr>
               )}
               {spreadData.map((s, i) => (
@@ -419,7 +419,7 @@ export function CrossAssetQuoteUI2() {
             <tbody>
               {analytics.length === 0 && (
                 <tr><td colSpan={9} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                  No analytics â€” check /api/v4/quotes/analytics
+                  No analytics
                 </td></tr>
               )}
               {analytics.map((a, i) => (
@@ -430,8 +430,8 @@ export function CrossAssetQuoteUI2() {
                   <Td right mono col={Math.abs(a.correlationToSPY) > 0.8 ? ORANGE : SUBTLE}>{a.correlationToSPY.toFixed(3)}</Td>
                   <Td right mono col={a.beta > 1.5 ? ORANGE : SUBTLE}>{a.beta.toFixed(2)}</Td>
                   <Td right mono>{(a.realizedVol * 100).toFixed(1)}%</Td>
-                  <Td right mono col={a.impliedVol !== undefined && a.impliedVol > a.realizedVol ? RED : GREEN}>{a.impliedVol !== undefined ? (a.impliedVol * 100).toFixed(1) + '%' : 'â€”'}</Td>
-                  <Td right mono col={a.skew !== undefined && a.skew > 0 ? PURPLE : SUBTLE}>{a.skew !== undefined ? a.skew.toFixed(3) : 'â€”'}</Td>
+                  <Td right mono col={a.impliedVol !== undefined && a.impliedVol > a.realizedVol ? RED : GREEN}>{a.impliedVol !== undefined ? (a.impliedVol * 100).toFixed(1) + '%' : '—'}</Td>
+                  <Td right mono col={a.skew !== undefined && a.skew > 0 ? PURPLE : SUBTLE}>{a.skew !== undefined ? a.skew.toFixed(3) : '—'}</Td>
                   <Td right mono col={a.relativeStrength > 60 ? GREEN : a.relativeStrength < 40 ? RED : SUBTLE}>{a.relativeStrength.toFixed(0)}</Td>
                 </tr>
               ))}

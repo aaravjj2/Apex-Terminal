@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// OperatorEnableUI2 â€” Bloomberg APEX operator enablement terminal
+﻿// OperatorEnableUI2 — Bloomberg APEX operator enablement terminal
 // Training, playbooks, certifications, competency tracking, audit
 // Tabs: OPERATORS | PLAYBOOKS | CERTIFICATIONS | COMPETENCY | AUDIT
 // APIs: /api/v4/operator-enable/operators, /playbooks, /certs, /competency, /audit
@@ -214,7 +214,7 @@ export function OperatorEnableUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>OPERATOR ENABLEMENT â€” TRAINING + PLAYBOOKS + COMPETENCY TRACKING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>OPERATOR ENABLEMENT — TRAINING + PLAYBOOKS + COMPETENCY TRACKING</span>
         {expiredCerts > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {expiredCerts} EXPIRED CERTS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
@@ -240,18 +240,18 @@ export function OperatorEnableUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Operator</Th><Th>Role</Th><Th>Team</Th><Th>Status</Th><Th>Cert Level</Th><Th>Progress</Th><Th right>Incidents</Th><Th right>Avg Score</Th><Th>Last Active</Th></tr></thead>
               <tbody>
-                {operators.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No operators â€” check /api/v4/operator-enable/operators</td></tr>}
+                {operators.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No operators</td></tr>}
                 {operators.sort((a, b) => a.name.localeCompare(b.name)).map((o, i) => (
                   <tr key={i} style={{ background: o.status === 'suspended' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{o.name}</Td>
                     <Td mono col={BLUE}>{o.role}</Td>
                     <Td mono col={SUBTLE}>{o.team}</Td>
                     <Td><StatusBadge s={o.status} /></Td>
-                    <Td mono col={PURPLE}>{o.certLevel || 'â€”'}</Td>
+                    <Td mono col={PURPLE}>{o.certLevel || '—'}</Td>
                     <Td><MiniBar done={o.completedModules} total={o.totalModules} /></Td>
                     <Td right mono col={TEXT}>{o.incidentsHandled}</Td>
                     <Td right mono col={o.avgScorePct >= 80 ? GREEN : o.avgScorePct >= 60 ? AMBER : RED}>{o.avgScorePct.toFixed(1)}%</Td>
-                    <Td mono col={SUBTLE}>{o.lastActive || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{o.lastActive || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -264,18 +264,18 @@ export function OperatorEnableUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Playbook</Th><Th>Category</Th><Th>Version</Th><Th>Status</Th><Th>Cert Required</Th><Th right>Steps</Th><Th right>Assigned</Th><Th right>Completion %</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {playbooks.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No playbooks â€” check /api/v4/operator-enable/playbooks</td></tr>}
+                {playbooks.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No playbooks</td></tr>}
                 {playbooks.sort((a, b) => a.title.localeCompare(b.title)).map((p, i) => (
                   <tr key={i} style={{ opacity: p.status === 'deprecated' ? 0.5 : 1 }}>
                     <Td mono col={AMBER}>{p.title}</Td>
                     <Td mono col={BLUE}>{p.category}</Td>
                     <Td mono col={SUBTLE}>{p.version}</Td>
                     <Td><StatusBadge s={p.status} /></Td>
-                    <Td mono col={PURPLE}>{p.requiredCertLevel || 'â€”'}</Td>
+                    <Td mono col={PURPLE}>{p.requiredCertLevel || '—'}</Td>
                     <Td right mono col={SUBTLE}>{p.steps}</Td>
                     <Td right mono col={TEXT}>{p.assignedOperators}</Td>
                     <Td right mono col={p.completionRatePct >= 80 ? GREEN : p.completionRatePct >= 50 ? AMBER : RED}>{p.completionRatePct.toFixed(1)}%</Td>
-                    <Td mono col={SUBTLE}>{p.lastUpdated || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{p.lastUpdated || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -288,7 +288,7 @@ export function OperatorEnableUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Cert</Th><Th>Operator</Th><Th>Level</Th><Th>Status</Th><Th right>Score</Th><Th>Issued</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {certs.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No certifications â€” check /api/v4/operator-enable/certs</td></tr>}
+                {certs.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No certifications</td></tr>}
                 {certs.sort((a, b) => a.status === 'expired' ? -1 : 1).map((c, i) => (
                   <tr key={i} style={{ background: c.status === 'expired' ? ORANGE + '0a' : c.status === 'revoked' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.certName}</Td>
@@ -297,7 +297,7 @@ export function OperatorEnableUI2() {
                     <Td><StatusBadge s={c.status} /></Td>
                     <Td right mono col={c.score >= 80 ? GREEN : c.score >= 60 ? AMBER : RED}>{c.score.toFixed(1)}</Td>
                     <Td mono col={SUBTLE}>{c.issuedAt}</Td>
-                    <Td mono col={c.status === 'expired' ? ORANGE : SUBTLE}>{c.expiresAt || 'â€”'}</Td>
+                    <Td mono col={c.status === 'expired' ? ORANGE : SUBTLE}>{c.expiresAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -310,7 +310,7 @@ export function OperatorEnableUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Operator</Th><Th>Domain</Th><Th>Skill</Th><Th>Proficiency</Th><Th right>Score %</Th><Th>Assessor</Th><Th>Assessed</Th></tr></thead>
               <tbody>
-                {competency.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No competency data â€” check /api/v4/operator-enable/competency</td></tr>}
+                {competency.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No competency data</td></tr>}
                 {competency.map((c, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{c.operatorName}</Td>
@@ -332,7 +332,7 @@ export function OperatorEnableUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Operator</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/operator-enable/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -340,7 +340,7 @@ export function OperatorEnableUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

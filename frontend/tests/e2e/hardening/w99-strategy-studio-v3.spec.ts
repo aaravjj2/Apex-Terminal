@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090/api/v3/strategy-studio';
+const API = 'http://localhost:8000/api/v3/strategy-studio';
 const UI = 'http://localhost:5100/ui2/strategy-studio';
 
 test.beforeEach(async ({ request }) => {

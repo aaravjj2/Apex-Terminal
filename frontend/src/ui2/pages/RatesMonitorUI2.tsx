@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// RatesMonitorUI2 â€” Bloomberg APEX interest rates monitor
+﻿// RatesMonitorUI2 — Bloomberg APEX interest rates monitor
 // Yield curves, spreads, central bank tracking, sovereign bonds
 // Tabs: YIELD CURVES | SPREADS | CENTRAL BANKS | BONDS | AUDIT
 // APIs: /api/v4/rates/yield-curves, /spreads, /central-banks, /bonds, /audit
@@ -207,7 +207,7 @@ export function RatesMonitorUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>RATES MONITOR â€” YIELD CURVES + SPREADS + CENTRAL BANK + SOVEREIGN BONDS</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>RATES MONITOR — YIELD CURVES + SPREADS + CENTRAL BANK + SOVEREIGN BONDS</span>
         {invertedCount > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {invertedCount} INVERTED CURVE{invertedCount > 1 ? 'S' : ''}</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
       </div>
@@ -233,7 +233,7 @@ export function RatesMonitorUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Country</Th><Th>CCY</Th><Th right>1M</Th><Th right>3M</Th><Th right>6M</Th><Th right>1Y</Th><Th right>2Y</Th><Th right>5Y</Th><Th right>10Y</Th><Th right>30Y</Th><Th right>Slope 10Y-2Y</Th><Th>Shape</Th><Th>As of</Th></tr></thead>
               <tbody>
-                {yieldCurves.length === 0 && <tr><td colSpan={13} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No yield curves â€” check /api/v4/rates/yield-curves</td></tr>}
+                {yieldCurves.length === 0 && <tr><td colSpan={13} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No yield curves</td></tr>}
                 {yieldCurves.map((y, i) => (
                   <tr key={i} style={{ background: y.inverted ? ORANGE + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{y.country}</Td>
@@ -261,7 +261,7 @@ export function RatesMonitorUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Leg A</Th><Th>Leg B</Th><Th>Category</Th><Th right>Spread bps</Th><Th right>Chg bps</Th><Th right>52W Low</Th><Th right>52W High</Th><Th>As of</Th></tr></thead>
               <tbody>
-                {spreads.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No spread data â€” check /api/v4/rates/spreads</td></tr>}
+                {spreads.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No spread data</td></tr>}
                 {spreads.sort((a, b) => Math.abs(b.changeBps) - Math.abs(a.changeBps)).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.name}</Td>
@@ -285,7 +285,7 @@ export function RatesMonitorUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Bank</Th><Th>Country</Th><Th>CCY</Th><Th right>Current Rate</Th><Th right>Prev Rate</Th><Th right>Expected Î” bp</Th><Th right>Market Implied</Th><Th>Bias</Th><Th>Next Meeting</Th><Th>Last Action</Th></tr></thead>
               <tbody>
-                {centralBanks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No central bank data â€” check /api/v4/rates/central-banks</td></tr>}
+                {centralBanks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No central bank data</td></tr>}
                 {centralBanks.map((c, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{c.name}</Td>
@@ -296,8 +296,8 @@ export function RatesMonitorUI2() {
                     <Td right><BpsChange bps={c.expectedChange} /></Td>
                     <Td right mono col={TEXT}>{c.marketImplied.toFixed(2)}%</Td>
                     <Td><HikeCut v={c.hike_cut} /></Td>
-                    <Td mono col={SUBTLE}>{c.nextMeeting || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{c.lastAction || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{c.nextMeeting || '—'}</Td>
+                    <Td mono col={SUBTLE}>{c.lastAction || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -310,7 +310,7 @@ export function RatesMonitorUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Issuer</Th><Th>ISIN</Th><Th>Maturity</Th><Th right>Coupon %</Th><Th right>Yield %</Th><Th right>Duration</Th><Th right>Bid</Th><Th right>Ask</Th><Th right>Spread vs Swap</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {bonds.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bond data â€” check /api/v4/rates/bonds</td></tr>}
+                {bonds.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No bond data</td></tr>}
                 {bonds.sort((a, b) => a.yieldPct - b.yieldPct).map((b, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{b.issuer}</Td>
@@ -335,7 +335,7 @@ export function RatesMonitorUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/rates/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

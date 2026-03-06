@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// IncidentAiUI2 â€” Bloomberg INAI incident-aware AI fallback terminal
+﻿// IncidentAiUI2 — Bloomberg INAI incident-aware AI fallback terminal
 // Active incidents, fallback states, recovery workflows, postmortems, audit
 // Tabs: INCIDENTS | FALLBACKS | RECOVERY | POSTMORTEM | AUDIT
 // APIs: /api/v4/incident-ai/incidents, /fallbacks, /recovery, /postmortem, /audit
@@ -210,7 +210,7 @@ export function IncidentAiUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>INAI</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>INCIDENT AI â€” ACTIVE INCIDENTS + AI FALLBACK STATES + RECOVERY + POSTMORTEM</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>INCIDENT AI — ACTIVE INCIDENTS + AI FALLBACK STATES + RECOVERY + POSTMORTEM</span>
         {sev1Count > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {sev1Count} SEV1 ACTIVE</span>}
         {activeFallbacks > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeFallbacks} FALLBACKS ACTIVE</span>}
         {blockedTasks > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {blockedTasks} RECOVERY BLOCKED</span>}
@@ -238,7 +238,7 @@ export function IncidentAiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Incident ID</Th><Th>Title</Th><Th>Severity</Th><Th>Status</Th><Th>Service</Th><Th right>Affected Users</Th><Th>Owner</Th><Th right>MTTR (min)</Th><Th>AI</Th><Th>Start</Th></tr></thead>
               <tbody>
-                {incidents.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No incidents â€” check /api/v4/incident-ai/incidents</td></tr>}
+                {incidents.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No incidents</td></tr>}
                 {incidents.sort((a, b) => {
                   const ord: Record<string, number> = { sev1: 0, sev2: 1, sev3: 2, sev4: 3 }
                   return (ord[a.severity] ?? 4) - (ord[b.severity] ?? 4)
@@ -252,7 +252,7 @@ export function IncidentAiUI2() {
                     <Td right mono col={i.affectedUsers > 1000 ? RED : i.affectedUsers > 100 ? AMBER : SUBTLE}>{i.affectedUsers.toLocaleString()}</Td>
                     <Td mono col={SUBTLE}>{i.owner}</Td>
                     <Td right mono col={i.mttrMinutes > 60 ? RED : i.mttrMinutes > 30 ? AMBER : GREEN}>{i.mttrMinutes}</Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: i.aiTriggered ? PURPLE : SUBTLE }}>{i.aiTriggered ? 'AI' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: i.aiTriggered ? PURPLE : SUBTLE }}>{i.aiTriggered ? 'AI' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{i.startTime}</Td>
                   </tr>
                 ))}
@@ -266,7 +266,7 @@ export function IncidentAiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Fallback ID</Th><Th>Service</Th><Th>Mode</Th><Th>Status</Th><Th>Trigger</Th><Th right>Latency (ms)</Th><Th right>Success %</Th><Th>Incident</Th><Th>Activated</Th></tr></thead>
               <tbody>
-                {fallbacks.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No fallbacks â€” check /api/v4/incident-ai/fallbacks</td></tr>}
+                {fallbacks.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No fallbacks</td></tr>}
                 {fallbacks.sort((a, b) => Number(b.status === 'active') - Number(a.status === 'active')).map((f, i) => (
                   <tr key={i} style={{ background: f.status === 'active' ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{f.fallbackId}</Td>
@@ -276,7 +276,7 @@ export function IncidentAiUI2() {
                     <Td mono col={SUBTLE}>{f.triggerReason}</Td>
                     <Td right mono col={f.fallbackLatencyMs > 500 ? ORANGE : SUBTLE}>{f.fallbackLatencyMs}</Td>
                     <Td right mono col={f.successRate < 90 ? RED : f.successRate < 99 ? AMBER : GREEN}>{f.successRate.toFixed(1)}%</Td>
-                    <Td mono col={BLUE}>{f.incidentRef || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{f.incidentRef || '—'}</Td>
                     <Td mono col={SUBTLE}>{f.activatedAt}</Td>
                   </tr>
                 ))}
@@ -290,7 +290,7 @@ export function IncidentAiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Task ID</Th><Th>Incident</Th><Th>Title</Th><Th>Priority</Th><Th>Status</Th><Th>Assigned</Th><Th>Automation</Th><Th>Due</Th><Th>Completed</Th></tr></thead>
               <tbody>
-                {recovery.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No recovery tasks â€” check /api/v4/incident-ai/recovery</td></tr>}
+                {recovery.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No recovery tasks</td></tr>}
                 {recovery.sort((a, b) => {
                   const ord: Record<string, number> = { blocked: 0, pending: 1, 'in-progress': 2, done: 3 }
                   return (ord[a.status] ?? 4) - (ord[b.status] ?? 4)
@@ -304,7 +304,7 @@ export function IncidentAiUI2() {
                     <Td mono col={SUBTLE}>{r.assignedTo}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: r.automationAvailable ? GREEN : SUBTLE }}>{r.automationAvailable ? '⚠™ AUTO' : 'MANUAL'}</span></Td>
                     <Td mono col={AMBER}>{r.dueAt}</Td>
-                    <Td mono col={r.completedAt ? GREEN : SUBTLE}>{r.completedAt || 'â€”'}</Td>
+                    <Td mono col={r.completedAt ? GREEN : SUBTLE}>{r.completedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -317,7 +317,7 @@ export function IncidentAiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>PM ID</Th><Th>Title</Th><Th>Severity</Th><Th>Status</Th><Th>Author</Th><Th>Root Cause</Th><Th right>Action Items</Th><Th right>Open Items</Th><Th>Follow-Up</Th></tr></thead>
               <tbody>
-                {postmortem.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No postmortems â€” check /api/v4/incident-ai/postmortem</td></tr>}
+                {postmortem.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No postmortems</td></tr>}
                 {postmortem.sort((a, b) => {
                   const ord: Record<string, number> = { draft: 0, review: 1, published: 2 }
                   return (ord[a.status] ?? 3) - (ord[b.status] ?? 3)
@@ -344,7 +344,7 @@ export function IncidentAiUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Incident</Th><Th>Action</Th><Th>Actor</Th><Th>Automated</Th><Th>Outcome</Th><Th>Details</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/incident-ai/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'failure' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>

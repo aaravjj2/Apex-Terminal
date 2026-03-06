@@ -10,7 +10,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8090';
+const API = 'http://localhost:8000';
 
 test.describe('W115 — Broker sync monitor', () => {
   test('w115-01 broker endpoint returns 200', async ({ request }) => {

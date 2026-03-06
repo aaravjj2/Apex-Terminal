@@ -1,5 +1,5 @@
-﻿/**
- * ScreenersUI2 â€” Bloomberg EQS-Grade Stock Screener Terminal
+/**
+ * ScreenersUI2 — Bloomberg EQS-Grade Stock Screener Terminal
  * ===========================================================
  * Full institutional equity screening toolkit:
  *  â€¢ 5 preset preset screener strategies (Momentum / Value / Growth / Mean Reversion / Quality)
@@ -9,7 +9,7 @@
  *  â€¢ Alert manager for price/RSI/volume triggers
  *  â€¢ Universe ranking by composite weighted score
  *  â€¢ Sortable, filterable results with live updates
- *  â€¢ All data from /api/v4/screener â€” real screener_engine.py backend
+ *  â€¢ All data from /api/v4/screener — real screener_engine.py backend
  */
 
 import { useState, useCallback, type CSSProperties } from 'react';
@@ -77,8 +77,8 @@ const td: CSSProperties = {
   borderBottom: `1px solid ${BORDER}22`, whiteSpace: 'nowrap',
 };
 
-const fmt  = (v: unknown, d = 2) => v != null && !isNaN(Number(v)) ? Number(v).toFixed(d) : 'â€”';
-const fmtM = (v: number | undefined) => v == null ? 'â€”' : v > 1e9 ? `${(v / 1e9).toFixed(1)}B` : v > 1e6 ? `${(v / 1e6).toFixed(1)}M` : v.toFixed(0);
+const fmt  = (v: unknown, d = 2) => v != null && !isNaN(Number(v)) ? Number(v).toFixed(d) : '—';
+const fmtM = (v: number | undefined) => v == null ? '—' : v > 1e9 ? `${(v / 1e9).toFixed(1)}B` : v > 1e6 ? `${(v / 1e6).toFixed(1)}M` : v.toFixed(0);
 
 // â”€â”€â”€ Preset definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -145,7 +145,7 @@ function CriteriaBuilder({
       </div>
       {criteria.length === 0 && (
         <div style={{ fontSize: 10, color: SUBTLE, padding: '10px 0', fontFamily: MONO }}>
-          No criteria â€” add criteria above or use a preset
+          No criteria — add criteria above or use a preset
         </div>
       )}
       {criteria.map((c, i) => (
@@ -178,7 +178,7 @@ function ResultsTable({ results, sortKey, sortDir, onSort }:
   { results: ScreenerResult[]; sortKey: string; sortDir: 'asc' | 'desc'; onSort: (k: string) => void }) {
   if (!results.length) return (
     <div style={{ padding: '30px', textAlign: 'center', color: SUBTLE, fontSize: 11, fontFamily: MONO }}>
-      No results â€” run a screener to populate table
+      No results — run a screener to populate table
     </div>
   );
 
@@ -220,28 +220,28 @@ function ResultsTable({ results, sortKey, sortDir, onSort }:
             return (
               <tr key={i} style={{ background: i % 2 === 0 ? '#0d0d0d' : 'transparent' }}>
                 <td style={{ ...td, textAlign: 'left', color: AMBER, fontWeight: 700 }}>{r.symbol}</td>
-                <td style={td}>{r.price != null ? r.price.toFixed(2) : 'â€”'}</td>
+                <td style={td}>{r.price != null ? r.price.toFixed(2) : '—'}</td>
                 <td style={{ ...td, color: chg >= 0 ? GREEN : RED, fontWeight: 600 }}>
-                  {chg !== 0 ? `${chg >= 0 ? '+' : ''}${(chg * 100).toFixed(2)}%` : 'â€”'}
+                  {chg !== 0 ? `${chg >= 0 ? '+' : ''}${(chg * 100).toFixed(2)}%` : '—'}
                 </td>
                 <td style={{ ...td, color: SUBTLE }}>{fmtM(r.volume)}</td>
                 <td style={{ ...td, color: SUBTLE }}>{fmtM(r.market_cap)}</td>
                 <td style={td}>{fmt(r.pe_ratio)}</td>
                 <td style={td}>{fmt(r.pb_ratio)}</td>
                 <td style={{ ...td, color: rsi == null ? SUBTLE : rsi > 70 ? RED : rsi < 30 ? GREEN : TEXT }}>
-                  {rsi != null ? rsi.toFixed(1) : 'â€”'}
+                  {rsi != null ? rsi.toFixed(1) : '—'}
                 </td>
                 <td style={{ ...td, color: (r.macd ?? 0) >= 0 ? GREEN : RED }}>{fmt(r.macd)}</td>
                 <td style={td}>{fmt(r.atr_14)}</td>
                 <td style={td}>{fmt(r.beta)}</td>
                 <td style={{ ...td, color: fsc == null ? SUBTLE : fsc >= 7 ? GREEN : fsc >= 4 ? AMBER : RED, fontWeight: 600 }}>
-                  {fsc != null ? fsc.toFixed(0) : 'â€”'}
+                  {fsc != null ? fsc.toFixed(0) : '—'}
                 </td>
                 <td style={{ ...td, color: zscore == null ? SUBTLE : zscore > 3 ? GREEN : zscore > 1.8 ? AMBER : RED, fontWeight: 600 }}>
-                  {zscore != null ? zscore.toFixed(2) : 'â€”'}
+                  {zscore != null ? zscore.toFixed(2) : '—'}
                 </td>
                 <td style={{ ...td, color: (r.composite_score ?? 0) >= 0.6 ? GREEN : AMBER, fontWeight: 700 }}>
-                  {r.composite_score != null ? (r.composite_score * 100).toFixed(0) : 'â€”'}
+                  {r.composite_score != null ? (r.composite_score * 100).toFixed(0) : '—'}
                 </td>
               </tr>
             );
@@ -546,7 +546,7 @@ export function ScreenersUI2() {
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', background: '#141414', borderBottom: `1px solid ${BORDER}` }}>
                   <span style={{ fontSize: 10, color: SUBTLE, fontWeight: 700, letterSpacing: '0.08em' }}>
-                    RESULTS â€” {sortedResults.length} STOCKS PASSED
+                    RESULTS — {sortedResults.length} STOCKS PASSED
                   </span>
                   <span style={{ fontSize: 10, color: SUBTLE }}>Sort: {sortKey} {sortDir === 'asc' ? 'â†‘' : 'â†“'}</span>
                 </div>
@@ -581,9 +581,9 @@ export function ScreenersUI2() {
                     <>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
                         <div style={{ fontSize: 40, fontWeight: 700, color: (scoreResult.piotroski as Record<string,unknown>).total_score as number >= 7 ? GREEN : (scoreResult.piotroski as Record<string,unknown>).total_score as number >= 4 ? AMBER : RED }}>
-                          {String((scoreResult.piotroski as Record<string,unknown>).total_score ?? 'â€”')}
+                          {String((scoreResult.piotroski as Record<string,unknown>).total_score ?? '—')}
                         </div>
-                        <div style={{ fontSize: 10, color: SUBTLE }}>/9 â€” {(scoreResult.piotroski as Record<string,unknown>).total_score as number >= 7 ? 'STRONG' : (scoreResult.piotroski as Record<string,unknown>).total_score as number >= 4 ? 'NEUTRAL' : 'WEAK'}</div>
+                        <div style={{ fontSize: 10, color: SUBTLE }}>/9 — {(scoreResult.piotroski as Record<string,unknown>).total_score as number >= 7 ? 'STRONG' : (scoreResult.piotroski as Record<string,unknown>).total_score as number >= 4 ? 'NEUTRAL' : 'WEAK'}</div>
                       </div>
                       {Object.entries(scoreResult.piotroski as object)
                         .filter(([k]) => k !== 'total_score' && k !== 'symbol')
@@ -655,7 +655,7 @@ export function ScreenersUI2() {
             {rankResult.length > 0 && (
               <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ padding: '5px 10px', background: '#141414', borderBottom: `1px solid ${BORDER}`, fontSize: 10, color: SUBTLE, fontWeight: 700 }}>
-                  RANKED UNIVERSE â€” {rankField.toUpperCase()}
+                  RANKED UNIVERSE — {rankField.toUpperCase()}
                 </div>
                 <table style={{ borderCollapse: 'collapse', width: '100%' }}>
                   <thead>
@@ -675,15 +675,15 @@ export function ScreenersUI2() {
                         <td style={{ ...td, textAlign: 'left', color: i < 3 ? AMBER : SUBTLE }}>{i + 1}</td>
                         <td style={{ ...td, textAlign: 'left', color: AMBER, fontWeight: 700 }}>{r.symbol}</td>
                         <td style={{ ...td, color: TEXT, fontWeight: 600 }}>{fmt(r[rankField])}</td>
-                        <td style={td}>{r.price != null ? r.price.toFixed(2) : 'â€”'}</td>
+                        <td style={td}>{r.price != null ? r.price.toFixed(2) : '—'}</td>
                         <td style={{ ...td, color: (r.price_change ?? 0) >= 0 ? GREEN : RED }}>
-                          {r.price_change != null ? `${((r.price_change) * 100).toFixed(2)}%` : 'â€”'}
+                          {r.price_change != null ? `${((r.price_change) * 100).toFixed(2)}%` : '—'}
                         </td>
                         <td style={{ ...td, color: (r.rsi_14 ?? 50) > 70 ? RED : (r.rsi_14 ?? 50) < 30 ? GREEN : TEXT }}>
                           {fmt(r.rsi_14, 1)}
                         </td>
                         <td style={{ ...td, fontWeight: 700, color: (r.composite_score ?? 0) >= 0.6 ? GREEN : AMBER }}>
-                          {r.composite_score != null ? (r.composite_score * 100).toFixed(0) : 'â€”'}
+                          {r.composite_score != null ? (r.composite_score * 100).toFixed(0) : '—'}
                         </td>
                       </tr>
                     ))}

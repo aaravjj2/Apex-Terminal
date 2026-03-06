@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ModelRouterUI2 â€” Bloomberg MLRT AI model router terminal
+﻿// ModelRouterUI2 — Bloomberg MLRT AI model router terminal
 // Load balancing, fallback chains, cost optimization, health monitoring, audit
 // Tabs: ROUTES | BALANCING | FALLBACKS | COST | AUDIT
-// APIs: /api/v4/model-router/routes, /balancing, /fallbacks, /cost, /audit
+// APIs: /api/v4/model-router/routing-table, /models, /latency, /costs, /route
 
 const BG = '#0a0a0a'
 const PANEL = '#111111'
@@ -220,7 +220,7 @@ export function ModelRouterUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>MLRT</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>AI MODEL ROUTER â€” LOAD BALANCING + FALLBACK CHAINS + COST OPTIMIZATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>AI MODEL ROUTER — LOAD BALANCING + FALLBACK CHAINS + COST OPTIMIZATION</span>
         {degraded > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {degraded} DEGRADED</span>}
         {overloaded > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {overloaded} OVERLOADED</span>}
         {activeFailovers > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {activeFailovers} ACTIVE FAILOVER</span>}
@@ -248,7 +248,7 @@ export function ModelRouterUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Route</Th><Th>Model</Th><Th>Provider</Th><Th>Strategy</Th><Th>Status</Th><Th right>RPM</Th><Th right>Success %</Th><Th right>Latency ms</Th><Th right>$/Token</Th><Th right>Priority</Th><Th>Region</Th></tr></thead>
               <tbody>
-                {routes.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No routes â€” check /api/v4/model-router/routes</td></tr>}
+                {routes.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No routes</td></tr>}
                 {routes.sort((a, b) => a.priority - b.priority).map((r, i) => (
                   <tr key={i} style={{ background: r.status === 'disabled' ? RED + '0a' : r.status === 'degraded' ? AMBER + '07' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.name}</Td>
@@ -274,7 +274,7 @@ export function ModelRouterUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Node ID</Th><Th>Model</Th><Th>Provider</Th><Th>Load</Th><Th>Status</Th><Th right>Connections</Th><Th right>Queued</Th><Th right>CPU %</Th><Th right>Mem MB</Th><Th right>TPS</Th><Th>Updated</Th></tr></thead>
               <tbody>
-                {balancing.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No nodes â€” check /api/v4/model-router/balancing</td></tr>}
+                {balancing.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No nodes</td></tr>}
                 {balancing.sort((a, b) => b.loadPct - a.loadPct).map((b, i) => (
                   <tr key={i} style={{ background: b.status === 'overloaded' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{b.nodeId}</Td>
@@ -300,7 +300,7 @@ export function ModelRouterUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Chain ID</Th><Th>Primary</Th><Th>Fallback Order</Th><Th>Active</Th><Th>Status</Th><Th>Trigger</Th><Th right>Failovers</Th><Th right>Retries</Th><Th right>Timeout ms</Th><Th>Last Failover</Th></tr></thead>
               <tbody>
-                {fallbacks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No fallback chains â€” check /api/v4/model-router/fallbacks</td></tr>}
+                {fallbacks.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No fallback chains</td></tr>}
                 {fallbacks.map((f, i) => (
                   <tr key={i} style={{ background: f.status === 'chain-exhausted' ? RED + '0a' : f.status === 'active-failover' ? AMBER + '07' : 'transparent' }}>
                     <Td mono col={AMBER}>{f.chainId}</Td>
@@ -312,7 +312,7 @@ export function ModelRouterUI2() {
                     <Td right mono col={f.failoverCount > 0 ? ORANGE : SUBTLE}>{f.failoverCount}</Td>
                     <Td right mono col={SUBTLE}>{f.maxRetries}</Td>
                     <Td right mono col={SUBTLE}>{f.timeoutMs}</Td>
-                    <Td mono col={SUBTLE}>{f.lastFailover || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{f.lastFailover || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -325,7 +325,7 @@ export function ModelRouterUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Model</Th><Th>Provider</Th><Th>Period</Th><Th right>Rank</Th><Th right>Prompt Tokens</Th><Th right>Completion</Th><Th right>Total</Th><Th right>Cost $</Th><Th right>Budget $</Th><Th>Utilization</Th><Th>Trend</Th></tr></thead>
               <tbody>
-                {cost.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No cost data â€” check /api/v4/model-router/cost</td></tr>}
+                {cost.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No cost data</td></tr>}
                 {cost.sort((a, b) => b.costUsd - a.costUsd).map((c, i) => (
                   <tr key={i} style={{ background: c.utilizationPct > 100 ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{c.modelId}</Td>
@@ -358,7 +358,7 @@ export function ModelRouterUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Route</Th><Th>Action</Th><Th>Actor</Th><Th>Previous</Th><Th>New</Th><Th>Outcome</Th><Th>Notes</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/model-router/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -368,7 +368,7 @@ export function ModelRouterUI2() {
                     <Td mono col={SUBTLE}>{a.previousConfig}</Td>
                     <Td mono col={TEXT}>{a.newConfig}</Td>
                     <Td><StatusBadge2 s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.notes || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.notes || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// DriftDetectionUI2 â€” Bloomberg DRTD drift detection terminal
+﻿// DriftDetectionUI2 — Bloomberg DRTD drift detection terminal
 // Data drift, model drift, segment analysis, root cause, alerts, retraining
 // Tabs: DRIFT MONITOR | SEGMENTS | ROOT CAUSE | ALERTS | HISTORY
 // APIs: /api/v4/drift-detection/monitor, /segments, /root-cause, /alerts, /history
@@ -227,7 +227,7 @@ export function DriftDetectionUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>DRTD</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>DRIFT DETECTION â€” MODEL DRIFT + SEGMENT ANALYSIS + ROOT CAUSE + ALERTS + HISTORY</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>DRIFT DETECTION — MODEL DRIFT + SEGMENT ANALYSIS + ROOT CAUSE + ALERTS + HISTORY</span>
         {driftedModels > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {driftedModels} DRIFTED</span>}
         {warningModels > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {warningModels} WARNING</span>}
         {criticalAlerts > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalAlerts} CRITICAL ALERTS</span>}
@@ -255,7 +255,7 @@ export function DriftDetectionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Model</Th><Th>Drift Type</Th><Th>Status</Th><Th>Drift Score</Th><Th right>Samples</Th><Th>Test Method</Th><Th>Detected</Th><Th>Baseline</Th></tr></thead>
               <tbody>
-                {monitor.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No monitor â€” check /api/v4/drift-detection/monitor</td></tr>}
+                {monitor.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No monitor</td></tr>}
                 {monitor.sort((a, b) => b.driftScore - a.driftScore).map((m, i) => (
                   <tr key={i} style={{ background: m.status === 'drifted' ? RED + '0a' : m.status === 'warning' ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{m.modelName}</Td>
@@ -278,7 +278,7 @@ export function DriftDetectionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Segment</Th><Th>Dimension</Th><Th right>Drift Score</Th><Th right>Volume</Th><Th right>Vol Change %</Th><Th>Feature Drifted</Th><Th right>p-Value</Th><Th right>JS Div</Th><Th right>Wasserstein</Th></tr></thead>
               <tbody>
-                {segments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No segments â€” check /api/v4/drift-detection/segments</td></tr>}
+                {segments.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No segments</td></tr>}
                 {segments.sort((a, b) => b.driftScore - a.driftScore).map((s, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{s.segmentName}</Td>
@@ -302,7 +302,7 @@ export function DriftDetectionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Model</Th><Th>Feature</Th><Th right>Contribution</Th><Th right>Magnitude</Th><Th>Direction</Th><Th>Expected Range</Th><Th>Current Range</Th><Th>Recommendation</Th></tr></thead>
               <tbody>
-                {rootCause.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No root causes â€” check /api/v4/drift-detection/root-cause</td></tr>}
+                {rootCause.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No root causes</td></tr>}
                 {rootCause.sort((a, b) => b.contribution - a.contribution).map((r, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{r.modelId}</Td>
@@ -325,7 +325,7 @@ export function DriftDetectionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Severity</Th><Th>Model</Th><Th>Drift Type</Th><Th>Metric</Th><Th right>Threshold</Th><Th right>Current</Th><Th>Acked</Th><Th>Retrain</Th><Th>Assigned</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {alerts.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts â€” check /api/v4/drift-detection/alerts</td></tr>}
+                {alerts.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No alerts</td></tr>}
                 {alerts.sort((a, b) => {
                   const ord: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (ord[a.severity] ?? 4) - (ord[b.severity] ?? 4)
@@ -338,7 +338,7 @@ export function DriftDetectionUI2() {
                     <Td right mono col={SUBTLE}>{a.threshold.toFixed(4)}</Td>
                     <Td right mono col={a.currentValue > a.threshold ? RED : GREEN}>{a.currentValue.toFixed(4)}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.acknowledged ? GREEN : RED }}>{a.acknowledged ? 'ACKED' : 'OPEN'}</span></Td>
-                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.retrainingTriggered ? BLUE : SUBTLE }}>{a.retrainingTriggered ? 'TRIGGERED' : 'â€”'}</span></Td>
+                    <Td><span style={{ fontFamily: MONO, fontSize: 9, color: a.retrainingTriggered ? BLUE : SUBTLE }}>{a.retrainingTriggered ? 'TRIGGERED' : '—'}</span></Td>
                     <Td mono col={SUBTLE}>{a.assignedTo}</Td>
                     <Td mono col={SUBTLE}>{a.createdAt}</Td>
                   </tr>
@@ -353,7 +353,7 @@ export function DriftDetectionUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Model</Th><Th>Date</Th><Th>Drift Type</Th><Th right>Drift Score</Th><Th right>PSI</Th><Th right>KS</Th><Th>Outcome</Th><Th>Action</Th></tr></thead>
               <tbody>
-                {history.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history â€” check /api/v4/drift-detection/history</td></tr>}
+                {history.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No history</td></tr>}
                 {history.map((h, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{h.modelId}</Td>
@@ -363,7 +363,7 @@ export function DriftDetectionUI2() {
                     <Td right mono col={h.psi > 0.2 ? RED : h.psi > 0.1 ? AMBER : GREEN}>{h.psi.toFixed(4)}</Td>
                     <Td right mono col={h.ks > 0.1 ? AMBER : GREEN}>{h.ks.toFixed(4)}</Td>
                     <Td><OutcomeBadge s={h.outcome} /></Td>
-                    <Td mono col={SUBTLE} style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{h.actionTaken || 'â€”'}</Td>
+                    <Td mono col={SUBTLE} style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' } as any}>{h.actionTaken || '—'}</Td>
                   </tr>
                 ))}
               </tbody>

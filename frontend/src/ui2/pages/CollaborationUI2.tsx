@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// CollaborationUI2 â€” Bloomberg COLB-grade analyst collaboration terminal
+﻿// CollaborationUI2 — Bloomberg COLB-grade analyst collaboration terminal
 // Shared workspaces, research notes, review workflows, data annotations, team presence
 // Tabs: WORKSPACES | NOTES | REVIEWS | ANNOTATIONS | TEAM
 // APIs: /api/v4/collaboration/workspaces, /notes, /reviews, /annotations, /team
@@ -105,8 +105,8 @@ function StatusDot({ s }: { s: string }) {
 }
 
 function SentimentBadge({ s }: { s: string }) {
-  const m: Record<string, [string, string]> = { bullish: [GREEN, 'â–²'], bearish: [RED, 'â–¼'], neutral: [SUBTLE, 'â€”'] }
-  const [c, icon] = m[s] ?? [SUBTLE, 'â€”']
+  const m: Record<string, [string, string]> = { bullish: [GREEN, 'â–²'], bearish: [RED, 'â–¼'], neutral: [SUBTLE, '—'] }
+  const [c, icon] = m[s] ?? [SUBTLE, '—']
   return <span style={{ fontFamily: MONO, fontSize: 9, color: c }}>{icon} {s.toUpperCase()}</span>
 }
 
@@ -221,7 +221,7 @@ export function CollaborationUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>COLB</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>COLLABORATION â€” WORKSPACES + RESEARCH NOTES + REVIEWS + ANNOTATIONS + TEAM PRESENCE</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>COLLABORATION — WORKSPACES + RESEARCH NOTES + REVIEWS + ANNOTATIONS + TEAM PRESENCE</span>
         <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>â— {onlineCount} ONLINE</span>
         {pendingReviews > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {pendingReviews} PENDING REVIEWS</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -248,7 +248,7 @@ export function CollaborationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Type</Th><Th>Owner</Th><Th>Status</Th><Th right>Members</Th><Th right>Assets</Th><Th right>Notes</Th><Th>Last Activity</Th></tr></thead>
               <tbody>
-                {workspaces.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No workspaces â€” check /api/v4/collaboration/workspaces</td></tr>}
+                {workspaces.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No workspaces</td></tr>}
                 {workspaces.map((w, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{w.name}</Td>
@@ -280,11 +280,11 @@ export function CollaborationUI2() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><Th>Title</Th><Th>Symbol</Th><Th>Author</Th><Th>Sentiment</Th><Th>Status</Th><Th>Tags</Th><Th right>Views</Th><Th right>Comments</Th><Th>Updated</Th></tr></thead>
                 <tbody>
-                  {filteredNotes.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No notes â€” check /api/v4/collaboration/notes</td></tr>}
+                  {filteredNotes.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No notes</td></tr>}
                   {filteredNotes.map((n, i) => (
                     <tr key={i}>
                       <Td><span style={{ fontSize: 11, color: TEXT }}>{n.title}</span></Td>
-                      <Td mono col={AMBER}>{n.symbol || 'â€”'}</Td>
+                      <Td mono col={AMBER}>{n.symbol || '—'}</Td>
                       <Td mono col={BLUE}>{n.author}</Td>
                       <Td><SentimentBadge s={n.sentiment} /></Td>
                       <Td><span style={{ fontFamily: MONO, fontSize: 9, color: n.status === 'published' ? GREEN : n.status === 'draft' ? SUBTLE : n.status === 'under_review' ? AMBER : SUBTLE }}>{n.status.replace(/_/g, ' ').toUpperCase()}</span></Td>
@@ -305,7 +305,7 @@ export function CollaborationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Title</Th><Th>Type</Th><Th>Priority</Th><Th>Status</Th><Th>Requested By</Th><Th>Assigned To</Th><Th right>Comments</Th><Th>Due</Th></tr></thead>
               <tbody>
-                {reviews.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews â€” check /api/v4/collaboration/reviews</td></tr>}
+                {reviews.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews</td></tr>}
                 {reviews.sort((a, b) => { const o: Record<string, number> = { pending: 0, in_review: 1, needs_revision: 2, approved: 3, rejected: 4 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) }).map((r, i) => (
                   <tr key={i} style={{ background: r.priority === 'urgent' && (r.status === 'pending' || r.status === 'in_review') ? RED + '0a' : 'transparent' }}>
                     <Td><span style={{ fontSize: 11, color: TEXT }}>{r.title}</span></Td>
@@ -328,7 +328,7 @@ export function CollaborationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Type</Th><Th right>Price</Th><Th>Text</Th><Th>Author</Th><Th>Visible</Th><Th right>Shared With</Th><Th>Created</Th></tr></thead>
               <tbody>
-                {annotations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No annotations â€” check /api/v4/collaboration/annotations</td></tr>}
+                {annotations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No annotations</td></tr>}
                 {annotations.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.symbol}</Td>
@@ -351,13 +351,13 @@ export function CollaborationUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Name</Th><Th>Role</Th><Th>Status</Th><Th>Current Activity</Th><Th right>Notes</Th><Th right>Reviews</Th><Th right>Workspaces</Th><Th>Last Seen</Th></tr></thead>
               <tbody>
-                {team.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No team members â€” check /api/v4/collaboration/team</td></tr>}
+                {team.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No team members</td></tr>}
                 {team.sort((a, b) => { const o: Record<string, number> = { online: 0, busy: 1, away: 2, offline: 3 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) }).map((m, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}><span style={{ display: 'flex', alignItems: 'center' }}><StatusDot s={m.status} />{m.displayName}</span></Td>
                     <Td mono col={BLUE}>{m.role}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: m.status === 'online' ? GREEN : m.status === 'away' ? AMBER : m.status === 'busy' ? RED : SUBTLE }}>{m.status.toUpperCase()}</span></Td>
-                    <Td><span style={{ fontSize: 10, color: SUBTLE }}>{m.currentActivity || 'â€”'}</span></Td>
+                    <Td><span style={{ fontSize: 10, color: SUBTLE }}>{m.currentActivity || '—'}</span></Td>
                     <Td right mono col={m.notesCount > 0 ? BLUE : SUBTLE}>{m.notesCount}</Td>
                     <Td right mono col={m.reviewsCompleted > 0 ? GREEN : SUBTLE}>{m.reviewsCompleted}</Td>
                     <Td right mono col={PURPLE}>{m.workspaces.length}</Td>

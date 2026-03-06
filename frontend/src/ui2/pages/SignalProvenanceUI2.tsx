@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// SignalProvenanceUI2 â€” Bloomberg APEX Signal Provenance terminal
+﻿// SignalProvenanceUI2 — Bloomberg APEX Signal Provenance terminal
 // Signal lineage tracking, reproducibility attestation, provenance ledger, audit chain
 // Tabs: SIGNALS | LINEAGE | ATTESTATION | REPRODUCIBILITY | AUDIT
 // APIs: /api/v4/signal-provenance/signals, /lineage, /attestation, /reproducibility, /audit
@@ -236,7 +236,7 @@ export function SignalProvenanceUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>SIGNAL PROVENANCE â€” LINEAGE TRACKING + REPRODUCIBILITY ATTESTATION + AUDIT LEDGER</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>SIGNAL PROVENANCE — LINEAGE TRACKING + REPRODUCIBILITY ATTESTATION + AUDIT LEDGER</span>
         {expiredAttestations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {expiredAttestations} ATTESTATION EXPIRED</span>}
         {failedReplays > 0 && <span style={{ fontSize: 10, color: RED }}>⚠‘ {failedReplays} REPLAY FAILURES</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -263,7 +263,7 @@ export function SignalProvenanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Signal ID</Th><Th>Name</Th><Th>Category</Th><Th>Status</Th><Th>Version</Th><Th>Owner</Th><Th right>Sources</Th><Th right>Derived</Th><Th>Reproduct.</Th><Th>Hash</Th></tr></thead>
               <tbody>
-                {signals.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No signals â€” check /api/v4/signal-provenance/signals</td></tr>}
+                {signals.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No signals</td></tr>}
                 {signals.sort((a, b) => a.status === 'deprecated' ? 1 : -1).map((s, i) => (
                   <tr key={i} style={{ opacity: s.status === 'deprecated' ? 0.6 : 1 }}>
                     <Td mono col={AMBER}>{s.signalId}</Td>
@@ -271,11 +271,11 @@ export function SignalProvenanceUI2() {
                     <Td><CatBadge c={s.category} /></Td>
                     <Td><StatusBadge s={s.status} /></Td>
                     <Td mono col={SUBTLE}>{s.version}</Td>
-                    <Td mono col={BLUE}>{s.owner || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{s.owner || '—'}</Td>
                     <Td right mono col={TEXT}>{s.dataSourceCount}</Td>
                     <Td right mono col={TEXT}>{s.derivedSignalCount}</Td>
                     <Td><ScoreBar score={s.reproducibilityScore} /></Td>
-                    <Td mono col={SUBTLE}>{s.hash ? s.hash.slice(0, 12) + 'â€¦' : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{s.hash ? s.hash.slice(0, 12) + 'â€¦' : '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -288,19 +288,19 @@ export function SignalProvenanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Node ID</Th><Th>Signal</Th><Th>Transformation</Th><Th>Up/Downstream</Th><Th>Env</Th><Th>Data Vintage</Th><Th>Param Hash</Th><Th>Computed At</Th><Th>Root</Th><Th>Leaf</Th></tr></thead>
               <tbody>
-                {lineage.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No lineage data â€” check /api/v4/signal-provenance/lineage</td></tr>}
+                {lineage.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No lineage data</td></tr>}
                 {lineage.map((l, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{l.nodeId}</Td>
                     <Td mono col={BLUE}>{l.signalName || l.signalId}</Td>
-                    <Td mono col={TEXT}>{l.transformation || 'â€”'}</Td>
+                    <Td mono col={TEXT}>{l.transformation || '—'}</Td>
                     <Td mono col={SUBTLE}>{l.upstreamIds.length}â†‘ / {l.downstreamIds.length}â†“</Td>
-                    <Td mono col={PURPLE}>{l.environment || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{l.dataVintage || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{l.parameterHash ? l.parameterHash.slice(0, 10) + 'â€¦' : 'â€”'}</Td>
+                    <Td mono col={PURPLE}>{l.environment || '—'}</Td>
+                    <Td mono col={SUBTLE}>{l.dataVintage || '—'}</Td>
+                    <Td mono col={SUBTLE}>{l.parameterHash ? l.parameterHash.slice(0, 10) + 'â€¦' : '—'}</Td>
                     <Td mono col={SUBTLE}>{l.computedAt}</Td>
-                    <Td mono col={l.isRoot ? GREEN : SUBTLE}>{l.isRoot ? 'ROOT' : 'â€”'}</Td>
-                    <Td mono col={l.isLeaf ? AMBER : SUBTLE}>{l.isLeaf ? 'LEAF' : 'â€”'}</Td>
+                    <Td mono col={l.isRoot ? GREEN : SUBTLE}>{l.isRoot ? 'ROOT' : '—'}</Td>
+                    <Td mono col={l.isLeaf ? AMBER : SUBTLE}>{l.isLeaf ? 'LEAF' : '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -313,18 +313,18 @@ export function SignalProvenanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Attest ID</Th><Th>Signal</Th><Th>Status</Th><Th>Attested By</Th><Th>Framework</Th><Th>Schema</Th><Th>Evidence Hash</Th><Th>Attested At</Th><Th>Expires</Th></tr></thead>
               <tbody>
-                {attestations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No attestations â€” check /api/v4/signal-provenance/attestation</td></tr>}
+                {attestations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No attestations</td></tr>}
                 {attestations.sort((a, b) => a.status === 'expired' ? -1 : 0).map((a, i) => (
                   <tr key={i} style={{ background: a.status === 'expired' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.attestationId}</Td>
                     <Td mono col={BLUE}>{a.signalName || a.signalId}</Td>
                     <Td><StatusBadge s={a.status} /></Td>
-                    <Td mono col={TEXT}>{a.attestedBy || 'â€”'}</Td>
-                    <Td mono col={PURPLE}>{a.complianceFramework || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.schemaVersion || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.evidenceHash ? a.evidenceHash.slice(0, 12) + 'â€¦' : 'â€”'}</Td>
+                    <Td mono col={TEXT}>{a.attestedBy || '—'}</Td>
+                    <Td mono col={PURPLE}>{a.complianceFramework || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.schemaVersion || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.evidenceHash ? a.evidenceHash.slice(0, 12) + 'â€¦' : '—'}</Td>
                     <Td mono col={SUBTLE}>{a.attestedAt}</Td>
-                    <Td mono col={a.status === 'expired' ? RED : SUBTLE}>{a.expiresAt || 'â€”'}</Td>
+                    <Td mono col={a.status === 'expired' ? RED : SUBTLE}>{a.expiresAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -337,18 +337,18 @@ export function SignalProvenanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Run ID</Th><Th>Signal</Th><Th>Match</Th><Th right>Max Dev %</Th><Th>Orig Hash</Th><Th>Replay Hash</Th><Th right>Exec ms</Th><Th>Initiated</Th><Th>Completed</Th></tr></thead>
               <tbody>
-                {reproducibility.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reproducibility runs â€” check /api/v4/signal-provenance/reproducibility</td></tr>}
+                {reproducibility.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reproducibility runs</td></tr>}
                 {reproducibility.sort((a, b) => a.matchStatus === 'failed' ? -1 : 0).map((r, i) => (
                   <tr key={i} style={{ background: r.matchStatus === 'failed' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.runId}</Td>
                     <Td mono col={BLUE}>{r.signalName || r.signalId}</Td>
                     <Td><StatusBadge s={r.matchStatus} /></Td>
                     <Td right mono col={r.maxDeviationPct > 1 ? RED : GREEN}>{r.maxDeviationPct.toFixed(4)}%</Td>
-                    <Td mono col={SUBTLE}>{r.originalHash ? r.originalHash.slice(0, 12) + 'â€¦' : 'â€”'}</Td>
-                    <Td mono col={r.matchStatus === 'exact' ? GREEN : SUBTLE}>{r.replayHash ? r.replayHash.slice(0, 12) + 'â€¦' : 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.originalHash ? r.originalHash.slice(0, 12) + 'â€¦' : '—'}</Td>
+                    <Td mono col={r.matchStatus === 'exact' ? GREEN : SUBTLE}>{r.replayHash ? r.replayHash.slice(0, 12) + 'â€¦' : '—'}</Td>
                     <Td right mono col={TEXT}>{r.executionTimeMs.toLocaleString()}</Td>
-                    <Td mono col={TEXT}>{r.initiatedBy || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{r.completedAt || 'â€”'}</Td>
+                    <Td mono col={TEXT}>{r.initiatedBy || '—'}</Td>
+                    <Td mono col={SUBTLE}>{r.completedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -361,14 +361,14 @@ export function SignalProvenanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Signal ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries â€” check /api/v4/signal-provenance/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit entries</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
                     <Td mono col={BLUE}>{a.signalId}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

@@ -1,7 +1,7 @@
 // Wave 118 — Zero-flake: same API call 3× must yield identical results.
 import { test, expect } from '@playwright/test';
 
-const BASE = 'http://localhost:8090';
+const BASE = 'http://localhost:8000';
 
 async function fetchHealth(request: any) {
   const r = await request.get(`${BASE}/api/v3/ops/health`);

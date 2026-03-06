@@ -176,6 +176,84 @@ async def get_positions_v3(status: Optional[str] = Query(default="open")):
         return {"ok": False, "error": str(e), "positions": [], "correlation_id": cid}
 
 
+@router.post("/close-position/{position_id}")
+async def close_position_v3(position_id: str, body: dict = None):
+    """
+    Force-close an open position: submit a market sell order via options_gateway,
+    then mark the position as closed in v3_store.
+    """
+    cid = _cid()
+    try:
+        from ...autopilot.v3_store import positions_list, position_update, exit_record
+        from ...autopilot.options_gateway import get_options_gateway
+        from datetime import datetime
+
+        # Find position
+        all_pos = positions_list(status=None)
+        pos = next((p for p in all_pos if p["position_id"] == position_id), None)
+        if not pos:
+            return {"ok": False, "error": f"position {position_id} not found", "correlation_id": cid}
+
+        contract = pos.get("contract_symbol")
+        qty = pos.get("qty", 1)
+        avg_entry = pos.get("avg_entry", 0)
+        # Use current_price if available; fall back to avg_entry; adjust slightly down for sell
+        current_price = pos.get("current_price") or avg_entry
+        limit_price = round(float(current_price) * 0.98, 2) if current_price else round(float(avg_entry) * 0.98, 2)
+        if limit_price <= 0:
+            limit_price = 0.01  # minimum valid price
+
+        # Submit sell order
+        gw = get_options_gateway()
+        order_result = await gw.place_option_order(
+            contract_symbol=contract,
+            qty=qty,
+            side="sell",
+            limit_price=limit_price,
+        )
+        # Extract order_id from nested "order" dict if present
+        order_inner = order_result.get("order") or {}
+        broker_close_order_id = (
+            order_result.get("order_id")
+            or order_inner.get("order_id")
+            or order_inner.get("id")
+        )
+        exit_price = limit_price  # use limit_price as exit estimate
+
+        # Update position in store — do NOT set close_order_id because it
+        # has a FK to autopilot_orders which we don't populate for manual closes.
+        now = datetime.utcnow().isoformat() + "Z"
+        position_update(position_id, {
+            "status": "closed",
+            "closed_at": now,
+            "exit_trigger": "manual_close",
+        })
+
+        # Record exit (best-effort; don't fail the whole close if this errors)
+        try:
+            exit_record({
+                "position_id": position_id,
+                "decision_id": pos.get("decision_id"),
+                "symbol": pos.get("symbol"),
+                "contract_symbol": contract,
+                "exit_reason": "manual_close",
+                "exit_price": exit_price,
+                "entry_price": avg_entry,
+                "qty": qty,
+                "realized_pnl": round((exit_price - avg_entry) * qty * 100, 2),
+                "realized_pnl_pct": round(((exit_price - avg_entry) / avg_entry * 100) if avg_entry else 0, 2),
+                "exit_order_id": broker_close_order_id,
+            })
+        except Exception as ex_err:
+            logger.warning(f"exit_record failed (non-critical): {ex_err}")
+
+        return {"ok": True, "position_id": position_id, "contract": contract,
+                "broker_close_order_id": broker_close_order_id, "exit_price": exit_price, "correlation_id": cid}
+    except Exception as e:
+        logger.error(f"close_position_v3: {e}")
+        return {"ok": False, "error": str(e), "correlation_id": cid}
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # ORDERS (truth from v3_store)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -264,6 +342,28 @@ async def get_thresholds_v3():
             "history_count": len(history),
             "correlation_id": cid,
         }
+    except Exception as e:
+        return {"ok": False, "error": str(e), "correlation_id": cid}
+
+
+@router.patch("/thresholds")
+async def patch_thresholds_v3(body: dict):
+    """Update one or more risk/threshold values at runtime on the running singleton."""
+    cid = _cid()
+    try:
+        from ...autopilot.risk_engine import get_risk_engine
+        from ...autopilot.evaluator import get_evaluator
+        engine = get_risk_engine()
+        evaluator = get_evaluator()
+        updated: dict = {}
+        for key, val in body.items():
+            if hasattr(engine.cfg, key):
+                setattr(engine.cfg, key, float(val))
+                updated[key] = float(val)
+            if hasattr(evaluator, key):
+                setattr(evaluator, key, float(val))
+                updated[f"evaluator.{key}"] = float(val)
+        return {"ok": True, "updated": updated, "correlation_id": cid}
     except Exception as e:
         return {"ok": False, "error": str(e), "correlation_id": cid}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// ResearchGovernanceUI2 â€” Bloomberg APEX research governance terminal
+﻿// ResearchGovernanceUI2 — Bloomberg APEX research governance terminal
 // QA controls, compliance attestation, model approval, research review
 // Tabs: RESEARCH | REVIEWS | ATTESTATIONS | CONTROLS | AUDIT
 // APIs: /api/v4/research-governance/research, /reviews, /attestations, /controls, /audit
@@ -214,7 +214,7 @@ export function ResearchGovernanceUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH GOVERNANCE â€” QA + REVIEW CONTROLS + COMPLIANCE ATTESTATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>RESEARCH GOVERNANCE — QA + REVIEW CONTROLS + COMPLIANCE ATTESTATION</span>
         {pendingReview > 0 && <span style={{ fontSize: 10, color: AMBER }}>⚠‘ {pendingReview} PENDING REVIEW</span>}
         {flagged > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {flagged} FLAGGED</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -241,7 +241,7 @@ export function ResearchGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Title</Th><Th>Author</Th><Th>Category</Th><Th>Status</Th><Th>Confidentiality</Th><Th right>Reviewers</Th><Th right>Approvals</Th><Th right>Flags</Th><Th>Submitted</Th><Th>Deadline</Th></tr></thead>
               <tbody>
-                {research.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No research â€” check /api/v4/research-governance/research</td></tr>}
+                {research.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No research</td></tr>}
                 {research.sort((a, b) => (b.flagCount) - (a.flagCount)).map((r, i) => (
                   <tr key={i} style={{ background: r.flagCount > 0 ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.title}</Td>
@@ -253,7 +253,7 @@ export function ResearchGovernanceUI2() {
                     <Td right mono col={r.approvalCount > 0 ? GREEN : SUBTLE}>{r.approvalCount}</Td>
                     <Td right mono col={r.flagCount > 0 ? RED : SUBTLE}>{r.flagCount}</Td>
                     <Td mono col={SUBTLE}>{r.submittedAt}</Td>
-                    <Td mono col={SUBTLE}>{r.reviewDeadline || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.reviewDeadline || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -266,7 +266,7 @@ export function ResearchGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Review ID</Th><Th>Research ID</Th><Th>Reviewer</Th><Th>Verdict</Th><Th>Quality</Th><Th>Methodology</Th><Th right>Risk Score</Th><Th>Comment</Th><Th>Submitted At</Th></tr></thead>
               <tbody>
-                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews â€” check /api/v4/research-governance/reviews</td></tr>}
+                {reviews.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reviews</td></tr>}
                 {reviews.sort((a, b) => (a.verdict === 'reject' ? -1 : 1) - (b.verdict === 'reject' ? -1 : 1)).map((r, i) => (
                   <tr key={i} style={{ background: r.verdict === 'reject' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.reviewId}</Td>
@@ -276,8 +276,8 @@ export function ResearchGovernanceUI2() {
                     <Td><ScoreBar val={r.qualityScore} /></Td>
                     <Td><ScoreBar val={r.methodologyScore} /></Td>
                     <Td right mono col={r.riskScore > 70 ? RED : r.riskScore > 40 ? ORANGE : GREEN}>{r.riskScore.toFixed(0)}</Td>
-                    <Td mono col={SUBTLE}>{r.comment || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{r.submittedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{r.comment || '—'}</Td>
+                    <Td mono col={SUBTLE}>{r.submittedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -290,17 +290,17 @@ export function ResearchGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Attestation ID</Th><Th>Research ID</Th><Th>Type</Th><Th>Outcome</Th><Th>Attested By</Th><Th>Attested At</Th><Th>Expires</Th><Th>Notes</Th></tr></thead>
               <tbody>
-                {attestations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No attestations â€” check /api/v4/research-governance/attestations</td></tr>}
+                {attestations.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No attestations</td></tr>}
                 {attestations.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.attestationId}</Td>
                     <Td mono col={BLUE}>{a.researchId}</Td>
                     <Td mono col={PURPLE}>{a.attestationType.replace('_', ' ')}</Td>
                     <Td><StatusBadge s={a.outcome} /></Td>
-                    <Td mono col={TEXT}>{a.attestedBy || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.attestedAt || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.expiresAt || 'â€”'}</Td>
-                    <Td mono col={SUBTLE}>{a.notes || 'â€”'}</Td>
+                    <Td mono col={TEXT}>{a.attestedBy || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.attestedAt || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.expiresAt || '—'}</Td>
+                    <Td mono col={SUBTLE}>{a.notes || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -313,17 +313,17 @@ export function ResearchGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Control</Th><Th>Category</Th><Th>Framework</Th><Th>Enabled</Th><Th right>Automated %</Th><Th right>Compliance %</Th><Th right>Failures</Th><Th>Last Assessed</Th></tr></thead>
               <tbody>
-                {controls.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls â€” check /api/v4/research-governance/controls</td></tr>}
+                {controls.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No controls</td></tr>}
                 {controls.sort((a, b) => a.compliancePct - b.compliancePct).map((c, i) => (
                   <tr key={i} style={{ opacity: c.enabled ? 1 : 0.5 }}>
                     <Td mono col={AMBER}>{c.name}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: BLUE, background: BLUE + '22', borderRadius: 3, padding: '2px 5px' }}>{c.category.toUpperCase()}</span></Td>
-                    <Td mono col={SUBTLE}>{c.framework || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{c.framework || '—'}</Td>
                     <Td><span style={{ fontFamily: MONO, fontSize: 9, color: c.enabled ? GREEN : RED }}>{c.enabled ? 'âœ“ ON' : 'âœ— OFF'}</span></Td>
                     <Td right mono col={TEXT}>{c.automatedPct.toFixed(0)}%</Td>
                     <Td right mono col={c.compliancePct >= 95 ? GREEN : c.compliancePct >= 80 ? AMBER : RED}>{c.compliancePct.toFixed(1)}%</Td>
                     <Td right mono col={c.failureCount > 0 ? RED : SUBTLE}>{c.failureCount}</Td>
-                    <Td mono col={SUBTLE}>{c.lastAssessedAt || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{c.lastAssessedAt || '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -336,14 +336,14 @@ export function ResearchGovernanceUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Research ID</Th><Th>Action</Th><Th>Actor</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/research-governance/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
-                    <Td mono col={BLUE}>{a.researchId || 'â€”'}</Td>
+                    <Td mono col={BLUE}>{a.researchId || '—'}</Td>
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

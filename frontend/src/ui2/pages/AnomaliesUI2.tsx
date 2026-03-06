@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-﻿// AnomaliesUI2 â€” Bloomberg ANOM-grade anomaly detection terminal
+﻿// AnomaliesUI2 — Bloomberg ANOM-grade anomaly detection terminal
 // Tabs: LIVE FEED | HEATMAP | PATTERNS | STATISTICS | RESOLVED
 // APIs: /api/v4/anomalies/active, /api/v4/anomalies/heatmap,
 //       /api/v4/anomalies/patterns, /api/v4/anomalies/stats,
@@ -114,11 +114,11 @@ function StatCard({ label, value, sub, col }: { label: string; value: string | n
 }
 
 function fmtTime(ts: string) {
-  if (!ts) return 'â€”'
+  if (!ts) return '—'
   try { return new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) } catch { return ts }
 }
 function fmtDate(ts: string) {
-  if (!ts) return 'â€”'
+  if (!ts) return '—'
   try { return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) } catch { return ts }
 }
 
@@ -253,7 +253,7 @@ export function AnomaliesUI2() {
       {/* HEADER */}
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>ANOM</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>ANOMALY DETECTION â€” STATISTICAL DEVIATION MONITORING</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>ANOMALY DETECTION — STATISTICAL DEVIATION MONITORING</span>
         {critCount > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700, animation: 'none' }}>⚠¡ {critCount} CRITICAL</span>}
       </div>
 
@@ -263,7 +263,7 @@ export function AnomaliesUI2() {
         <StatCard label="Critical" value={critCount} col={RED} sub="immediate attention" />
         <StatCard label="High" value={highCount} col={ORANGE} sub="monitor closely" />
         <StatCard label="Resolved Today" value={resolved.length} col={GREEN} />
-        <StatCard label="Avg Z-Score" value={anomalies.length ? (anomalies.reduce((s, a) => s + Math.abs(a.zscore), 0) / anomalies.length).toFixed(1) + 'Ïƒ' : 'â€”'} col={AMBER} />
+        <StatCard label="Avg Z-Score" value={anomalies.length ? (anomalies.reduce((s, a) => s + Math.abs(a.zscore), 0) / anomalies.length).toFixed(1) + 'Ïƒ' : '—'} col={AMBER} />
         <StatCard label="Patterns" value={patterns.length} col={PURPLE} />
       </div>
 
@@ -315,7 +315,7 @@ export function AnomaliesUI2() {
                 <tbody>
                   {filtered.length === 0 && (
                     <tr><td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                      {loading ? 'Scanning...' : 'No anomalies detected â€” check /api/v4/anomalies/active'}
+                      {loading ? 'Scanning...' : 'No anomalies detected'}
                     </td></tr>
                   )}
                   {[...filtered].sort((a, b) => {
@@ -343,7 +343,7 @@ export function AnomaliesUI2() {
         {tab === 'heatmap' && (
           <>
             {heatmap.length === 0 ? (
-              <div style={{ color: SUBTLE, fontSize: 11 }}>No heatmap data â€” check /api/v4/anomalies/heatmap</div>
+              <div style={{ color: SUBTLE, fontSize: 11 }}>No heatmap data</div>
             ) : (
               <>
                 {/* Group by sector */}
@@ -377,7 +377,7 @@ export function AnomaliesUI2() {
         {/* â”€â”€ PATTERNS â”€â”€ */}
         {tab === 'patterns' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {patterns.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No patterns â€” check /api/v4/anomalies/patterns</div>}
+            {patterns.length === 0 && <div style={{ color: SUBTLE, fontSize: 11 }}>No patterns</div>}
             {patterns.map((p, i) => (
               <div key={i} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '12px 16px' }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
@@ -402,7 +402,7 @@ export function AnomaliesUI2() {
         {tab === 'stats' && (
           <>
             {!stats ? (
-              <div style={{ color: SUBTLE, fontSize: 11 }}>No stats â€” check /api/v4/anomalies/stats</div>
+              <div style={{ color: SUBTLE, fontSize: 11 }}>No stats</div>
             ) : (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }}>
@@ -455,7 +455,7 @@ export function AnomaliesUI2() {
               <tbody>
                 {resolved.length === 0 && (
                   <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>
-                    No resolved anomalies â€” check /api/v4/anomalies/resolved
+                    No resolved anomalies
                   </td></tr>
                 )}
                 {resolved.map(a => (

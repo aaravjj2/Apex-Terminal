@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// PolicyCodeUI2 â€” Bloomberg APEX policy-as-code terminal
+﻿// PolicyCodeUI2 — Bloomberg APEX policy-as-code terminal
 // Rule authoring, testing pipelines, policy deployments, violations, audit
 // Tabs: RULES | PIPELINES | DEPLOYMENTS | VIOLATIONS | AUDIT
 // APIs: /api/v4/policy-code/rules, /pipelines, /deployments, /violations, /audit
@@ -216,7 +216,7 @@ export function PolicyCodeUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>APEX</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>POLICY CODE â€” RULE ENGINE + TEST PIPELINES + DEPLOYMENT + ENFORCEMENT</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>POLICY CODE — RULE ENGINE + TEST PIPELINES + DEPLOYMENT + ENFORCEMENT</span>
         {criticalViolations > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {criticalViolations} CRITICAL VIOLATIONS</span>}
         {failedPipelines > 0 && <span style={{ fontSize: 10, color: ORANGE }}>⚠‘ {failedPipelines} PIPELINE FAILURES</span>}
         {err && <span style={{ fontSize: 10, color: RED }}>⚠  {err}</span>}
@@ -243,7 +243,7 @@ export function PolicyCodeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rule</Th><Th>Engine</Th><Th>Category</Th><Th>Status</Th><Th>Severity</Th><Th>Ver</Th><Th right>Evals/day</Th><Th right>Failures 24h</Th><Th right>Latency ms</Th><Th>Author</Th></tr></thead>
               <tbody>
-                {rules.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rules â€” check /api/v4/policy-code/rules</td></tr>}
+                {rules.length === 0 && <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No rules</td></tr>}
                 {rules.sort((a, b) => {
                   const sp: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
                   return (sp[a.severity] ?? 5) - (sp[b.severity] ?? 5)
@@ -271,7 +271,7 @@ export function PolicyCodeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Pipeline</Th><Th>Rule</Th><Th>Stage</Th><Th>Status</Th><Th right>Passed</Th><Th right>Failed</Th><Th right>Coverage %</Th><Th right>Duration s</Th><Th>Triggered</Th></tr></thead>
               <tbody>
-                {pipelines.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No pipelines â€” check /api/v4/policy-code/pipelines</td></tr>}
+                {pipelines.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No pipelines</td></tr>}
                 {pipelines.sort((a, b) => a.status === 'failed' ? -1 : 1).map((p, i) => (
                   <tr key={i} style={{ background: p.status === 'failed' ? RED + '0a' : p.status === 'running' ? AMBER + '07' : 'transparent' }}>
                     <Td mono col={AMBER}>{p.pipelineId}</Td>
@@ -295,7 +295,7 @@ export function PolicyCodeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Rule</Th><Th>Environment</Th><Th>Version</Th><Th>Status</Th><Th right>Rollout %</Th><Th right>Policies Impacted</Th><Th>Deployed By</Th><Th>Deployed At</Th></tr></thead>
               <tbody>
-                {deployments.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No deployments â€” check /api/v4/policy-code/deployments</td></tr>}
+                {deployments.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No deployments</td></tr>}
                 {deployments.sort((a, b) => a.environment === 'production' ? -1 : 1).map((d, i) => (
                   <tr key={i} style={{ background: d.status === 'rolled_back' ? ORANGE + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{d.ruleName}</Td>
@@ -318,7 +318,7 @@ export function PolicyCodeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Violation</Th><Th>Rule</Th><Th>Context</Th><Th>Severity</Th><Th>Action</Th><Th>Status</Th><Th>Entity</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {violations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations â€” check /api/v4/policy-code/violations</td></tr>}
+                {violations.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No violations</td></tr>}
                 {violations.sort((a, b) => {
                   const sp: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
                   return (sp[a.severity] ?? 4) - (sp[b.severity] ?? 4)
@@ -345,7 +345,7 @@ export function PolicyCodeUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Audit ID</Th><Th>Rule</Th><Th>Action</Th><Th>Actor</Th><Th>Outcome</Th><Th>Detail</Th><Th>Timestamp</Th></tr></thead>
               <tbody>
-                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log â€” check /api/v4/policy-code/audit</td></tr>}
+                {auditLog.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No audit log</td></tr>}
                 {auditLog.map((a, i) => (
                   <tr key={i} style={{ background: a.outcome === 'fail' ? RED + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.auditId}</Td>
@@ -353,7 +353,7 @@ export function PolicyCodeUI2() {
                     <Td mono col={ORANGE}>{a.action}</Td>
                     <Td mono col={TEXT}>{a.actor}</Td>
                     <Td><StatusBadge s={a.outcome} /></Td>
-                    <Td mono col={SUBTLE}>{a.detail || 'â€”'}</Td>
+                    <Td mono col={SUBTLE}>{a.detail || '—'}</Td>
                     <Td mono col={SUBTLE}>{a.timestamp}</Td>
                   </tr>
                 ))}

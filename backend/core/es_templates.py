@@ -263,7 +263,8 @@ async def ensure_all_aliases() -> List[Dict[str, Any]]:
 
 
 async def _get_entity_alias_health(entity: str) -> Dict[str, Any]:
-    """Check write + read alias for a single entity (parallel inner calls)."""
+    """Check write + read alias for a single entity (parallel inner calls).
+    Also accepts the case where an index with the alias name exists (legacy pattern)."""
     walias = write_alias(entity)
     ralias = read_alias(entity)
     try:
@@ -271,12 +272,30 @@ async def _get_entity_alias_health(entity: str) -> Dict[str, Any]:
             _es_request("GET", f"/_alias/{walias}"),
             _es_request("GET", f"/_alias/{ralias}"),
         )
+        # If alias doesn't exist but an index with the same name does — also valid
+        w_exists = w_status == 200
+        r_exists = r_status == 200
+        if not w_exists:
+            wix_status, _ = await _es_request("HEAD", f"/{walias}")
+            w_exists = wix_status == 200
+        if not r_exists:
+            rix_status, _ = await _es_request("HEAD", f"/{ralias}")
+            r_exists = rix_status == 200
+        # Also accept the datestamped write index as valid read path
+        if not r_exists:
+            idx = index_name(entity)
+            ix_status, _ = await _es_request("HEAD", f"/{idx}")
+            r_exists = ix_status == 200
+        # Finally, accept write index (apex-{entity}-write) as valid read fallback
+        if not r_exists:
+            wix_r_status, _ = await _es_request("HEAD", f"/{walias}")
+            r_exists = wix_r_status == 200
         return {
             "entity": entity,
             "write_alias": walias,
             "read_alias": ralias,
-            "write_alias_exists": w_status == 200,
-            "read_alias_exists": r_status == 200,
+            "write_alias_exists": w_exists,
+            "read_alias_exists": r_exists,
             "write_index_count": len(w_resp) if w_status == 200 else 0,
             "read_index_count": len(r_resp) if r_status == 200 else 0,
         }

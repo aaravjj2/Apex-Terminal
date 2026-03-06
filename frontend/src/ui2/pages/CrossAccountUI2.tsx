@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-﻿// CrossAccountUI2 â€” Bloomberg CXAC cross-account management terminal
+﻿// CrossAccountUI2 — Bloomberg CXAC cross-account management terminal
 // Aggregated positions, PnL, exposure limits, margin consolidation, account reconciliation
 // Tabs: ACCOUNTS | POSITIONS | EXPOSURE | MARGIN | RECONCILIATION
 // APIs: /api/v4/cross-account/accounts, /positions, /exposure, /margin, /reconciliation
@@ -216,7 +216,7 @@ export function CrossAccountUI2() {
     <div style={{ background: BG, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: MONO, color: TEXT }}>
       <div style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, letterSpacing: 2 }}>CXAC</span>
-        <span style={{ fontSize: 10, color: SUBTLE }}>CROSS-ACCOUNT â€” ACCOUNTS + AGGREGATED POSITIONS + EXPOSURE + MARGIN + RECONCILIATION</span>
+        <span style={{ fontSize: 10, color: SUBTLE }}>CROSS-ACCOUNT — ACCOUNTS + AGGREGATED POSITIONS + EXPOSURE + MARGIN + RECONCILIATION</span>
         {expBreaches > 0 && <span style={{ fontSize: 10, color: RED, fontWeight: 700 }}>⚠‘ {expBreaches} EXPOSURE BREACHES</span>}
         {marginAlerts > 0 && <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>⚠‘ {marginAlerts} MARGIN ALERTS</span>}
         {reconBreaks > 0 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>⚠‘ {reconBreaks} RECON BREAKS</span>}
@@ -224,7 +224,7 @@ export function CrossAccountUI2() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: BORDER, flexShrink: 0 }}>
         <StatCard label="Accounts" value={accounts.length} col={BLUE} />
-        <StatCard label="Total NAV" value={totalNAV > 0 ? `$${(totalNAV / 1e6).toFixed(2)}M` : 'â€”'} col={TEXT} />
+        <StatCard label="Total NAV" value={totalNAV > 0 ? `$${(totalNAV / 1e6).toFixed(2)}M` : '—'} col={TEXT} />
         <StatCard label="Total Unrealized" value={`$${totalPnl.toLocaleString()}`} col={totalPnl >= 0 ? GREEN : RED} />
         <StatCard label="Margin Alerts" value={marginAlerts} col={marginAlerts > 0 ? ORANGE : GREEN} />
         <StatCard label="Recon Breaks" value={reconBreaks} col={reconBreaks > 0 ? AMBER : GREEN} />
@@ -244,7 +244,7 @@ export function CrossAccountUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Account</Th><Th>Type</Th><Th>Owner</Th><Th>Status</Th><Th right>NAV</Th><Th right>Cash</Th><Th right>Unrealized PnL</Th><Th right>Positions</Th><Th right>Leverage</Th></tr></thead>
               <tbody>
-                {accounts.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No accounts â€” check /api/v4/cross-account/accounts</td></tr>}
+                {accounts.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No accounts</td></tr>}
                 {accounts.sort((a, b) => b.nav - a.nav).map((a, i) => (
                   <tr key={i} style={{ background: a.status === 'suspended' ? AMBER + '08' : 'transparent' }}>
                     <Td mono col={AMBER}>{a.name}</Td>
@@ -268,7 +268,7 @@ export function CrossAccountUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Symbol</Th><Th>Asset Class</Th><Th right>Total Qty</Th><Th right>Avg Price</Th><Th right>Market Value</Th><Th right>Unrealized PnL</Th><Th right>Daily %</Th><Th right>Accounts</Th><Th right>Beta</Th></tr></thead>
               <tbody>
-                {positions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No positions â€” check /api/v4/cross-account/positions</td></tr>}
+                {positions.length === 0 && <tr><td colSpan={9} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No positions</td></tr>}
                 {positions.sort((a, b) => Math.abs(b.marketValue) - Math.abs(a.marketValue)).map((p, i) => (
                   <tr key={i}>
                     <Td mono col={AMBER}>{p.symbol}</Td>
@@ -292,7 +292,7 @@ export function CrossAccountUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Category</Th><Th>Utilization</Th><Th right>Gross Exp</Th><Th right>Net Exp</Th><Th right>Long</Th><Th right>Short</Th><Th right>Limit</Th></tr></thead>
               <tbody>
-                {exposure.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exposure â€” check /api/v4/cross-account/exposure</td></tr>}
+                {exposure.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No exposure</td></tr>}
                 {exposure.sort((a, b) => b.utilizationPct - a.utilizationPct).map((e, i) => (
                   <tr key={i} style={{ background: e.utilizationPct >= 90 ? RED + '0a' : e.utilizationPct >= 75 ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{e.category}</Td>
@@ -314,7 +314,7 @@ export function CrossAccountUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Account</Th><Th>Utilization</Th><Th right>Initial Margin</Th><Th right>Used</Th><Th right>Available</Th><Th right>Excess</Th></tr></thead>
               <tbody>
-                {margin.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No margin â€” check /api/v4/cross-account/margin</td></tr>}
+                {margin.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No margin</td></tr>}
                 {margin.sort((a, b) => b.utilizationPct - a.utilizationPct).map((m, i) => (
                   <tr key={i} style={{ background: m.utilizationPct >= 90 ? RED + '0a' : m.utilizationPct >= 75 ? AMBER + '06' : 'transparent' }}>
                     <Td mono col={AMBER}>{m.accountName}</Td>
@@ -335,7 +335,7 @@ export function CrossAccountUI2() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><Th>Account</Th><Th>Status</Th><Th right>Internal</Th><Th right>Broker</Th><Th right>Discrepancy</Th><Th right>% Diff</Th><Th right>Break Items</Th><Th>Last Reconciled</Th></tr></thead>
               <tbody>
-                {reconciliation.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reconciliation â€” check /api/v4/cross-account/reconciliation</td></tr>}
+                {reconciliation.length === 0 && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: SUBTLE, fontFamily: MONO, fontSize: 11 }}>No reconciliation</td></tr>}
                 {reconciliation.sort((a, b) => Math.abs(b.discrepancy) - Math.abs(a.discrepancy)).map((r, i) => (
                   <tr key={i} style={{ background: r.status === 'discrepancy' ? AMBER + '0a' : 'transparent' }}>
                     <Td mono col={AMBER}>{r.accountName}</Td>

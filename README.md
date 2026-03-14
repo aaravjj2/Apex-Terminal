@@ -1,199 +1,198 @@
 # Apex Terminal
 
+**A Bloomberg-style trading workstation built for serious retail traders.**
+
 <div align="center">
 
-**A Production-Grade Market Workstation Platform**
-*Built with Elastic Agent Builder — Combining TradingView-style charting with Bloomberg-terminal analytics and an ES|QL-powered Autonomous Options Agent.*
+[![React](https://img.shields.io/badge/React_19-61DAFB.svg?style=flat-square&logo=React&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6.svg?style=flat-square&logo=TypeScript&logoColor=white)](https://www.typescriptlang.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg?style=flat-square&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python_3.10+-3776AB.svg?style=flat-square&logo=Python&logoColor=white)](https://python.org)
+[![Playwright](https://img.shields.io/badge/Playwright-2EAD33.svg?style=flat-square&logo=Playwright&logoColor=white)](https://playwright.dev)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-[**🏆 ELASTICSEARCH AGENT BUILDER HACKATHON SUBMISSION**](https://elasticsearch.devpost.com/)
-
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/elastic?style=social)](https://x.com/elastic_devs)  *(Official hackathon social post link goes here: [X Post](https://x.com/your_handle/status/id) @elastic_devs @elastic)*
-
-<img src="https://img.shields.io/badge/React-61DAFB.svg?style=flat-square&logo=React&logoColor=black" alt="React">
-<img src="https://img.shields.io/badge/FastAPI-009688.svg?style=flat-square&logo=FastAPI&logoColor=white" alt="FastAPI">
-<img src="https://img.shields.io/badge/Elasticsearch-005571.svg?style=flat-square&logo=Elasticsearch&logoColor=white" alt="Elastic">
-<img src="https://img.shields.io/badge/Python-3776AB.svg?style=flat-square&logo=Python&logoColor=white" alt="Python">
-<img src="https://img.shields.io/badge/TypeScript-3178C6.svg?style=flat-square&logo=TypeScript&logoColor=white" alt="TypeScript">
-
-[Features](#-key-features) • [Architecture](#-architecture) • [Directory Structure](#-directory-structure) • [Installation & Run](#-installation--run) • [Testing Stack](#-testing-stack)
+[Features](#-features) • [Architecture](#-architecture) • [Quick Start](#-quick-start) • [Testing](#-testing) • [Roadmap](#-roadmap)
 
 </div>
 
 ---
 
-### 🎯 Problem Statement & Solution Overview
+## Screenshots
 
-**The Problem:** Financial quant tooling is incredibly fragmented. Retail traders rely on basic charting software, while elite institutional firms leverage massive, bespoke, deterministic systems (like the Bloomberg Terminal). Developing, testing, and dynamically scaling multi-agent AI workflows on massive financial time-series data requires assembling a custom tech stack from scratch, locking innovative but under-resourced traders out of advanced mathematical modeling.
+![Dashboard](media/screenshots/dashboard.png)
+![Trading](media/screenshots/trading.png)
+![Autopilot](media/screenshots/autopilot.png)
+![Portfolio](media/screenshots/portfolio.png)
+![Options Chain](media/screenshots/options-chain.png)
 
-**The Solution:** Apex Terminal securely bridges this gap. Breaking from fragmented retail environments, it seamlessly unites custom deterministic algorithmic backtesting, comprehensive technical analysis, and complete live market workflows inside a single unified Workstation natively powered by Elastic Agent Builder.
-
-### Core Workspaces
-- **Chart View (TradingView Clone):** Highly interactive graphical interface rendering OHLCV candles, real-time tick streaming, and a dock housing **35 technical indicators** and **30+ drawing tools**.
-- **Bloomberg-Style Dashboard:** Deep analytics layout running 14 modular drag-and-drop tiles (Orders, Heatmaps, Options Chains, Volatility Surfaces, Scanners, P&L Metrics).
-- **The AI Autopilot System (Elastic Agent Builder):** A heavily guarded multi-agent pipeline orchestrated natively using **Elastic Workflows** and **Agent Builder**. By wrapping external LLMs (Groq, Gemini) as Tools within the Elastic ecosystem, the Agent directly queries market data via **ES|QL**, evaluates pre-trade Risk Managers, and triggers execution layers based on dynamic semantic rulesets.
-
----
-
-## ✨ Key Features Breakdown
-
-### 🤖 Elastic Agent Builder Integration
-Apex Terminal leverages the absolute bleeding edge of the Elastic AI stack to drive its autonomous decision systems:
-- **Elastic Workflows:** Chains together distinct Sub-Agents (Risk Evaluator, Market Analyst, Compliance Officer) to process multi-step analysis without hallucination loops.
-- **ES|QL Driven Memory:** Agents natively construct and execute ES|QL queries to rapidly aggregate historical option chains and spot volatility anomalies in runtime.
-- **Hybrid Search (kNN + BM25):** The system stores all historical trades and strategy blueprints across 24 indices utilizing 64-dimensional `dense_vector` fields, ensuring Agents have perfect memory recall via Reciprocal Rank Fusion (RRF).
-
-### 📊 35 Technical Indicators (Calculated server-side)
-1. **Trend:** SMA, EMA, VWAP, Ichimoku Cloud, Supertrend, Parabolic SAR, ADX, Aroon
-2. **Momentum:** RSI, MACD, Stochastic (Standard & RSI), CCI, ROC, Williams %R, TRIX, Price Velocity
-3. **Volatility:** Bollinger Bands (incl. Width), ATR, Keltner Channels, Donchian Channels, Historic Vol (Rolling Methods)
-4. **Volume:** OBV, MFI, CMF, ADL, VWMA, Force Index, Standard Profile
-5. **Advanced Profiles:** VRVP, Anchored VWAP, VWAP StdDev Bands, Point of Control (POC), VAH/VAL TPOs
-
-### 🧠 Auto-Pattern Recognition Engines
-Apex Terminal natively tracks mathematical breakouts mapping them across the canvas:
-- 35 standard candlestick patterns (Dojis, Haramis, Engulfings)
-- Chart geometries (Triangles, Pennants, Wedges, Head & Shoulders)
-- Deep Harmonics (ABCD retracements)
-- Fibonacci suites, Gann fans, and Andrews' Pitchfork layouts
-
-### 🔄 Execution Vectors (Paper Trading)
-Runs purely deterministic integrations via REST and WebSockets using:
-- **Alpaca API** for mock Portfolio margin validations and ledger synchronization.
-- **Tradier API** for live options chains and Greek metric extrapolations (Delta, Gamma, Vega).
+<!-- Additional screenshots in media/screenshots/ -->
 
 ---
 
-## 🏗 System Architecture
+## Features
 
-Apex utilizes a multi-engine `FastAPI` back end connected statically directly to `React 19`. Bar aggregates and executions run entirely independent of the UI logic, supporting safe autonomous headless deployments alongside `n8n`.
+### Charting
+- Candlestick chart powered by **lightweight-charts v5** — 1m, 5m, 15m, 1h, 1D timeframes
+- **35 server-side technical indicators**: SMA, EMA, VWAP, RSI, MACD, Bollinger Bands, ATR, Ichimoku Cloud, Stochastic, OBV, MFI, and more
+- Bloomberg-style dense dashboard with live KPIs and equity curve
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    FRONTEND (React)                         │
-│  • Chart Workspace / Dashboard / Autopilot Monitors         │
-│  • Zustand State Management & Lightweight Charts Canvas     │
-└───────────────────────┬─────────────────────────────────────┘
-                        │ HTTP / WebSockets
-┌───────────────────────▼─────────────────────────────────────┐
-│                    BACKEND (FastAPI - phase1)               │
-│  • 27 Engines (Risk, Backtests, Sizing, Pattern Checks)     │
-│  • Parity & Verification Tracker (HMAC-SHA256 audits)       │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────────────┐
-│               ELASTIC AGENT BUILDER (Core)                  │
-│  • Workflows connecting LLMs as specialized Sub-Agents      │
-│  • ES|QL query generation for advanced runtime analytics    │
-│  • 24 active indices (tickets, workflows, compliance)       │
-│  • dense_vector (64-dim, cosine) & Hybrid (kNN + RRF)       │
-└─────────────────────────────────────────────────────────────┘
+### Autopilot
+- Multi-signal **AI paper trading engine** — scans a configurable symbol universe, scores candidates, executes paper trades autonomously
+- Full pipeline view: signal generation → candidate scoring → order execution → ledger
+- Equity curve rendered via ApexAreaChart (lightweight-charts)
+
+### Portfolio
+- Live positions and P&L via Alpaca paper account
+- Sharpe ratio, max drawdown, volatility KPIs from live performance data
+- Equity curve with drawdown overlay
+
+### Options
+- Full options chain with Greeks: Delta, Gamma, Vega, Theta, Implied Volatility
+- Powered by **Tradier API** (optional)
+
+### Data & Order Management
+- Right sidebar: Order ticket, live Watchlist, Positions, News feed, L2 depth, Time & Sales
+- Live quotes via Alpaca; WebSocket tick streaming via Finnhub; yfinance as delayed fallback
+- Batch quote endpoint for efficient multi-symbol updates
+
+---
+
+## Architecture
+
+```
+Browser (http://localhost:5100/ui2)
+  │
+  │  React 19 + Vite 5 + Zustand + lightweight-charts v5
+  │  Tailwind CSS 4 · TypeScript · React Router 7
+  │
+  └─── HTTP / WebSocket ──────────────────────────────────────────────
+                                                                      │
+                              FastAPI  (http://localhost:8000)        │
+                              phase1/services/api/main.py             │
+                                                                      │
+                         ┌────────────────────────────────────────────┘
+                         │
+             ┌───────────┼────────────────┬───────────────┐
+             │           │                │               │
+          Alpaca      Tradier          Finnhub         yfinance
+     (broker + data) (options)      (WS ticks)      (delayed fallback)
+                                                          │
+                                                       SQLite
+                                               (bars.db · autopilot_v3.db)
 ```
 
 ---
 
-## 📁 Directory Structure
-
-```text
-Tradingview recreation/
-├── frontend/             # React 19 + TypeScript + Vite UI Application
-├── phase1/               # Python/FastAPI Backend Services & Core Engines
-├── n8n/                  # Dockerized workflow automations (Intraday Scans, Alerts)
-├── scripts/              # Independent root-level execution and utility scripts
-├── media/                # Application screenshots and playback videos
-├── devpost_submission_materials/ # Dedicated PDF briefs and Business Plans for Hackathons
-├── documents/            # Architectural plans, gap analysis, status trackers
-├── logs/                 # Isolated system execution logs and output traces
-├── data/                 # Evaluation outputs, cache, SQLite/DuckDB bases
-├── judge_system/         # Standalone system evaluators and test harnesses
-├── strategies/           # Specialized built-in algorithms (SMA, VWAP, Breakout)
-└── archives/             # Compressed submission bundles and backup artifacts
-```
-
----
-
-## 🏗 Future Scope / Roadmap
-
-- **Phase 1 (Current):** Open-source deterministic FastAPI architecture, 35 technical indicators, and full React frontend. Live market tracking (paper trading) via Alpaca.
-- **Phase 2 (Enterprise):** Introduce multi-tenant workspaces, cloud-hosted Elasticsearch clusters, and deep PCA/Monte Carlo backtesting visualizations directly within the UI.
-- **Phase 3 (SaaS Scale):** Establish public LLM Sub-Agent marketplaces allowing users to drag-and-drop proprietary Groq/Gemini logic into rigid Elastic workflows.
-
----
-
-## 📚 Libraries, Datasets & Tools Used
-
-To maintain rigorous production quality, Apex integrates the following open-source frameworks and API providers:
-- **Core Orchestration:** Elastic Agent Builder, Elasticsearch (v8.x), FastAPI, Uvicorn, n8n.
-- **Frontend Stack:** React 19.2, TypeScript, Vite, Tailwind CSS, Zustand.
-- **Charting Engine:** TradingView Lightweight Charts, Recharts.
-- **Data Providers:** Alpaca (Market Data & Brokerage), Tradier (Live Options Chains), Finnhub, Yahoo Finance.
-- **AI Models:** Groq (Llama 3 8B/70B), Google Gemini 1.5 Pro.
-
----
-
-## 🚀 Installation & Run
+## Quick Start
 
 ### Prerequisites
-- **Python 3.11+**
-- **Node.js 18+** & npm
-- **Elasticsearch 8.x** running locally on port `9200`
+- Python 3.10+
+- Node.js 18+ and npm
 
-### 1. Configuration (Environment keys)
-Create a `keys.env` file in the root based off `keys.env.example` to attach the system to live data pipes.
+### 1. Clone & configure
 
-```env
-# Example keys.env
-APCA_API_KEY_ID=your_alpaca_key_id_here
-APCA_API_SECRET_KEY=your_alpaca_secret_key_here
-APCA_ENDPOINT=https://paper-api.alpaca.markets
-TRADIER_BROKERAGE_KEY=your_tradier_key_here
+```bash
+git clone https://github.com/aaravjj2/Apex-Terminal.git
+cd Apex-Terminal
+cp .env.example keys.env
+# Edit keys.env — fill in APCA_API_KEY_ID and APCA_API_SECRET_KEY at minimum
 ```
 
-### 2. Start the Backend (`phase1`)
+### 2. Start the backend
+
 ```bash
 cd phase1
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# Start FastAPI Uvicorn engine
-python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn services.api.main:app --reload --port 8000
 ```
-> **Notice:** Start Elasticsearch prior to triggering the backend router to avoid connection dropping. Verify ES via `curl http://localhost:9200/_cluster/health`.
 
-### 3. Start the Frontend (`frontend`)
+API docs available at `http://localhost:8000/docs`.
+
+### 3. Start the frontend
+
 ```bash
 cd frontend
 npm install
-npm run build
-npm run preview -- --port 5100 --host 0.0.0.0
+npm run dev                       # Runs on http://localhost:5100
 ```
 
-### 🔗 Application Access:
-- **UI Terminal:** `http://localhost:5100/ui2`
-- **Backend API Docs:** `http://localhost:8000/docs`
+Open **http://localhost:5100/ui2**.
 
 ---
 
-## 🧪 Testing Stack
+## Environment Variables
 
-The project operates under a strict testing guideline and maintains a **0 skipped, 0 failed** policy across active branches. Verification ensures deterministic replays (`Parity System` using SHA256 hashes against all parsed tick data) and safety net thresholds aren't breached.
+Copy `.env.example` to `keys.env` in the project root. Full documentation is in that file.
 
-**Test Coverage (2143+ Assertions):**
-- **Unit and Integration (Backend):** `Pytest` running from `phase1/tests/unit/` isolating exact computational engine behavior.
-- **Unit (Frontend):** `Vitest` testing hooks and state synchronizations.
-- **E2E & UI Parity (Frontend):** `Playwright` workflows running headless/headed verifying interactions within the Dashboard widgets and executing test buys.
+| Variable | Required | Description |
+|---|---|---|
+| `APCA_API_KEY_ID` | Yes | Alpaca API key — enables live market data and paper trading |
+| `APCA_API_SECRET_KEY` | Yes | Alpaca API secret |
+| `APCA_ENDPOINT` | Yes | `https://paper-api.alpaca.markets` for paper trading |
+| `FINNHUB_API_KEY` | Optional | Real-time news feed and WebSocket tick streaming |
+| `TRADIER_BROKERAGE_KEY` | Optional | Options chain data with Greeks |
+| `POLYGON_API_KEY` | Optional | Additional equities/options data source |
 
-#### Run the Test Suite
+Get Alpaca paper trading keys free at [alpaca.markets](https://alpaca.markets).
+
+---
+
+## Testing
+
 ```bash
-# Backend Test Harness
+# TypeScript type check
+cd frontend && npx tsc --noEmit
+
+# Backend unit tests
 cd phase1 && source venv/bin/activate
 python -m pytest tests/unit/ --tb=short -q
 
-# Frontend DOM and Integration Harness
+# E2E tests (Playwright, 108 tests across 7 suites)
 cd frontend
-npx vitest run          # Run Unit tests
-npx playwright test     # Run E2E Workflows 
+npx playwright test
+```
+
+Run suites sequentially — concurrent Playwright runs cause trace write conflicts.
+
+Suites: `navigation`, `portfolio`, `chart-views`, `autopilot`, `autopilot-live`, `investor-personas`, `indicators-e2e`.
+
+---
+
+## Project Structure
+
+```
+Apex-Terminal/
+├── frontend/                  # React 19 + TypeScript + Vite 5
+│   ├── src/ui2/               # Active UI (pages, shell, stores, services, components)
+│   │   └── components/chart/  # ApexChart.tsx + ApexAreaChart.tsx (lightweight-charts v5)
+│   └── tests/e2e/             # Playwright test suites
+├── phase1/                    # FastAPI backend
+│   ├── services/api/          # Route handlers (market data, portfolio, options, autopilot)
+│   ├── services/autopilot/    # Autopilot engine (unified_engine.py, brain_v3.py)
+│   └── data/                  # bars.db SQLite database
+├── media/screenshots/         # App screenshots
+├── .env.example               # Environment variable reference
+└── tasks.md                   # Full improvement roadmap
 ```
 
 ---
-*Developed as a premier institutional-grade simulation interface.*
+
+## Roadmap
+
+Full detail in [tasks.md](tasks.md).
+
+- **Sprint 2** — Autopilot WebSocket (replace 13 polling timers), candidate drill-down panel, config save/load
+- **Sprint 3** — Docker Compose full-stack deployment, nginx reverse proxy, rate limiting, DB connection pooling
+- **Sprint 4** — Volume histogram overlay, virtual scroll for large option chains, performance regression tests, AI signal quality improvements
+
+---
+
+## Contributing
+
+Pull requests are welcome. For significant changes, open an issue first. Ensure `npx tsc --noEmit` and `npx playwright test` pass before opening a PR.
+
+## License
+
+[MIT](LICENSE)

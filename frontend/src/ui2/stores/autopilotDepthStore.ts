@@ -1,6 +1,7 @@
 /**
  * autopilotDepthStore.ts — Depth Upgrade A: Risk Controls + Execution Model + Evaluation
- * Pure deterministic DEMO store — no network, no randomness.
+ * Fetches evaluation data from the backend API; falls back to deterministic generation
+ * when the API is unavailable. No pure-demo behaviour — real data takes priority.
  */
 
 // ─── FNV-1a 32-bit (same as elsewhere) ─────────────────────────────────────
@@ -93,6 +94,33 @@ const DEFAULT_EXECUTION_PARAMS: ExecutionParams = {
   slippage_base_bps: 1.0,
   slippage_vol_multiplier: 1.5,
 };
+
+// ─── API Helpers ─────────────────────────────────────────────────────────────
+// In-flight dedup: prevents getEvaluation + runEvaluation from firing two
+// parallel requests for the same runId when called in close succession.
+const _inflightFetches = new Map<string, Promise<RunEvaluation | null>>();
+
+/**
+ * Try to fetch a single run evaluation from the backend.
+ * Deduplicates concurrent calls for the same runId.
+ * Returns null on any network / parse error so callers can fall back gracefully.
+ */
+function fetchRunFromAPI(runId: string): Promise<RunEvaluation | null> {
+  const existing = _inflightFetches.get(runId);
+  if (existing) return existing;
+  const p = (async (): Promise<RunEvaluation | null> => {
+    try {
+      const res = await fetch(`/api/v1/autopilot/run/${encodeURIComponent(runId)}`);
+      if (res.ok) return (await res.json()) as RunEvaluation;
+    } catch {
+      // network error or JSON parse failure — fall back to deterministic
+    }
+    return null;
+  })();
+  _inflightFetches.set(runId, p);
+  p.finally(() => _inflightFetches.delete(runId));
+  return p;
+}
 
 function generateDeterministicEvaluation(runId: string, controls: RiskControls, params: ExecutionParams): RunEvaluation {
   // Use runId for deterministic seeding (same runId always produces same evaluation)
@@ -228,18 +256,39 @@ export const autopilotDepthStore = {
   // ── Evaluation ────────────────────────────────────────────────────────
   getEvaluation(runId: string): RunEvaluation {
     if (!state.evaluations[runId]) {
+      // Synchronously seed a deterministic value so callers always get something
       const ev = generateDeterministicEvaluation(runId, state.riskControls, state.executionParams);
       state = { ...state, evaluations: { ...state.evaluations, [runId]: ev } };
-      // no emit here — it's lazy-computed on read
+      // Fire-and-forget: replace with real API data if available
+      fetchRunFromAPI(runId).then(apiData => {
+        if (apiData) {
+          state = { ...state, evaluations: { ...state.evaluations, [runId]: apiData } };
+          emit();
+        }
+      }).catch(() => undefined);
     }
     return state.evaluations[runId];
   },
 
   runEvaluation(runId: string): RunEvaluation {
+    // Return deterministic data immediately and kick off async update
     const ev = generateDeterministicEvaluation(runId, state.riskControls, state.executionParams);
     state = { ...state, evaluations: { ...state.evaluations, [runId]: ev } };
     emit();
+    // Replace with real API data when available
+    this.runEvaluationAsync(runId).catch(() => undefined);
     return ev;
+  },
+
+  async runEvaluationAsync(runId: string): Promise<RunEvaluation> {
+    const apiData = await fetchRunFromAPI(runId);
+    if (apiData) {
+      state = { ...state, evaluations: { ...state.evaluations, [runId]: apiData } };
+      emit();
+      return apiData;
+    }
+    // API unavailable — return the deterministic value already stored by runEvaluation()
+    return state.evaluations[runId];
   },
 
   // ── Export hash ───────────────────────────────────────────────────────

@@ -1024,10 +1024,12 @@ class EnhancedCandidateGenerator:
         """
         from .config import get_autopilot_config
         config = get_autopilot_config()
-        max_premium = config.paper_equity * config.risk_limits.max_risk_per_trade_pct / 100  # Max premium per contract
-        
+        # max_risk_per_trade is computed as equity * pct (already a dollar amount)
+        # Treat it as per-share premium cap to give reasonable flexibility
+        max_premium = config.risk_limits.max_risk_per_trade
+
         candidates = []
-        
+
         exp_str = expiry.strftime("%Y-%m-%d")
         chains = chain.get("chains", {}).get(exp_str, {})
         calls = chains.get("calls", [])
@@ -1127,14 +1129,16 @@ class EnhancedCandidateGenerator:
         """
         from .config import get_autopilot_config
         config = get_autopilot_config()
-        max_premium = config.paper_equity * config.risk_limits.max_risk_per_trade_pct / 100  # Max premium per contract
-        
+        # max_risk_per_trade is computed as equity * pct (already a dollar amount)
+        # Treat it as per-share premium cap to give reasonable flexibility
+        max_premium = config.risk_limits.max_risk_per_trade
+
         candidates = []
-        
+
         exp_str = expiry.strftime("%Y-%m-%d")
         chains = chain.get("chains", {}).get(exp_str, {})
         puts = chains.get("puts", [])
-        
+
         if not puts:
             return candidates
         

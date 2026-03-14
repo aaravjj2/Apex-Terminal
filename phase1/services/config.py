@@ -7,11 +7,14 @@ Secrets loading priority:
 2. PROFILE=dev (or unset) → Loads from keys.env files, then env vars override
 """
 
+import logging
 import os
 from typing import Optional, Literal
 from pydantic_settings import BaseSettings
 from pydantic import Field
 from functools import lru_cache
+
+_cfg_log = logging.getLogger("apex.config")
 
 
 # Check profile BEFORE any other imports to control secrets loading behavior
@@ -33,7 +36,12 @@ class Settings(BaseSettings):
     
     # API Server
     api_host: str = Field(default="0.0.0.0")
-    api_port: int = Field(default=8090, description="Backend port — env-driven single source of truth")
+    api_port: int = Field(default=8000, description="Backend port — single source of truth (8000)")
+    # CORS — comma-separated allowed origins; set via ALLOWED_ORIGINS env var in prod
+    allowed_origins: str = Field(
+        default="http://localhost:5100,http://localhost:5173,http://localhost:3000",
+        description="Comma-separated CORS allowed origins"
+    )
     
     # Finnhub
     finnhub_api_key: Optional[str] = Field(default=None)
@@ -86,7 +94,7 @@ class Settings(BaseSettings):
     # Elasticsearch
     elasticsearch_url: str = Field(default="http://localhost:9200")
     elasticsearch_api_key: Optional[str] = Field(default=None)
-    elastic_required: bool = Field(default=True, description="Fail-fast if ES not reachable")
+    elastic_required: bool = Field(default=False, description="Set True only if ES is available in your env")
 
     # ElevenLabs TTS
     elevenlabs_api_key: Optional[str] = Field(default=None)
@@ -96,7 +104,7 @@ class Settings(BaseSettings):
     elevenlabs_similarity_boost: float = Field(default=0.75)
     
     class Config:
-        env_file = ".env"
+        env_file = "keys.env"
         env_file_encoding = "utf-8"
         extra = "ignore"
     
@@ -104,6 +112,11 @@ class Settings(BaseSettings):
         """Check if running in production mode."""
         return self.profile == "prod"
     
+    @property
+    def origins_list(self) -> list[str]:
+        """Parse allowed CORS origins into list."""
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
     @property
     def timeframes_list(self) -> list[str]:
         """Parse supported timeframes into list."""
@@ -126,44 +139,74 @@ def _load_keys_env_if_dev() -> None:
     In production, environment variables must be set externally (Heroku Config Vars).
     """
     if IS_PRODUCTION:
-        print("[CONFIG] PROFILE=prod — skipping keys.env file loading (env vars only)")
+        _cfg_log.info("PROFILE=prod — skipping keys.env file loading (env vars only)")
         return
-    
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     potential_paths = [
         os.path.join(current_dir, "..", "keys.env"),        # phase1/keys.env
         os.path.join(current_dir, "..", "..", "keys.env"),  # root/keys.env
         os.path.join(current_dir, "keys.env"),              # services/keys.env
     ]
-    
+
     for path in potential_paths:
         if os.path.exists(path):
             from dotenv import load_dotenv
-            print(f"[CONFIG] Loading keys from: {path}")
+            _cfg_log.info(f"Loading keys from: {os.path.abspath(path)}")
             load_dotenv(path)
             return
-    
-    print("[CONFIG] No keys.env file found (env vars may still be used)")
+
+    _cfg_log.warning("No keys.env file found — relying on environment variables only")
 
 
 @lru_cache
 def get_settings() -> Settings:
-    """Get cached settings instance."""
+    """Get cached settings instance. Logs a full key inventory on first call."""
     _load_keys_env_if_dev()
     settings = Settings()
-    
-    # Startup validation — warn about missing providers
-    warnings = []
+
+    # ── Key inventory ────────────────────────────────────────────────────────
+    configured: list[str] = []
+    missing: list[str] = []
+
+    def _check(label: str, value: Optional[str]) -> None:
+        if value:
+            configured.append(label)
+        else:
+            missing.append(label)
+
+    _check("APCA_API_KEY_ID",      settings.apca_api_key_id)
+    _check("APCA_API_SECRET_KEY",  settings.apca_api_secret_key)
+    _check("FINNHUB_API_KEY",      settings.finnhub_api_key)
+    _check("FINNHUB2_API_KEY",     settings.finnhub2_api_key)
+    _check("TRADIER_BROKERAGE_KEY", settings.tradier_brokerage_key)
+    _check("TRADIER_SANDBOX_KEY",  settings.tradier_sandbox_key)
+    _check("POLYGON_API_KEY",      settings.polygon_api_key)
+    _check("TIINGO_API_KEY",       settings.tiingo_api_key)
+    _check("ELEVENLABS_API_KEY",   settings.elevenlabs_api_key)
+    _check("ELASTICSEARCH_API_KEY", settings.elasticsearch_api_key)
+
+    if configured:
+        _cfg_log.info(f"API keys configured: {', '.join(configured)}")
+    if missing:
+        _cfg_log.warning(f"API keys NOT set (features will degrade): {', '.join(missing)}")
+
+    # ── Critical key warnings ────────────────────────────────────────────────
     if not settings.apca_api_key_id:
-        warnings.append("APCA_API_KEY_ID not set — broker/live data unavailable")
+        _cfg_log.error(
+            "APCA_API_KEY_ID is missing — Alpaca broker and live market data are DISABLED. "
+            "Set this in keys.env to enable trading."
+        )
+    if not settings.apca_api_secret_key:
+        _cfg_log.error(
+            "APCA_API_SECRET_KEY is missing — Alpaca authentication will fail."
+        )
     if not settings.finnhub_api_key and not settings.tiingo_api_key:
-        warnings.append("No market data API key (FINNHUB/TIINGO) — yfinance-only mode")
-    if not settings.elasticsearch_url:
-        warnings.append("ELASTICSEARCH_URL not set — ES features disabled")
-    
-    for w in warnings:
-        print(f"[CONFIG WARNING] {w}")
-    
+        _cfg_log.warning(
+            "No streaming market data key (FINNHUB_API_KEY / TIINGO_API_KEY) — "
+            "falling back to yfinance delayed quotes only."
+        )
+
     return settings
 
 

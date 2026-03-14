@@ -1,104 +1,320 @@
 """
-Wave 6 — News Sentiment Engine
-Enhanced sentiment analysis for universe symbols.
+Wave 6 — News Sentiment Engine (Live Finnhub Integration)
+=========================================================
+GET /api/v1/sentiment/articles      — Live market news (Finnhub → empty on failure)
+GET /api/v1/sentiment/symbols       — Per-symbol sentiment scores (Finnhub)
+GET /api/v1/sentiment/symbols/{sym} — Per-symbol summary
+GET /api/v1/sentiment/hash          — Data fingerprint
+GET /api/v1/sentiment/market-mood   — Aggregate market mood
+
+Data priority: Finnhub live → warning log (no stale demo data shown to user).
+Cache TTL: 5 minutes to avoid hammering the Finnhub rate limit.
 """
+from __future__ import annotations
+
+import asyncio
 import hashlib
 import json
-from typing import List
+import logging
+import time
+from typing import Dict, List, Optional
+
 from fastapi import APIRouter
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/sentiment", tags=["sentiment"])
+_log = logging.getLogger(__name__)
 
-
-class SentimentArticle(BaseModel):
-    article_id: str
-    headline: str
-    source: str
-    published_at: str
-    sentiment: str  # bullish / bearish / neutral
-    confidence: float
-    relevance: float
-    symbols: List[str]
-
-
-class SymbolSentiment(BaseModel):
-    symbol: str
-    overall_sentiment: str
-    score: float  # -1.0 to 1.0
-    article_count: int
-    bullish_count: int
-    bearish_count: int
-    neutral_count: int
-    top_headline: str
-
-
-DEMO_ARTICLES: List[dict] = [
-    {"article_id": "art-001", "headline": "Apple reports record Q4 revenue beating estimates", "source": "Reuters",
-     "published_at": "2026-01-16T09:30:00Z", "sentiment": "bullish", "confidence": 0.92, "relevance": 0.98, "symbols": ["AAPL"]},
-    {"article_id": "art-002", "headline": "NVIDIA faces supply chain concerns amid AI chip demand", "source": "Bloomberg",
-     "published_at": "2026-01-16T10:15:00Z", "sentiment": "bearish", "confidence": 0.78, "relevance": 0.95, "symbols": ["NVDA"]},
-    {"article_id": "art-003", "headline": "Tesla announces new factory expansion in Europe", "source": "CNBC",
-     "published_at": "2026-01-16T11:00:00Z", "sentiment": "bullish", "confidence": 0.85, "relevance": 0.90, "symbols": ["TSLA"]},
-    {"article_id": "art-004", "headline": "S&P 500 holds steady amid mixed economic data", "source": "MarketWatch",
-     "published_at": "2026-01-16T12:00:00Z", "sentiment": "neutral", "confidence": 0.88, "relevance": 0.75, "symbols": ["SPY"]},
-    {"article_id": "art-005", "headline": "Microsoft Azure growth accelerates in cloud market", "source": "WSJ",
-     "published_at": "2026-01-16T13:30:00Z", "sentiment": "bullish", "confidence": 0.90, "relevance": 0.93, "symbols": ["MSFT"]},
-    {"article_id": "art-006", "headline": "AMD gains market share in data center processors", "source": "TechCrunch",
-     "published_at": "2026-01-16T14:00:00Z", "sentiment": "bullish", "confidence": 0.82, "relevance": 0.88, "symbols": ["AMD"]},
-    {"article_id": "art-007", "headline": "Meta Platforms faces regulatory scrutiny in EU", "source": "FT",
-     "published_at": "2026-01-16T14:30:00Z", "sentiment": "bearish", "confidence": 0.75, "relevance": 0.85, "symbols": ["META"]},
-    {"article_id": "art-008", "headline": "Amazon Web Services launches new AI services", "source": "Reuters",
-     "published_at": "2026-01-16T15:00:00Z", "sentiment": "bullish", "confidence": 0.87, "relevance": 0.91, "symbols": ["AMZN"]},
+# ── Symbols to track for symbol-level sentiment ───────────────────────────────
+UNIVERSE: List[str] = [
+    "AAPL", "NVDA", "TSLA", "MSFT", "AMZN",
+    "META", "AMD", "GOOGL", "JPM", "SPY",
 ]
 
-DEMO_SYMBOL_SENTIMENTS: List[dict] = [
-    {"symbol": "AAPL", "overall_sentiment": "bullish", "score": 0.72, "article_count": 5, "bullish_count": 3, "bearish_count": 1, "neutral_count": 1, "top_headline": "Apple reports record Q4 revenue beating estimates"},
-    {"symbol": "NVDA", "overall_sentiment": "bearish", "score": -0.35, "article_count": 4, "bullish_count": 1, "bearish_count": 2, "neutral_count": 1, "top_headline": "NVIDIA faces supply chain concerns amid AI chip demand"},
-    {"symbol": "TSLA", "overall_sentiment": "bullish", "score": 0.55, "article_count": 6, "bullish_count": 3, "bearish_count": 1, "neutral_count": 2, "top_headline": "Tesla announces new factory expansion in Europe"},
-    {"symbol": "SPY", "overall_sentiment": "neutral", "score": 0.05, "article_count": 8, "bullish_count": 3, "bearish_count": 2, "neutral_count": 3, "top_headline": "S&P 500 holds steady amid mixed economic data"},
-    {"symbol": "MSFT", "overall_sentiment": "bullish", "score": 0.68, "article_count": 4, "bullish_count": 3, "bearish_count": 0, "neutral_count": 1, "top_headline": "Microsoft Azure growth accelerates in cloud market"},
-    {"symbol": "AMD", "overall_sentiment": "bullish", "score": 0.48, "article_count": 3, "bullish_count": 2, "bearish_count": 0, "neutral_count": 1, "top_headline": "AMD gains market share in data center processors"},
-    {"symbol": "META", "overall_sentiment": "bearish", "score": -0.22, "article_count": 5, "bullish_count": 1, "bearish_count": 3, "neutral_count": 1, "top_headline": "Meta Platforms faces regulatory scrutiny in EU"},
-    {"symbol": "AMZN", "overall_sentiment": "bullish", "score": 0.61, "article_count": 4, "bullish_count": 3, "bearish_count": 0, "neutral_count": 1, "top_headline": "Amazon Web Services launches new AI services"},
-]
+# ── Simple in-process TTL cache ───────────────────────────────────────────────
+_CACHE: Dict[str, tuple] = {}
+_CACHE_TTL = 300  # 5 minutes
 
+
+def _cache_get(key: str):
+    entry = _CACHE.get(key)
+    if entry and time.monotonic() < entry[1]:
+        return entry[0]
+    return None
+
+
+def _cache_set(key: str, value, ttl: int = _CACHE_TTL) -> None:
+    _CACHE[key] = (value, time.monotonic() + ttl)
+
+
+# ── Keyword sentiment classifier ──────────────────────────────────────────────
+_BULL_WORDS = frozenset([
+    "beat", "surge", "rally", "record", "growth", "upgrade", "buy",
+    "strong", "positive", "gain", "expansion", "jump", "boost",
+    "profit", "revenue", "rises", "soars", "bullish", "outperform",
+])
+_BEAR_WORDS = frozenset([
+    "miss", "drop", "fall", "decline", "cut", "downgrade", "sell",
+    "weak", "loss", "layoff", "recall", "concern", "warning",
+    "slump", "tumble", "bearish", "recession", "default", "lawsuit",
+])
+
+
+def _classify_sentiment(text: str) -> tuple[str, float]:
+    """Simple keyword heuristic returning (sentiment_label, confidence)."""
+    words = [w.strip(".,!?;:\"'") for w in text.lower().split()]
+    bull = sum(1 for w in words if w in _BULL_WORDS)
+    bear = sum(1 for w in words if w in _BEAR_WORDS)
+    total = bull + bear
+    if total == 0:
+        return "neutral", 0.65
+    if bull > bear:
+        return "bullish", min(0.95, 0.65 + bull * 0.04)
+    if bear > bull:
+        return "bearish", min(0.95, 0.65 + bear * 0.04)
+    return "neutral", 0.65
+
+
+def _extract_symbols(text: str) -> List[str]:
+    """Extract universe symbols that appear in text."""
+    text_upper = text.upper()
+    return [s for s in UNIVERSE if s in text_upper]
+
+
+# ── Finnhub REST helpers (synchronous — run via executor) ─────────────────────
+
+def _fetch_finnhub_market_news_sync(limit: int = 30) -> Optional[List[dict]]:
+    """
+    Fetch live general market news from Finnhub.
+    GET https://finnhub.io/api/v1/news?category=general&token=...
+    Returns list of article dicts, or None if Finnhub is unavailable.
+    """
+    cached = _cache_get("market_news")
+    if cached is not None:
+        return cached
+
+    try:
+        import datetime
+        import httpx
+        from ...config import get_settings
+
+        settings = get_settings()
+        key = settings.finnhub_api_key
+        if not key:
+            _log.warning(
+                "FINNHUB_API_KEY not configured — news feed unavailable. "
+                "Set FINNHUB_API_KEY in keys.env to enable live news."
+            )
+            return None
+
+        with httpx.Client(timeout=10.0) as client:
+            resp = client.get(
+                "https://finnhub.io/api/v1/news",
+                params={"category": "general", "token": key},
+            )
+            resp.raise_for_status()
+            raw = resp.json()
+
+        if not isinstance(raw, list) or not raw:
+            _log.warning("Finnhub returned empty news list")
+            return None
+
+        articles: List[dict] = []
+        for i, item in enumerate(raw[:limit]):
+            headline = item.get("headline", "").strip()
+            summary = item.get("summary", "").strip()
+            if not headline:
+                continue
+            source = item.get("source", "Unknown")
+            dt = item.get("datetime", 0)
+            try:
+                ts = datetime.datetime.utcfromtimestamp(int(dt)).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            except Exception:
+                ts = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            sentiment, confidence = _classify_sentiment(headline + " " + summary)
+            symbols = _extract_symbols(headline + " " + summary)
+            articles.append({
+                "article_id": f"fh-{item.get('id', i)}",
+                "headline": headline,
+                "source": source,
+                "published_at": ts,
+                "sentiment": sentiment,
+                "confidence": round(confidence, 2),
+                "relevance": 0.80,
+                "symbols": symbols,
+                "url": item.get("url", ""),
+                "summary": (summary[:300] + "…") if len(summary) > 300 else summary,
+            })
+
+        _cache_set("market_news", articles)
+        _log.info(f"Finnhub market news fetched: {len(articles)} articles")
+        return articles
+
+    except Exception as e:
+        _log.warning(f"Finnhub market news fetch failed: {e}")
+        return None
+
+
+def _fetch_finnhub_symbol_sentiment_sync(symbol: str) -> Optional[dict]:
+    """
+    Fetch Finnhub news-sentiment score for a single symbol.
+    GET https://finnhub.io/api/v1/news-sentiment?symbol=...&token=...
+    Returns sentiment dict or None.
+    """
+    cache_key = f"sym_sentiment_{symbol}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    try:
+        import httpx
+        from ...config import get_settings
+
+        settings = get_settings()
+        key = settings.finnhub_api_key
+        if not key:
+            return None
+
+        with httpx.Client(timeout=8.0) as client:
+            resp = client.get(
+                "https://finnhub.io/api/v1/news-sentiment",
+                params={"symbol": symbol, "token": key},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        if not data or "sentiment" not in data:
+            return None
+
+        bull_pct: float = data["sentiment"].get("bullishPercent", 0.5)
+        bear_pct: float = data["sentiment"].get("bearishPercent", 0.5)
+        score = round(float(bull_pct) - float(bear_pct), 4)
+        overall = "bullish" if score > 0.1 else "bearish" if score < -0.1 else "neutral"
+
+        buzz = data.get("buzz", {})
+        count = int(buzz.get("articlesInLastWeek", 0))
+        bull_n = int(count * bull_pct)
+        bear_n = int(count * bear_pct)
+        neutral_n = max(0, count - bull_n - bear_n)
+
+        result = {
+            "symbol": symbol,
+            "overall_sentiment": overall,
+            "score": score,
+            "article_count": count,
+            "bullish_count": bull_n,
+            "bearish_count": bear_n,
+            "neutral_count": neutral_n,
+            "top_headline": (
+                f"Bullish: {bull_pct * 100:.0f}% / Bearish: {bear_pct * 100:.0f}% "
+                f"({count} articles this week, source: Finnhub)"
+            ),
+            "company_news_score": round(float(data.get("companyNewsScore", 0.0)), 4),
+        }
+        _cache_set(cache_key, result)
+        return result
+
+    except Exception as e:
+        _log.debug(f"Finnhub symbol sentiment fetch failed for {symbol}: {e}")
+        return None
+
+
+def _null_sentiment(symbol: str) -> dict:
+    """Return a zero-value sentiment record when Finnhub is unavailable."""
+    return {
+        "symbol": symbol,
+        "overall_sentiment": "neutral",
+        "score": 0.0,
+        "article_count": 0,
+        "bullish_count": 0,
+        "bearish_count": 0,
+        "neutral_count": 0,
+        "top_headline": "No live data — FINNHUB_API_KEY not configured or fetch failed",
+    }
+
+
+# ── Route handlers ────────────────────────────────────────────────────────────
 
 @router.get("/articles")
 async def list_articles(symbol: str = None, limit: int = 20):
-    articles = DEMO_ARTICLES
+    """Return live Finnhub market news. Empty list (not demo data) if unavailable."""
+    loop = asyncio.get_event_loop()
+    articles = await loop.run_in_executor(
+        None, _fetch_finnhub_market_news_sync, min(limit * 2, 60)
+    )
+    if articles is None:
+        return {"articles": [], "total": 0, "source": "unavailable"}
+
     if symbol:
-        articles = [a for a in articles if symbol.upper() in a["symbols"]]
-    return {"articles": articles[:limit], "total": len(articles)}
+        articles = [a for a in articles if symbol.upper() in a.get("symbols", [])]
+
+    result = articles[:limit]
+    return {"articles": result, "total": len(result), "source": "finnhub"}
 
 
 @router.get("/symbols")
 async def symbol_sentiments():
-    return {"sentiments": DEMO_SYMBOL_SENTIMENTS}
+    """Return per-symbol sentiment for the universe. Live Finnhub data, zeros if unavailable."""
+    loop = asyncio.get_event_loop()
+    tasks = [
+        loop.run_in_executor(None, _fetch_finnhub_symbol_sentiment_sync, sym)
+        for sym in UNIVERSE
+    ]
+    raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+    results = [
+        r if isinstance(r, dict) else _null_sentiment(sym)
+        for sym, r in zip(UNIVERSE, raw_results)
+    ]
+    source = "finnhub" if any(r["article_count"] > 0 for r in results) else "unavailable"
+    return {"sentiments": results, "source": source}
 
 
 @router.get("/symbols/{symbol}")
 async def symbol_sentiment(symbol: str):
-    for s in DEMO_SYMBOL_SENTIMENTS:
-        if s["symbol"] == symbol.upper():
-            return s
-    return {"symbol": symbol.upper(), "overall_sentiment": "unknown", "score": 0.0, "article_count": 0,
-            "bullish_count": 0, "bearish_count": 0, "neutral_count": 0, "top_headline": "No data"}
+    """Return sentiment for a single symbol."""
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(
+        None, _fetch_finnhub_symbol_sentiment_sync, symbol.upper()
+    )
+    return result if result else _null_sentiment(symbol.upper())
 
 
 @router.get("/hash")
 async def sentiment_hash():
-    canonical = json.dumps(DEMO_SYMBOL_SENTIMENTS, sort_keys=True, separators=(",", ":"))
-    return {"hash": hashlib.sha256(canonical.encode()).hexdigest()}
+    """Return SHA-256 fingerprint of live news data."""
+    loop = asyncio.get_event_loop()
+    articles = await loop.run_in_executor(None, _fetch_finnhub_market_news_sync, 20)
+    canonical = json.dumps(articles or [], sort_keys=True, separators=(",", ":"))
+    return {
+        "hash": hashlib.sha256(canonical.encode()).hexdigest(),
+        "source": "finnhub" if articles else "unavailable",
+    }
 
 
 @router.get("/market-mood")
 async def market_mood():
-    avg_score = sum(s["score"] for s in DEMO_SYMBOL_SENTIMENTS) / len(DEMO_SYMBOL_SENTIMENTS)
-    if avg_score > 0.3:
-        mood = "bullish"
-    elif avg_score < -0.3:
-        mood = "bearish"
-    else:
-        mood = "neutral"
-    return {"mood": mood, "avg_score": round(avg_score, 4), "symbol_count": len(DEMO_SYMBOL_SENTIMENTS)}
+    """Aggregate market mood across the top-5 universe symbols."""
+    loop = asyncio.get_event_loop()
+    tasks = [
+        loop.run_in_executor(None, _fetch_finnhub_symbol_sentiment_sync, sym)
+        for sym in UNIVERSE[:5]
+    ]
+    raw = await asyncio.gather(*tasks, return_exceptions=True)
+    scores = [r["score"] for r in raw if isinstance(r, dict) and r.get("article_count", 0) > 0]
+    if not scores:
+        return {
+            "mood": "neutral",
+            "avg_score": 0.0,
+            "symbol_count": 0,
+            "source": "unavailable",
+        }
+    avg_score = sum(scores) / len(scores)
+    mood = "bullish" if avg_score > 0.1 else "bearish" if avg_score < -0.1 else "neutral"
+    return {
+        "mood": mood,
+        "avg_score": round(avg_score, 4),
+        "symbol_count": len(scores),
+        "source": "finnhub",
+    }

@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "7500:7500"
+      - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-dashboard_user}:${POSTGRES_PASSWORD:-newpassword}@db:5432/${POSTGRES_DB:-financial_dashboard}
       - FINNHUB_API_KEY=${FINNHUB_API_KEY}
@@ -30,14 +30,20 @@ services:
       - APCA_API_SECRET_KEY=${APCA_API_SECRET_KEY}
       - APCA_ENDPOINT=${APCA_ENDPOINT:-https://paper-api.alpaca.markets}
       - API_HOST=0.0.0.0
-      - API_PORT=7500
+      - API_PORT=8000
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5100,http://localhost:3000}
       - LOG_LEVEL=INFO
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     volumes:
       - ./fixtures:/app/fixtures:ro
-    command: ["python", "-m", "uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "7500"]
+    command: ["python", "-m", "uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
   ingestion:
     build:

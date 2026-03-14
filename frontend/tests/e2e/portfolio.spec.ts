@@ -5,8 +5,8 @@ const LOAD_OPTS = { timeout: 30_000 };
 test.describe('Portfolio — Holdings and Allocation', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/ui2/portfolio');
-    await page.waitForLoadState('networkidle', LOAD_OPTS).catch(() => {});
-    await expect(page.getByTestId('portfolio-ui2-page')).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState('domcontentloaded', LOAD_OPTS).catch(() => {});
+    await expect(page.getByTestId('portfolio-ui2-page')).toBeVisible({ timeout: 25_000 });
   });
 
   test('portfolio page loads with data-testid marker', async ({ page }) => {

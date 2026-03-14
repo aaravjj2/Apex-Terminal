@@ -3,6 +3,8 @@
  * Kill switch, rule toggles, activity feed
  */
 
+import { API_BASE } from '@/config/api';
+
 // Live timestamp utility
 function now() { return Date.now(); }
 
@@ -26,13 +28,16 @@ export interface AutopilotActivity {
   confidence?: number;
 }
 
-let killSwitchActive = false;
-let rules: AutopilotRule[] = [
+// Hardcoded fallback rules — used only when the API returns an empty set
+const FALLBACK_RULES: AutopilotRule[] = [
   { id: 'rule-1', name: 'Max Position Size', enabled: true, type: 'position-limit', value: 500, unit: 'shares' },
   { id: 'rule-2', name: 'Daily Loss Limit', enabled: true, type: 'loss-limit', value: 5000, unit: 'USD' },
   { id: 'rule-3', name: 'Sector Concentration', enabled: true, type: 'sector-limit', value: 40, unit: '%' },
   { id: 'rule-4', name: 'Trade Frequency', enabled: false, type: 'frequency-limit', value: 10, unit: 'trades/hour' },
 ];
+
+let killSwitchActive = false;
+let rules: AutopilotRule[] = [];
 
 let activityFeed: AutopilotActivity[] = [];
 
@@ -121,15 +126,40 @@ export const autopilotStore = {
     return () => { listeners.delete(fn); };
   },
 
+  /** Fetch risk rules from the backend; falls back to FALLBACK_RULES if the API is unavailable or returns an empty array */
+  async fetchRules(): Promise<void> {
+    try {
+      const resp = await fetch(`${API_BASE}/api/v1/autopilot/risk-rules`, {
+        signal: AbortSignal.timeout(10000),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const fetched: AutopilotRule[] = Array.isArray(data) ? data : (data?.rules ?? []);
+        if (fetched.length > 0) {
+          rules = fetched;
+          notify();
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[autopilotStore] Failed to fetch risk rules from API, using fallback:', e);
+    }
+    // API unavailable or returned empty — apply fallback
+    if (rules.length === 0) {
+      rules = [...FALLBACK_RULES];
+      notify();
+    }
+  },
+
   reset() {
     killSwitchActive = false;
-    rules = [
-      { id: 'rule-1', name: 'Max Position Size', enabled: true, type: 'position-limit', value: 500, unit: 'shares' },
-      { id: 'rule-2', name: 'Daily Loss Limit', enabled: true, type: 'loss-limit', value: 5000, unit: 'USD' },
-      { id: 'rule-3', name: 'Sector Concentration', enabled: true, type: 'sector-limit', value: 40, unit: '%' },
-      { id: 'rule-4', name: 'Trade Frequency', enabled: false, type: 'frequency-limit', value: 10, unit: 'trades/hour' },
-    ];
-    activityFeed = []; // Reset to empty — no seeded data
+    rules = [];
+    activityFeed = [];
     notify();
+    // Re-fetch rules from the API (async, non-blocking)
+    autopilotStore.fetchRules();
   },
 };
+
+// Populate rules on module load — API first, fallback if unavailable
+autopilotStore.fetchRules();

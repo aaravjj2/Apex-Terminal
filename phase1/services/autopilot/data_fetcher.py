@@ -248,12 +248,15 @@ class YFinanceDataFetcher:
         """Get historical closing prices."""
         if not self._yf:
             return []
-        
+
         try:
+            import math
             ticker = self._yf.Ticker(symbol)
             hist = ticker.history(period=period)
-            return hist["Close"].tolist()
-            
+            # Filter out NaN/None values which yfinance may return for today's incomplete candle
+            raw = hist["Close"].tolist()
+            return [x for x in raw if x is not None and not (isinstance(x, float) and math.isnan(x))]
+
         except Exception as e:
             logger.error(f"yFinance history error for {symbol}: {e}")
             return []
@@ -268,7 +271,17 @@ class MarketDataProvider:
     """
     
     def __init__(self):
-        self.tradier = TradierDataFetcher()
+        # Prefer sandbox key + sandbox URL for market data (options chains, quotes).
+        # Tradier sandbox API has full market data access and works with the sandbox key.
+        # Brokerage API may 401 if the brokerage account subscription doesn't cover market data.
+        sandbox_key = os.environ.get("TRADIER_SANDBOX_KEY")
+        brokerage_key = os.environ.get("TRADIER_BROKERAGE_KEY")
+        if sandbox_key:
+            self.tradier = TradierDataFetcher(api_key=sandbox_key, sandbox=True)
+        elif brokerage_key:
+            self.tradier = TradierDataFetcher(api_key=brokerage_key, sandbox=False)
+        else:
+            self.tradier = TradierDataFetcher()
         self.yfinance = YFinanceDataFetcher()
         self._cache: Dict[str, Any] = {}
         self._cache_time: Dict[str, datetime] = {}

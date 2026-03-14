@@ -619,25 +619,24 @@ class ExecutionEngineV2:
     async def _persist_order(self, intent: OrderIntent, result: OrderResult) -> None:
         """Persist order to v3_store."""
         try:
-            from .v3_store import get_v3_store
+            from .v3_store import order_create
             import asyncio
-            store = get_v3_store()
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, lambda: store.upsert_order({
+            await loop.run_in_executor(None, lambda: order_create({
                 "order_id": result.broker_order_id or result.intent_id,
                 "cycle_id": intent.cycle_id,
                 "decision_id": intent.intent_id,
                 "symbol": intent.symbol,
                 "contract_symbol": intent.contract_symbol,
-                "side": intent.side.value,
+                "intent": "BTO" if intent.side == OrderSide.BUY_TO_OPEN else "STC",
+                "side": "buy" if intent.side == OrderSide.BUY_TO_OPEN else "sell",
                 "qty": result.qty,
+                "order_type": "limit",
                 "limit_price": result.submitted_limit,
-                "fill_price": result.fill_price,
-                "status": result.status.value,
+                "limit_price_rule": intent.limit_price_basis,
                 "broker_order_id": result.broker_order_id,
-                "correlation_id": result.correlation_id,
+                "status": result.status.value,
                 "submitted_at": result.submitted_at.isoformat(),
-                "error": result.error,
             }))
         except Exception as exc:
             logger.error(f"ExecutionEngineV2._persist_order: {exc}")

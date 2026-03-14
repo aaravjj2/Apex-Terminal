@@ -192,6 +192,9 @@ from .verification_routes import router as verification_router
 from ..autopilot.unified_router import router as unified_autopilot_router
 # v1.19 + v1.20: Portfolio CRUD
 from ..portfolio import portfolio_router
+# Account summary endpoint
+from .routes import account_summary
+from .routes import investor_personas_route
 
 
 logger = structlog.get_logger()
@@ -244,7 +247,7 @@ async def lifespan(app: FastAPI):
         # Online-only: still set mode=live, ingestion will use yfinance
         logger.warning("no_api_keys_configured_using_yfinance_fallback")
 
-    ingestion = IngestionService(mode=mode, symbols=["AAPL", "TSLA", "MSFT"], provider=provider_override) # Default symbols
+    ingestion = IngestionService(mode=mode, symbols=settings.universe_list[:10], provider=provider_override)
     
     # Start ingestion
     try:
@@ -332,13 +335,14 @@ def create_app() -> FastAPI:
     from .middleware.json_errors import JsonErrorMiddleware
     app.add_middleware(JsonErrorMiddleware)
 
-    # CORS middleware
+    # CORS middleware — uses settings.origins_list (never wildcard + credentials)
+    _cors_origins = settings.origins_list
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=_cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
     )
     
     # Include routers
@@ -352,6 +356,9 @@ def create_app() -> FastAPI:
     app.include_router(portfolio.router, prefix="/api/v1/portfolio", tags=["portfolio"])
     # ── Compat: expose /api/v1/positions and /api/v1/orders (legacy shortcuts) ──
     app.include_router(portfolio.router, prefix="/api/v1", tags=["portfolio-compat"])
+    # ── Account summary (GET /api/v1/account/summary) ──
+    app.include_router(account_summary.router, tags=["account"])
+    app.include_router(investor_personas_route.router)
     app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["alerts"])
     app.include_router(versions.router, prefix="/api/v1", tags=["versions"])
     app.include_router(runs.router, prefix="/api/v1", tags=["runs"])
@@ -459,8 +466,9 @@ def create_app() -> FastAPI:
     app.include_router(export_bundle.router, prefix="/api/v3/export", tags=["export-bundle-v3"])
     # ── Autopilot Options (real options autopilot with Alpaca paper) ──
     app.include_router(autopilot_options_router_mod.router, tags=["autopilot-options"])
-    # ── Autopilot V3 (closed-loop trading system) ──────────────────────────
-    app.include_router(autopilot_v3_router_mod.router, tags=["autopilot-v3"])
+    # ── Autopilot V3 DISABLED — unified_autopilot_router at /api/v1/autopilot is the canonical engine.
+    # ── Enabling both simultaneously risks double-orders on the Alpaca paper account.
+    # app.include_router(autopilot_v3_router_mod.router, tags=["autopilot-v3"])
     # ── Reality Repair routes (Phases A-G) ──
     app.include_router(ops_version.router, tags=["ops-version"])
     app.include_router(ops_market_session.router, tags=["ops-market-session"])
@@ -894,38 +902,62 @@ def create_app() -> FastAPI:
     async def health_check():
         """
         Quick health check that does real connectivity probes.
-        Uses the same backend.core.startup_checks as /api/v3/ops/health.
+        Uses backend.core.startup_checks when available; fallback when not.
         """
-        from backend.core.startup_checks import run_all_checks  # type: ignore
-        result = await run_all_checks(timeout=5.0)
-        
-        deps = result.get("dependencies", {})
-        es = deps.get("elasticsearch", {})
-        broker = deps.get("broker", {})
-        
         settings = get_settings()
-        
-        # Determine actual bars source
-        if broker.get("connected"):
-            bars_source = "alpaca"
-        elif settings.finnhub_api_key:
-            bars_source = "finnhub"
-        elif settings.tiingo_api_key:
-            bars_source = "yfinance"
-        else:
-            bars_source = "none"
-        
-        return {
-            "status": "healthy" if result.get("ready") else "degraded",
-            "ready": result.get("ready", False),
-            "correlation_id": result.get("correlation_id"),
-            "alpaca_configured": bool(settings.apca_api_key_id),
-            "alpaca_connected": broker.get("connected", False),
-            "elasticsearch_connected": es.get("connected", False),
-            "tradier_configured": bool(settings.tradier_brokerage_key),
-            "bars_source": bars_source,
-            "mode": "paper" if broker.get("connected") else "no-broker",
-        }
+        try:
+            from backend.core.startup_checks import run_all_checks  # type: ignore
+            result = await run_all_checks(timeout=5.0)
+            deps = result.get("dependencies", {})
+            es = deps.get("elasticsearch", {})
+            broker = deps.get("broker", {})
+            if broker.get("connected"):
+                bars_source = "alpaca"
+            elif settings.finnhub_api_key:
+                bars_source = "finnhub"
+            elif settings.tiingo_api_key:
+                bars_source = "yfinance"
+            else:
+                bars_source = "none"
+            return {
+                "status": "healthy" if result.get("ready") else "degraded",
+                "ready": result.get("ready", False),
+                "correlation_id": result.get("correlation_id"),
+                "alpaca_configured": bool(settings.apca_api_key_id),
+                "alpaca_connected": broker.get("connected", False),
+                "elasticsearch_connected": es.get("connected", False),
+                "tradier_configured": bool(settings.tradier_brokerage_key),
+                "bars_source": bars_source,
+                "mode": "paper" if broker.get("connected") else "no-broker",
+            }
+        except (ImportError, ModuleNotFoundError):
+            # Fallback when backend.core not on path (e.g. phase1 standalone)
+            bars_source = "yfinance" if settings.tiingo_api_key else ("finnhub" if settings.finnhub_api_key else "none")
+            return {
+                "status": "healthy",
+                "ready": True,
+                "correlation_id": None,
+                "alpaca_configured": bool(settings.apca_api_key_id),
+                "alpaca_connected": False,
+                "elasticsearch_connected": False,
+                "tradier_configured": bool(settings.tradier_brokerage_key),
+                "bars_source": bars_source,
+                "mode": "no-broker",
+            }
+        except Exception:
+            # run_all_checks failed (timeout, network, etc.) — return degraded, never crash
+            bars_source = "yfinance" if settings.tiingo_api_key else ("finnhub" if settings.finnhub_api_key else "none")
+            return {
+                "status": "degraded",
+                "ready": False,
+                "correlation_id": None,
+                "alpaca_configured": bool(settings.apca_api_key_id),
+                "alpaca_connected": False,
+                "elasticsearch_connected": False,
+                "tradier_configured": bool(settings.tradier_brokerage_key),
+                "bars_source": bars_source,
+                "mode": "no-broker",
+            }
     
     # Root endpoint
     @app.get("/")
@@ -993,7 +1025,38 @@ def create_app() -> FastAPI:
                 "symbols": settings.symbols_list,
             },
         }
-    
+
+    # ── Top-level health / readiness endpoints ──────────────────────────────
+    import time as _time
+    _start_time = _time.time()
+
+    @app.get("/health", tags=["health"], include_in_schema=True)
+    async def health_check():
+        """Liveness probe. Returns 200 when process is up."""
+        return {
+            "status": "ok",
+            "uptime_s": round(_time.time() - _start_time, 1),
+            "version": "2.0.0",
+            "port": 8000,
+        }
+
+    @app.get("/ready", tags=["health"], include_in_schema=True)
+    async def readiness_check():
+        """Readiness probe. Checks DB and Alpaca key presence."""
+        _settings = get_settings()
+        checks = {
+            "alpaca_key": bool(_settings.apca_api_key_id),
+            "alpaca_secret": bool(_settings.apca_api_secret_key),
+        }
+        try:
+            db = get_database()
+            await db.execute("SELECT 1")
+            checks["database"] = True
+        except Exception:
+            checks["database"] = False
+        ready = all(checks.values())
+        return {"ready": ready, "checks": checks}
+
     return app
 
 

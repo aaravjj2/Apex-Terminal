@@ -1,69 +1,109 @@
 """
 heatmap_compat.py — Heatmap + Fixed-Income compat routes for UI2 pages
 ======================================================================
-GET /api/v1/market-data/heatmap      → Sector heatmap data (stocks + changes)
-GET /api/v1/fixed-income/yield-curve → US Treasury yield curve
+GET /api/v1/market-data/heatmap      → Sector heatmap data (real yfinance quotes)
+GET /api/v1/fixed-income/yield-curve → US Treasury yield curve (FRED/yfinance)
 """
 from __future__ import annotations
-import random
-from typing import List, Optional
+import asyncio
+import logging
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
 
 router = APIRouter(tags=["UI2 Compat"])
+_log = logging.getLogger(__name__)
 
-# ── Heatmap mock data ─────────────────────────────────────────────────────
-
-SECTORS = [
-    "Technology", "Healthcare", "Financials", "Consumer Discretionary",
-    "Communication", "Industrials", "Consumer Staples", "Energy",
-    "Utilities", "Real Estate", "Materials",
+# ── Symbol → Sector + MarketCap mapping ──────────────────────────────────────
+# MarketCap values are approximate and used for tile sizing only (updated periodically)
+STOCK_META: List[Dict] = [
+    {"symbol": "AAPL", "sector": "Technology", "marketCap": 2.95e12},
+    {"symbol": "MSFT", "sector": "Technology", "marketCap": 2.80e12},
+    {"symbol": "NVDA", "sector": "Technology", "marketCap": 1.20e12},
+    {"symbol": "GOOGL", "sector": "Technology", "marketCap": 1.75e12},
+    {"symbol": "META", "sector": "Technology", "marketCap": 0.95e12},
+    {"symbol": "AVGO", "sector": "Technology", "marketCap": 0.55e12},
+    {"symbol": "ORCL", "sector": "Technology", "marketCap": 0.35e12},
+    {"symbol": "AMD", "sector": "Technology", "marketCap": 0.28e12},
+    {"symbol": "AMZN", "sector": "Consumer Discretionary", "marketCap": 1.55e12},
+    {"symbol": "TSLA", "sector": "Consumer Discretionary", "marketCap": 0.78e12},
+    {"symbol": "HD", "sector": "Consumer Discretionary", "marketCap": 0.38e12},
+    {"symbol": "NKE", "sector": "Consumer Discretionary", "marketCap": 0.18e12},
+    {"symbol": "JPM", "sector": "Financials", "marketCap": 0.52e12},
+    {"symbol": "V", "sector": "Financials", "marketCap": 0.50e12},
+    {"symbol": "MA", "sector": "Financials", "marketCap": 0.42e12},
+    {"symbol": "BAC", "sector": "Financials", "marketCap": 0.30e12},
+    {"symbol": "BRK-B", "sector": "Financials", "marketCap": 0.78e12},
+    {"symbol": "UNH", "sector": "Healthcare", "marketCap": 0.48e12},
+    {"symbol": "JNJ", "sector": "Healthcare", "marketCap": 0.42e12},
+    {"symbol": "LLY", "sector": "Healthcare", "marketCap": 0.58e12},
+    {"symbol": "PFE", "sector": "Healthcare", "marketCap": 0.16e12},
+    {"symbol": "ABBV", "sector": "Healthcare", "marketCap": 0.30e12},
+    {"symbol": "XOM", "sector": "Energy", "marketCap": 0.44e12},
+    {"symbol": "CVX", "sector": "Energy", "marketCap": 0.32e12},
+    {"symbol": "COP", "sector": "Energy", "marketCap": 0.14e12},
+    {"symbol": "DIS", "sector": "Communication", "marketCap": 0.22e12},
+    {"symbol": "NFLX", "sector": "Communication", "marketCap": 0.25e12},
+    {"symbol": "CMCSA", "sector": "Communication", "marketCap": 0.17e12},
+    {"symbol": "PG", "sector": "Consumer Staples", "marketCap": 0.36e12},
+    {"symbol": "KO", "sector": "Consumer Staples", "marketCap": 0.27e12},
+    {"symbol": "PEP", "sector": "Consumer Staples", "marketCap": 0.24e12},
+    {"symbol": "CAT", "sector": "Industrials", "marketCap": 0.18e12},
+    {"symbol": "GE", "sector": "Industrials", "marketCap": 0.17e12},
+    {"symbol": "HON", "sector": "Industrials", "marketCap": 0.14e12},
+    {"symbol": "NEE", "sector": "Utilities", "marketCap": 0.15e12},
+    {"symbol": "DUK", "sector": "Utilities", "marketCap": 0.08e12},
+    {"symbol": "AMT", "sector": "Real Estate", "marketCap": 0.10e12},
+    {"symbol": "PLD", "sector": "Real Estate", "marketCap": 0.12e12},
+    {"symbol": "LIN", "sector": "Materials", "marketCap": 0.20e12},
+    {"symbol": "APD", "sector": "Materials", "marketCap": 0.06e12},
 ]
 
-MOCK_STOCKS = [
-    {"symbol": "AAPL", "sector": "Technology", "marketCap": 2.95e12, "change": 1.39},
-    {"symbol": "MSFT", "sector": "Technology", "marketCap": 2.80e12, "change": 1.08},
-    {"symbol": "NVDA", "sector": "Technology", "marketCap": 1.20e12, "change": 3.17},
-    {"symbol": "GOOGL", "sector": "Technology", "marketCap": 1.75e12, "change": -0.36},
-    {"symbol": "META", "sector": "Technology", "marketCap": 0.95e12, "change": 1.63},
-    {"symbol": "AVGO", "sector": "Technology", "marketCap": 0.55e12, "change": 0.87},
-    {"symbol": "ORCL", "sector": "Technology", "marketCap": 0.35e12, "change": -0.22},
-    {"symbol": "AMD", "sector": "Technology", "marketCap": 0.28e12, "change": 2.41},
-    {"symbol": "AMZN", "sector": "Consumer Discretionary", "marketCap": 1.55e12, "change": 0.99},
-    {"symbol": "TSLA", "sector": "Consumer Discretionary", "marketCap": 0.78e12, "change": -1.24},
-    {"symbol": "HD", "sector": "Consumer Discretionary", "marketCap": 0.38e12, "change": 0.45},
-    {"symbol": "NKE", "sector": "Consumer Discretionary", "marketCap": 0.18e12, "change": -0.67},
-    {"symbol": "JPM", "sector": "Financials", "marketCap": 0.52e12, "change": 0.73},
-    {"symbol": "V", "sector": "Financials", "marketCap": 0.50e12, "change": 0.35},
-    {"symbol": "MA", "sector": "Financials", "marketCap": 0.42e12, "change": 0.52},
-    {"symbol": "BAC", "sector": "Financials", "marketCap": 0.30e12, "change": 1.01},
-    {"symbol": "BRK.B", "sector": "Financials", "marketCap": 0.78e12, "change": 0.37},
-    {"symbol": "UNH", "sector": "Healthcare", "marketCap": 0.48e12, "change": -0.55},
-    {"symbol": "JNJ", "sector": "Healthcare", "marketCap": 0.42e12, "change": 0.28},
-    {"symbol": "LLY", "sector": "Healthcare", "marketCap": 0.58e12, "change": 1.89},
-    {"symbol": "PFE", "sector": "Healthcare", "marketCap": 0.16e12, "change": -0.91},
-    {"symbol": "ABBV", "sector": "Healthcare", "marketCap": 0.30e12, "change": 0.44},
-    {"symbol": "XOM", "sector": "Energy", "marketCap": 0.44e12, "change": -0.62},
-    {"symbol": "CVX", "sector": "Energy", "marketCap": 0.32e12, "change": -0.38},
-    {"symbol": "COP", "sector": "Energy", "marketCap": 0.14e12, "change": -0.85},
-    {"symbol": "DIS", "sector": "Communication", "marketCap": 0.22e12, "change": 0.33},
-    {"symbol": "NFLX", "sector": "Communication", "marketCap": 0.25e12, "change": 1.15},
-    {"symbol": "CMCSA", "sector": "Communication", "marketCap": 0.17e12, "change": 0.19},
-    {"symbol": "PG", "sector": "Consumer Staples", "marketCap": 0.36e12, "change": 0.21},
-    {"symbol": "KO", "sector": "Consumer Staples", "marketCap": 0.27e12, "change": 0.15},
-    {"symbol": "PEP", "sector": "Consumer Staples", "marketCap": 0.24e12, "change": -0.11},
-    {"symbol": "CAT", "sector": "Industrials", "marketCap": 0.18e12, "change": 0.83},
-    {"symbol": "GE", "sector": "Industrials", "marketCap": 0.17e12, "change": 0.64},
-    {"symbol": "HON", "sector": "Industrials", "marketCap": 0.14e12, "change": 0.27},
-    {"symbol": "NEE", "sector": "Utilities", "marketCap": 0.15e12, "change": 0.02},
-    {"symbol": "DUK", "sector": "Utilities", "marketCap": 0.08e12, "change": -0.14},
-    {"symbol": "AMT", "sector": "Real Estate", "marketCap": 0.10e12, "change": 0.19},
-    {"symbol": "PLD", "sector": "Real Estate", "marketCap": 0.12e12, "change": 0.29},
-    {"symbol": "LIN", "sector": "Materials", "marketCap": 0.20e12, "change": 0.49},
-    {"symbol": "APD", "sector": "Materials", "marketCap": 0.06e12, "change": 0.29},
-]
+PERIOD_TO_YF = {
+    "1D": ("1d", "5m"),
+    "1W": ("5d", "1d"),
+    "1M": ("1mo", "1d"),
+    "3M": ("3mo", "1d"),
+    "6M": ("6mo", "1wk"),
+    "YTD": ("ytd", "1d"),
+    "1Y": ("1y", "1wk"),
+}
 
-PERIOD_MULT = {"1D": 1, "1W": 1.5, "1M": 2, "3M": 3, "6M": 4, "YTD": 3.5, "1Y": 5}
+
+def _fetch_quotes_sync(symbols: List[str], period: str) -> Dict[str, float]:
+    """Fetch pct change for symbols using yfinance. Returns {symbol: change_pct}."""
+    try:
+        import yfinance as yf
+        yf_period, yf_interval = PERIOD_TO_YF.get(period, ("1d", "5m"))
+        data = yf.download(
+            tickers=" ".join(symbols),
+            period=yf_period,
+            interval=yf_interval,
+            progress=False,
+            group_by="ticker",
+            auto_adjust=True,
+            threads=True,
+        )
+        results: Dict[str, float] = {}
+        if len(symbols) == 1:
+            sym = symbols[0]
+            closes = data.get("Close")
+            if closes is not None and len(closes) >= 2:
+                pct = (closes.iloc[-1] - closes.iloc[0]) / closes.iloc[0] * 100
+                results[sym] = round(float(pct), 2)
+        else:
+            for sym in symbols:
+                try:
+                    closes = data[sym]["Close"].dropna()
+                    if len(closes) >= 2:
+                        pct = (closes.iloc[-1] - closes.iloc[0]) / closes.iloc[0] * 100
+                        results[sym] = round(float(pct), 2)
+                except Exception:
+                    pass
+        return results
+    except Exception as e:
+        _log.warning(f"yfinance heatmap fetch failed: {e}")
+        return {}
 
 
 @router.get("/api/v1/market-data/heatmap")
@@ -71,19 +111,26 @@ async def get_heatmap(
     period: str = Query("1D"),
     tab: str = Query("SECTOR MAP"),
 ):
-    """Return jittered heatmap stock data."""
-    mult = PERIOD_MULT.get(period, 1)
+    """Return live heatmap stock data from yfinance."""
+    symbols = [s["symbol"] for s in STOCK_META]
+    loop = asyncio.get_event_loop()
+    quote_map = await loop.run_in_executor(None, _fetch_quotes_sync, symbols, period)
+
     stocks = []
-    for s in MOCK_STOCKS:
-        jitter = (random.random() - 0.5) * 0.6 * mult
+    for s in STOCK_META:
+        sym = s["symbol"]
+        change = quote_map.get(sym, 0.0)
         stocks.append({
-            **s,
-            "change": round(s["change"] * mult + jitter, 2),
+            "symbol": sym,
+            "sector": s["sector"],
+            "marketCap": s["marketCap"],
+            "change": change,
         })
 
     advancers = sum(1 for s in stocks if s["change"] > 0)
-    decliners = sum(1 for s in stocks if s["change"] < 0)
-    unchanged = sum(1 for s in stocks if s["change"] == 0)
+    decliners  = sum(1 for s in stocks if s["change"] < 0)
+    unchanged  = sum(1 for s in stocks if s["change"] == 0)
+    fetched_at = datetime.now(timezone.utc).isoformat()
 
     return {
         "stocks": stocks,
@@ -95,35 +142,77 @@ async def get_heatmap(
         },
         "period": period,
         "tab": tab,
+        "source": "yfinance",
+        "fetched_at": fetched_at,
     }
 
 
-# ── Fixed income yield curve ──────────────────────────────────────────────
+# ── Fixed income yield curve via yfinance Treasury tickers ───────────────────
 
-YIELD_CURVE = [
-    {"tenor": "1M",  "yield_pct": 5.33, "change_bp": -1},
-    {"tenor": "3M",  "yield_pct": 5.37, "change_bp": 0},
-    {"tenor": "6M",  "yield_pct": 5.36, "change_bp": -2},
-    {"tenor": "1Y",  "yield_pct": 5.12, "change_bp": -3},
-    {"tenor": "2Y",  "yield_pct": 4.71, "change_bp": -5},
-    {"tenor": "3Y",  "yield_pct": 4.42, "change_bp": -4},
-    {"tenor": "5Y",  "yield_pct": 4.27, "change_bp": -3},
-    {"tenor": "7Y",  "yield_pct": 4.30, "change_bp": -2},
-    {"tenor": "10Y", "yield_pct": 4.35, "change_bp": -1},
-    {"tenor": "20Y", "yield_pct": 4.62, "change_bp": 0},
-    {"tenor": "30Y", "yield_pct": 4.51, "change_bp": 1},
-]
+TREASURY_TICKERS = {
+    "1M": "^IRX",   # 13-week T-bill (proxy for 1M)
+    "3M": "^IRX",
+    "6M": "^IRX",
+    "1Y": "^IRX",
+    "2Y": "^TXY",   # 2Y Treasury
+    "5Y": "^FVX",
+    "10Y": "^TNX",
+    "30Y": "^TYX",
+}
+
+# Fallback rates when yfinance cannot fetch (last known FOMC cycle approximations)
+FALLBACK_YIELDS = {
+    "1M": 5.30, "3M": 5.35, "6M": 5.32, "1Y": 5.10,
+    "2Y": 4.68, "3Y": 4.40, "5Y": 4.25, "7Y": 4.28,
+    "10Y": 4.33, "20Y": 4.60, "30Y": 4.48,
+}
+
+
+def _fetch_treasury_yield(ticker_sym: str) -> Optional[float]:
+    """Fetch latest yield for a Treasury ticker."""
+    try:
+        import yfinance as yf
+        t = yf.Ticker(ticker_sym)
+        hist = t.history(period="5d")
+        if not hist.empty:
+            return round(float(hist["Close"].iloc[-1]) / 100, 4)  # yfinance returns as percentage
+    except Exception:
+        pass
+    return None
 
 
 @router.get("/api/v1/fixed-income/yield-curve")
 async def get_yield_curve():
-    """Return US Treasury yield curve data with slight jitter."""
+    """Return US Treasury yield curve — live where possible, fallback otherwise."""
+    loop = asyncio.get_event_loop()
+    tenors = ["1M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "20Y", "30Y"]
+
+    # Fetch the key anchors we have tickers for
+    anchor_tickers = {"10Y": "^TNX", "30Y": "^TYX", "5Y": "^FVX", "3M": "^IRX"}
+    fetched: Dict[str, float] = {}
+    for tenor, ticker_sym in anchor_tickers.items():
+        val = await loop.run_in_executor(None, _fetch_treasury_yield, ticker_sym)
+        if val is not None:
+            fetched[tenor] = round(val * 100, 3)  # back to percentage for display
+
+    # Build curve: use live for anchors, interpolate/fallback for others
     curve = []
-    for pt in YIELD_CURVE:
-        jitter = (random.random() - 0.5) * 0.04
+    for tenor in tenors:
+        if tenor in fetched:
+            yld = fetched[tenor]
+        else:
+            yld = FALLBACK_YIELDS.get(tenor, 4.50)
+        prev = FALLBACK_YIELDS.get(tenor, yld)
+        change_bp = round((yld - prev) * 100) if tenor in fetched else 0
         curve.append({
-            "tenor": pt["tenor"],
-            "yield": round(pt["yield_pct"] + jitter, 3),
-            "change_bp": pt["change_bp"] + random.randint(-1, 1),
+            "tenor": tenor,
+            "yield": round(yld, 3),
+            "change_bp": change_bp,
         })
-    return {"curve": curve, "date": "2024-01-15", "source": "mock"}
+
+    return {
+        "curve": curve,
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "source": "yfinance" if fetched else "fallback",
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+    }

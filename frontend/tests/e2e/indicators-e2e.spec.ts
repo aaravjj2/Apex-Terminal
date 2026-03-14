@@ -58,8 +58,8 @@ test.describe('Indicators E2E', () => {
 
   test('multiple chart views', async ({ page }) => {
     await page.goto('/ui2/trading');
-    await page.waitForLoadState('networkidle', LOAD).catch(() => {});
-    await expect(page.locator('body')).toBeVisible();
+    await page.waitForLoadState('domcontentloaded', LOAD).catch(() => {});
+    await expect(page.getByTestId('trading-ui2-page')).toBeVisible({ timeout: 20_000 });
   });
 
   test('indicator overlay area', async ({ page }) => {

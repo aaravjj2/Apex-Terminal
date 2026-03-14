@@ -25,6 +25,7 @@
  * └──────────────────────────────────────────────────────────────────────────┘
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ApexAreaChart from '../components/chart/ApexAreaChart';
 
 const T = {
   brand: '#2962FF', bg0: '#0C0E12', bg1: '#131722', bg2: '#1E222D', bg3: '#2A2E39',
@@ -36,7 +37,7 @@ const T = {
   radius: '4px',
 };
 
-const API = 'http://localhost:8000';
+const API = (window as any).__APEX_API__ || '';
 const SIGNALS_UNIVERSE = 'AAPL,SPY,NVDA,MSFT,META,GOOGL,TSLA,AMZN,GLD,QQQ';
 const POLL_MS = 15000;
 
@@ -85,63 +86,35 @@ const fetchHash = () => fetch(`${API}/api/ui2/autopilot-depth/hash`).then(r => r
 const fetchRiskControls = () => fetch(`${API}/api/ui2/autopilot-depth/risk-controls`).then(r => r.json());
 const fetchExecParams = () => fetch(`${API}/api/ui2/autopilot-depth/execution-params`).then(r => r.json());
 
-/* Equity Curve */
+/* Equity Curve — lightweight-charts v5 area series */
 function EquityCurve({ history, base }: { history: number[]; base: number }) {
-  const cvs = useRef<HTMLCanvasElement>(null);
-  const con = useRef<HTMLDivElement>(null);
-  const draw = useCallback(() => {
-    if (!cvs.current || !con.current || history.length < 2) return;
-    const c = cvs.current; c.width = con.current.clientWidth; c.height = con.current.clientHeight;
-    const ctx = c.getContext('2d')!; const w = c.width, h = c.height;
-    const pad = { t: 14, r: 8, b: 20, l: 72 };
-    ctx.clearRect(0, 0, w, h);
-    const mn = Math.min(...history) * 0.9997, mx = Math.max(...history) * 1.0003, rng = mx - mn || 1;
-    for (let i = 0; i <= 4; i++) {
-      const y = pad.t + (i / 4) * (h - pad.t - pad.b);
-      ctx.strokeStyle = T.border0; ctx.lineWidth = 0.5;
-      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
-      ctx.fillStyle = T.text3; ctx.font = `8px ${T.fontMono}`; ctx.textAlign = 'right';
-      ctx.fillText(`$${((mx - (i / 4) * rng) / 1000).toFixed(0)}K`, pad.l - 3, y + 3);
-    }
-    const tx = (i: number) => pad.l + (i / (history.length - 1)) * (w - pad.l - pad.r);
-    const ty = (v: number) => pad.t + ((mx - v) / rng) * (h - pad.t - pad.b);
-    const last = history[history.length - 1], isUp = last >= base;
-    ctx.beginPath();
-    history.forEach((v, i) => i === 0 ? ctx.moveTo(tx(i), ty(v)) : ctx.lineTo(tx(i), ty(v)));
-    ctx.lineTo(tx(history.length - 1), h - pad.b); ctx.lineTo(pad.l, h - pad.b); ctx.closePath();
-    ctx.fillStyle = isUp ? 'rgba(38,166,154,0.10)' : 'rgba(239,83,80,0.10)'; ctx.fill();
-    ctx.beginPath();
-    history.forEach((v, i) => i === 0 ? ctx.moveTo(tx(i), ty(v)) : ctx.lineTo(tx(i), ty(v)));
-    ctx.strokeStyle = isUp ? T.up : T.dn; ctx.lineWidth = 1.5; ctx.stroke();
-    const bY = ty(base);
-    if (bY >= pad.t && bY <= h - pad.b) {
-      ctx.setLineDash([3, 3]); ctx.strokeStyle = T.text3; ctx.lineWidth = 0.5;
-      ctx.beginPath(); ctx.moveTo(pad.l, bY); ctx.lineTo(w - pad.r, bY); ctx.stroke();
-      ctx.setLineDash([]);
-    }
-    ctx.beginPath(); ctx.arc(tx(history.length - 1), ty(last), 3, 0, Math.PI * 2);
-    ctx.fillStyle = isUp ? T.up : T.dn; ctx.fill();
-  }, [history, base]);
-  useEffect(() => { draw(); }, [draw]);
-  useEffect(() => {
-    const obs = new ResizeObserver(draw);
-    if (con.current) obs.observe(con.current);
-    return () => obs.disconnect();
-  }, [draw]);
-  const last = history[history.length - 1];
+  const last = history.length > 0 ? history[history.length - 1] : 0;
   const pct = base > 0 ? (last - base) / base : 0;
+  const isUp = last >= base;
+
+  // Convert number[] to AreaPoint[] with synthetic daily timestamps going backwards
+  const areaData = history.map((val, i) => {
+    const secsPerBar = 86400; // 1 day per bar
+    const now = Math.floor(Date.now() / 1000);
+    const time = now - (history.length - 1 - i) * secsPerBar;
+    return { time, value: val };
+  });
+
   return (
     <div data-testid="autopilot-equity" style={{ ...panel, flex: 1 }}>
-      <div style={hdr}><span>ACCOUNT EQUITY</span>
-        {last != null && <div style={{ display: 'flex', gap: 8 }}>
-          <span style={{ ...mono(T.text1), fontSize: '10px', fontWeight: 700 }}>{fmtUSD(last)}</span>
-          <span style={{ ...mono(clr(pct)), fontSize: '9px' }}>{fmtPct(pct)}</span>
-        </div>}
+      <div style={hdr}>
+        <span>ACCOUNT EQUITY</span>
+        {last != null && last > 0 && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <span style={{ ...mono(T.text1), fontSize: '10px', fontWeight: 700 }}>{fmtUSD(last)}</span>
+            <span style={{ ...mono(clr(pct)), fontSize: '9px' }}>{fmtPct(pct)}</span>
+          </div>
+        )}
       </div>
-      <div ref={con} style={{ flex: 1, minHeight: 80 }}>
-        {history.length < 2
+      <div style={{ flex: 1, minHeight: 80 }}>
+        {areaData.length < 2
           ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: T.text3, fontSize: '10px' }}>Waiting for account data...</div>
-          : <canvas ref={cvs} style={{ width: '100%', height: '100%' }} />}
+          : <ApexAreaChart data={areaData} color={isUp ? T.up : T.dn} />}
       </div>
     </div>
   );
@@ -175,7 +148,7 @@ function SignalsPanel({ data }: { data: any }) {
 
 /* Risk Panel (dashboard guardrails) */
 function RiskPanel({ data }: { data: any }) {
-  if (!data?.ok) return <div style={panel}><div style={hdr}><span>RISK LIMITS</span></div><div style={{ padding: 10, color: T.text3, fontSize: '10px' }}>Loading...</div></div>;
+  if (!data?.ok) return <div data-testid="risk-guardrails" style={panel}><div style={hdr}><span>RISK LIMITS</span></div><div style={{ padding: 10, color: T.text3, fontSize: '10px' }}>Loading...</div></div>;
   const s = data.risk_snapshot || {}, caps = data.caps || {}, acct = data.account || {};
   const lims = [
     { l: 'Premium at Risk', c: s.total_premium_at_risk || 0, m: caps.max_total_premium_open_usd || 1, f: (v: number) => `$${v.toFixed(0)}` },

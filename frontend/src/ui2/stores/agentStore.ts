@@ -78,22 +78,19 @@ function stubInvoke(prompt: string): { content: string; toolCalls: ToolCall[]; c
 
   if (lower.includes('backtest') || lower.includes('strategy')) {
     return {
-      content: 'Backtest complete for VWAP Mean Reversion strategy. Sharpe ratio: 1.82, win rate: 64.3%, max drawdown: -8.5%. The strategy shows consistent performance across market regimes.',
+      content: 'Backtest analysis requires a live backend connection. The backend is currently unavailable — please ensure the backend service is running and retry.',
       toolCalls: [
-        { tool_name: 'run_backtest', args: { strategy: 'vwap_mean_reversion', period: '6m' }, result: { sharpe: 1.82, win_rate: 0.643, max_dd: -0.085 }, duration_ms: 230 },
-        { tool_name: 'summarize_run', args: { run_id: 'bt-local-1' }, result: { summary: 'Consistent alpha generation' }, duration_ms: 45 },
+        { tool_name: 'run_backtest', args: { strategy: 'vwap_mean_reversion', period: '6m' }, result: { error: 'backend_unavailable' }, duration_ms: 0 },
       ],
-      citations: [
-        { source: 'Backtest Engine', entity_type: 'backtest', entity_id: 'bt-local-1', snippet: 'Sharpe: 1.82, Win Rate: 64.3%' },
-      ],
+      citations: [],
     };
   }
 
   if (lower.includes('spy') || lower.includes('order') || lower.includes('buy') || lower.includes('sell')) {
     return {
-      content: 'Order ticket created for SPY. Limit buy 50 shares at $547.23. The order has been queued pending autopilot approval.',
+      content: 'Order management requires a live backend connection. The backend is currently unavailable — please ensure the backend service is running and retry.',
       toolCalls: [
-        { tool_name: 'create_order_ticket', args: { symbol: 'SPY', side: 'buy', qty: 50, price: 547.23 }, result: { ticket_id: 'OT-local-1', status: 'queued' }, duration_ms: 32 },
+        { tool_name: 'create_order_ticket', args: { query: prompt.slice(0, 50) }, result: { error: 'backend_unavailable' }, duration_ms: 0 },
       ],
       citations: [],
     };

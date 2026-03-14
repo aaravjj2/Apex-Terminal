@@ -7,17 +7,22 @@ GET  /api/v4/options/chain/{symbol} — Quick GET variant.
 Accepts the OptionsMatrixUI2.tsx payload format:
   { symbol, spot, r, n_strikes, option_type, expiry }
 
-Returns chain rows with full Greeks + OI/volume mock data so the
-OPTIONS CHAIN tab renders beautifully.
+Returns chain rows with full Greeks. OI/volume is deterministically
+seeded (no real-time OI source available for free; labeled as estimated).
+Spot price is fetched live from yfinance; SPOT_MAP is a stale emergency
+fallback only — a warning is logged when it is used.
 """
 from __future__ import annotations
+import logging
 import math
+from datetime import date, timedelta
 from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/api/v4/options", tags=["options-chain-v4"])
+_log = logging.getLogger(__name__)
 
 
 # ── BSM helpers ──────────────────────────────────────────────────────────────
@@ -91,37 +96,83 @@ class ChainRequest(BaseModel):
     expiry: Optional[str] = None   # ISO date string — ignored, use T_list
 
 
-# ── Approximate spot prices for demo symbols ─────────────────────────────────
+# ── Emergency fallback spot prices (stale — live yfinance is always tried first) ──
+# WARNING: These prices are approximate reference values only. A warning is logged
+# whenever a fallback price is used. Do not rely on these for real trading decisions.
 
 SPOT_MAP: Dict[str, float] = {
-    "AAPL": 272.95, "MSFT": 401.72, "NVDA": 184.89, "AMZN": 207.92,
-    "GOOG": 307.15, "META": 657.01, "SPY":  689.30,  "QQQ":  484.20,
-    "TSLA": 408.58, "BTC":  29.83,  "ETH":  19.17,   "JPM":  238.45,
-    "GS":   620.10, "BAC":  45.23,  "XOM":  113.55,  "CVX":  158.30,
+    "AAPL": 220.0, "MSFT": 410.0, "NVDA": 875.0, "AMZN": 195.0,
+    "GOOG": 175.0, "GOOGL": 175.0, "META": 550.0, "SPY": 550.0,
+    "QQQ":  470.0, "TSLA": 250.0, "BTC":  85000.0, "ETH":  3200.0,
+    "JPM":  240.0, "GS":   530.0, "BAC":  45.0,   "XOM":  115.0,
+    "CVX":  155.0,
 }
 
-# Vol (IV) map — realistic skew baked in per symbol
+# Vol (IV) map — realistic long-run estimates per symbol (used when Tradier/live IV unavailable)
 VOL_MAP: Dict[str, float] = {
-    "AAPL": 0.24, "MSFT": 0.22, "NVDA": 0.45, "AMZN": 0.28,
-    "GOOG": 0.26, "META": 0.32, "SPY":  0.16, "QQQ":  0.20,
-    "TSLA": 0.55, "BTC":  0.68, "ETH":  0.72, "JPM":  0.23,
-    "GS":   0.26, "BAC":  0.28, "XOM":  0.22, "CVX":  0.24,
+    "AAPL": 0.24, "MSFT": 0.22, "NVDA": 0.50, "AMZN": 0.28,
+    "GOOG": 0.26, "GOOGL": 0.26, "META": 0.35, "SPY":  0.16,
+    "QQQ":  0.20, "TSLA": 0.60, "BTC":  0.75, "ETH":  0.80,
+    "JPM":  0.24, "GS":   0.27, "BAC":  0.30, "XOM":  0.23,
+    "CVX":  0.25,
 }
 
-# Expiry buckets (T in years)
-EXPIRY_BUCKETS = [
-    ("2026-03-21", 0.063),
-    ("2026-04-17", 0.13),
-    ("2026-06-19", 0.31),
-    ("2026-09-18", 0.56),
-    ("2027-01-15", 1.38),
-]
+
+# ── Dynamic expiry-bucket computation ─────────────────────────────────────────
+
+def _third_friday(year: int, month: int) -> date:
+    """Return the 3rd Friday of a given year/month (standard monthly expiry)."""
+    d = date(year, month, 1)
+    # weekday(): 0=Mon … 4=Fri
+    first_friday = d + timedelta(days=(4 - d.weekday()) % 7)
+    return first_friday + timedelta(weeks=2)
+
+
+def _next_friday() -> date:
+    today = date.today()
+    days = (4 - today.weekday()) % 7
+    if days == 0:
+        days = 7  # if today is Friday, jump to next Friday
+    return today + timedelta(days=days)
+
+
+def _compute_expiry_buckets() -> List[tuple]:
+    """
+    Dynamically compute 5 standard options expiry dates from today:
+      0 — next weekly Friday
+      1 — 3rd Friday ~1 month out
+      2 — 3rd Friday ~3 months out
+      3 — 3rd Friday ~6 months out
+      4 — 3rd Friday ~15 months out (LEAPS)
+    Returns list of (iso_date, T_in_years) tuples.
+    """
+    today = date.today()
+    buckets: List[tuple] = []
+
+    # Weekly: next Friday
+    nf = _next_friday()
+    t0 = max(0.005, (nf - today).days / 365.25)
+    buckets.append((nf.isoformat(), round(t0, 4)))
+
+    # Monthly expirations at ~1, 3, 6, 15 month offsets
+    for month_offset in (1, 3, 6, 15):
+        raw_month = today.month + month_offset
+        target_year = today.year + (raw_month - 1) // 12
+        target_month = ((raw_month - 1) % 12) + 1
+        exp = _third_friday(target_year, target_month)
+        # Ensure exp is strictly in the future
+        if exp <= today:
+            exp += timedelta(weeks=4)
+        t = max(0.01, (exp - today).days / 365.25)
+        buckets.append((exp.isoformat(), round(t, 4)))
+
+    return buckets
 
 
 def _build_chain(sym: str, S: float, r: float, q: float, sigma: float,
                   n_strikes: int, pct_width: float,
                   option_type: str) -> List[Dict[str, Any]]:
-    """Generate BSM options chain rows."""
+    """Generate BSM options chain rows with dynamically computed expiry dates."""
     step_pct = pct_width / (n_strikes // 2)
     raw_step = S * step_pct / 100.0
     # Round step to a "clean" tick
@@ -137,7 +188,10 @@ def _build_chain(sym: str, S: float, r: float, q: float, sigma: float,
     rows: List[Dict[str, Any]] = []
     import random, hashlib
 
-    for T, exp_date in [(bkt[1], bkt[0]) for bkt in EXPIRY_BUCKETS[:3]]:
+    # Use fresh dynamic expiry buckets (never stale hardcoded dates)
+    expiry_buckets = _compute_expiry_buckets()
+
+    for T, exp_date in [(bkt[1], bkt[0]) for bkt in expiry_buckets[:3]]:
         for side in (["call", "put"] if option_type == "both" else [option_type]):
             for K in strikes:
                 # Skew: OTM puts have higher vol, OTM calls slightly lower
@@ -155,7 +209,9 @@ def _build_chain(sym: str, S: float, r: float, q: float, sigma: float,
                 bid = round(price - spread / 2, 2)
                 ask = round(price + spread / 2, 2)
 
-                # Mock OI and volume (seeded by symbol+K+side for determinism)
+                # Estimated OI and volume (deterministic seed by symbol+K+side+expiry).
+                # NOTE: These are estimates only — no real-time OI source is available
+                # for free. Seeded deterministically so the UI is stable across refreshes.
                 seed = int(hashlib.md5(f"{sym}{K}{side}{exp_date}".encode()).hexdigest()[:8], 16)
                 rng = random.Random(seed)
                 oi = rng.randint(50, 25000)
@@ -180,6 +236,7 @@ def _build_chain(sym: str, S: float, r: float, q: float, sigma: float,
                     "open_interest": oi,
                     "volume": vol_trades,
                     "itm": (K < S if side == "call" else K > S),
+                    "oi_source": "estimated",
                 })
 
     return rows
@@ -187,10 +244,44 @@ def _build_chain(sym: str, S: float, r: float, q: float, sigma: float,
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+async def _get_live_spot(symbol: str) -> Optional[float]:
+    """Fetch live spot price from yfinance."""
+    import asyncio, logging
+    try:
+        import yfinance as yf
+        loop = asyncio.get_event_loop()
+        def _fetch():
+            t = yf.Ticker(symbol)
+            hist = t.history(period="2d")
+            if not hist.empty:
+                return float(hist["Close"].iloc[-1])
+            return None
+        return await loop.run_in_executor(None, _fetch)
+    except Exception as e:
+        logging.getLogger(__name__).debug(f"Live spot fetch failed for {symbol}: {e}")
+        return None
+
+
 @router.post("/chain")
 async def post_options_chain(req: ChainRequest):
     sym = req.symbol.upper()
-    S = req.spot or SPOT_MAP.get(sym, 100.0)
+    live_spot = None
+    if req.spot is None:
+        live_spot = await _get_live_spot(sym)
+    fallback_used = False
+    if req.spot:
+        S = req.spot
+    elif live_spot is not None:
+        S = live_spot
+    else:
+        fallback_price = SPOT_MAP.get(sym, 100.0)
+        _log.warning(
+            f"Live spot price unavailable for {sym} — using stale fallback ${fallback_price:.2f}. "
+            "This price may be significantly out of date."
+        )
+        S = fallback_price
+        fallback_used = True
+
     sigma = VOL_MAP.get(sym, 0.30)
     if req.flat_vol and req.flat_vol != 0.28:
         sigma = req.flat_vol
@@ -204,6 +295,7 @@ async def post_options_chain(req: ChainRequest):
         "ok": True,
         "symbol": sym,
         "spot_price": S,
+        "spot_source": "request" if req.spot else ("yfinance" if not fallback_used else "stale_fallback"),
         "expiries": expiries,
         "chain": chain,
         "metadata": {
@@ -212,6 +304,7 @@ async def post_options_chain(req: ChainRequest):
             "iv_model": "bsm_flat_skew",
             "r": req.r,
             "q": req.q,
+            "oi_note": "Open interest values are estimates (no real-time OI source)",
         },
     }
 
@@ -219,7 +312,18 @@ async def post_options_chain(req: ChainRequest):
 @router.get("/chain/{symbol}")
 async def get_options_chain(symbol: str, n_strikes: int = 20, r: float = 0.04):
     sym = symbol.upper()
-    S = SPOT_MAP.get(sym, 100.0)
+    live_spot = await _get_live_spot(sym)
+    if live_spot is None:
+        fallback_price = SPOT_MAP.get(sym, 100.0)
+        _log.warning(
+            f"Live spot price unavailable for {sym} — using stale fallback ${fallback_price:.2f}."
+        )
+        S = fallback_price
+        spot_source = "stale_fallback"
+    else:
+        S = live_spot
+        spot_source = "yfinance"
+
     sigma = VOL_MAP.get(sym, 0.30)
     chain = _build_chain(sym, S, r, 0.0, sigma, n_strikes, 20.0, "both")
     expiries = sorted({row["expiry"] for row in chain})
@@ -227,7 +331,11 @@ async def get_options_chain(symbol: str, n_strikes: int = 20, r: float = 0.04):
         "ok": True,
         "symbol": sym,
         "spot_price": S,
+        "spot_source": spot_source,
         "expiries": expiries,
         "chain": chain,
-        "metadata": {"total_rows": len(chain)},
+        "metadata": {
+            "total_rows": len(chain),
+            "oi_note": "Open interest values are estimates (no real-time OI source)",
+        },
     }

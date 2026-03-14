@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 ﻿// ModelRouterUI2 — Bloomberg MLRT AI model router terminal
 // Load balancing, fallback chains, cost optimization, health monitoring, audit
 // Tabs: ROUTES | BALANCING | FALLBACKS | COST | AUDIT
-// APIs: /api/v4/model-router/routing-table, /models, /latency, /costs, /route
+// APIs: /api/v4/model-router/routing-table, /models, /balancing, /fallbacks, /costs, /audit
 
 const BG = '#0a0a0a'
 const PANEL = '#111111'
@@ -135,10 +135,10 @@ export function ModelRouterUI2() {
     try {
       const [rR, rB, rF, rC, rA] = await Promise.allSettled([
         fetch('/api/v4/model-router/routing-table').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/model-router/models').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/model-router/latency').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/model-router/balancing').then(r => r.ok ? r.json() : []),
+        fetch('/api/v4/model-router/fallbacks').then(r => r.ok ? r.json() : []),
         fetch('/api/v4/model-router/costs').then(r => r.ok ? r.json() : []),
-        fetch('/api/v4/model-router/route').then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch('/api/v4/model-router/audit').then(r => r.ok ? r.json() : []).catch(() => []),
       ])
       if (rR.status === 'fulfilled') {
         const raw = Array.isArray(rR.value) ? rR.value : rR.value.routes ?? rR.value.data ?? []

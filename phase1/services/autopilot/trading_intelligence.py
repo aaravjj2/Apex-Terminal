@@ -668,8 +668,12 @@ class TradingIntelligenceEngine:
         """
         Generate comprehensive trade score using all available factors.
         """
+        import math
         score = TradeScore(symbol=symbol, direction=TradingSignal.NEUTRAL)
-        
+
+        # Sanitize prices: remove NaN/None values (yfinance may return NaN for today's candle)
+        prices = [p for p in prices if p is not None and not (isinstance(p, float) and math.isnan(p))]
+
         if len(prices) < 20:
             score.warnings.append("Insufficient price history")
             return score

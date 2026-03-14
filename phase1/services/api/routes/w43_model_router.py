@@ -79,3 +79,42 @@ async def model_latency():
         "metadata": {"generated": True, "version": "v4", "week": "W43"},
     }
 
+
+@router.get("/balancing")
+async def load_balancing():
+    """Get load-balancing node status"""
+    return {
+        "ok": True,
+        "week": 43,
+        "feature": "Model Router",
+        "endpoint": "load_balancing",
+        "data": [],
+        "metadata": {"generated": True, "version": "v4", "week": "W43"},
+    }
+
+
+@router.get("/fallbacks")
+async def fallback_chains():
+    """Get fallback chain configuration"""
+    return {
+        "ok": True,
+        "week": 43,
+        "feature": "Model Router",
+        "endpoint": "fallback_chains",
+        "data": [],
+        "metadata": {"generated": True, "version": "v4", "week": "W43"},
+    }
+
+
+@router.get("/audit")
+async def router_audit():
+    """Get router configuration audit log"""
+    return {
+        "ok": True,
+        "week": 43,
+        "feature": "Model Router",
+        "endpoint": "router_audit",
+        "data": [],
+        "metadata": {"generated": True, "version": "v4", "week": "W43"},
+    }
+

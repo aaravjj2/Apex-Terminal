@@ -326,3 +326,43 @@ async def get_portfolio_metrics():
         "trade_count": 0,
         "broker_connected": False,
     }
+
+
+@router.get("/holdings")
+async def get_holdings():
+    """Alias for /positions — returns holdings in portfolio-friendly format."""
+    positions = await get_positions()
+    # Transform to holdings format expected by frontend
+    holdings = []
+    for pos in positions:
+        holdings.append({
+            "symbol": pos.symbol,
+            "name": pos.symbol,  # fallback name
+            "qty": pos.quantity,
+            "avgPrice": pos.avg_cost,
+            "mktPrice": pos.current_price,
+            "sector": "Unknown",
+            "weight": 0.0,  # computed below
+            "beta": 1.0,
+            "dailyReturn": 0.0,
+            "totalReturn": pos.unrealized_pnl_pct,
+        })
+    # Compute weights
+    total_value = sum(h["qty"] * h["mktPrice"] for h in holdings)
+    if total_value > 0:
+        for h in holdings:
+            h["weight"] = round(h["qty"] * h["mktPrice"] / total_value * 100, 2)
+    return {"holdings": holdings, "total_value": total_value}
+
+
+@router.get("/performance")
+async def get_performance(period: str = "1y"):
+    """Portfolio performance history — equity curve + benchmark."""
+    # For now delegate to metrics and return equity_curve placeholder
+    metrics = await get_portfolio_metrics()
+    # Return in the format expected by PortfolioUI2
+    return {
+        "equity_curve": [],  # Would need historical data storage for real curve
+        "metrics": metrics,
+        "period": period,
+    }

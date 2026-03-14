@@ -604,7 +604,7 @@ class UnifiedAutopilotEngine:
         REFUSES TO TRADE if not paper endpoint.
         """
         import os
-        endpoint = os.environ.get("ALPACA3_ENDPOINT", os.environ.get("APCA_API_BASE_URL", ""))
+        endpoint = os.environ.get("ALPACA3_ENDPOINT", os.environ.get("APCA_ENDPOINT", os.environ.get("APCA_API_BASE_URL", "")))
         
         # Check for paper indicators
         is_paper = (
@@ -1752,16 +1752,24 @@ class UnifiedAutopilotEngine:
                             prem_factor = [1.00, 0.75, 0.55, 0.40]
                             calls_syn = []
                             puts_syn = []
+                            # Standard option strike increment: $1 for equities/ETFs > $25
+                            # $0.50 for stocks under $25. Round to nearest increment.
+                            strike_inc = 0.5 if live_price < 25 else 1.0
                             for p, d, pf in zip(pct, deltas, prem_factor):
                                 pr = max(round(atm_prem * pf, 2), 0.10)
                                 bid_ = round(pr * 0.92, 2)
                                 ask_ = round(pr * 1.08, 2)
+                                raw_call_strike = live_price * (1 + p)
+                                raw_put_strike = live_price * (1 - p)
+                                # Round to nearest standard option strike increment
+                                call_strike = round(round(raw_call_strike / strike_inc) * strike_inc, 2)
+                                put_strike = round(round(raw_put_strike / strike_inc) * strike_inc, 2)
                                 calls_syn.append({
-                                    "strike": round(live_price * (1 + p), 2),
+                                    "strike": call_strike,
                                     "bid": bid_, "ask": ask_, "delta": d, "iv": approx_iv,
                                 })
                                 puts_syn.append({
-                                    "strike": round(live_price * (1 - p), 2),
+                                    "strike": put_strike,
                                     "bid": bid_, "ask": ask_, "delta": d, "iv": approx_iv,
                                 })
                             chain_dict = {"chains": {exp_str: {

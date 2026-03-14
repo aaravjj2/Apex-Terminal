@@ -51,7 +51,7 @@ export interface MarketDataSubscription {
 }
 
 export interface FeedConfig {
-  provider: 'polygon' | 'alpaca' | 'coinbase' | 'mock';
+  provider: 'polygon' | 'alpaca' | 'coinbase' | 'mock' | 'live';
   apiKey?: string;
   wsUrl?: string;
   restUrl?: string;
@@ -313,7 +313,7 @@ export class MarketDataService {
   private isRunning = false;
 
   constructor(config?: Partial<FeedConfig>) {
-    this.config = { provider: 'mock', ...config };
+    this.config = { provider: 'live', ...config };
     this.vwapCalc = new VwapCalculator();
     this.tickBuffer = new TickBuffer();
     this.mockGen = new MockMarketDataGenerator();
@@ -322,8 +322,10 @@ export class MarketDataService {
   subscribeTick(symbol: string, callback: (tick: Tick) => void): string {
     const id = `sub_${++this.subCounter}`;
     this.subscriptions.set(id, { id, symbol, type: 'tick', callback: callback as any });
-    this.mockGen.subscribe(symbol, callback);
-    if (!this.isRunning) { this.mockGen.start(); this.isRunning = true; }
+    if (this.config.provider === 'mock') {
+      this.mockGen.subscribe(symbol, callback);
+      if (!this.isRunning) { this.mockGen.start(); this.isRunning = true; }
+    }
     return id;
   }
 
@@ -335,15 +337,16 @@ export class MarketDataService {
     }
     this.subscriptions.set(id, { id, symbol, type: 'bar', timeframe, callback: callback as any });
 
-    this.mockGen.subscribe(symbol, (tick) => {
-      const agg = this.aggregators.get(aggKey);
-      if (agg) {
-        const bar = agg.processTick(tick);
-        if (bar) callback(bar);
-      }
-    });
-
-    if (!this.isRunning) { this.mockGen.start(); this.isRunning = true; }
+    if (this.config.provider === 'mock') {
+      this.mockGen.subscribe(symbol, (tick) => {
+        const agg = this.aggregators.get(aggKey);
+        if (agg) {
+          const bar = agg.processTick(tick);
+          if (bar) callback(bar);
+        }
+      });
+      if (!this.isRunning) { this.mockGen.start(); this.isRunning = true; }
+    }
     return id;
   }
 

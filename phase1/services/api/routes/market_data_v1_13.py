@@ -12,6 +12,7 @@ from ...market_data.record_replay import (
     get_cache,
     MarketDataSource
 )
+from ...config import get_settings
 
 router = APIRouter(tags=["Market Data v1.13"])
 
@@ -99,7 +100,7 @@ async def list_providers():
         ProviderInfo(
             name="Alpaca",
             enabled_demo=False,
-            enabled_local=bool(os.getenv("ALPACA_API_KEY")),
+            enabled_local=bool(get_settings().apca_api_key_id),
             description="Real-time market data (requires API key)"
         )
     ]
@@ -149,14 +150,31 @@ async def get_bars(req: BarsRequest):
     }
     
     def fetch_yahoo_bars():
-        """Mock fetch function - in reality would call yfinance."""
-        # For testing: return deterministic mock data
-        return {
-            "bars": [
-                {"time": f"{req.start_date}T09:30:00Z", "close": 150.0},
-                {"time": f"{req.end_date}T09:30:00Z", "close": 155.0}
-            ]
-        }
+        """Fetch real OHLCV bars from yfinance."""
+        import yfinance as yf
+        from datetime import timedelta
+        try:
+            ticker = yf.Ticker(req.symbol)
+            # Add 1 day to end_date since yfinance end is exclusive
+            end = req.end_date + timedelta(days=1)
+            hist = ticker.history(start=str(req.start_date), end=str(end), interval=req.timeframe if req.timeframe in ("1d", "1wk", "1mo") else "1d")
+            if hist.empty:
+                return {"bars": []}
+            bars = []
+            for idx, row in hist.iterrows():
+                bars.append({
+                    "time": idx.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "open": round(float(row["Open"]), 4),
+                    "high": round(float(row["High"]), 4),
+                    "low": round(float(row["Low"]), 4),
+                    "close": round(float(row["Close"]), 4),
+                    "volume": int(row["Volume"]),
+                })
+            return {"bars": bars}
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"yfinance bars fetch failed for {req.symbol}: {e}")
+            return {"bars": []}
     
     data, source, cache_key = cache.get_or_fetch("yahoo", request_params, fetch_yahoo_bars)
     
@@ -355,3 +373,52 @@ async def get_trades(symbol: str, limit: int = 50):
             "side": side,
         })
     return trades
+
+
+# ── Batch Quote endpoint (replaces 10 individual /quote calls in WatchlistPanel) ──
+
+class BatchQuoteRequest(BaseModel):
+    """Request for batch quotes — up to 50 symbols at once."""
+    symbols: List[str]
+
+
+@router.post("/quotes/batch")
+async def get_quotes_batch(req: BatchQuoteRequest):
+    """
+    Batch quote endpoint: fetch quotes for multiple symbols in parallel.
+    Replaces N individual GET /{symbol}/quote calls with a single request.
+    POST /api/v1/market-data/quotes/batch
+    Body: {"symbols": ["AAPL", "TSLA", ...]}  (max 50)
+    """
+    import asyncio as _asyncio
+
+    if len(req.symbols) > 50:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="Maximum 50 symbols per batch request")
+
+    symbols = [s.strip().upper() for s in req.symbols if s.strip()]
+
+    async def fetch_one(sym: str) -> Dict[str, Any]:
+        try:
+            result = await get_quote(QuoteRequest(symbol=sym))
+            return {
+                "symbol": sym,
+                "price": result.price,
+                "bid": result.bid,
+                "ask": result.ask,
+                "last": result.last,
+                "change": result.change,
+                "change_pct": result.change_pct,
+                "volume": result.volume,
+                "open": result.open,
+                "high": result.high,
+                "low": result.low,
+                "close": result.close,
+                "timestamp": result.timestamp,
+                "ok": True,
+            }
+        except Exception as e:
+            return {"symbol": sym, "ok": False, "error": str(e), "price": 0.0}
+
+    results = await _asyncio.gather(*[fetch_one(s) for s in symbols])
+    return {"quotes": list(results), "count": len(results)}

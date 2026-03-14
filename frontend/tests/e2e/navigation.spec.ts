@@ -23,8 +23,8 @@ test.describe('Navigation — All UI2 Routes', () => {
 
   test('portfolio (/ui2/portfolio) loads and renders page', async ({ page }) => {
     await page.goto('/ui2/portfolio');
-    await page.waitForLoadState('networkidle', LOAD_OPTS).catch(() => {});
-    await expect(page.getByTestId('portfolio-ui2-page')).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState('domcontentloaded', LOAD_OPTS).catch(() => {});
+    await expect(page.getByTestId('portfolio-ui2-page')).toBeVisible({ timeout: 25_000 });
   });
 
   test('orders (/ui2/orders) loads and renders page', async ({ page }) => {

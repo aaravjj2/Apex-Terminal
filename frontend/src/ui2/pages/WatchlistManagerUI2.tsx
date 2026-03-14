@@ -285,6 +285,41 @@ function HeatStrip({ symbols, width = 600 }: { symbols: WatchlistSymbol[]; width
 // ── View modes ───────────────────────────────────────────────────────────────
 type ViewMode = 'table' | 'tiles' | 'compact';
 
+// ── Live price hook ───────────────────────────────────────────────────────────
+/**
+ * Polls GET /api/v1/market/quotes?symbols=... every 15 seconds.
+ * Returns a map of symbol -> { price, change, changePct } from the API.
+ * When the API is unavailable the map is empty, so callers fall back to
+ * the random values stored in the watchlist state.
+ */
+function useWatchlistPrices(symbols: string[]) {
+  const [prices, setPrices] = React.useState<Record<string, { price: number; change: number; changePct: number }>>({});
+  const key = symbols.slice(0, 20).join(',');
+  React.useEffect(() => {
+    if (!key) return;
+    // Reuse `key` — avoids recomputing the same slice+join inside every poll tick
+    const fetch_prices = () => {
+      fetch(`/api/v1/market/quotes?symbols=${key}`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+        .then(data => {
+          if (data?.quotes) {
+            const map: Record<string, { price: number; change: number; changePct: number }> = {};
+            for (const q of data.quotes) {
+              map[q.symbol] = { price: q.price, change: q.change ?? 0, changePct: q.change_pct ?? 0 };
+            }
+            setPrices(map);
+          }
+        });
+    };
+    fetch_prices();
+    const id = setInterval(fetch_prices, 15000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return prices;
+}
+
 export default function WatchlistManagerUI2() {
   const [watchlists, setWatchlists] = useState<Watchlist[]>(DEFAULT_WATCHLISTS);
   const [activeWLId, setActiveWLId] = useState(DEFAULT_WATCHLISTS[0].id);
@@ -303,6 +338,9 @@ export default function WatchlistManagerUI2() {
 
   const activeWL = useMemo(() => watchlists.find(w => w.id === activeWLId), [watchlists, activeWLId]);
   const symbols = activeWL?.symbols || [];
+
+  // Fetch live prices from the API; falls back to the random values in WatchlistSymbol
+  const livePrices = useWatchlistPrices(symbols.map(s => s.symbol));
 
   // ── Autocomplete suggestions ──
   const suggestions = useMemo(() => {
@@ -711,7 +749,14 @@ export default function WatchlistManagerUI2() {
                 ))}
               </div>
               {/* Table body */}
-              {sortedSymbols.map((s, i) => (
+              {sortedSymbols.map((s, i) => {
+                // Use live API price/change when available; fall back to the
+                // random value that was generated when the symbol was added.
+                const live = livePrices[s.symbol];
+                const displayPrice = live?.price ?? s.price;
+                const displayChange = live?.change ?? s.change;
+                const displayChangePct = live?.changePct ?? s.changePct;
+                return (
                 <div
                   key={s.symbol}
                   style={{
@@ -724,19 +769,19 @@ export default function WatchlistManagerUI2() {
                 >
                   <div style={{ width: 70, minWidth: 70, padding: '5px 6px', color: AMBER, fontWeight: 600 }}>{s.symbol}</div>
                   <div style={{ width: 130, minWidth: 130, padding: '5px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 10 }}>{s.name}</div>
-                  <div style={{ width: 75, minWidth: 75, padding: '5px 6px', textAlign: 'right' }}>${s.price.toFixed(2)}</div>
+                  <div style={{ width: 75, minWidth: 75, padding: '5px 6px', textAlign: 'right' }}>${displayPrice.toFixed(2)}</div>
                   <div style={{
                     width: 65, minWidth: 65, padding: '5px 6px', textAlign: 'right',
-                    color: s.changePct >= 0 ? GREEN : RED,
+                    color: displayChangePct >= 0 ? GREEN : RED,
                   }}>
-                    {s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(2)}%
+                    {displayChangePct >= 0 ? '+' : ''}{displayChangePct.toFixed(2)}%
                   </div>
                   <div style={{ width: 60, minWidth: 60, padding: '5px 6px', textAlign: 'right', fontSize: 10 }}>{s.volume.toFixed(1)}M</div>
                   <div style={{ width: 70, minWidth: 70, padding: '5px 6px', textAlign: 'right', fontSize: 10 }}>{s.marketCap}B</div>
                   <div style={{ width: 50, minWidth: 50, padding: '5px 6px', textAlign: 'right', fontSize: 10 }}>{s.pe.toFixed(1)}</div>
                   <div style={{ width: 50, minWidth: 50, padding: '5px 6px', textAlign: 'right', fontSize: 10 }}>{s.divYield.toFixed(2)}%</div>
                   <div style={{ width: 70, minWidth: 70, padding: '3px 6px' }}>
-                    <MiniSparkline data={s.sparkline} positive={s.changePct >= 0} />
+                    <MiniSparkline data={s.sparkline} positive={displayChangePct >= 0} />
                   </div>
                   <div style={{ width: 80, minWidth: 80, padding: '3px 4px', display: 'flex', gap: 2, alignItems: 'center' }}>
                     <button
@@ -751,7 +796,7 @@ export default function WatchlistManagerUI2() {
                     >▼</button>
                     <button
                       style={{ background: 'transparent', border: 'none', color: AMBER, cursor: 'pointer', fontSize: 9, padding: '2px' }}
-                      onClick={e => { e.stopPropagation(); setAlertModal(s.symbol); setAlertPrice(s.price.toFixed(2)); }}
+                      onClick={e => { e.stopPropagation(); setAlertModal(s.symbol); setAlertPrice(displayPrice.toFixed(2)); }}
                       title="Set alert"
                     >🔔</button>
                     {s.alert && (
@@ -766,7 +811,7 @@ export default function WatchlistManagerUI2() {
                     >✕</button>
                   </div>
                 </div>
-              ))}
+                ); })}
             </>
           )}
 

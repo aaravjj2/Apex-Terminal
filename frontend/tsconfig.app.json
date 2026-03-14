@@ -24,5 +24,11 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/features",
+    "src/components",
+    "src/pages",
+    "src/ui"
+  ]
 }

@@ -35,12 +35,13 @@
  * │ • Keyboard shortcuts: B=Buy, S=Sell, Esc=Cancel, Enter=Submit           │
  * └──────────────────────────────────────────────────────────────────────────┘
  */
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMarketData } from '@/ui2/hooks';
 import { useOrders } from '@/ui2/hooks';
 import { useIndicators } from '@/ui2/hooks';
 import { useDrawing } from '@/ui2/hooks';
 import { useChartTypes } from '@/ui2/hooks';
+import ApexChart from '../components/chart/ApexChart';
 
 /* ── Design tokens ── */
 const T = {
@@ -130,15 +131,6 @@ interface TradeRecord {
   strategy: string;
 }
 
-interface OHLCVBar {
-  time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
-
 interface AlgoConfig {
   type: 'TWAP' | 'VWAP' | 'POV' | 'IS' | 'NONE';
   urgency: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -168,7 +160,6 @@ const ORDER_TYPES: OrderType[] = [
 ];
 
 const TIF_OPTIONS = ['DAY', 'GTC', 'IOC', 'FOK', 'GTD', 'OPG', 'CLS'] as const;
-const EXCHANGES = ['NYSE', 'NASDAQ', 'ARCA', 'BATS', 'IEX', 'DARK'] as const;
 
 /* ── Deterministic Data Generators (no Math.random) ── */
 function generateL2(mid: number, levels = 20): { bids: L2Level[]; asks: L2Level[] } {
@@ -185,31 +176,6 @@ function generateL2(mid: number, levels = 20): { bids: L2Level[]; asks: L2Level[
   return { bids, asks };
 }
 
-function generateTape(_mid: number, _count = 50): TapeTrade[] {
-  // Initially empty — populated from real time & sales API
-  return [];
-}
-
-function generateOHLCV(_bars: number, _startPrice = 192): OHLCVBar[] {
-  // Initially empty — populated from useMarketData bars
-  return [];
-}
-
-function generatePositions(): Position[] {
-  // Initially empty — populated from useOrders positions
-  return [];
-}
-
-function generateActiveOrders(): ActiveOrder[] {
-  // Initially empty — populated from useOrders openOrders
-  return [];
-}
-
-function generateTradeHistory(): TradeRecord[] {
-  // Initially empty — populated from useOrders orderHistory
-  return [];
-}
-
 /* ── Styles ── */
 const panelStyle: React.CSSProperties = { background: T.bg1, border: `1px solid ${T.border0}`, borderRadius: T.radius, display: 'flex', flexDirection: 'column', overflow: 'hidden' };
 const panelHdr: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: `1px solid ${T.border0}`, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: T.text2, fontFamily: T.fontSans };
@@ -220,20 +186,49 @@ const tdStyle: React.CSSProperties = { padding: '3px 8px', fontSize: '11px', fon
 /* ══  SUB-COMPONENTS                                          ══ */
 /* ═══════════════════════════════════════════════════════════════ */
 
+function useAccountData() {
+  const [account, setAccount] = React.useState<{
+    nav: number; buying_power: number; equity: number; win_rate: number | null;
+  } | null>(null);
+
+  React.useEffect(() => {
+    const API = (window as any).__APEX_API__ || '';
+    fetch(`${API}/api/v1/account/summary`)
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null)
+      .then(data => {
+        if (data) setAccount(data);
+      });
+    const id = setInterval(() => {
+      fetch(`${API}/api/v1/account/summary`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+        .then(data => { if (data) setAccount(data); });
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  return account;
+}
+
 function KPIStrip({ positions }: { positions: Position[] }) {
+  const account = useAccountData();
   const totalPnl = positions.reduce((s, p) => s + p.unrealizedPnl, 0);
   const totalDayPnl = positions.reduce((s, p) => s + p.dayPnl, 0);
   const marketValue = positions.reduce((s, p) => s + p.marketValue, 0);
-  const buyingPower = 1000000 - marketValue * 0.25;
+  const nav = account?.nav ?? (marketValue + totalPnl);
+  const buyingPower = account?.buying_power ?? Math.max(0, nav - marketValue * 0.25);
+  const leverage = nav > 0 ? marketValue / nav : 0;
+  const winRate = account?.win_rate != null ? `${account.win_rate.toFixed(1)}%` : '—';
   const kpis = [
-    { label: 'NAV', value: fmtUsd(248392.41 + totalPnl), color: T.text0 },
+    { label: 'NAV', value: fmtUsd(nav), color: T.text0 },
     { label: 'Day P&L', value: fmtUsd(totalDayPnl), color: clr(totalDayPnl) },
     { label: 'Unrealized', value: fmtUsd(totalPnl), color: clr(totalPnl) },
     { label: 'Buying Power', value: fmtUsd(Math.max(0, buyingPower)), color: buyingPower > 100000 ? T.up : T.warn },
     { label: 'Positions', value: positions.length.toString(), color: T.text0 },
     { label: 'Mkt Value', value: fmtUsd(marketValue), color: T.text0 },
-    { label: 'Leverage', value: `${(marketValue / 248392).toFixed(2)}x`, color: marketValue / 248392 > 2 ? T.dn : T.text0 },
-    { label: 'Win Rate', value: '62.4%', color: T.up },
+    { label: 'Leverage', value: `${leverage.toFixed(2)}x`, color: leverage > 2 ? T.dn : T.text0 },
+    { label: 'Win Rate', value: winRate, color: T.up },
   ];
   return (
     <div data-testid="trading-kpi-strip" style={{ display: 'flex', gap: '1px', background: T.border0, borderRadius: T.radius, overflow: 'hidden' }}>
@@ -247,141 +242,8 @@ function KPIStrip({ positions }: { positions: Position[] }) {
   );
 }
 
-/* ── Candlestick Chart ── */
-function CandlestickChart({ data, symbol, indicators }: { data: OHLCVBar[]; symbol: string; indicators: string[] }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ w: 800, h: 400 });
-  const [crosshair, setCrosshair] = useState<{ x: number; y: number; bar: OHLCVBar | null } | null>(null);
-  const [visibleRange, setVisibleRange] = useState({ start: Math.max(0, data.length - 100), end: data.length });
-
-  const calcSMA = useCallback((period: number) => data.map((_, i) => i < period - 1 ? null : data.slice(i - period + 1, i + 1).reduce((s, b) => s + b.close, 0) / period), [data]);
-  const calcEMA = useCallback((period: number) => {
-    const k = 2 / (period + 1); const ema: (number | null)[] = [];
-    let prev = data[0]?.close || 0;
-    for (let i = 0; i < data.length; i++) {
-      if (i < period - 1) { ema.push(null); continue; }
-      if (i === period - 1) { prev = data.slice(0, period).reduce((s, b) => s + b.close, 0) / period; ema.push(prev); continue; }
-      prev = data[i].close * k + prev * (1 - k); ema.push(prev);
-    } return ema;
-  }, [data]);
-  const calcBB = useCallback((period = 20, sd = 2) => data.map((_, i) => {
-    if (i < period - 1) return null;
-    const slice = data.slice(i - period + 1, i + 1).map(b => b.close);
-    const mean = slice.reduce((s, v) => s + v, 0) / period;
-    const std = Math.sqrt(slice.reduce((s, v) => s + (v - mean) ** 2, 0) / period);
-    return { upper: mean + sd * std, middle: mean, lower: mean - sd * std };
-  }), [data]);
-  const calcRSI = useCallback((period = 14) => {
-    const rsi: (number | null)[] = []; let avgGain = 0, avgLoss = 0;
-    for (let i = 0; i < data.length; i++) {
-      if (i === 0) { rsi.push(null); continue; }
-      const change = data[i].close - data[i - 1].close;
-      const gain = change > 0 ? change : 0, loss = change < 0 ? -change : 0;
-      if (i <= period) { avgGain += gain / period; avgLoss += loss / period; rsi.push(i === period ? 100 - 100 / (1 + avgGain / (avgLoss || 0.001)) : null); }
-      else { avgGain = (avgGain * (period - 1) + gain) / period; avgLoss = (avgLoss * (period - 1) + loss) / period; rsi.push(100 - 100 / (1 + avgGain / (avgLoss || 0.001))); }
-    } return rsi;
-  }, [data]);
-  const calcVWAP = useCallback(() => { let cumVol = 0, cumTP = 0; return data.map(b => { const tp = (b.high + b.low + b.close) / 3; cumVol += b.volume; cumTP += tp * b.volume; return cumVol > 0 ? cumTP / cumVol : tp; }); }, [data]);
-
-  useEffect(() => {
-    const el = containerRef.current; if (!el) return;
-    const obs = new ResizeObserver(entries => { const { width, height } = entries[0].contentRect; setDimensions({ w: Math.floor(width), h: Math.floor(height) }); });
-    obs.observe(el); return () => obs.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas || data.length === 0) return;
-    const ctx = canvas.getContext('2d'); if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = dimensions.w * dpr; canvas.height = dimensions.h * dpr; ctx.scale(dpr, dpr);
-    const { w, h } = dimensions;
-    const mt = 10, mb = indicators.includes('RSI') || indicators.includes('MACD') ? 100 : 30, ml = 60, mr = 10;
-    const cH = h - mt - mb, cW = w - ml - mr;
-    const visible = data.slice(visibleRange.start, visibleRange.end);
-    if (visible.length === 0) return;
-    const minP = Math.min(...visible.map(b => b.low)) * 0.999, maxP = Math.max(...visible.map(b => b.high)) * 1.001;
-    const pRange = maxP - minP || 1;
-    const barW = Math.max(1, cW / visible.length - 1), bodyW = Math.max(1, barW * 0.7);
-    const pToY = (p: number) => mt + cH - ((p - minP) / pRange) * cH;
-    const iToX = (i: number) => ml + (i + 0.5) * (cW / visible.length);
-
-    ctx.fillStyle = T.bg1; ctx.fillRect(0, 0, w, h);
-    // Grid
-    ctx.strokeStyle = T.border0; ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 8; i++) { const p = minP + (pRange * i) / 8; const y = pToY(p); ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(w - mr, y); ctx.stroke(); ctx.fillStyle = T.text3; ctx.font = '10px Inter,sans-serif'; ctx.textAlign = 'right'; ctx.fillText(fmt2(p), ml - 5, y + 3); }
-    // Volume
-    const maxVol = Math.max(...visible.map(b => b.volume));
-    visible.forEach((b, i) => { const x = iToX(i); const vh = (b.volume / maxVol) * cH * 0.15; ctx.fillStyle = b.close >= b.open ? 'rgba(38,166,154,0.15)' : 'rgba(239,83,80,0.15)'; ctx.fillRect(x - bodyW / 2, mt + cH - vh, bodyW, vh); });
-    // Candlesticks
-    visible.forEach((b, i) => {
-      const x = iToX(i); const bull = b.close >= b.open; const c = bull ? T.up : T.dn;
-      ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, pToY(b.high)); ctx.lineTo(x, pToY(b.low)); ctx.stroke();
-      const yO = pToY(b.open), yC = pToY(b.close); const bT = Math.min(yO, yC); const bH = Math.max(1, Math.abs(yO - yC));
-      ctx.fillStyle = bull ? 'rgba(38,166,154,0.8)' : 'rgba(239,83,80,0.8)'; ctx.fillRect(x - bodyW / 2, bT, bodyW, bH); ctx.strokeStyle = c; ctx.strokeRect(x - bodyW / 2, bT, bodyW, bH);
-    });
-    // Indicators
-    const drawLine = (vals: (number | null)[], col: string, lw = 1.5) => {
-      ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); let started = false;
-      vals.slice(visibleRange.start, visibleRange.end).forEach((v, i) => { if (v === null) return; const x = iToX(i), y = pToY(v); if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y); }); ctx.stroke();
-    };
-    if (indicators.includes('SMA20')) drawLine(calcSMA(20), '#FFD700');
-    if (indicators.includes('SMA50')) drawLine(calcSMA(50), '#FF6B6B');
-    if (indicators.includes('EMA12')) drawLine(calcEMA(12), '#42A5F5');
-    if (indicators.includes('EMA26')) drawLine(calcEMA(26), '#AB47BC');
-    if (indicators.includes('VWAP')) drawLine(calcVWAP(), T.brand, 2);
-    if (indicators.includes('BB')) { const bb = calcBB(); drawLine(bb.map(b => b?.upper ?? null), 'rgba(255,152,0,0.6)'); drawLine(bb.map(b => b?.middle ?? null), 'rgba(255,152,0,0.3)'); drawLine(bb.map(b => b?.lower ?? null), 'rgba(255,152,0,0.6)'); }
-    if (indicators.includes('RSI')) {
-      const rsi = calcRSI(); const rT = mt + cH + 10, rH = 60;
-      ctx.fillStyle = T.bg2; ctx.fillRect(ml, rT, cW, rH); ctx.strokeStyle = T.border0; ctx.strokeRect(ml, rT, cW, rH);
-      [30, 50, 70].forEach(lv => { const y = rT + rH - (lv / 100) * rH; ctx.strokeStyle = lv === 50 ? T.border1 : 'rgba(239,83,80,0.3)'; ctx.lineWidth = 0.5; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(w - mr, y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = T.text3; ctx.font = '9px Inter'; ctx.textAlign = 'right'; ctx.fillText(lv.toString(), ml - 5, y + 3); });
-      ctx.strokeStyle = '#AB47BC'; ctx.lineWidth = 1.5; ctx.beginPath(); let s3 = false;
-      rsi.slice(visibleRange.start, visibleRange.end).forEach((v, i) => { if (v === null) return; const x = iToX(i), y = rT + rH - (v / 100) * rH; if (!s3) { ctx.moveTo(x, y); s3 = true; } else ctx.lineTo(x, y); }); ctx.stroke();
-      ctx.fillStyle = T.text2; ctx.font = '9px Inter'; ctx.textAlign = 'left'; ctx.fillText('RSI(14)', ml + 5, rT + 12);
-    }
-    // Crosshair
-    if (crosshair && crosshair.bar) {
-      ctx.strokeStyle = T.text3; ctx.lineWidth = 0.5; ctx.setLineDash([4, 4]);
-      ctx.beginPath(); ctx.moveTo(crosshair.x, mt); ctx.lineTo(crosshair.x, h); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(ml, crosshair.y); ctx.lineTo(w - mr, crosshair.y); ctx.stroke(); ctx.setLineDash([]);
-      const b = crosshair.bar; ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(10, 5, 320, 18);
-      ctx.fillStyle = T.text1; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left';
-      ctx.fillText(`${symbol}  O:${fmt2(b.open)}  H:${fmt2(b.high)}  L:${fmt2(b.low)}  C:${fmt2(b.close)}  V:${fmtK(b.volume)}`, 14, 17);
-    }
-    ctx.fillStyle = T.text2; ctx.font = 'bold 12px Inter'; ctx.textAlign = 'left'; ctx.fillText(`${symbol} · 1m`, ml + 5, mt + 15);
-  }, [data, dimensions, crosshair, visibleRange, indicators, calcSMA, calcEMA, calcBB, calcRSI, calcVWAP]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left, y = e.clientY - rect.top;
-    const visible = data.slice(visibleRange.start, visibleRange.end);
-    const cW = dimensions.w - 70; const barIdx = Math.floor(((x - 60) / cW) * visible.length);
-    setCrosshair({ x, y, bar: visible[Math.max(0, Math.min(barIdx, visible.length - 1))] || null });
-  }, [data, visibleRange, dimensions]);
-
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    setVisibleRange(prev => {
-      const delta = e.deltaY > 0 ? 10 : -10;
-      const ns = Math.max(0, prev.start + delta), ne = Math.min(data.length, prev.end - delta);
-      return ne - ns < 10 ? prev : { start: ns, end: ne };
-    });
-  }, [data.length]);
-
-  return (
-    <div ref={containerRef} data-testid="trading-chart" style={{ ...panelStyle, flex: 1, position: 'relative' }}>
-      <div style={panelHdr}>
-        <span>{symbol} · CANDLESTICK · 1M</span>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {['SMA20', 'SMA50', 'EMA12', 'VWAP', 'BB', 'RSI', 'MACD'].map(ind => (
-            <span key={ind} style={{ padding: '1px 5px', fontSize: '9px', borderRadius: '2px', cursor: 'pointer', background: indicators.includes(ind) ? T.brand : T.bg3, color: indicators.includes(ind) ? '#fff' : T.text2 }}>{ind}</span>
-          ))}
-        </div>
-      </div>
-      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', cursor: 'crosshair' }} onMouseMove={handleMouseMove} onMouseLeave={() => setCrosshair(null)} onWheel={handleWheel} />
-    </div>
-  );
-}
+/* ── Candlestick Chart — powered by lightweight-charts v5 ── */
+/* ApexChart handles its own panel header, fetch, resize, and volume pane */
 
 /* ── Order Entry Form ── */
 function OrderEntryForm({ symbol, lastPrice, onSubmit }: { symbol: string; lastPrice: number; onSubmit: (order: Partial<ActiveOrder>) => void }) {
@@ -399,19 +261,22 @@ function OrderEntryForm({ symbol, lastPrice, onSubmit }: { symbol: string; lastP
   const [algoEnabled, setAlgoEnabled] = useState(false);
   const [algo, setAlgo] = useState<AlgoConfig>({ type: 'TWAP', urgency: 'MEDIUM', maxParticipation: 10, darkPoolEnabled: false });
 
+  const account = useAccountData();
+
   const selectedType = ORDER_TYPES.find(t => t.id === orderType)!;
   const notionalValue = qty * limitPrice;
   const commission = qty * 0.005;
   const estimatedSlippage = orderType === 'MKT' ? qty * 0.01 : 0;
+  const portfolioSize = account?.nav ?? account?.equity ?? notionalValue * 4;
 
   const riskChecks = useMemo(() => [
     { label: 'Position Limit', pass: qty <= 1000, detail: `${qty}/1000` },
     { label: 'Buying Power', pass: notionalValue < 500000, detail: fmtUsd(notionalValue) },
-    { label: 'Concentration', pass: notionalValue / 248392 < 0.25, detail: `${((notionalValue / 248392) * 100).toFixed(1)}%` },
+    { label: 'Concentration', pass: notionalValue / Math.max(notionalValue, portfolioSize) < 0.25, detail: `${(notionalValue / Math.max(notionalValue, portfolioSize) * 100).toFixed(1)}%` },
     { label: 'Price Deviation', pass: Math.abs(limitPrice - lastPrice) / lastPrice < 0.05, detail: fmtPct((limitPrice - lastPrice) / lastPrice * 100) },
     { label: 'Daily Loss Limit', pass: true, detail: 'OK' },
     { label: 'Circuit Breaker', pass: true, detail: 'OK' },
-  ], [qty, notionalValue, limitPrice, lastPrice]);
+  ], [qty, notionalValue, limitPrice, lastPrice, portfolioSize]);
 
   const allChecksPass = riskChecks.every(c => c.pass);
 
@@ -781,27 +646,18 @@ function TCAPanel() {
 
 export default function TradingUI2() {
   // ── Hook integration ──
-  const [marketState, marketActions] = useMarketData();
+  const [marketState] = useMarketData();
   const [orderState, orderActions] = useOrders();
-  const [indicatorState, indicatorActions] = useIndicators();
-  const [drawingState, drawingActions] = useDrawing();
-  const [chartTypeState, chartTypeActions] = useChartTypes();
+  // Note: useIndicators / useDrawing / useChartTypes called for store subscriptions only
+  useIndicators();
+  useDrawing();
+  useChartTypes();
 
   const [symbol] = useState('AAPL');
   // lastPrice: seed from quote cache or fallback
   const [lastPrice, setLastPrice] = useState(
     () => marketState.activeQuote?.last ?? 192.53,
   );
-  // Chart data from marketState.bars; fall back to empty while loading
-  const chartData = useMemo<OHLCVBar[]>(() => {
-    if (marketState.bars.length > 0) {
-      return marketState.bars.map(b => ({
-        time: b.timestamp,
-        open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume,
-      }));
-    }
-    return generateOHLCV(300, 185); // empty
-  }, [marketState.bars]);
   const [l2Data, setL2Data] = useState(() => generateL2(192.53));
   const [tapeData, setTapeData] = useState<TapeTrade[]>([]);
   // Positions and orders from hooks
@@ -923,7 +779,7 @@ export default function TradingUI2() {
       <KPIStrip positions={positions} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '6px', flex: 1, minHeight: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: 0 }}>
-          <div style={{ flex: 2, minHeight: 200 }}><CandlestickChart data={chartData} symbol={symbol} indicators={indicators} /></div>
+          <div style={{ flex: 2, minHeight: 200 }}><ApexChart symbol={symbol} /></div>
           <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', padding: '2px 4px' }}>
             {['SMA20', 'SMA50', 'EMA12', 'EMA26', 'VWAP', 'BB', 'RSI', 'MACD'].map(ind => (
               <button key={ind} onClick={() => toggleIndicator(ind)} style={{ padding: '2px 6px', border: 'none', borderRadius: '2px', cursor: 'pointer', background: indicators.includes(ind) ? T.brand : T.bg3, color: indicators.includes(ind) ? '#fff' : T.text3, fontSize: '9px', fontWeight: 600, fontFamily: T.fontSans }}>{ind}</button>

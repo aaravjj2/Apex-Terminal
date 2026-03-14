@@ -52,10 +52,10 @@ function generateFinancials(baseRev: number): FinancialPeriod[] {
   });
 }
 
-// ── Companies ──
+// ── Companies — initial static data; live prices fetched on mount ──
 interface Company { ticker: string; name: string; sector: string; price: number; marketCap: number; }
 
-const COMPANIES: Company[] = [
+const COMPANIES_INITIAL: Company[] = [
   { ticker: 'AAPL', name: 'Apple Inc.', sector: 'Technology', price: 189.84, marketCap: 2940e9 },
   { ticker: 'MSFT', name: 'Microsoft Corp.', sector: 'Technology', price: 415.56, marketCap: 3090e9 },
   { ticker: 'GOOGL', name: 'Alphabet Inc.', sector: 'Technology', price: 174.23, marketCap: 2150e9 },
@@ -166,15 +166,41 @@ const TABS = ['Income Stmt', 'Balance Sheet', 'Cash Flow', 'Ratios', 'DCF Model'
 
 export default function FinancialAnalysisUI2() {
   const [tab, setTab] = useState(0);
-  const [selectedCompany, setSelectedCompany] = useState(COMPANIES[0]);
+  // Companies state — initialized with static prices, overwritten with live quotes on mount
+  const [companies, setCompanies] = useState<Company[]>(COMPANIES_INITIAL);
+  const [selectedCompany, setSelectedCompany] = useState(COMPANIES_INITIAL[0]);
   const [financials] = useState(() => {
     const map: Record<string, FinancialPeriod[]> = {};
-    COMPANIES.forEach(c => { map[c.ticker] = generateFinancials(c.marketCap * 0.03); });
+    COMPANIES_INITIAL.forEach(c => { map[c.ticker] = generateFinancials(c.marketCap * 0.03); });
     return map;
   });
   const [dcfInputs, setDcfInputs] = useState<DCFInputs>({ growthY1: 15, growthY5: 8, termGrowth: 2.5, wacc: 10, years: 10 });
   const [chartMetric, setChartMetric] = useState<'revenue' | 'netIncome' | 'fcf' | 'eps'>('revenue');
   const chartRef = useRef<HTMLCanvasElement>(null);
+
+  // Fetch live prices for all companies on mount
+  useEffect(() => {
+    Promise.allSettled(
+      COMPANIES_INITIAL.map(co =>
+        fetch(`/api/v1/market-data/${co.ticker}/quote`, { signal: AbortSignal.timeout(5000) })
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+          .then(d => d ? { ticker: co.ticker, price: d.price ?? d.last ?? d.close ?? null } : null)
+      )
+    ).then(results => {
+      const updates: Record<string, number> = {};
+      results.forEach(r => {
+        if (r.status === 'fulfilled' && r.value?.price && typeof r.value.price === 'number' && r.value.price > 0) {
+          updates[r.value.ticker] = r.value.price;
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        setCompanies(prev => prev.map(c => updates[c.ticker] ? { ...c, price: updates[c.ticker] } : c));
+        // Also sync selectedCompany price if it was updated
+        setSelectedCompany(prev => updates[prev.ticker] ? { ...prev, price: updates[prev.ticker] } : prev);
+      }
+    });
+  }, []);
 
   const fins = financials[selectedCompany.ticker] || [];
   const latestFin = fins[fins.length - 1];
@@ -197,10 +223,10 @@ export default function FinancialAnalysisUI2() {
         <span style={{ color: AMBER, fontWeight: 'bold', fontSize: 14 }}>💰 FINANCIAL ANALYSIS</span>
         <span style={{ color: DIM }}>|</span>
         <select value={selectedCompany.ticker} onChange={e => {
-          const c = COMPANIES.find(co => co.ticker === e.target.value);
+          const c = companies.find(co => co.ticker === e.target.value);
           if (c) setSelectedCompany(c);
         }} style={{ padding: '4px 8px', background: '#1a1a1a', border: `1px solid ${BORDER}`, color: AMBER, fontFamily: 'monospace', fontSize: 12, fontWeight: 'bold' }}>
-          {COMPANIES.map(c => <option key={c.ticker} value={c.ticker}>{c.ticker} — {c.name}</option>)}
+          {companies.map(c => <option key={c.ticker} value={c.ticker}>{c.ticker} — {c.name}</option>)}
         </select>
         <span style={{ color: WHITE }}>${selectedCompany.price.toFixed(2)}</span>
         <span style={{ color: DIM }}>MCap: {fmtM(selectedCompany.marketCap)}</span>

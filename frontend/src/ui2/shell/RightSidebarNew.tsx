@@ -19,20 +19,20 @@ interface WatchItem {
   pct: number;
 }
 
-const WATCHLIST_DATA: WatchItem[] = [
-  { sym: 'AAPL', name: 'Apple Inc', price: 189.84, change: 2.41, pct: 1.29 },
-  { sym: 'TSLA', name: 'Tesla Inc', price: 248.42, change: -3.18, pct: -1.26 },
-  { sym: 'MSFT', name: 'Microsoft', price: 378.91, change: 4.52, pct: 1.21 },
-  { sym: 'NVDA', name: 'NVIDIA Corp', price: 875.28, change: 12.37, pct: 1.43 },
-  { sym: 'AMZN', name: 'Amazon', price: 178.25, change: -1.13, pct: -0.63 },
-  { sym: 'GOOGL', name: 'Alphabet', price: 141.80, change: 0.95, pct: 0.67 },
-  { sym: 'META', name: 'Meta Platforms', price: 485.58, change: 6.72, pct: 1.40 },
-  { sym: 'SPY', name: 'S&P 500 ETF', price: 502.12, change: 3.41, pct: 0.68 },
-  { sym: 'QQQ', name: 'Nasdaq 100 ETF', price: 437.58, change: 4.28, pct: 0.99 },
-  { sym: 'BTC', name: 'Bitcoin', price: 64250.00, change: 1250.00, pct: 1.98 },
-  { sym: 'ETH', name: 'Ethereum', price: 3485.50, change: -42.30, pct: -1.20 },
-  { sym: 'JPM', name: 'JPMorgan', price: 198.94, change: 1.87, pct: 0.95 },
-];
+const WATCHLIST_SYMBOLS = ['AAPL', 'TSLA', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'SPY', 'QQQ', 'JPM'];
+
+const SYMBOL_NAMES: Record<string, string> = {
+  AAPL: 'Apple Inc.',
+  TSLA: 'Tesla Inc.',
+  MSFT: 'Microsoft',
+  NVDA: 'NVIDIA Corp.',
+  AMZN: 'Amazon.com',
+  GOOGL: 'Alphabet Inc.',
+  META: 'Meta Platforms',
+  SPY: 'S&P 500 ETF',
+  QQQ: 'Nasdaq 100 ETF',
+  JPM: 'JPMorgan Chase',
+};
 
 // ─── News data ───
 interface NewsItem {
@@ -42,16 +42,24 @@ interface NewsItem {
   sentiment: 'bullish' | 'bearish' | 'neutral';
 }
 
-const NEWS_DATA: NewsItem[] = [
-  { time: '09:32', headline: 'AAPL announces $110B buyback, largest in history', source: 'Reuters', sentiment: 'bullish' },
-  { time: '09:28', headline: 'Fed minutes signal patience on rate cuts', source: 'WSJ', sentiment: 'neutral' },
-  { time: '09:15', headline: 'NVDA beats Q4 estimates, data center revenue surges 409%', source: 'Bloomberg', sentiment: 'bullish' },
-  { time: '09:02', headline: 'China PMI contracts for 5th month — global slowdown fears', source: 'FT', sentiment: 'bearish' },
-  { time: '08:45', headline: 'Oil rises 2% on OPEC+ supply cut extension', source: 'CNBC', sentiment: 'bullish' },
-  { time: '08:30', headline: 'US jobless claims fall to 215K, labor market remains tight', source: 'DoL', sentiment: 'neutral' },
-  { time: '08:15', headline: 'TSLA recalls 2M vehicles over Autopilot safety concerns', source: 'Reuters', sentiment: 'bearish' },
-  { time: '07:58', headline: 'EU approves landmark AI regulation framework', source: 'EC', sentiment: 'neutral' },
-];
+function formatNewsTime(raw: string | undefined): string {
+  if (!raw) return '--:--';
+  try {
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return raw.slice(0, 5);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  } catch {
+    return raw.slice(0, 5);
+  }
+}
+
+function normalizeSentiment(raw: string | undefined): 'bullish' | 'bearish' | 'neutral' {
+  if (!raw) return 'neutral';
+  const s = raw.toLowerCase();
+  if (s === 'bullish' || s === 'positive' || s === 'buy') return 'bullish';
+  if (s === 'bearish' || s === 'negative' || s === 'sell') return 'bearish';
+  return 'neutral';
+}
 
 // ─── L2 Depth data ───
 interface DepthLevel {
@@ -113,14 +121,6 @@ interface Position {
   pnlPct: number;
 }
 
-const POSITIONS: Position[] = [
-  { sym: 'AAPL', qty: 150, avgCost: 185.20, last: 189.84, pnl: 696.00, pnlPct: 2.51 },
-  { sym: 'NVDA', qty: 50, avgCost: 845.00, last: 875.28, pnl: 1514.00, pnlPct: 3.58 },
-  { sym: 'MSFT', qty: 80, avgCost: 370.50, last: 378.91, pnl: 672.80, pnlPct: 2.27 },
-  { sym: 'TSLA', qty: -30, avgCost: 255.00, last: 248.42, pnl: 197.40, pnlPct: 2.58 },
-  { sym: 'SPY', qty: 200, avgCost: 498.30, last: 502.12, pnl: 764.00, pnlPct: 0.77 },
-];
-
 export function RightSidebarNew() {
   const [activeTab, setActiveTab] = useState<SidebarTab>('order');
   const activeSymbol = useContextBus(s => s.activeSymbol);
@@ -150,24 +150,14 @@ export function RightSidebarNew() {
         ))}
       </div>
 
-      {/* Tab content */}
-      <div className={`s-content${activeTab === 'order' ? ' active' : ''}`}>
-        <OrderTicketPanel symbol={activeSymbol} />
-      </div>
-      <div className={`s-content${activeTab === 'watch' ? ' active' : ''}`}>
-        <WatchlistPanel />
-      </div>
-      <div className={`s-content${activeTab === 'pos' ? ' active' : ''}`}>
-        <PositionsPanel />
-      </div>
-      <div className={`s-content${activeTab === 'news' ? ' active' : ''}`}>
-        <NewsPanel />
-      </div>
-      <div className={`s-content${activeTab === 'l2' ? ' active' : ''}`}>
-        <L2DepthPanel symbol={activeSymbol} />
-      </div>
-      <div className={`s-content${activeTab === 'ts' ? ' active' : ''}`}>
-        <TimeSalesPanel symbol={activeSymbol} />
+      {/* Tab content — only mount active tab to prevent background polling */}
+      <div className="s-content active">
+        {activeTab === 'order' && <OrderTicketPanel symbol={activeSymbol} />}
+        {activeTab === 'watch' && <WatchlistPanel />}
+        {activeTab === 'pos'   && <PositionsPanel />}
+        {activeTab === 'news'  && <NewsPanel />}
+        {activeTab === 'l2'    && <L2DepthPanel symbol={activeSymbol} />}
+        {activeTab === 'ts'    && <TimeSalesPanel symbol={activeSymbol} />}
       </div>
     </div>
   );
@@ -319,106 +309,294 @@ function OrderTicketPanel({ symbol }: { symbol: string }) {
 // ─── WATCHLIST ───
 function WatchlistPanel() {
   const setActiveSymbol = useContextBus(s => s.setActiveSymbol);
-  
+  const [watchlistData, setWatchlistData] = useState<WatchItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchWatchlist = useCallback(async () => {
+    try {
+      // Single batch call replaces 10 individual /quote requests
+      const res = await fetch('/api/v1/market-data/quotes/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols: WATCHLIST_SYMBOLS }),
+      });
+      if (!res.ok) throw new Error(`batch status ${res.status}`);
+      const data = await res.json();
+      const quotes: Record<string, unknown>[] = Array.isArray(data.quotes) ? data.quotes : [];
+      const items: WatchItem[] = quotes
+        .filter(q => (q as any).ok !== false)
+        .map(q => ({
+          sym: String((q as any).symbol ?? ''),
+          name: SYMBOL_NAMES[String((q as any).symbol ?? '')] || String((q as any).symbol ?? ''),
+          price: parseFloat(String((q as any).price ?? 0)) || 0,
+          change: parseFloat(String((q as any).change ?? 0)) || 0,
+          pct: parseFloat(String((q as any).change_pct ?? 0)) || 0,
+        }))
+        .filter(item => item.sym);
+      setWatchlistData(items);
+    } catch {
+      // Fallback: individual calls if batch endpoint not yet deployed
+      try {
+        const results = await Promise.allSettled(
+          WATCHLIST_SYMBOLS.map(sym =>
+            fetch(`/api/v1/market-data/${sym}/quote`).then(r => (r.ok ? r.json() : null))
+          )
+        );
+        const items: WatchItem[] = results
+          .map((res, i) => {
+            const sym = WATCHLIST_SYMBOLS[i];
+            if (res.status === 'fulfilled' && res.value) {
+              const d = res.value;
+              return { sym, name: SYMBOL_NAMES[sym] || sym, price: d.price ?? d.last ?? 0, change: d.change ?? 0, pct: d.change_pct ?? 0 } as WatchItem;
+            }
+            return null;
+          })
+          .filter((item): item is WatchItem => item !== null);
+        setWatchlistData(items);
+      } catch { setWatchlistData([]); }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWatchlist();
+    const iv = setInterval(fetchWatchlist, 60_000);
+    return () => clearInterval(iv);
+  }, [fetchWatchlist]);
+
   return (
     <div style={{ overflow: 'auto', flex: 1 }}>
       <div className="wl-hdr">
         <span>SYMBOL</span>
         <span>LAST</span>
       </div>
-      {WATCHLIST_DATA.map(item => (
-        <div key={item.sym} className="wl-row" onClick={() => setActiveSymbol(item.sym)}>
-          <div>
-            <div className="wl-sym">{item.sym}</div>
-            <div className="wl-name">{item.name}</div>
-          </div>
-          <div className="wl-p">{item.price < 1000 ? `$${item.price.toFixed(2)}` : `$${item.price.toLocaleString()}`}</div>
-          <div className={`wl-c ${item.change >= 0 ? 'up' : 'dn'}`}>
-            {item.change >= 0 ? '+' : ''}{item.pct.toFixed(2)}%
-          </div>
-        </div>
-      ))}
+      {loading && watchlistData.length === 0
+        ? WATCHLIST_SYMBOLS.map(sym => (
+            <div key={sym} className="wl-row">
+              <div>
+                <div className="wl-sym">{sym}</div>
+                <div className="wl-name">{SYMBOL_NAMES[sym] || sym}</div>
+              </div>
+              <div className="wl-p">--</div>
+              <div className="wl-c">--</div>
+            </div>
+          ))
+        : watchlistData.map(item => (
+            <div key={item.sym} className="wl-row" onClick={() => setActiveSymbol(item.sym)}>
+              <div>
+                <div className="wl-sym">{item.sym}</div>
+                <div className="wl-name">{item.name}</div>
+              </div>
+              <div className="wl-p">
+                {item.price < 1000 ? `$${item.price.toFixed(2)}` : `$${item.price.toLocaleString()}`}
+              </div>
+              <div className={`wl-c ${item.change >= 0 ? 'up' : 'dn'}`}>
+                {item.change >= 0 ? '+' : ''}{item.pct.toFixed(2)}%
+              </div>
+            </div>
+          ))}
     </div>
   );
 }
 
 // ─── POSITIONS ───
 function PositionsPanel() {
-  const totalPnl = POSITIONS.reduce((s, p) => s + p.pnl, 0);
-  
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPositions() {
+      try {
+        const res = await fetch('/api/v1/portfolio/positions');
+        if (res.ok) {
+          const data = await res.json();
+          const raw: Record<string, unknown>[] = Array.isArray(data)
+            ? data
+            : Array.isArray(data.positions)
+            ? data.positions
+            : [];
+          const mapped: Position[] = raw.map(p => ({
+            sym: String(p.symbol ?? p.sym ?? ''),
+            qty: parseFloat(String(p.qty ?? p.quantity ?? 0)),
+            avgCost: parseFloat(String(p.avg_entry_price ?? p.avg_cost ?? p.avgCost ?? 0)),
+            last: parseFloat(String(p.current_price ?? p.last ?? 0)),
+            pnl: parseFloat(String(p.unrealized_pl ?? p.pnl ?? 0)),
+            pnlPct: parseFloat(String(p.unrealized_plpc ?? p.pnl_pct ?? p.pnlPct ?? 0)) * 100,
+          }));
+          setPositions(mapped);
+        } else {
+          setPositions([]);
+        }
+      } catch {
+        setPositions([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPositions();
+    const iv = setInterval(fetchPositions, 60_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const totalPnl = positions.reduce((s, p) => s + p.pnl, 0);
+
   return (
     <div style={{ overflow: 'auto', flex: 1 }}>
       <div className="wl-hdr">
-        <span>POSITIONS ({POSITIONS.length})</span>
-        <span style={{ color: totalPnl >= 0 ? 'var(--up)' : 'var(--dn)', fontFamily: 'var(--mono)' }}>
-          {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
-        </span>
+        <span>POSITIONS ({loading ? '…' : positions.length})</span>
+        {!loading && (
+          <span style={{ color: totalPnl >= 0 ? 'var(--up)' : 'var(--dn)', fontFamily: 'var(--mono)' }}>
+            {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
+          </span>
+        )}
       </div>
-      {POSITIONS.map(pos => (
-        <div key={pos.sym} className="wl-row">
-          <div>
-            <div className="wl-sym">{pos.sym}</div>
-            <div className="wl-name">{pos.qty > 0 ? `LONG ${pos.qty}` : `SHORT ${Math.abs(pos.qty)}`} @ ${pos.avgCost.toFixed(2)}</div>
+      {loading ? (
+        <div style={{ padding: '12px 10px', fontSize: '11px', color: 'var(--tx3)' }}>Loading positions…</div>
+      ) : positions.length === 0 ? (
+        <div style={{ padding: '12px 10px', fontSize: '11px', color: 'var(--tx3)' }}>No open positions</div>
+      ) : (
+        positions.map(pos => (
+          <div key={pos.sym} className="wl-row">
+            <div>
+              <div className="wl-sym">{pos.sym}</div>
+              <div className="wl-name">
+                {pos.qty > 0 ? `LONG ${pos.qty}` : `SHORT ${Math.abs(pos.qty)}`} @ ${pos.avgCost.toFixed(2)}
+              </div>
+            </div>
+            <div className="wl-p">${pos.last.toFixed(2)}</div>
+            <div className={`wl-c ${pos.pnl >= 0 ? 'up' : 'dn'}`}>
+              {pos.pnl >= 0 ? '+' : ''}${pos.pnl.toFixed(0)}
+            </div>
           </div>
-          <div className="wl-p">${pos.last.toFixed(2)}</div>
-          <div className={`wl-c ${pos.pnl >= 0 ? 'up' : 'dn'}`}>
-            {pos.pnl >= 0 ? '+' : ''}${pos.pnl.toFixed(0)}
-          </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }
 
 // ─── NEWS ───
 function NewsPanel() {
+  const [newsData, setNewsData] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchNews() {
+      try {
+        const res = await fetch('/api/v1/sentiment/articles?limit=8');
+        if (res.ok) {
+          const data = await res.json();
+          const articles: Record<string, unknown>[] = Array.isArray(data)
+            ? data
+            : Array.isArray(data.articles)
+            ? data.articles
+            : [];
+          const mapped: NewsItem[] = articles.map(a => ({
+            time: formatNewsTime(
+              String(a.time_published ?? a.published_at ?? a.datetime ?? '')
+            ),
+            headline: String(a.title ?? a.headline ?? a.summary ?? ''),
+            source: String(a.source ?? a.feed ?? ''),
+            sentiment: normalizeSentiment(
+              String(a.sentiment_label ?? a.sentiment ?? a.overall_sentiment_label ?? '')
+            ),
+          }));
+          setNewsData(mapped);
+        } else {
+          setNewsData([]);
+        }
+      } catch {
+        setNewsData([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchNews();
+    const iv = setInterval(fetchNews, 120_000);
+    return () => clearInterval(iv);
+  }, []);
+
   return (
     <div style={{ overflow: 'auto', flex: 1 }}>
       <div className="wl-hdr">
         <span>LATEST NEWS</span>
         <span style={{ color: 'var(--brand)', cursor: 'pointer' }}>⟳</span>
       </div>
-      {NEWS_DATA.map((news, i) => (
-        <div key={i} style={{
-          padding: '7px 10px',
-          borderBottom: '1px solid var(--bdr)',
-          cursor: 'pointer',
-          transition: 'background .08s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg2)'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-            <span style={{ fontSize: '10px', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>{news.time}</span>
-            <span style={{
-              fontSize: '9px',
-              fontWeight: 600,
-              padding: '1px 5px',
-              borderRadius: '3px',
-              background: news.sentiment === 'bullish' ? 'var(--live-bg)' : news.sentiment === 'bearish' ? 'rgba(242,54,69,.1)' : 'var(--bg2)',
-              color: news.sentiment === 'bullish' ? 'var(--up)' : news.sentiment === 'bearish' ? 'var(--dn)' : 'var(--tx2)',
-            }}>
-              {news.sentiment.toUpperCase()}
-            </span>
-            <span style={{ fontSize: '9px', color: 'var(--tx3)', marginLeft: 'auto' }}>{news.source}</span>
+      {loading ? (
+        <div style={{ padding: '12px 10px', fontSize: '11px', color: 'var(--tx3)' }}>Loading news…</div>
+      ) : newsData.length === 0 ? (
+        <div style={{ padding: '12px 10px', fontSize: '11px', color: 'var(--tx3)' }}>No articles available</div>
+      ) : (
+        newsData.map((news, i) => (
+          <div
+            key={i}
+            style={{
+              padding: '7px 10px',
+              borderBottom: '1px solid var(--bdr)',
+              cursor: 'pointer',
+              transition: 'background .08s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>{news.time}</span>
+              <span style={{
+                fontSize: '9px',
+                fontWeight: 600,
+                padding: '1px 5px',
+                borderRadius: '3px',
+                background: news.sentiment === 'bullish' ? 'var(--live-bg)' : news.sentiment === 'bearish' ? 'rgba(242,54,69,.1)' : 'var(--bg2)',
+                color: news.sentiment === 'bullish' ? 'var(--up)' : news.sentiment === 'bearish' ? 'var(--dn)' : 'var(--tx2)',
+              }}>
+                {news.sentiment.toUpperCase()}
+              </span>
+              <span style={{ fontSize: '9px', color: 'var(--tx3)', marginLeft: 'auto' }}>{news.source}</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--tx)', lineHeight: 1.4 }}>{news.headline}</div>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--tx)', lineHeight: 1.4 }}>{news.headline}</div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }
 
 // ─── L2 DEPTH ───
 function L2DepthPanel({ symbol }: { symbol: string }) {
-  const [depth, setDepth] = useState(() => genDepth(189.84));
+  const liveMidRef = useRef<number>(100);
+  const [depth, setDepth] = useState(() => genDepth(100));
 
   useEffect(() => {
+    let cancelled = false;
+    liveMidRef.current = 100;
+
+    async function fetchPrice() {
+      try {
+        const res = await fetch(`/api/v1/market-data/${symbol}/quote`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          const price: number = data.price ?? data.last ?? data.close ?? 100;
+          if (price > 0) {
+            liveMidRef.current = price;
+            setDepth(genDepth(price));
+          }
+        }
+      } catch {
+        // keep fallback mid of 100
+      }
+    }
+
+    fetchPrice();
+
     const iv = setInterval(() => {
-      setDepth(genDepth(189.84 + (Math.random() - 0.5) * 0.2));
+      setDepth(genDepth(liveMidRef.current + (Math.random() - 0.5) * 0.2));
     }, 2000);
-    return () => clearInterval(iv);
-  }, []);
+
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+  }, [symbol]);
 
   const maxTotal = Math.max(
     depth.bids[depth.bids.length - 1]?.total || 1,
@@ -465,16 +643,37 @@ function L2DepthPanel({ symbol }: { symbol: string }) {
 
 // ─── TIME & SALES ───
 function TimeSalesPanel({ symbol }: { symbol: string }) {
+  const liveMidRef = useRef<number>(189.84);
   const [trades, setTrades] = useState(() => genTrades(189.84));
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function fetchPrice() {
+      try {
+        const res = await fetch(`/api/v1/market-data/${symbol}/quote`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          const price: number = data.price ?? data.last ?? data.close ?? 0;
+          if (price > 0) {
+            liveMidRef.current = price;
+            setTrades(genTrades(price));
+          }
+        }
+      } catch {
+        // keep current mid
+      }
+    }
+
+    fetchPrice();
+
     const iv = setInterval(() => {
       setTrades(prev => {
         const side: 'buy' | 'sell' = Math.random() > 0.5 ? 'buy' : 'sell';
         const now = new Date();
         const newTrade: TradeItem = {
           time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`,
-          price: 189.84 + (Math.random() - 0.5) * 0.2,
+          price: liveMidRef.current + (Math.random() - 0.5) * 0.2,
           size: Math.floor(Math.random() * 300 + 10),
           side,
           exch: ['NYSE', 'ARCA', 'BATS', 'IEX'][Math.floor(Math.random() * 4)],
@@ -482,8 +681,12 @@ function TimeSalesPanel({ symbol }: { symbol: string }) {
         return [newTrade, ...prev.slice(0, 29)];
       });
     }, 1500);
-    return () => clearInterval(iv);
-  }, []);
+
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+  }, [symbol]);
 
   return (
     <div style={{ overflow: 'auto', flex: 1 }}>

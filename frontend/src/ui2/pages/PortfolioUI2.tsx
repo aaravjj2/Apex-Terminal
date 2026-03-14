@@ -91,6 +91,44 @@ function generateEquityCurve(days: number) {
 
 /* ═════════════════════════════════════════════════════════════════════ */
 
+interface PerfStats { sharpe?: number; max_drawdown?: number; annualized_vol?: number; }
+
+function usePortfolioHoldings() {
+  const [holdings, setHoldings] = React.useState<Holding[] | null>(null);
+  const [holdingsLoaded, setHoldingsLoaded] = React.useState(false);
+  const [equityCurve, setEquityCurve] = React.useState<{date: string; portfolio: number; benchmark: number}[] | null>(null);
+  const [perfStats, setPerfStats] = React.useState<PerfStats>({});
+
+  React.useEffect(() => {
+    const API = (window as any).__APEX_API__ || '';
+    // Fetch holdings from portfolio API
+    Promise.all([
+      fetch(`${API}/api/v1/portfolio/holdings`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${API}/api/v1/portfolio/performance?period=2y`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([holdingsData, perfData]) => {
+      if (holdingsData?.holdings?.length > 0) {
+        setHoldings(holdingsData.holdings);
+      }
+      setHoldingsLoaded(true);
+      if (perfData?.equity_curve?.length > 0) {
+        setEquityCurve(perfData.equity_curve);
+      }
+      if (perfData?.stats) {
+        setPerfStats(perfData.stats);
+      }
+    });
+
+    const id = setInterval(() => {
+      fetch(`${API}/api/v1/portfolio/holdings`)
+        .then(r => r.ok ? r.json() : null).catch(() => null)
+        .then(data => { if (data?.holdings?.length > 0) setHoldings(data.holdings); });
+    }, 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  return { liveHoldings: holdings, holdingsLoaded, liveEquityCurve: equityCurve, perfStats };
+}
+
 /* Holdings Table */
 function HoldingsTable({ holdings }: { holdings: Holding[] }) {
   const [sortBy, setSortBy] = useState<keyof Holding>('weight');
@@ -107,6 +145,9 @@ function HoldingsTable({ holdings }: { holdings: Holding[] }) {
   return (
     <div data-testid="holdings-table" style={panelStyle}>
       <div style={panelHdr}><span>HOLDINGS ({holdings.length})</span></div>
+      {holdings.length === 0 ? (
+        <div style={{ padding: '16px', color: T.text3, fontSize: '12px', textAlign: 'center' }}>No holdings</div>
+      ) : (
       <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>
@@ -134,6 +175,7 @@ function HoldingsTable({ holdings }: { holdings: Holding[] }) {
           ))}</tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }
@@ -379,19 +421,22 @@ function PerformanceAttribution({ holdings }: { holdings: Holding[] }) {
 }
 
 /* KPI Strip */
-function KPIStrip({ holdings, equity }: { holdings: Holding[]; equity: { portfolio: number; benchmark: number }[] }) {
+function KPIStrip({ holdings, equity, perfStats }: { holdings: Holding[]; equity: { portfolio: number; benchmark: number }[]; perfStats: PerfStats }) {
   const totalValue = holdings.reduce((s, h) => s + h.mktPrice * h.qty, 0);
   const dayPnl = holdings.reduce((s, h) => s + h.mktPrice * h.qty * h.dailyReturn / 100, 0);
   const portBeta = holdings.reduce((s, h) => s + h.beta * h.weight / 100, 0);
+  const sharpe = perfStats.sharpe != null && perfStats.sharpe !== 0 ? perfStats.sharpe.toFixed(2) : '--';
+  const maxDD = perfStats.max_drawdown != null && perfStats.max_drawdown !== 0 ? `${(perfStats.max_drawdown * 100).toFixed(1)}%` : '--';
+  const annVol = perfStats.annualized_vol != null && perfStats.annualized_vol !== 0 ? `${(perfStats.annualized_vol * 100).toFixed(1)}%` : '--';
   const kpis = [
     { label: 'NAV', value: fmtUsd(totalValue), color: T.text0 },
     { label: 'Day P&L', value: fmtUsd(dayPnl), color: clr(dayPnl) },
     { label: 'Day %', value: fmtPct(dayPnl / totalValue * 100), color: clr(dayPnl) },
     { label: 'YTD Return', value: fmtPct(((equity[equity.length - 1]?.portfolio || totalValue) / (equity[0]?.portfolio || totalValue) - 1) * 100), color: T.up },
     { label: 'Beta', value: portBeta.toFixed(2), color: portBeta > 1.2 ? T.warn : T.text0 },
-    { label: 'Sharpe', value: '1.85', color: T.up },
-    { label: 'Max DD', value: '-8.42%', color: T.dn },
-    { label: 'Vol (ann)', value: '14.8%', color: T.text0 },
+    { label: 'Sharpe', value: sharpe, color: T.up },
+    { label: 'Max DD', value: maxDD, color: T.dn },
+    { label: 'Vol (ann)', value: annVol, color: T.text0 },
   ];
 
   return (
@@ -477,14 +522,21 @@ export default function PortfolioUI2() {
   const [riskState, riskActions] = useRisk();
   const [reportingState, reportingActions] = useReporting();
 
-  const [holdings] = useState(generateHoldings);
-  const [equityCurve] = useState(() => generateEquityCurve(365));
+  const { liveHoldings, holdingsLoaded, liveEquityCurve, perfStats } = usePortfolioHoldings();
+  // When the API fetch has completed but returned no holdings, use an empty array (show "No holdings").
+  // While still loading, use generateHoldings() as a placeholder so the layout is not empty.
+  const holdings = useMemo(
+    () => liveHoldings ?? (holdingsLoaded ? [] : generateHoldings()),
+    [liveHoldings, holdingsLoaded]
+  );
+  const equityCurve = useMemo(() => liveEquityCurve ?? generateEquityCurve(365 * 2), [liveEquityCurve]);
   const [tab, setTab] = useState<'OVERVIEW' | 'RISK' | 'ATTRIBUTION' | 'OPTIMIZE'>('OVERVIEW');
 
   return (
-    <div data-testid="portfolio-page" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+    <div data-testid="portfolio-ui2-page" data-ready="true" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
+      <div data-testid="portfolio-ready" style={{ display: 'none' }} aria-hidden="true" />
       {/* KPIs */}
-      <KPIStrip holdings={holdings} equity={equityCurve} />
+      <KPIStrip holdings={holdings} equity={equityCurve} perfStats={perfStats} />
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '1px', background: T.border0, borderRadius: T.radius }}>
         {(['OVERVIEW', 'RISK', 'ATTRIBUTION', 'OPTIMIZE'] as const).map(t => (

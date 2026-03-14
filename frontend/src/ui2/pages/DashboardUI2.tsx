@@ -31,12 +31,13 @@
  * │ • Asset allocation visualization                                    │
  * └──────────────────────────────────────────────────────────────────────┘
  */
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useMarketData } from '@/ui2/hooks';
 import { usePortfolio } from '@/ui2/hooks';
 import { useOrders } from '@/ui2/hooks';
 import { useSocial } from '@/ui2/hooks';
 import { usePlatform } from '@/ui2/hooks';
+import ApexAreaChart from '../components/chart/ApexAreaChart';
 
 /* ── Design tokens ── */
 const T = {
@@ -148,22 +149,9 @@ interface NewsItem {
 }
 
 function generateNews(): NewsItem[] {
-  const headlines = [
-    { headline: 'NVIDIA reports record Q4 data center revenue, beats estimates by 18%', source: 'Bloomberg', sentiment: 'positive' as const, symbols: ['NVDA'] },
-    { headline: 'Fed signals potential rate cut in September, markets rally', source: 'Reuters', sentiment: 'positive' as const, symbols: ['SPY', 'QQQ'] },
-    { headline: 'Tesla recalls 1.2M vehicles over steering software issue', source: 'CNBC', sentiment: 'negative' as const, symbols: ['TSLA'] },
-    { headline: 'Apple Vision Pro sales slow as consumer adoption stalls', source: 'WSJ', sentiment: 'negative' as const, symbols: ['AAPL'] },
-    { headline: 'Microsoft Azure cloud revenue grows 29% YoY in Q3', source: 'Bloomberg', sentiment: 'positive' as const, symbols: ['MSFT'] },
-    { headline: 'Amazon expands same-day delivery to 30 new cities', source: 'Reuters', sentiment: 'positive' as const, symbols: ['AMZN'] },
-    { headline: 'JPMorgan upgrades tech sector to overweight on AI spending', source: 'MarketWatch', sentiment: 'positive' as const, symbols: ['NVDA', 'AMD', 'AVGO'] },
-    { headline: 'Oil prices drop 2% on weak Chinese demand data', source: 'Bloomberg', sentiment: 'negative' as const, symbols: ['XOM', 'CVX'] },
-    { headline: 'Bitcoin briefly touches $70K before pulling back to $67K', source: 'CoinDesk', sentiment: 'neutral' as const, symbols: ['BTC'] },
-    { headline: 'FDA approves Eli Lilly weight loss drug for heart failure', source: 'CNBC', sentiment: 'positive' as const, symbols: ['LLY'] },
-    { headline: 'Semiconductor stocks rally on strong TSMC earnings', source: 'Reuters', sentiment: 'positive' as const, symbols: ['AMD', 'NVDA', 'INTC'] },
-    { headline: 'Congress debates new crypto regulation framework', source: 'WSJ', sentiment: 'neutral' as const, symbols: ['BTC', 'ETH'] },
-  ];
-  const now = Date.now();
-  return headlines.map((h, i) => ({ id: i, time: new Date(now - i * 600000 - i * 50000), ...h }));
+  // Returns empty array — real news is loaded via /api/v1/sentiment/articles in DashboardUI2.
+  // This function is kept only so the type compiles; no fake headlines are rendered.
+  return [];
 }
 
 /* ═════════════════════════════════════════════════════════════════════ */
@@ -191,78 +179,42 @@ function Sparkline({ data, width = 60, height = 20, color }: { data: number[]; w
   return (<svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}><polyline points={pts} fill="none" stroke={color} strokeWidth="1.2" /></svg>);
 }
 
-/* Equity Curve (Canvas) */
+/* Equity Curve — powered by lightweight-charts v5 AreaSeries */
 function EquityCurveChart({ data }: { data: { date: string; equity: number; benchmark: number }[] }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ w: 600, h: 300 });
-  const [hover, setHover] = useState<{ idx: number; x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    const el = containerRef.current; if (!el) return;
-    const obs = new ResizeObserver(entries => { const { width, height } = entries[0].contentRect; setDims({ w: Math.floor(width), h: Math.floor(height) }); });
-    obs.observe(el); return () => obs.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const c = canvasRef.current; if (!c) return;
-    const ctx = c.getContext('2d'); if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1; c.width = dims.w * dpr; c.height = dims.h * dpr; ctx.scale(dpr, dpr);
-    const { w, h } = dims; const mt = 10, mb = 25, ml = 65, mr = 10;
-    const cW = w - ml - mr, cH = h - mt - mb;
-    const allVals = data.flatMap(d => [d.equity, d.benchmark]);
-    const minV = Math.min(...allVals) * 0.998, maxV = Math.max(...allVals) * 1.002, range = maxV - minV || 1;
-    const toX = (i: number) => ml + (i / (data.length - 1)) * cW;
-    const toY = (v: number) => mt + cH - ((v - minV) / range) * cH;
-
-    ctx.fillStyle = T.bg1; ctx.fillRect(0, 0, w, h);
-    // Grid
-    for (let i = 0; i <= 5; i++) { const v = minV + (range * i) / 5; const y = toY(v); ctx.strokeStyle = T.border0; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(w - mr, y); ctx.stroke(); ctx.fillStyle = T.text3; ctx.font = '10px Inter'; ctx.textAlign = 'right'; ctx.fillText(fmtK(v), ml - 5, y + 3); }
-    // Dates
-    for (let i = 0; i < data.length; i += Math.floor(data.length / 6)) { ctx.fillStyle = T.text3; ctx.font = '9px Inter'; ctx.textAlign = 'center'; ctx.fillText(data[i].date.slice(5), toX(i), h - 5); }
-    // Benchmark line
-    ctx.strokeStyle = T.text3; ctx.lineWidth = 1; ctx.setLineDash([4, 3]); ctx.beginPath();
-    data.forEach((d, i) => { const x = toX(i), y = toY(d.benchmark); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }); ctx.stroke(); ctx.setLineDash([]);
-    // Equity fill
-    const eqGrad = ctx.createLinearGradient(0, mt, 0, mt + cH);
-    eqGrad.addColorStop(0, 'rgba(41,98,255,0.25)'); eqGrad.addColorStop(1, 'rgba(41,98,255,0)');
-    ctx.fillStyle = eqGrad; ctx.beginPath(); ctx.moveTo(toX(0), toY(data[0].equity));
-    data.forEach((d, i) => ctx.lineTo(toX(i), toY(d.equity))); ctx.lineTo(toX(data.length - 1), mt + cH); ctx.lineTo(toX(0), mt + cH); ctx.fill();
-    // Equity line
-    ctx.strokeStyle = T.brand; ctx.lineWidth = 2; ctx.beginPath();
-    data.forEach((d, i) => { const x = toX(i), y = toY(d.equity); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }); ctx.stroke();
-    // Legend
-    ctx.font = '10px Inter'; ctx.fillStyle = T.brand; ctx.fillRect(ml + 10, mt + 5, 10, 3); ctx.fillText('Portfolio', ml + 25, mt + 10);
-    ctx.fillStyle = T.text3; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(ml + 90, mt + 7); ctx.lineTo(ml + 100, mt + 7); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillText('S&P 500', ml + 105, mt + 10);
-    // Crosshair
-    if (hover && hover.idx >= 0 && hover.idx < data.length) {
-      const d = data[hover.idx]; const x = toX(hover.idx);
-      ctx.strokeStyle = T.text3; ctx.lineWidth = 0.5; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(x, mt); ctx.lineTo(x, mt + cH); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(x - 80, mt + 5, 160, 36); ctx.borderRadius;
-      ctx.fillStyle = T.text1; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
-      ctx.fillText(`${d.date}  Portfolio: ${fmtK(d.equity)}`, x, mt + 18);
-      ctx.fillText(`Benchmark: ${fmtK(d.benchmark)}  α: ${fmtPct(((d.equity / d.benchmark) - 1) * 100)}`, x, mt + 32);
-      ctx.fillStyle = T.brand; ctx.beginPath(); ctx.arc(x, toY(d.equity), 4, 0, Math.PI * 2); ctx.fill();
-    }
-  }, [data, dims, hover]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = canvasRef.current?.getBoundingClientRect(); if (!rect) return;
-    const x = e.clientX - rect.left; const ml = 65, cW = dims.w - ml - 10;
-    const idx = Math.round(((x - ml) / cW) * (data.length - 1));
-    setHover({ idx: Math.max(0, Math.min(idx, data.length - 1)), x: e.clientX - rect.left, y: e.clientY - rect.top });
-  }, [data.length, dims.w]);
+  /* Convert date strings to unix timestamps (seconds) for ApexAreaChart */
+  const areaData = useMemo(
+    () =>
+      data
+        .filter(d => d.date && d.equity > 0)
+        .map(d => ({
+          time:  Math.floor(new Date(d.date).getTime() / 1000),
+          value: d.equity,
+        })),
+    [data],
+  );
 
   return (
-    <div ref={containerRef} data-testid="equity-curve" style={{ ...panelStyle, flex: 1 }}>
+    <div data-testid="equity-curve" style={{ ...panelStyle, flex: 1 }}>
       <div style={panelHdr}>
         <span>PORTFOLIO EQUITY CURVE</span>
         <div style={{ display: 'flex', gap: '6px', fontSize: '10px', fontFamily: T.fontMono }}>
-          {['1W', '1M', '3M', 'YTD', '1Y', 'ALL'].map(p => <span key={p} style={{ cursor: 'pointer', padding: '1px 5px', borderRadius: '2px', background: p === '1Y' ? T.brand : 'transparent', color: p === '1Y' ? '#fff' : T.text3 }}>{p}</span>)}
+          {['1W', '1M', '3M', 'YTD', '1Y', 'ALL'].map(p => (
+            <span
+              key={p}
+              style={{
+                cursor: 'pointer', padding: '1px 5px', borderRadius: '2px',
+                background: p === '1Y' ? T.brand : 'transparent',
+                color: p === '1Y' ? '#fff' : T.text3,
+              }}
+            >
+              {p}
+            </span>
+          ))}
         </div>
       </div>
-      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', cursor: 'crosshair' }} onMouseMove={handleMouseMove} onMouseLeave={() => setHover(null)} />
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <ApexAreaChart data={areaData} />
+      </div>
     </div>
   );
 }
@@ -456,13 +408,43 @@ function NewsFeed({ news }: { news: NewsItem[] }) {
   );
 }
 
-/* Asset Allocation Donut */
-function AssetAllocation() {
-  const allocations = [
-    { name: 'US Equities', pct: 42, color: T.brand }, { name: 'Int\'l Equities', pct: 15, color: '#42A5F5' },
-    { name: 'Fixed Income', pct: 18, color: T.up }, { name: 'Commodities', pct: 8, color: T.warn },
-    { name: 'Crypto', pct: 7, color: '#AB47BC' }, { name: 'Cash', pct: 10, color: T.text3 },
-  ];
+/* Asset Allocation Donut — driven by live portfolio data when available */
+function AssetAllocation({ portfolio, nav }: { portfolio: any | null; nav: number }) {
+  // Derive allocations from live portfolio positions when available.
+  // Falls back to showing only the cash/equity split when positions are missing.
+  const allocations = useMemo(() => {
+    if (portfolio?.positions?.length > 0) {
+      // Group positions by asset_class
+      const byClass: Record<string, number> = {};
+      for (const p of portfolio.positions) {
+        const cls = (p.asset_class ?? 'unknown').replace('_', ' ');
+        const label =
+          cls.includes('us') || cls.includes('equity') ? 'US Equities' :
+          cls.includes('option') || cls.includes('deriv') ? 'Derivatives' :
+          cls.includes('crypto') ? 'Crypto' :
+          cls.includes('fixed') || cls.includes('bond') ? 'Fixed Income' :
+          cls.includes('international') ? "Int'l Equities" :
+          'Other';
+        byClass[label] = (byClass[label] ?? 0) + Math.abs(p.market_value ?? 0);
+      }
+      const cashVal = portfolio.cash ?? 0;
+      if (cashVal > 0) byClass['Cash'] = cashVal;
+
+      const total = Object.values(byClass).reduce((s, v) => s + v, 0) || 1;
+      const palette = [T.brand, '#42A5F5', T.up, T.warn, '#AB47BC', T.text3, '#EF9A9A'];
+      return Object.entries(byClass).map(([name, val], i) => ({
+        name,
+        pct: Math.round((val / total) * 100),
+        color: palette[i % palette.length],
+      }));
+    }
+    // Minimal fallback: show only that data is loading
+    return nav > 0
+      ? [{ name: 'Portfolio', pct: 100, color: T.brand }]
+      : [{ name: 'Loading…', pct: 100, color: T.text3 }];
+  }, [portfolio, nav]);
+
+  const totalDisplay = nav > 0 ? fmtUsd(nav) : (portfolio?.portfolio_value ? fmtUsd(portfolio.portfolio_value) : '—');
 
   // Draw donut with SVG
   let cumAngle = -90;
@@ -487,8 +469,8 @@ function AssetAllocation() {
       <div style={{ display: 'flex', alignItems: 'center', padding: '12px', gap: '16px', flex: 1 }}>
         <svg width="100" height="100" viewBox="0 0 100 100">
           {donutPaths.map((p, i) => <path key={i} d={p.d} fill={p.color} opacity="0.85" />)}
-          <text x="50" y="48" textAnchor="middle" fill={T.text0} fontSize="12" fontWeight="700" fontFamily="JetBrains Mono">$248K</text>
-          <text x="50" y="60" textAnchor="middle" fill={T.text3} fontSize="8" fontFamily="Inter">Total</text>
+          <text x="50" y="48" textAnchor="middle" fill={T.text0} fontSize="9" fontWeight="700" fontFamily="JetBrains Mono">{totalDisplay.length > 8 ? totalDisplay.slice(0, 8) : totalDisplay}</text>
+          <text x="50" y="60" textAnchor="middle" fill={T.text3} fontSize="8" fontFamily="Inter">NAV</text>
         </svg>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {allocations.map(a => (
@@ -504,13 +486,50 @@ function AssetAllocation() {
   );
 }
 
-/* Risk Metrics */
-function RiskMetrics() {
+/* Risk Metrics — driven by live performance/portfolio data when available */
+function RiskMetrics({ perfKpis, accountKpis }: { perfKpis: any | null; accountKpis: any | null }) {
+  const fmtOrDash = (v: number | null | undefined, toFixed = 2) =>
+    v != null && isFinite(v) ? v.toFixed(toFixed) : '—';
+  const fmtUsdOrDash = (v: number | null | undefined) =>
+    v != null && isFinite(v) ? fmtUsd(v) : '—';
+  const fmtPctOrDash = (v: number | null | undefined) =>
+    v != null && isFinite(v) ? `${(v * 100).toFixed(1)}%` : '—';
+
   const metrics = [
-    { label: 'VaR (95%)', value: '$3,241', color: T.warn }, { label: 'CVaR', value: '$5,128', color: T.dn },
-    { label: 'Beta', value: '1.12', color: T.text0 }, { label: 'Correlation', value: '0.87', color: T.text0 },
-    { label: 'Tracking Error', value: '2.4%', color: T.warn }, { label: 'Info Ratio', value: '1.34', color: T.up },
+    {
+      label: 'VaR (95%)',
+      value: fmtUsdOrDash(perfKpis?.var_95 ?? perfKpis?.value_at_risk_95),
+      color: T.warn,
+    },
+    {
+      label: 'CVaR',
+      value: fmtUsdOrDash(perfKpis?.cvar_95 ?? perfKpis?.conditional_var_95),
+      color: T.dn,
+    },
+    {
+      label: 'Beta',
+      value: fmtOrDash(perfKpis?.beta),
+      color: T.text0,
+    },
+    {
+      label: 'Correlation',
+      value: fmtOrDash(perfKpis?.correlation ?? perfKpis?.benchmark_correlation),
+      color: T.text0,
+    },
+    {
+      label: 'Tracking Error',
+      value: perfKpis?.tracking_error != null
+        ? `${(perfKpis.tracking_error * 100).toFixed(1)}%`
+        : '—',
+      color: T.warn,
+    },
+    {
+      label: 'Info Ratio',
+      value: fmtOrDash(perfKpis?.information_ratio ?? perfKpis?.info_ratio),
+      color: T.up,
+    },
   ];
+
   return (
     <div data-testid="risk-metrics" style={panelStyle}>
       <div style={panelHdr}><span>RISK METRICS</span></div>
@@ -532,18 +551,109 @@ function RiskMetrics() {
 
 export default function DashboardUI2() {
   // ── Hook integration ──
-  const [marketState, marketActions] = useMarketData();
-  const [portfolioState, portfolioActions] = usePortfolio();
+  const [marketState] = useMarketData();
+  usePortfolio(); // loaded for child components
   const [, ] = useOrders(); // load orders for RecentTrades child
-  const [socialState, socialActions] = useSocial();
-  const [platformState, platformActions] = usePlatform();
+  useSocial();
+  usePlatform();
 
-  const [equityCurve] = useState(() => generateEquityCurve(365));
+  const [equityCurve, setEquityCurve] = useState(() => generateEquityCurve(365));
   // Watchlist: start from static base, then updated by real API quotes from hook
   const [watchlist, setWatchlist] = useState(() => generateWatchlist());
-  const [indices] = useState(() => generateIndices());
-  const [sectors] = useState(() => generateSectors());
-  const [news] = useState(() => generateNews());
+  const [indices, setIndices] = useState(() => generateIndices());
+  const [sectors, setSectors] = useState(() => generateSectors());
+  // News: empty until fetched from /api/v1/sentiment/articles (no fake headlines)
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [perfKpis, setPerfKpis] = useState<any>(null);
+  const [accountKpis, setAccountKpis] = useState<any>(null);
+  // Portfolio: for asset allocation donut (live from /api/v1/portfolio)
+  const [portfolioData, setPortfolioData] = useState<any>(null);
+
+  // ── Live equity curve from /api/v1/portfolio/performance ──
+  useEffect(() => {
+    fetch('/api/v1/portfolio/performance?period=1y')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.equity_curve?.length > 1) {
+          setEquityCurve(d.equity_curve.map((pt: any) => ({
+            date: pt.date ?? pt.timestamp?.slice(0, 10) ?? '',
+            equity: pt.equity ?? pt.value ?? 0,
+            benchmark: pt.benchmark ?? pt.equity_value ?? (pt.equity ?? 0) * 0.98,
+          })));
+        }
+        if (d?.metrics) setPerfKpis(d.metrics);
+      })
+      .catch(() => {});
+  }, []);
+
+  // ── Live account KPIs from /api/v1/account/summary ──
+  useEffect(() => {
+    const doFetch = () =>
+      fetch('/api/v1/account/summary')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setAccountKpis(d); })
+        .catch(() => {});
+    doFetch();
+    const id = setInterval(doFetch, 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── Live indices from /api/v1/market-data/{symbol}/quote ──
+  useEffect(() => {
+    const symbolMap: Record<string, string> = {
+      GSPC: 'SPX', IXIC: 'NDX', DJI: 'DJI', RUT: 'RUT',
+      VIX: 'VIX', TNX: 'TNX', DX: 'DXY',
+    };
+    const apiSymbols = ['GSPC', 'IXIC', 'DJI', 'RUT', 'VIX', 'TNX'];
+    Promise.allSettled(
+      apiSymbols.map(sym =>
+        fetch(`/api/v1/market-data/${sym}/quote`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => d ? { sym, ...d } : null)
+      )
+    ).then(results => {
+      const updates: Record<string, any> = {};
+      results.forEach(r => {
+        if (r.status === 'fulfilled' && r.value) {
+          const sym = symbolMap[r.value.sym] ?? r.value.sym;
+          updates[sym] = r.value;
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        setIndices(prev => prev.map(idx => {
+          const u = updates[idx.symbol];
+          if (!u) return idx;
+          return {
+            ...idx,
+            value: u.price ?? u.close ?? idx.value,
+            change: u.change ?? idx.change,
+            changePct: u.change_pct ?? idx.changePct,
+          };
+        }));
+      }
+    }).catch(() => {});
+  }, []);
+
+  // ── Live sector heatmap from /api/v1/market-data/heatmap ──
+  useEffect(() => {
+    fetch('/api/v1/market-data/heatmap?period=1D')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.stocks) return;
+        const changeBySymbol: Record<string, number> = {};
+        d.stocks.forEach((s: any) => { changeBySymbol[s.symbol] = s.change ?? 0; });
+        setSectors(prev => prev.map(sec => {
+          const children = sec.children.map((c: any) => ({
+            ...c, change: changeBySymbol[c.name] ?? c.change,
+          }));
+          const avgChange = children.length > 0
+            ? children.reduce((sum: number, c: any) => sum + c.change, 0) / children.length
+            : 0;
+          return { ...sec, children, change: avgChange };
+        }));
+      })
+      .catch(() => {});
+  }, []);
 
   // Sync watchlist prices from real quote cache when hook provides data
   useEffect(() => {
@@ -564,11 +674,60 @@ export default function DashboardUI2() {
     }));
   }, [marketState.quoteCache]);
 
-  // KPI data
-  const lastEq = equityCurve[equityCurve.length - 1];
-  const prevEq = equityCurve[equityCurve.length - 2];
-  const dailyPnl = lastEq.equity - prevEq.equity;
-  const totalReturn = ((lastEq.equity / equityCurve[0].equity) - 1) * 100;
+  // ── Live news from /api/v1/sentiment/articles (Finnhub) ──
+  useEffect(() => {
+    fetch('/api/v1/sentiment/articles?limit=12')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.articles?.length) return;
+        const fetched: NewsItem[] = d.articles.map((a: any, i: number) => ({
+          id: i,
+          time: new Date(a.published_at ?? Date.now()),
+          headline: a.headline ?? '',
+          source: a.source ?? '',
+          sentiment: a.sentiment === 'bullish' ? 'positive' as const
+            : a.sentiment === 'bearish' ? 'negative' as const
+            : 'neutral' as const,
+          symbols: a.symbols ?? [],
+        }));
+        setNews(fetched);
+      })
+      .catch(() => {
+        // Finnhub key not configured or network error — news feed stays empty (no fake data)
+      });
+  }, []);
+
+  // ── Live portfolio data for asset allocation donut ──
+  useEffect(() => {
+    fetch('/api/v1/portfolio')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setPortfolioData(d); })
+      .catch(() => {});
+  }, []);
+
+  // KPI data — prefer live account/performance data, fall back to equity curve
+  // Guards prevent crash when equityCurve has < 2 items (API returned only 1 point)
+  const lastEq = equityCurve.length > 0
+    ? equityCurve[equityCurve.length - 1]
+    : { equity: 0, benchmark: 0, date: '' };
+  const prevEq = equityCurve.length > 1
+    ? equityCurve[equityCurve.length - 2]
+    : lastEq;
+  const nav = accountKpis?.nav ?? accountKpis?.equity ?? lastEq.equity;
+  // Use last_equity from Alpaca when available; fall back to equity curve delta
+  // Avoids the silent zero that occurs when accountKpis.last_equity is absent
+  const dailyPnl = accountKpis?.last_equity != null
+    ? (accountKpis.equity ?? nav) - accountKpis.last_equity
+    : lastEq.equity - prevEq.equity;
+  const startEquity = (accountKpis?.start_equity ?? (equityCurve.length > 0 ? equityCurve[0].equity : nav)) || nav;
+  const totalReturn = ((nav / startEquity) - 1) * 100;
+  const sharpe = perfKpis?.sharpe_ratio != null ? perfKpis.sharpe_ratio.toFixed(2) : '—';
+  const sortino = perfKpis?.sortino_ratio != null ? perfKpis.sortino_ratio.toFixed(2) : '—';
+  const maxDD = perfKpis?.max_drawdown != null ? `${(perfKpis.max_drawdown * 100).toFixed(1)}%` : '—';
+  const winRate = accountKpis?.win_rate != null ? `${accountKpis.win_rate.toFixed(1)}%`
+    : perfKpis?.win_rate != null ? `${(perfKpis.win_rate * 100).toFixed(1)}%` : '—';
+  const profitFactor = perfKpis?.profit_factor != null ? perfKpis.profit_factor.toFixed(2) : '—';
+  const calmar = perfKpis?.calmar_ratio != null ? perfKpis.calmar_ratio.toFixed(2) : '—';
 
   return (
     <div data-testid="dashboard-ui2-page" data-ready="true" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
@@ -578,14 +737,14 @@ export default function DashboardUI2() {
       <div data-testid="dashboard-ready" style={{ display: 'none' }} />
       {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '1px' }}>
-        <KPICard label="NAV" value={fmtUsd(lastEq.equity)} sub={`${fmtPct(totalReturn)} total return`} color={T.text0} icon="💰" />
-        <KPICard label="Day P&L" value={fmtUsd(dailyPnl)} sub={fmtPct((dailyPnl / prevEq.equity) * 100)} color={clr(dailyPnl)} icon="📊" />
-        <KPICard label="Sharpe" value="1.87" sub="vs 1.2 benchmark" color={T.up} icon="📈" />
-        <KPICard label="Sortino" value="2.41" sub="downside-adjusted" color={T.up} />
-        <KPICard label="Max DD" value="-8.3%" sub="Apr 2024" color={T.dn} icon="📉" />
-        <KPICard label="Win Rate" value="62.4%" sub="312 / 500 trades" color={T.up} />
-        <KPICard label="Profit Factor" value="1.94" sub="gross P / gross L" color={T.up} />
-        <KPICard label="Calmar" value="3.12" sub="return / max DD" color={T.up} />
+        <KPICard label="NAV" value={fmtUsd(nav)} sub={`${fmtPct(totalReturn)} total return`} color={T.text0} icon="💰" />
+        <KPICard label="Day P&L" value={fmtUsd(dailyPnl)} sub={fmtPct((prevEq.equity > 0 ? dailyPnl / prevEq.equity : 0) * 100)} color={clr(dailyPnl)} icon="📊" />
+        <KPICard label="Sharpe" value={sharpe} sub="vs 1.2 benchmark" color={T.up} icon="📈" />
+        <KPICard label="Sortino" value={sortino} sub="downside-adjusted" color={T.up} />
+        <KPICard label="Max DD" value={maxDD} sub="rolling 1Y" color={T.dn} icon="📉" />
+        <KPICard label="Win Rate" value={winRate} sub="realized trades" color={T.up} />
+        <KPICard label="Profit Factor" value={profitFactor} sub="gross P / gross L" color={T.up} />
+        <KPICard label="Calmar" value={calmar} sub="return / max DD" color={T.up} />
       </div>
       {/* Indices Ticker */}
       <IndicesTicker indices={indices} />
@@ -604,8 +763,8 @@ export default function DashboardUI2() {
           </div>
           {/* Bottom Row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', flex: 1, minHeight: 130 }}>
-            <AssetAllocation />
-            <RiskMetrics />
+            <AssetAllocation portfolio={portfolioData} nav={nav} />
+            <RiskMetrics perfKpis={perfKpis} accountKpis={accountKpis} />
             <RecentTrades />
           </div>
         </div>

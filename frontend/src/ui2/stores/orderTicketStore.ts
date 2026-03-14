@@ -89,7 +89,7 @@ export function placeOrder(preview: OrderTicket): OrderTicket {
   if (order.type === 'market') {
     order.status = 'filled';
     order.filledQty = order.quantity;
-    order.avgFillPrice = getBasePrice(order.symbol);
+    order.avgFillPrice = _staticBasePrice(order.symbol);
     order.updatedAt = Date.now() + 500;
     notify();
   } else if (order.type === 'limit' || order.type === 'stop_limit') {
@@ -128,10 +128,32 @@ export function subscribeOrders(fn: () => void) {
   return () => { listeners.delete(fn); };
 }
 
-function getBasePrice(symbol: string): number {
+// Static fallback prices used only when the live API is unavailable.
+// Not exported — callers should use the async getBasePrice() below.
+function _staticBasePrice(symbol: string): number {
   const prices: Record<string, number> = {
     SPY: 547.23, AAPL: 182.41, TSLA: 218.77, NVDA: 789.55, MSFT: 412.33,
     AMZN: 178.92, GOOGL: 152.23, META: 487.63,
   };
   return prices[symbol] ?? 100.00;
+}
+
+/**
+ * Async price lookup — fetches live quote from the backend and falls back
+ * to stale static prices if the API is unreachable or returns an error.
+ */
+export async function getBasePrice(symbol: string): Promise<number> {
+  try {
+    const resp = await fetch(`/api/v1/market-data/${symbol}/quote`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const price = data?.price ?? data?.last ?? data?.close ?? null;
+      if (typeof price === 'number' && price > 0) return price;
+    }
+  } catch {
+    // API unreachable — fall through to static fallback
+  }
+  return _staticBasePrice(symbol);
 }

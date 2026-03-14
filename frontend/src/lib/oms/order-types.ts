@@ -412,6 +412,9 @@ export function validateOrderSpec(spec: OrderSpec): ValidationResult {
       if ('limitPrice' in spec && (spec.limitPrice <= 0 || spec.limitPrice > MAX_PRICE)) {
         errors.push('Invalid limit price');
       }
+      if (spec.type === OrderType.ICEBERG && 'displayQuantity' in spec && spec.displayQuantity >= spec.quantity) {
+        errors.push('Iceberg displayQuantity must be less than total quantity');
+      }
       break;
     case OrderType.STOP:
     case OrderType.STOP_LIMIT:
@@ -441,11 +444,6 @@ export function validateOrderSpec(spec: OrderSpec): ValidationResult {
     case OrderType.GTD:
       if ('expiresAt' in spec && spec.expiresAt <= Date.now()) {
         errors.push('GTD expiresAt must be in the future');
-      }
-      break;
-    case OrderType.ICEBERG:
-      if ('displayQuantity' in spec && spec.displayQuantity >= spec.quantity) {
-        errors.push('Iceberg displayQuantity must be less than total quantity');
       }
       break;
   }

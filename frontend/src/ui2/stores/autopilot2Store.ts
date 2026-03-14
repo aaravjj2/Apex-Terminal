@@ -4,7 +4,7 @@
  * Deterministic — no network required.
  */
 
-// Deterministic — no external deps
+import { API_BASE } from '@/config/api';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -80,13 +80,55 @@ function stableHash(data: unknown): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-// ── Demo Prices ───────────────────────────────────────────────
+// ── Offline Fallback Prices ────────────────────────────────────────
+// These are reference prices used ONLY when the backend is completely unreachable.
+// On module load, _fetchLivePrices() attempts to overwrite these with real quotes
+// from /api/v1/market-data/{symbol}/quote so the fallback pipeline is not stale.
+// A console.warn is emitted whenever the fallback pipeline runs.
 
 const REF_PRICES: Record<string, number> = {
-  SPY: 547.23, AAPL: 182.41, TSLA: 218.77, NVDA: 789.55,
-  MSFT: 412.33, AMZN: 178.92,
+  SPY: 550.0, AAPL: 220.0, TSLA: 250.0, NVDA: 875.0,
+  MSFT: 415.0, AMZN: 195.0,
 };
 
+// Populated at module load by _fetchLivePrices()
+const _livePrices: Record<string, number> = {};
+
+async function _fetchLivePrices(): Promise<void> {
+  const symbols = Object.keys(REF_PRICES);
+  try {
+    const results = await Promise.allSettled(
+      symbols.map(sym =>
+        fetch(`/api/v1/market-data/${sym}/quote`, { signal: AbortSignal.timeout(5000) })
+          .then(r => r.ok ? r.json() : null)
+          .then(d => d ? { sym, price: d.price ?? d.last ?? d.close ?? null } : null)
+      )
+    );
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value?.price) {
+        const { sym, price } = result.value;
+        if (sym && typeof price === 'number' && price > 0) {
+          _livePrices[sym] = price;
+        }
+      }
+    }
+    if (Object.keys(_livePrices).length > 0) {
+      console.info('[autopilot2Store] Seeded live prices for fallback pipeline:', _livePrices);
+    }
+  } catch {
+    // Backend unreachable — REF_PRICES will be used as ultimate fallback
+  }
+}
+
+// Seed live prices at module load (non-blocking)
+_fetchLivePrices().catch(() => undefined);
+
+// ── OFFLINE FALLBACK SIGNALS ───────────────────────────────────────────────
+// REF_SIGNALS are used ONLY when the backend is completely unreachable.
+// Under normal operation, execute() calls the live backend (/api/autopilot/run-v3)
+// first and only falls back to these signals if that request fails or times out.
+// These signals are static — they never update. If you see them in production,
+// it means the backend is down.
 const REF_SIGNALS: { symbol: string; signal: string; confidence: number; source: string; reason: string }[] = [
   { symbol: 'AAPL', signal: 'hold', confidence: 0.55, source: 'fundamental', reason: 'Earnings neutral, awaiting guidance' },
   { symbol: 'AMZN', signal: 'hold', confidence: 0.48, source: 'sentiment', reason: 'Mixed sentiment, insufficient conviction' },
@@ -102,8 +144,23 @@ const MAX_BUDGET_PER_TRADE = 50000;
 const MAX_PORTFOLIO_EXPOSURE = 0.45;
 const RUN_TS = new Date().toISOString();
 
+// ── OFFLINE FALLBACK PIPELINE ──────────────────────────────────────────────
+// runPipeline() is the local simulation used ONLY when the backend is unreachable.
+// Under normal operation, execute() calls /api/autopilot/run-v3 first and only
+// invokes this function if that request fails or times out. Do NOT rely on this
+// function's results for real trading decisions.
 function runPipeline(symbols: string[], budget: number): AP2Run {
   const runId = `ap2-run-${stableHash({ symbols, budget, t: RUN_TS })}`;
+
+  // Merge live prices (fetched on module load) over stale REF_PRICES
+  const effectivePrices = { ...REF_PRICES, ..._livePrices };
+  const staleFallbacks = symbols.filter(s => !_livePrices[s] && REF_PRICES[s]);
+  if (staleFallbacks.length > 0) {
+    console.warn(
+      `[autopilot2Store] Offline fallback pipeline using stale prices for: ${staleFallbacks.join(', ')}. ` +
+      'Backend is unreachable — results are for UI demonstration only.'
+    );
+  }
 
   // Stage 1: Candidates
   const candidates: AP2Candidate[] = REF_SIGNALS
@@ -123,11 +180,11 @@ function runPipeline(symbols: string[], budget: number): AP2Run {
     }
   }
 
-  // Stage 3: Sizing
+  // Stage 3: Sizing — use live prices where available
   let remaining = budget;
   const sized: AP2Decision[] = [];
   for (const c of validated) {
-    const price = REF_PRICES[c.symbol] ?? 100;
+    const price = effectivePrices[c.symbol] ?? 100;
     const maxQty = Math.min(MAX_POSITION_SIZE, Math.floor(MAX_BUDGET_PER_TRADE / price));
     let qty = Math.max(1, Math.floor(maxQty * c.confidence));
     const cost = qty * price;
@@ -220,8 +277,90 @@ export const autopilot2Store = {
   getSelectedRun: () => selectedRun,
   getLedgerTab: () => ledgerTab,
 
-  execute(symbols?: string[], budget?: number) {
-    const run = runPipeline(symbols ?? ['SPY', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'], budget ?? 100000);
+  async execute(symbols?: string[], budget?: number): Promise<AP2Run | null> {
+    const syms = symbols ?? ['SPY', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'];
+    const bud = budget ?? 100000;
+
+    // Try real backend (brain_v3) first
+    try {
+      const resp = await fetch(`${API_BASE}/api/autopilot/run-v3`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols: syms, dry_run: false }),
+        signal: AbortSignal.timeout(60000),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data?.ok && data?.cycle_id) {
+          // Map brain_v3 response → AP2Run shape
+          const ts = new Date().toISOString();
+          const decisions: AP2Decision[] = (data.decisions ?? []).map((d: any) => ({
+            symbol: d.symbol ?? d.underlying ?? '',
+            action: d.action ?? d.verdict ?? 'hold',
+            quantity: d.quantity ?? d.qty ?? 1,
+            price: d.price ?? d.spot_price ?? 0,
+            reason_code: d.reason_code ?? d.reasoning ?? 'BRAIN_V3',
+            reason_text: d.reason_text ?? d.explanation ?? '',
+            risk_score: d.risk_score ?? 0,
+            stage: 'v3_cycle',
+          }));
+          const rejections: AP2Rejection[] = (data.rejections ?? []).map((r: any) => ({
+            symbol: r.symbol ?? r.underlying ?? '',
+            reason_code: r.reason_code ?? r.reason ?? 'REJECTED',
+            reason_text: r.reason_text ?? r.explanation ?? '',
+            stage: 'v3_screening',
+          }));
+          const orders: AP2Order[] = (data.orders_submitted ?? []).map((o: any) => ({
+            order_id: o.order_id ?? o.id ?? `v3-${stableHash(o)}`,
+            symbol: o.symbol ?? '',
+            side: o.side ?? 'buy',
+            quantity: o.qty ?? o.quantity ?? 1,
+            price: o.limit_price ?? o.price ?? 0,
+            order_type: o.order_type ?? 'limit',
+            status: o.status ?? 'submitted',
+          }));
+          const postmortem = [
+            '# Brain V3 Post-Cycle Summary',
+            `**Cycle ID**: ${data.cycle_id}`,
+            `**Market Open**: ${data.market_open ? 'Yes' : 'No'}`,
+            `**Armed**: ${data.armed ? 'Yes' : 'No'}`,
+            `**Symbols Analyzed**: ${data.symbols_analyzed ?? syms.length}`,
+            '',
+            '## Decisions',
+            ...decisions.map(d => `- ${d.action.toUpperCase()} ${d.symbol} [${d.reason_code}]`),
+            '',
+            '## Rejections',
+            ...rejections.map(r => `- ${r.symbol}: ${r.reason_code}`),
+          ].join('\n');
+          const run: AP2Run = {
+            run_id: data.cycle_id,
+            status: 'completed',
+            started_at: ts,
+            completed_at: ts,
+            inputs: { symbols: syms, budget: bud },
+            stages: [],
+            candidates: decisions.map(d => ({
+              symbol: d.symbol, signal: d.action, confidence: 0.75,
+              source: 'brain_v3', reason: d.reason_text,
+            })),
+            decisions,
+            rejections,
+            orders,
+            postmortem,
+            deterministic_hash: stableHash({ cycle_id: data.cycle_id, decisions, rejections }),
+          };
+          runs = [...runs, run];
+          selectedRun = run.run_id;
+          notify();
+          return run;
+        }
+      }
+    } catch (e) {
+      console.warn('[autopilot2Store] Backend run-v3 failed, using local pipeline:', e);
+    }
+
+    // Fallback: local pipeline (for offline/dev only)
+    const run = runPipeline(syms, bud);
     runs = [...runs, run];
     selectedRun = run.run_id;
     notify();

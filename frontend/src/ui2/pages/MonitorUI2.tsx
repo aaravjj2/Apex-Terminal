@@ -397,10 +397,33 @@ function QueuePanel({ queues }: { queues: QueueMetric[] }) {
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* MAIN COMPONENT                                                        */
+/* ── API-backed system health hook ──────────────────────────────────── */
+/**
+ * Polls GET /api/v1/platform/health every 10 seconds.
+ * Returns the parsed response or null when the API is unreachable.
+ * Consumers fall back to the random generator functions when null.
+ */
+function useSystemMetrics() {
+  const [health, setHealth] = React.useState<any>(null);
+  React.useEffect(() => {
+    const fetch_health = () => {
+      fetch('/api/v1/platform/health')
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+        .then(data => { if (data) setHealth(data); });
+    };
+    fetch_health();
+    const id = setInterval(fetch_health, 10000);
+    return () => clearInterval(id);
+  }, []);
+  return health;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════ */
 type MonitorTab = 'overview' | 'services' | 'websockets' | 'logs' | 'api' | 'queues';
 
 export default function MonitorUI2() {
+  const systemHealth = useSystemMetrics(); // real API data; null while unavailable
   const [tab, setTab] = useState<MonitorTab>('overview');
   const [metrics, setMetrics] = useState<SystemMetric[]>(generateSystemMetrics());
   const [wsStatus, setWsStatus] = useState<WebSocketStatus[]>(generateWSStatus());
@@ -412,17 +435,26 @@ export default function MonitorUI2() {
   const [logFilter, setLogFilter] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Auto-refresh
+  // Apply real API data to state whenever a new health response arrives
+  useEffect(() => {
+    if (!systemHealth) return;
+    if (systemHealth.metrics) setMetrics(systemHealth.metrics);
+    if (systemHealth.services) setServices(systemHealth.services);
+  }, [systemHealth]);
+
+  // Auto-refresh: use API-provided data when available; fall back to generators
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      setMetrics(generateSystemMetrics());
+      if (!systemHealth) {
+        setMetrics(generateSystemMetrics());
+        setServices(generateServiceHealth());
+      }
       setWsStatus(generateWSStatus());
-      setServices(generateServiceHealth());
       setQueues(generateQueues());
     }, 3000);
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, systemHealth]);
 
   const healthySvcs = services.filter(s => s.status === 'healthy').length;
   const connectedWS = wsStatus.filter(w => w.status === 'connected').length;

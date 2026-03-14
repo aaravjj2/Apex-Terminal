@@ -19,7 +19,6 @@
 
 ## Screenshots
 
-![Dashboard](media/screenshots/dashboard.png)
 ![Trading](media/screenshots/trading.png)
 ![Autopilot](media/screenshots/autopilot.png)
 ![Portfolio](media/screenshots/portfolio.png)

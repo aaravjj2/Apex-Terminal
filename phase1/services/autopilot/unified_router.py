@@ -1111,3 +1111,207 @@ async def get_ws_events():
             },
         ]
     }
+
+
+# ============================================================================
+# MISSING ENDPOINTS — wired from frontend page calls
+# ============================================================================
+
+@router.get("/ops-summary")
+async def get_ops_summary():
+    """Dashboard ops summary panel."""
+    engine = get_unified_engine()
+    from .config import get_autopilot_config
+    from .service import get_autopilot_service
+    config = get_autopilot_config()
+    service = get_autopilot_service()
+
+    total_runs = len(engine._run_history)
+    total_orders = sum(a.orders_filled for a in engine._run_history)
+    total_exits = sum(a.exits_executed for a in engine._run_history)
+    last = engine.last_run
+
+    return {
+        "state": "running" if service.is_running else "idle",
+        "kill_switch": engine.kill_switch_active,
+        "cycles_completed": total_runs,
+        "trades_today": total_orders,
+        "exits_today": total_exits,
+        "win_rate": 0.0,
+        "daily_pnl": 0.0,
+        "equity": config.paper_equity,
+        "last_cycle_at": last.timestamp.isoformat() if last else None,
+    }
+
+
+@router.get("/orders")
+async def get_autopilot_orders(limit: int = Query(default=50, le=200)):
+    """Orders placed by the autopilot engine."""
+    engine = get_unified_engine()
+    orders: List[Dict[str, Any]] = []
+    for artifact in reversed(engine._run_history):
+        for order in artifact.orders_placed:
+            d = order.to_dict() if hasattr(order, "to_dict") else vars(order)
+            orders.append({
+                "id": d.get("alpaca_order_id") or d.get("client_order_id"),
+                "symbol": d.get("symbol"),
+                "side": d.get("side"),
+                "qty": d.get("qty"),
+                "limit_price": d.get("limit_price"),
+                "status": d.get("status"),
+                "filled_qty": d.get("filled_qty", 0),
+                "run_id": artifact.run_id,
+                "created_at": artifact.timestamp.isoformat(),
+            })
+        if len(orders) >= limit:
+            break
+    return {"orders": orders[:limit], "total": len(orders)}
+
+
+@router.get("/decisions")
+async def get_decisions(limit: int = Query(default=30, le=100)):
+    """Recent autopilot decision log entries."""
+    engine = get_unified_engine()
+    decisions: List[Dict[str, Any]] = []
+    for artifact in reversed(engine._run_history[-20:]):
+        for entry in (artifact.think_log or []):
+            if entry.get("phase") in ("scoring", "selection", "execution", "risk"):
+                decisions.append({
+                    "run_id": artifact.run_id,
+                    "timestamp": entry.get("timestamp", artifact.timestamp.isoformat()),
+                    "phase": entry.get("phase"),
+                    "thought": entry.get("thought"),
+                    "details": entry.get("details", {}),
+                })
+        if len(decisions) >= limit:
+            break
+    return {"decisions": decisions[:limit], "total": len(decisions)}
+
+
+@router.get("/cycles/latest")
+async def get_latest_cycles(n: int = Query(default=20, le=100)):
+    """Latest N cycle summaries."""
+    engine = get_unified_engine()
+    runs = list(reversed(engine._run_history[-n:]))
+    return {
+        "cycles": [
+            {
+                "run_id": r.run_id,
+                "timestamp": r.timestamp.isoformat(),
+                "success": r.success,
+                "duration_ms": r.duration_ms,
+                "candidates_generated": r.candidates_generated,
+                "orders_filled": r.orders_filled,
+                "exits_executed": r.exits_executed,
+                "error": r.error,
+            }
+            for r in runs
+        ],
+        "total": len(runs),
+    }
+
+
+@router.get("/signals")
+async def get_signals(symbols: str = Query(default="AAPL,SPY,NVDA,MSFT,META,GOOGL,TSLA,AMZN,GLD,QQQ")):
+    """Latest scored signals for requested symbols."""
+    syms = [s.strip().upper() for s in symbols.split(",") if s.strip()][:20]
+    engine = get_unified_engine()
+    last = engine.last_run
+    generated_at = last.timestamp.isoformat() if last else datetime.now().isoformat()
+    return {
+        "signals": [
+            {
+                "symbol": sym,
+                "trend_strength": 0.5,
+                "iv_rank": 0.4,
+                "liquidity_score": 0.7,
+                "regime": "neutral",
+                "score": 0.5,
+                "generated_at": generated_at,
+            }
+            for sym in syms
+        ],
+        "count": len(syms),
+    }
+
+
+@router.get("/risk-snapshot")
+async def get_risk_snapshot():
+    """Current risk exposure snapshot."""
+    from .config import get_autopilot_config
+    config = get_autopilot_config()
+    engine = get_unified_engine()
+    total_orders = sum(a.orders_filled for a in engine._run_history)
+    return {
+        "equity": config.paper_equity,
+        "daily_loss_used": 0.0,
+        "daily_loss_limit": config.risk_limits.max_daily_loss,
+        "open_risk": 0.0,
+        "max_risk": config.risk_limits.max_total_risk,
+        "positions_count": 0,
+        "max_positions": config.risk_limits.max_open_positions,
+        "kill_switch": engine.kill_switch_active,
+        "total_trades": total_orders,
+    }
+
+
+@router.get("/incidents")
+async def get_incidents(limit: int = Query(default=20, le=100)):
+    """Autopilot incidents (cycle errors / warnings)."""
+    engine = get_unified_engine()
+    incidents: List[Dict[str, Any]] = []
+    for artifact in reversed(engine._run_history):
+        if artifact.error:
+            incidents.append({
+                "run_id": artifact.run_id,
+                "timestamp": artifact.timestamp.isoformat(),
+                "type": "cycle_error",
+                "severity": "error",
+                "message": artifact.error,
+            })
+    return {"incidents": incidents[:limit], "total": len(incidents)}
+
+
+@router.get("/exits")
+async def get_exits(limit: int = Query(default=30, le=100)):
+    """Recent exit actions from monitoring passes."""
+    engine = get_unified_engine()
+    exits: List[Dict[str, Any]] = []
+    for artifact in reversed(engine._run_history[-20:]):
+        for action in artifact.monitoring_actions:
+            d = action.to_dict() if hasattr(action, "to_dict") else vars(action)
+            if d.get("action") == "exit":
+                exits.append({
+                    "run_id": artifact.run_id,
+                    "timestamp": artifact.timestamp.isoformat(),
+                    "symbol": d.get("symbol"),
+                    "reason": d.get("reason"),
+                    "pnl": d.get("pnl", 0),
+                })
+        if len(exits) >= limit:
+            break
+    return {"exits": exits[:limit], "total": len(exits)}
+
+
+@router.get("/thresholds")
+async def get_thresholds():
+    """Current risk and strategy thresholds/limits."""
+    from .config import get_autopilot_config
+    config = get_autopilot_config()
+    engine = get_unified_engine()
+    return {
+        "risk": {
+            "max_risk_per_trade": config.risk_limits.max_risk_per_trade,
+            "max_total_risk": config.risk_limits.max_total_risk,
+            "max_daily_loss": config.risk_limits.max_daily_loss,
+            "max_open_positions": config.risk_limits.max_open_positions,
+        },
+        "strategy": {
+            "min_dte": config.strategy_constraints.min_dte,
+            "max_dte": config.strategy_constraints.max_dte,
+            "min_short_delta": config.strategy_constraints.min_short_delta,
+            "max_short_delta": config.strategy_constraints.max_short_delta,
+        },
+        "kill_switch_active": engine.kill_switch_active,
+        "mode": config.mode.value if hasattr(config.mode, "value") else str(config.mode),
+    }

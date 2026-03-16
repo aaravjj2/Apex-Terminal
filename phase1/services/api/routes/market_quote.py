@@ -231,3 +231,9 @@ async def get_batch_quotes(symbols: str = Query(..., description="Comma-separate
         "latency_ms": latency_ms,
         "correlation_id": correlation_id,
     }
+
+
+@router.get("/quotes")
+async def get_quotes_shorthand(symbols: str = Query(..., description="Comma-separated symbols")):
+    """Alias for /quotes/batch — used by dashboard live-prices panels."""
+    return await get_batch_quotes(symbols=symbols)

@@ -1,0 +1,36 @@
+[Unit]
+Description=Apex Terminal Agent Orchestrator
+Documentation=https://github.com/aaravjj2/Apex-Terminal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aarav
+WorkingDirectory=/home/aarav/Aarav/Tradingview recreation/Tradingview recreation/apex_agents
+
+# Activate phase1 venv (same interpreter as the backend)
+ExecStart=/home/aarav/Aarav/Tradingview recreation/Tradingview recreation/phase1/venv/bin/python3 \
+    /home/aarav/Aarav/Tradingview recreation/Tradingview recreation/apex_agents/orchestrator.py
+
+# Environment
+Environment=PYTHONPATH=/home/aarav/Aarav/Tradingview recreation/Tradingview recreation
+Environment=APEX_POLL_INTERVAL=60
+Environment=APEX_DRY_RUN=0
+# Sensitive vars — put in a separate drop-in or EnvironmentFile
+# (DO NOT commit keys.env to git)
+EnvironmentFile=-/home/aarav/Aarav/Tradingview recreation/Tradingview recreation/keys.env
+
+# Restart policy
+Restart=always
+RestartSec=30
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Logging (journald picks this up automatically; or use StandardOutput=append:... for raw file)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=apex-agents
+
+[Install]
+WantedBy=multi-user.target

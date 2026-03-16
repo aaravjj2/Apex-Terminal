@@ -1,0 +1,23 @@
+[Unit]
+Description=Cloudflare Tunnel — Apex Terminal backend
+Documentation=https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aarav
+
+# Named tunnel (fill in UUID after running `cloudflared tunnel create apex-terminal`)
+ExecStart=/usr/local/bin/cloudflared tunnel --config /home/aarav/.cloudflared/config.yml run apex-terminal
+# Ephemeral (no domain needed — uncomment to use instead):
+# ExecStart=/usr/local/bin/cloudflared tunnel --url http://localhost:8000
+
+Restart=always
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cloudflared-apex
+
+[Install]
+WantedBy=multi-user.target

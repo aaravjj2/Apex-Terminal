@@ -1628,10 +1628,31 @@ class UnifiedAutopilotEngine:
             except Exception as _ml:
                 logger.debug(f"ML signals engine unavailable: {_ml}")
 
+            # ── Agent imports (loaded once per cycle, graceful fallback) ──────
+            try:
+                from apex_agents.agents.bar_guard import bar_is_confirmed as _bar_is_confirmed
+            except ImportError:
+                _bar_is_confirmed = None
+            try:
+                from apex_agents.agents.strategy_arbiter import blend_scores as _blend_scores
+            except ImportError:
+                _blend_scores = None
+
             for sym_info in symbols:
                 feats = await feature_engine.get_features(sym_info.symbol)
                 if not feats:
                     continue
+
+                # ── Bar confirmation guard (90% elapsed rule) ─────────────────
+                if _bar_is_confirmed is not None:
+                    bar_ts = getattr(feats, "bar_open_time", None) or getattr(feats, "timestamp", None)
+                    bar_tf  = getattr(feats, "timeframe_seconds", 300)
+                    if bar_ts is not None and not _bar_is_confirmed(bar_ts, timeframe_seconds=bar_tf):
+                        logger.debug(
+                            f"bar_is_confirmed: skipping {sym_info.symbol} — bar < 90%% complete"
+                        )
+                        continue
+
                 ml_signal = 0.0
                 if ml_engine:
                     try:
@@ -1642,13 +1663,26 @@ class UnifiedAutopilotEngine:
                     except Exception as _e:
                         logger.debug(f"ML signal for {sym_info.symbol}: {_e}")
                 ml_component = (ml_signal + 1) / 2.0
-                score = (
-                    feats.trend_strength * 0.25
-                    + feats.liquidity_score * 0.20
-                    + (feats.iv_rank / 100.0) * 0.20
-                    + max(0, 1 - feats.avg_spread_pct * 10) * 0.10
-                    + ml_component * 0.25
-                )
+
+                # ── Strategy arbiter: regime-aware signal blend ───────────────
+                if _blend_scores is not None:
+                    score = _blend_scores(
+                        trend_strength  = feats.trend_strength,
+                        liquidity_score = feats.liquidity_score,
+                        iv_rank         = feats.iv_rank,
+                        avg_spread_pct  = feats.avg_spread_pct,
+                        ml_component    = ml_component,
+                        regime          = market.regime if market else "neutral",
+                    )
+                else:
+                    # Fallback: original inline blend (kept if apex_agents unavailable)
+                    score = (
+                        feats.trend_strength * 0.25
+                        + feats.liquidity_score * 0.20
+                        + (feats.iv_rank / 100.0) * 0.20
+                        + max(0, 1 - feats.avg_spread_pct * 10) * 0.10
+                        + ml_component * 0.25
+                    )
                 # Phase 5b: Reduce weight for symbols with poor recent performance
                 try:
                     from .v3_store import strategy_performance_summary
@@ -2378,6 +2412,33 @@ class UnifiedAutopilotEngine:
                     # Submit via ExecutionEngineV2 (limit orders only, Alpaca paper)
                     logger.info(f"🚀 EXECUTING TRADE: {symbol} {template} @ ${credit}")
                     logger.info(f"📦 TradeCandidate: {trade_candidate.id}, legs={len(trade_candidate.legs)}")
+
+                    # ── Pre-trade validation gate ────────────────────────────
+                    try:
+                        from apex_agents.agents.pre_trade_validator import validate_order
+                        _ptv_result = validate_order(
+                            candidate,
+                            context={
+                                "equity": config.paper_equity,
+                                "limits": {
+                                    "min_dte":  config.strategy_constraints.min_dte,
+                                    "max_dte":  config.strategy_constraints.max_dte,
+                                    "max_loss_usd": config.risk_limits.max_single_position_usd,
+                                },
+                            },
+                        )
+                        if not _ptv_result.approved:
+                            logger.warning(
+                                f"🚫 PreTradeValidator BLOCKED {symbol} {template}: "
+                                f"{_ptv_result.reason}  flags={_ptv_result.flags}"
+                            )
+                            order_record.status = "rejected"
+                            order_record.error  = f"pre_trade_blocked: {_ptv_result.reason}"
+                            orders.append(order_record)
+                            continue
+                    except ImportError:
+                        pass   # apex_agents not importable — skip gate, do not block
+
                     results = await exec_engine.submit_candidate(trade_candidate, run_id, correlation_id)
                     
                     if results:

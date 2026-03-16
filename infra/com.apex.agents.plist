@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.apex.agents</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/home/aarav/Aarav/Tradingview recreation/Tradingview recreation/phase1/venv/bin/python3</string>
+    <string>/home/aarav/Aarav/Tradingview recreation/Tradingview recreation/apex_agents/orchestrator.py</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/home/aarav/Aarav/Tradingview recreation/Tradingview recreation/apex_agents</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/home/aarav/Aarav/Tradingview recreation/Tradingview recreation</string>
+    <key>APEX_POLL_INTERVAL</key>
+    <string>60</string>
+    <key>APEX_DRY_RUN</key>
+    <string>0</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <key>StandardOutPath</key>
+  <string>/home/aarav/Aarav/Tradingview recreation/Tradingview recreation/apex_agents/orchestrator.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/home/aarav/Aarav/Tradingview recreation/Tradingview recreation/apex_agents/orchestrator.log</string>
+</dict>
+</plist>

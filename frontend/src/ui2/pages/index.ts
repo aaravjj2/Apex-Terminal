@@ -39,6 +39,9 @@ export { VolSurfaceUI2 } from './VolSurfaceUI2';
 // ── Model ──
 export { ModelRouterUI2 } from './ModelRouterUI2';
 
+// ── Nova AI Hub (Amazon Nova / AWS Bedrock) ──
+export { default as NovaUI2 } from './NovaUI2';
+
 // ── Husk placeholders (development / previews) ──
 export { TradingUI2Husk } from '../husks/TradingUI2Husk';
 export { PortfolioUI2Husk } from '../husks/PortfolioUI2Husk';

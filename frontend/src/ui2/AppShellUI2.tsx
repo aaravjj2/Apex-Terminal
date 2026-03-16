@@ -65,6 +65,7 @@ const WORKSPACES: WorkspaceConfig[] = [
   // ── Strategy ──
   { id: 'backtest',          label: 'Backtest',        icon: '⏪', path: '/ui2/backtest',         section: 'tools',  description: 'Walk-forward analysis',                    keywords: ['backtest', 'strategy', 'walk-forward'] },
   { id: 'model-router',      label: 'Model Router',    icon: '🔀', path: '/ui2/model-router',     section: 'tools',  description: 'AI model routing',                         keywords: ['model', 'router', 'ai'] },
+  { id: 'nova',              label: 'Nova AI Hub',     icon: '✨', path: '/ui2/nova',             section: 'tools',  description: 'Amazon Nova — chat, chart vision, voice, agentic research', keywords: ['nova', 'ai', 'chat', 'voice', 'amazon', 'bedrock'] },
   // ── System ──
   { id: 'search',            label: 'Search',          icon: '🔍', path: '/ui2/search',           section: 'system', description: 'Full-text search',                         keywords: ['search', 'find'] },
   { id: 'settings',          label: 'Settings',        icon: '⚙️', path: '/ui2/settings',        section: 'system', description: 'Platform configuration',                   keywords: ['settings', 'config'] },

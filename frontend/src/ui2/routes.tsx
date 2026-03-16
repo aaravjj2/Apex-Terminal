@@ -43,6 +43,7 @@ const SearchUI2           = lazy(() => import('./pages').then(m => ({ default: m
 const MonitorUI2          = lazy(() => import('./pages').then(m => ({ default: m.MonitorUI2 })));
 const ModelRouterUI2      = lazy(() => import('./pages').then(m => ({ default: m.ModelRouterUI2 })));
 const AutopilotV2UI2      = lazy(() => import('./pages').then(m => ({ default: m.AutopilotV2UI2 })));
+const NovaUI2             = lazy(() => import('./pages').then(m => ({ default: m.NovaUI2 })));
 // Husk preview components
 const TradingUI2Husk      = lazy(() => import('./pages').then(m => ({ default: m.TradingUI2Husk })));
 const PortfolioUI2Husk    = lazy(() => import('./pages').then(m => ({ default: m.PortfolioUI2Husk })));
@@ -101,6 +102,9 @@ export function UI2Routes() {
 
         {/* ── Model ── */}
         <Route path="model-router"      element={<S><ModelRouterUI2 /></S>} />
+
+        {/* ── Nova AI Hub ── */}
+        <Route path="nova"              element={<S><NovaUI2 /></S>} />
 
         <Route path="judge"             element={<S><TerraCodeJudge /></S>} />
 

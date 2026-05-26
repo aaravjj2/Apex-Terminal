@@ -57,9 +57,10 @@ jobs:
       - name: Run unit tests
         env:
           PROFILE: dev
-          # Mock Alpaca credentials for tests
           ALPACA3_KEY: test_key_for_ci
           ALPACA3_SECRET: test_secret_for_ci
+          APCA_API_KEY_ID: test_key_for_ci
+          APCA_API_SECRET_KEY: test_secret_for_ci
         run: |
           pytest tests/unit/ -v --tb=short
       
@@ -68,6 +69,8 @@ jobs:
           PROFILE: dev
           ALPACA3_KEY: test_key_for_ci
           ALPACA3_SECRET: test_secret_for_ci
+          APCA_API_KEY_ID: test_key_for_ci
+          APCA_API_SECRET_KEY: test_secret_for_ci
         run: |
           pytest tests/unit/test_trading_window.py -v --tb=short
       
@@ -76,6 +79,8 @@ jobs:
           PROFILE: dev
           ALPACA3_KEY: test_key_for_ci
           ALPACA3_SECRET: test_secret_for_ci
+          APCA_API_KEY_ID: test_key_for_ci
+          APCA_API_SECRET_KEY: test_secret_for_ci
         run: |
           pytest tests/integration/ -v --tb=short || echo "Integration tests may require live API"
 

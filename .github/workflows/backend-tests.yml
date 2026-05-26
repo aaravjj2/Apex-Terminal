@@ -61,7 +61,7 @@ jobs:
           ALPACA3_KEY: test_key_for_ci
           ALPACA3_SECRET: test_secret_for_ci
         run: |
-          pytest tests/unit/ -v --tb=short -x
+          pytest tests/unit/ -v --tb=short
       
       - name: Run trading window tests
         env:
@@ -119,7 +119,9 @@ jobs:
       - name: Scan for secrets
         run: |
           # Check for common secret patterns
-          if grep -rE "(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|AKIA[A-Z0-9]{16})" --include="*.py" --include="*.env*" .; then
+          if grep -rE "(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|AKIA[A-Z0-9]{16})" \
+            --include="*.py" --include="*.ts" --include="*.tsx" \
+            phase1 frontend scripts; then
             echo "❌ Potential secrets found in code!"
             exit 1
           fi

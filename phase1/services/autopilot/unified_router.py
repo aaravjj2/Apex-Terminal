@@ -20,6 +20,8 @@ from datetime import datetime
 from pydantic import BaseModel
 import logging
 
+from services.json_util import json_safe
+
 from .unified_engine import get_unified_engine, RunArtifact, CyclePhase
 from .broker_position_manager import get_broker_position_manager, EnrichedBrokerPosition
 from .news_provider import get_news_provider
@@ -530,7 +532,7 @@ async def get_run(run_id: str):
     
     for artifact in engine._run_history:
         if artifact.run_id == run_id:
-            return artifact.to_dict()
+            return json_safe(artifact.to_dict())
     
     raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
 

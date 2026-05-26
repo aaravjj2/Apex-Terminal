@@ -1,18 +1,23 @@
 """
 heatmap_compat.py — Heatmap + Fixed-Income compat routes for UI2 pages
 ======================================================================
-GET /api/v1/market-data/heatmap      → Sector heatmap data (real yfinance quotes)
+GET /api/v1/market-data/heatmap      → Sector heatmap data (Alpaca live cache)
 GET /api/v1/fixed-income/yield-curve → US Treasury yield curve (FRED/yfinance)
 """
 from __future__ import annotations
 import asyncio
 import logging
+import time
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from fastapi import APIRouter, Query
 
 router = APIRouter(tags=["UI2 Compat"])
 _log = logging.getLogger(__name__)
+
+# Heatmap response cache (per-period). yfinance is slow; Alpaca live cache is instant.
+_HEATMAP_CACHE: Dict[str, Tuple[float, Dict]] = {}
+_HEATMAP_TTL_S = 15.0
 
 # ── Symbol → Sector + MarketCap mapping ──────────────────────────────────────
 # MarketCap values are approximate and used for tile sizing only (updated periodically)
@@ -111,10 +116,33 @@ async def get_heatmap(
     period: str = Query("1D"),
     tab: str = Query("SECTOR MAP"),
 ):
-    """Return live heatmap stock data from yfinance."""
+    """
+    Return live heatmap data. For 1D we use the Alpaca live snapshot cache
+    (instant, <50 ms). For multi-day windows we fall back to yfinance with
+    a 15s response cache to keep the dashboard snappy.
+    """
+    cached = _HEATMAP_CACHE.get(period)
+    if cached and (time.time() - cached[0] < _HEATMAP_TTL_S):
+        return cached[1]
+
     symbols = [s["symbol"] for s in STOCK_META]
-    loop = asyncio.get_event_loop()
-    quote_map = await loop.run_in_executor(None, _fetch_quotes_sync, symbols, period)
+    quote_map: Dict[str, float] = {}
+
+    if period == "1D":
+        # Fast path: use the live_quotes snapshot cache (Alpaca multi-snapshot).
+        try:
+            from .live_quotes import _get_quotes  # type: ignore
+            quotes = await _get_quotes(symbols)
+            for q in quotes:
+                if q.get("last", 0) > 0:
+                    quote_map[q["symbol"]] = float(q.get("change_pct", 0.0))
+        except Exception as e:
+            _log.warning(f"live snapshot heatmap fetch failed: {e}")
+
+    if not quote_map:
+        # Fallback: yfinance batch (only when live cache is empty or non-1D window).
+        loop = asyncio.get_event_loop()
+        quote_map = await loop.run_in_executor(None, _fetch_quotes_sync, symbols, period)
 
     stocks = []
     for s in STOCK_META:
@@ -132,7 +160,7 @@ async def get_heatmap(
     unchanged  = sum(1 for s in stocks if s["change"] == 0)
     fetched_at = datetime.now(timezone.utc).isoformat()
 
-    return {
+    payload = {
         "stocks": stocks,
         "summary": {
             "advancers": advancers,
@@ -142,9 +170,11 @@ async def get_heatmap(
         },
         "period": period,
         "tab": tab,
-        "source": "yfinance",
+        "source": "alpaca" if period == "1D" and quote_map else "yfinance",
         "fetched_at": fetched_at,
     }
+    _HEATMAP_CACHE[period] = (time.time(), payload)
+    return payload
 
 
 # ── Fixed income yield curve via yfinance Treasury tickers ───────────────────

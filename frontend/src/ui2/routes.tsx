@@ -91,6 +91,7 @@ export function UI2Routes() {
         <Route path="screeners"         element={<S><ScreenersUI2 /></S>} />
         <Route path="sentiment"         element={<S><SentimentUI2 /></S>} />
         <Route path="watchlist-manager" element={<S><WatchlistManagerUI2 /></S>} />
+        <Route path="watchlists"        element={<S><WatchlistManagerUI2 /></S>} />
         <Route path="economic-calendar" element={<S><EconomicCalendarUI2 /></S>} />
 
         {/* ── Analysis ── */}

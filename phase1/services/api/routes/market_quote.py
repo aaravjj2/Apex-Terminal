@@ -41,7 +41,7 @@ def _store(symbol: str, data: Dict[str, Any]) -> Dict[str, Any]:
 # ── Provider implementations ─────────────────────────────────────────────────
 
 def _quote_alpaca(symbol: str) -> Optional[Dict[str, Any]]:
-    """Fetch latest quote via Alpaca market data API."""
+    """Fetch latest quote + daily change via Alpaca market data snapshot."""
     key_id = os.environ.get("APCA_API_KEY_ID")
     secret = os.environ.get("APCA_API_SECRET_KEY")
     if not key_id or not secret:
@@ -50,14 +50,37 @@ def _quote_alpaca(symbol: str) -> Optional[Dict[str, Any]]:
         import httpx
         endpoint = os.environ.get("APCA_DATA_URL", "https://data.alpaca.markets")
         headers = {"APCA-API-KEY-ID": key_id, "APCA-API-SECRET-KEY": secret}
-        r = httpx.get(f"{endpoint}/v2/stocks/{symbol}/quotes/latest",
-                      headers=headers, timeout=4.0)
+        r = httpx.get(
+            f"{endpoint}/v2/stocks/{symbol}/snapshot",
+            headers=headers,
+            timeout=4.0,
+        )
         if r.status_code == 200:
-            q = r.json().get("quote", {})
+            snap = r.json()
+            quote = snap.get("latestQuote") or snap.get("quote") or {}
+            trade = snap.get("latestTrade") or snap.get("trade") or {}
+            daily = snap.get("dailyBar") or snap.get("minuteBar") or {}
+            prev = snap.get("prevDailyBar") or {}
+            bid = float(quote.get("bp") or quote.get("bid_price") or 0)
+            ask = float(quote.get("ap") or quote.get("ask_price") or 0)
+            last = float(
+                trade.get("p")
+                or trade.get("price")
+                or daily.get("c")
+                or daily.get("close")
+                or ((bid + ask) / 2 if bid and ask else 0)
+            )
+            if last <= 0:
+                return None
+            prev_close = float(prev.get("c") or prev.get("close") or 0)
+            change = round(last - prev_close, 4) if prev_close else 0.0
+            change_pct = round((change / prev_close) * 100, 4) if prev_close else 0.0
             return {
-                "bid": q.get("bp", 0),
-                "ask": q.get("ap", 0),
-                "last": round((q.get("bp", 0) + q.get("ap", 0)) / 2, 4) if q.get("bp") else 0,
+                "bid": bid or last,
+                "ask": ask or last,
+                "last": round(last, 4),
+                "change": change,
+                "change_pct": change_pct,
                 "source": "alpaca",
             }
     except Exception:
@@ -77,10 +100,15 @@ def _quote_finnhub(symbol: str) -> Optional[Dict[str, Any]]:
         if r.status_code == 200:
             d = r.json()
             if d.get("c", 0) > 0:
+                last = float(d["c"])
+                change = float(d.get("d") or 0)
+                change_pct = float(d.get("dp") or 0)
                 return {
-                    "bid": d.get("c", 0),
-                    "ask": d.get("c", 0),
-                    "last": d.get("c", 0),
+                    "bid": last,
+                    "ask": last,
+                    "last": last,
+                    "change": change,
+                    "change_pct": change_pct,
                     "source": "finnhub",
                 }
     except Exception:
@@ -96,10 +124,16 @@ def _quote_yfinance(symbol: str) -> Optional[Dict[str, Any]]:
         info = ticker.fast_info
         price = getattr(info, "last_price", None) or getattr(info, "previous_close", None)
         if price and price > 0:
+            prev = float(getattr(info, "previous_close", None) or price)
+            last = round(float(price), 4)
+            change = round(last - prev, 4) if prev else 0.0
+            change_pct = round((change / prev) * 100, 4) if prev else 0.0
             return {
-                "bid": round(price * 0.999, 4),
-                "ask": round(price * 1.001, 4),
-                "last": round(price, 4),
+                "bid": round(last * 0.999, 4),
+                "ask": round(last * 1.001, 4),
+                "last": last,
+                "change": change,
+                "change_pct": change_pct,
                 "source": "yfinance",
             }
     except Exception:
@@ -110,15 +144,64 @@ def _quote_yfinance(symbol: str) -> Optional[Dict[str, Any]]:
         hist = yf.download(symbol, period="1d", progress=False)
         if len(hist) > 0:
             close = float(hist["Close"].iloc[-1])
+            prev = float(hist["Close"].iloc[-2]) if len(hist) >= 2 else close
+            change = round(close - prev, 4)
+            change_pct = round((change / prev) * 100, 4) if prev else 0.0
             return {
                 "bid": round(close * 0.999, 4),
                 "ask": round(close * 1.001, 4),
                 "last": round(close, 4),
+                "change": change,
+                "change_pct": change_pct,
                 "source": "yfinance",
             }
     except Exception:
         pass
     return None
+
+
+def _format_quote_response(
+    symbol: str,
+    result: Dict[str, Any],
+    correlation_id: str,
+    latency_ms: float,
+    cached_suffix: str = "",
+) -> Dict[str, Any]:
+    last = float(result.get("last", 0))
+    change = float(result.get("change", 0))
+    change_pct = float(result.get("change_pct", 0))
+    src = str(result.get("source", "unknown")) + cached_suffix
+    return {
+        "ok": True,
+        "symbol": symbol,
+        "ts": datetime.now(tz=timezone.utc).isoformat(),
+        "bid": result.get("bid", last),
+        "ask": result.get("ask", last),
+        "last": last,
+        "price": last,
+        "c": last,
+        "close": last,
+        "change": change,
+        "change_pct": change_pct,
+        "source": src,
+        "latency_ms": latency_ms,
+        "correlation_id": correlation_id,
+    }
+
+
+def _batch_row(sym: str, result: Dict[str, Any]) -> Dict[str, Any]:
+    last = float(result.get("last", 0))
+    return {
+        "symbol": sym,
+        "last": last,
+        "price": last,
+        "bid": result.get("bid", last),
+        "ask": result.get("ask", last),
+        "change": float(result.get("change", 0)),
+        "change_pct": float(result.get("change_pct", 0)),
+        "source": result.get("source", "unknown"),
+        "ok": True,
+    }
 
 
 # ── Endpoint ─────────────────────────────────────────────────────────────────
@@ -143,20 +226,9 @@ async def get_live_quote(symbol: str = Query(..., min_length=1, max_length=10)):
     cached = _cached(symbol)
     if cached:
         latency_ms = round((time.time() - t0) * 1000, 2)
-        return {
-            "ok": True,
-            "symbol": symbol,
-            "ts": datetime.now(tz=timezone.utc).isoformat(),
-            "bid": cached["bid"],
-            "ask": cached["ask"],
-            "last": cached["last"],
-            "price": cached["last"],
-            "c": cached["last"],
-            "close": cached["last"],
-            "source": cached["source"] + " (cached)",
-            "latency_ms": latency_ms,
-            "correlation_id": correlation_id,
-        }
+        return _format_quote_response(
+            symbol, cached, correlation_id, latency_ms, cached_suffix=" (cached)"
+        )
 
     # Try providers in priority order
     providers = [
@@ -170,20 +242,7 @@ async def get_live_quote(symbol: str = Query(..., min_length=1, max_length=10)):
         if result and result.get("last", 0) > 0:
             _store(symbol, result)
             latency_ms = round((time.time() - t0) * 1000, 2)
-            return {
-                "ok": True,
-                "symbol": symbol,
-                "ts": datetime.now(tz=timezone.utc).isoformat(),
-                "bid": result["bid"],
-                "ask": result["ask"],
-                "last": result["last"],
-                "price": result["last"],
-                "c": result["last"],
-                "close": result["last"],
-                "source": result["source"],
-                "latency_ms": latency_ms,
-                "correlation_id": correlation_id,
-            }
+            return _format_quote_response(symbol, result, correlation_id, latency_ms)
 
     latency_ms = round((time.time() - t0) * 1000, 2)
     raise HTTPException(status_code=503, detail={
@@ -205,24 +264,16 @@ async def get_batch_quotes(symbols: str = Query(..., description="Comma-separate
     for sym in syms:
         cached = _cached(sym)
         if cached:
-            results.append({
-                "symbol": sym, "last": cached["last"],
-                "bid": cached["bid"], "ask": cached["ask"],
-                "source": cached["source"],
-            })
+            results.append(_batch_row(sym, cached))
             continue
         for _, fn in [("alpaca", _quote_alpaca), ("finnhub", _quote_finnhub), ("yfinance", _quote_yfinance)]:
             r = fn(sym)
             if r and r.get("last", 0) > 0:
                 _store(sym, r)
-                results.append({
-                    "symbol": sym, "last": r["last"],
-                    "bid": r["bid"], "ask": r["ask"],
-                    "source": r["source"],
-                })
+                results.append(_batch_row(sym, r))
                 break
         else:
-            results.append({"symbol": sym, "last": None, "error": "unavailable"})
+            results.append({"symbol": sym, "last": None, "price": None, "ok": False, "error": "unavailable"})
     latency_ms = round((time.time() - t0) * 1000, 2)
     return {
         "ok": True,

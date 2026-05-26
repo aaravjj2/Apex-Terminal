@@ -66,19 +66,16 @@ export default defineConfig({
     proxy: {
       // ── Specific rewrites MUST come before the generic /api catch-all ──
       // Frontend pages call /api/autopilot/... but backend serves /api/v1/autopilot/...
+      // AutopilotUI2 uses /api/autopilot/* — backend serves compat at /api and canonical at /api/v1
       '/api/autopilot': {
         target: BACKEND_URL,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/autopilot/, '/api/v1/autopilot'),
       },
-      // Frontend calls /api/market-quote/quote or /api/market-quote → /api/v1/market/quote
+      // /api/market-quote/* → /api/v1/market/* (quote, quotes/batch, etc.)
       '/api/market-quote': {
         target: BACKEND_URL,
         changeOrigin: true,
-        rewrite: (path) => {
-          if (path.startsWith('/api/market-quote/quote')) return path.replace('/api/market-quote/quote', '/api/v1/market/quote');
-          return path.replace('/api/market-quote', '/api/v1/market/quote');
-        },
+        rewrite: (path) => path.replace(/^\/api\/market-quote/, '/api/v1/market'),
       },
       // Generic catch-all
       '/api': {
@@ -96,18 +93,15 @@ export default defineConfig({
     port: 5100,
     strictPort: true,
     proxy: {
+      // AutopilotUI2 uses /api/autopilot/* — backend serves compat at /api and canonical at /api/v1
       '/api/autopilot': {
         target: BACKEND_URL,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/autopilot/, '/api/v1/autopilot'),
       },
       '/api/market-quote': {
         target: BACKEND_URL,
         changeOrigin: true,
-        rewrite: (path) => {
-          if (path.startsWith('/api/market-quote/quote')) return path.replace('/api/market-quote/quote', '/api/v1/market/quote');
-          return path.replace('/api/market-quote', '/api/v1/market/quote');
-        },
+        rewrite: (path) => path.replace(/^\/api\/market-quote/, '/api/v1/market'),
       },
       '/api': {
         target: BACKEND_URL,

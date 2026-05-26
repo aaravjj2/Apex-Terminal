@@ -61,7 +61,6 @@ async def run_backtest(config: BacktestConfig):
         raise HTTPException(status_code=400, detail={
             "error": str(e),
             "correlation_id": f"bt-err-{uuid.uuid4().hex[:8]}",
-            "fix": f"Run: python scripts/prime_backtest_history.py {config.symbol}",
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail={

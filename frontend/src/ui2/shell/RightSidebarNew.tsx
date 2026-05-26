@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useContextBus } from '../stores/contextBusStore';
+import { useLiveQuote, useLiveQuotes } from '../lib/liveQuoteStore';
 
 // ─── Tab types ───
 type SidebarTab = 'order' | 'watch' | 'pos' | 'news' | 'l2' | 'ts';
@@ -68,18 +69,20 @@ interface DepthLevel {
   total: number;
 }
 
+// Deterministic synthetic L2 around mid (Alpaca SIP L2 not in scope yet).
+// Labeled "SIM" in the panel so users know it's not exchange data.
 function genDepth(mid: number, levels: number = 8): { bids: DepthLevel[]; asks: DepthLevel[] } {
   const bids: DepthLevel[] = [];
   const asks: DepthLevel[] = [];
   let bidTotal = 0;
   let askTotal = 0;
   for (let i = 0; i < levels; i++) {
-    const bs = Math.floor(Math.random() * 500 + 100);
+    const bs = 200 + ((i * 137) % 400);
     bidTotal += bs;
-    bids.push({ price: mid - 0.01 * (i + 1), size: bs, total: bidTotal });
-    const as = Math.floor(Math.random() * 500 + 100);
+    bids.push({ price: +(mid - 0.01 * (i + 1)).toFixed(2), size: bs, total: bidTotal });
+    const as = 200 + (((i + 3) * 113) % 400);
     askTotal += as;
-    asks.push({ price: mid + 0.01 * (i + 1), size: as, total: askTotal });
+    asks.push({ price: +(mid + 0.01 * (i + 1)).toFixed(2), size: as, total: askTotal });
   }
   return { bids, asks };
 }
@@ -93,23 +96,7 @@ interface TradeItem {
   exch: string;
 }
 
-function genTrades(mid: number, count: number = 20): TradeItem[] {
-  const exchanges = ['NYSE', 'ARCA', 'BATS', 'IEX', 'EDGX'];
-  const trades: TradeItem[] = [];
-  const now = new Date();
-  for (let i = 0; i < count; i++) {
-    const t = new Date(now.getTime() - i * 1500);
-    const side = Math.random() > 0.5 ? 'buy' : 'sell';
-    trades.push({
-      time: `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}:${String(t.getSeconds()).padStart(2, '0')}`,
-      price: mid + (Math.random() - 0.5) * 0.1,
-      size: Math.floor(Math.random() * 300 + 10),
-      side,
-      exch: exchanges[Math.floor(Math.random() * exchanges.length)],
-    });
-  }
-  return trades;
-}
+/* genTrades removed — T&S now streams from liveQuoteStore (real Alpaca prints). */
 
 // ─── Position data ───
 interface Position {
@@ -168,15 +155,19 @@ function OrderTicketPanel({ symbol }: { symbol: string }) {
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [orderType, setOrderType] = useState('limit');
   const [quantity, setQuantity] = useState('100');
-  const [limitPrice, setLimitPrice] = useState('189.50');
+  const [limitPrice, setLimitPrice] = useState('');
   const [tif, setTif] = useState('day');
   const [showSLTP, setShowSLTP] = useState(false);
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
+  const live = useLiveQuote(symbol);
+  useEffect(() => {
+    if (live && !limitPrice) setLimitPrice(live.price.toFixed(2));
+  }, [live, limitPrice]);
 
-  const price = 189.84;
-  const change = 2.41;
-  const changePct = 1.29;
+  const price = live?.price ?? 0;
+  const change = live?.change ?? 0;
+  const changePct = live?.changePct ?? 0;
   const qty = parseInt(quantity) || 0;
   const lp = parseFloat(limitPrice) || price;
   const notional = qty * lp;
@@ -191,9 +182,13 @@ function OrderTicketPanel({ symbol }: { symbol: string }) {
           <div className="ot-exch">NASDAQ · US</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div className="ot-price" style={{ color: change >= 0 ? 'var(--up)' : 'var(--dn)' }}>${price.toFixed(2)}</div>
+          <div className="ot-price" style={{ color: change >= 0 ? 'var(--up)' : 'var(--dn)' }}>
+            {price > 0 ? `$${price.toFixed(2)}` : '…'}
+          </div>
           <div className="ot-chg" style={{ color: change >= 0 ? 'var(--up)' : 'var(--dn)' }}>
-            {change >= 0 ? '+' : ''}{change.toFixed(2)} ({changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%)
+            {price > 0 ? (
+              <>{change >= 0 ? '+' : ''}{change.toFixed(2)} ({changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%)</>
+            ) : 'Loading…'}
           </div>
         </div>
       </div>
@@ -312,58 +307,24 @@ function WatchlistPanel() {
   const [watchlistData, setWatchlistData] = useState<WatchItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchWatchlist = useCallback(async () => {
-    try {
-      // Single batch call replaces 10 individual /quote requests
-      const res = await fetch('/api/v1/market-data/quotes/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols: WATCHLIST_SYMBOLS }),
-      });
-      if (!res.ok) throw new Error(`batch status ${res.status}`);
-      const data = await res.json();
-      const quotes: Record<string, unknown>[] = Array.isArray(data.quotes) ? data.quotes : [];
-      const items: WatchItem[] = quotes
-        .filter(q => (q as any).ok !== false)
-        .map(q => ({
-          sym: String((q as any).symbol ?? ''),
-          name: SYMBOL_NAMES[String((q as any).symbol ?? '')] || String((q as any).symbol ?? ''),
-          price: parseFloat(String((q as any).price ?? 0)) || 0,
-          change: parseFloat(String((q as any).change ?? 0)) || 0,
-          pct: parseFloat(String((q as any).change_pct ?? 0)) || 0,
-        }))
-        .filter(item => item.sym);
-      setWatchlistData(items);
-    } catch {
-      // Fallback: individual calls if batch endpoint not yet deployed
-      try {
-        const results = await Promise.allSettled(
-          WATCHLIST_SYMBOLS.map(sym =>
-            fetch(`/api/v1/market-data/${sym}/quote`).then(r => (r.ok ? r.json() : null))
-          )
-        );
-        const items: WatchItem[] = results
-          .map((res, i) => {
-            const sym = WATCHLIST_SYMBOLS[i];
-            if (res.status === 'fulfilled' && res.value) {
-              const d = res.value;
-              return { sym, name: SYMBOL_NAMES[sym] || sym, price: d.price ?? d.last ?? 0, change: d.change ?? 0, pct: d.change_pct ?? 0 } as WatchItem;
-            }
-            return null;
-          })
-          .filter((item): item is WatchItem => item !== null);
-        setWatchlistData(items);
-      } catch { setWatchlistData([]); }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  const liveMap = useLiveQuotes(WATCHLIST_SYMBOLS);
   useEffect(() => {
-    fetchWatchlist();
-    const iv = setInterval(fetchWatchlist, 60_000);
-    return () => clearInterval(iv);
-  }, [fetchWatchlist]);
+    const items: WatchItem[] = WATCHLIST_SYMBOLS
+      .map(sym => {
+        const q = liveMap[sym];
+        if (!q) return null;
+        return {
+          sym,
+          name: SYMBOL_NAMES[sym] || sym,
+          price: q.price,
+          change: q.change,
+          pct: q.changePct,
+        };
+      })
+      .filter((item): item is WatchItem => item !== null);
+    setWatchlistData(items);
+    if (items.length) setLoading(false);
+  }, [liveMap]);
 
   return (
     <div style={{ overflow: 'auto', flex: 1 }}>
@@ -408,22 +369,28 @@ function PositionsPanel() {
   useEffect(() => {
     async function fetchPositions() {
       try {
-        const res = await fetch('/api/v1/portfolio/positions');
+        let res = await fetch('/api/broker/positions');
+        if (!res.ok) res = await fetch('/api/v1/portfolio/positions');
         if (res.ok) {
           const data = await res.json();
           const raw: Record<string, unknown>[] = Array.isArray(data)
             ? data
             : Array.isArray(data.positions)
             ? data.positions
+            : Array.isArray((data as { positions?: unknown[] }).positions)
+            ? (data as { positions: unknown[] }).positions as Record<string, unknown>[]
             : [];
-          const mapped: Position[] = raw.map(p => ({
-            sym: String(p.symbol ?? p.sym ?? ''),
-            qty: parseFloat(String(p.qty ?? p.quantity ?? 0)),
-            avgCost: parseFloat(String(p.avg_entry_price ?? p.avg_cost ?? p.avgCost ?? 0)),
-            last: parseFloat(String(p.current_price ?? p.last ?? 0)),
-            pnl: parseFloat(String(p.unrealized_pl ?? p.pnl ?? 0)),
-            pnlPct: parseFloat(String(p.unrealized_plpc ?? p.pnl_pct ?? p.pnlPct ?? 0)) * 100,
-          }));
+          const mapped: Position[] = raw.map(p => {
+            const pnlPctRaw = parseFloat(String(p.unrealized_plpc ?? p.pnl_pct ?? p.pnlPct ?? 0));
+            return {
+              sym: String(p.symbol ?? p.sym ?? ''),
+              qty: parseFloat(String(p.qty ?? p.quantity ?? 0)),
+              avgCost: parseFloat(String(p.avg_entry_price ?? p.avg_cost ?? p.avgCost ?? 0)),
+              last: parseFloat(String(p.current_price ?? p.last ?? 0)),
+              pnl: parseFloat(String(p.unrealized_pl ?? p.pnl ?? 0)),
+              pnlPct: Math.abs(pnlPctRaw) <= 1 ? pnlPctRaw * 100 : pnlPctRaw,
+            };
+          });
           setPositions(mapped);
         } else {
           setPositions([]);
@@ -563,40 +530,9 @@ function NewsPanel() {
 
 // ─── L2 DEPTH ───
 function L2DepthPanel({ symbol }: { symbol: string }) {
-  const liveMidRef = useRef<number>(100);
-  const [depth, setDepth] = useState(() => genDepth(100));
-
-  useEffect(() => {
-    let cancelled = false;
-    liveMidRef.current = 100;
-
-    async function fetchPrice() {
-      try {
-        const res = await fetch(`/api/v1/market-data/${symbol}/quote`);
-        if (res.ok && !cancelled) {
-          const data = await res.json();
-          const price: number = data.price ?? data.last ?? data.close ?? 100;
-          if (price > 0) {
-            liveMidRef.current = price;
-            setDepth(genDepth(price));
-          }
-        }
-      } catch {
-        // keep fallback mid of 100
-      }
-    }
-
-    fetchPrice();
-
-    const iv = setInterval(() => {
-      setDepth(genDepth(liveMidRef.current + (Math.random() - 0.5) * 0.2));
-    }, 2000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(iv);
-    };
-  }, [symbol]);
+  const live = useLiveQuote(symbol);
+  const mid = live?.price ?? 0;
+  const depth = mid > 0 ? genDepth(mid) : { bids: [], asks: [] };
 
   const maxTotal = Math.max(
     depth.bids[depth.bids.length - 1]?.total || 1,
@@ -607,7 +543,9 @@ function L2DepthPanel({ symbol }: { symbol: string }) {
     <div style={{ overflow: 'auto', flex: 1 }}>
       <div className="wl-hdr">
         <span>{symbol} ORDER BOOK</span>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: '10px' }}>8 levels</span>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--tx3)' }}>
+          {mid > 0 ? 'SIM · mid from Alpaca' : 'waiting for live mid…'}
+        </span>
       </div>
       {/* Spread */}
       <div style={{
@@ -643,49 +581,30 @@ function L2DepthPanel({ symbol }: { symbol: string }) {
 
 // ─── TIME & SALES ───
 function TimeSalesPanel({ symbol }: { symbol: string }) {
-  const liveMidRef = useRef<number>(189.84);
-  const [trades, setTrades] = useState(() => genTrades(189.84));
+  const live = useLiveQuote(symbol);
+  const [trades, setTrades] = useState<TradeItem[]>([]);
+  const lastPriceRef = useRef<number>(0);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function fetchPrice() {
-      try {
-        const res = await fetch(`/api/v1/market-data/${symbol}/quote`);
-        if (res.ok && !cancelled) {
-          const data = await res.json();
-          const price: number = data.price ?? data.last ?? data.close ?? 0;
-          if (price > 0) {
-            liveMidRef.current = price;
-            setTrades(genTrades(price));
-          }
-        }
-      } catch {
-        // keep current mid
-      }
-    }
-
-    fetchPrice();
-
-    const iv = setInterval(() => {
-      setTrades(prev => {
-        const side: 'buy' | 'sell' = Math.random() > 0.5 ? 'buy' : 'sell';
-        const now = new Date();
-        const newTrade: TradeItem = {
-          time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`,
-          price: liveMidRef.current + (Math.random() - 0.5) * 0.2,
-          size: Math.floor(Math.random() * 300 + 10),
-          side,
-          exch: ['NYSE', 'ARCA', 'BATS', 'IEX'][Math.floor(Math.random() * 4)],
-        };
-        return [newTrade, ...prev.slice(0, 29)];
-      });
-    }, 1500);
-
-    return () => {
-      cancelled = true;
-      clearInterval(iv);
+    if (!live || live.price <= 0) return;
+    const prev = lastPriceRef.current;
+    if (prev === live.price) return;
+    const side: 'buy' | 'sell' = prev === 0 ? 'buy' : live.price >= prev ? 'buy' : 'sell';
+    lastPriceRef.current = live.price;
+    const now = new Date();
+    const tick: TradeItem = {
+      time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`,
+      price: live.price,
+      size: 100,
+      side,
+      exch: 'ALPACA',
     };
+    setTrades(prev => [tick, ...prev].slice(0, 30));
+  }, [live]);
+
+  useEffect(() => {
+    setTrades([]);
+    lastPriceRef.current = 0;
   }, [symbol]);
 
   return (

@@ -9,9 +9,11 @@ Secrets loading priority:
 
 import logging
 import os
+import socket
+from pathlib import Path
 from typing import Optional, Literal
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, field_validator
 from functools import lru_cache
 
 _cfg_log = logging.getLogger("apex.config")
@@ -107,7 +109,23 @@ class Settings(BaseSettings):
         env_file = "keys.env"
         env_file_encoding = "utf-8"
         extra = "ignore"
-    
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def resolve_database_url(cls, value: object) -> str:
+        """Use SQLite in dev when Postgres is configured but unreachable."""
+        url = str(value or "")
+        if IS_PRODUCTION or "postgresql" not in url:
+            return url or _default_sqlite_url()
+        if _postgres_reachable(url):
+            return url
+        sqlite_url = _default_sqlite_url()
+        _cfg_log.warning(
+            "Postgres unreachable in dev — falling back to SQLite at %s",
+            sqlite_url,
+        )
+        return sqlite_url
+
     def is_production(self) -> bool:
         """Check if running in production mode."""
         return self.profile == "prod"
@@ -131,6 +149,32 @@ class Settings(BaseSettings):
     def universe_list(self) -> list[str]:
         """Parse market universe symbols into list."""
         return [s.strip().upper() for s in self.market_universe.split(",") if s.strip()]
+
+
+def _default_sqlite_url() -> str:
+    data_dir = Path(__file__).resolve().parent.parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return f"sqlite+aiosqlite:///{data_dir / 'apex.db'}"
+
+
+def _postgres_reachable(database_url: str) -> bool:
+    """Best-effort TCP probe for local Postgres."""
+    host, port = "localhost", 5432
+    if "@" in database_url and "/" in database_url:
+        try:
+            netloc = database_url.split("@", 1)[1].split("/", 1)[0]
+            if ":" in netloc:
+                host, port_str = netloc.rsplit(":", 1)
+                port = int(port_str)
+            else:
+                host = netloc
+        except Exception:
+            pass
+    try:
+        with socket.create_connection((host, port), timeout=1.5):
+            return True
+    except OSError:
+        return False
 
 
 def _load_keys_env_if_dev() -> None:

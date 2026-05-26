@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useContextBus } from '../stores/contextBusStore';
+import { useLiveStatus, useLiveQuote } from '../lib/liveQuoteStore';
 
 interface TopBarProps {
   onOpenCommandPalette: () => void;
@@ -22,6 +23,8 @@ export function TopBar({ onOpenCommandPalette, connectionStatus, marketOpen, mar
   const [mode, setMode] = useState<typeof MODES[number]>('live');
   const setActiveSymbol = useContextBus(s => s.setActiveSymbol);
   const activeSymbol = useContextBus(s => s.activeSymbol);
+  const liveStatus = useLiveStatus();
+  const activeQuote = useLiveQuote(activeSymbol);
 
   useEffect(() => {
     const tick = () => {
@@ -70,35 +73,54 @@ export function TopBar({ onOpenCommandPalette, connectionStatus, marketOpen, mar
         <span style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--tx3)', background: 'var(--bg3)', padding: '1px 5px', borderRadius: '3px' }}>⌘K</span>
       </div>
 
-      {/* Symbol Strip */}
+      {/* Symbol Strip with live prices */}
       <div style={{ display: 'flex', gap: '1px', overflow: 'hidden', flexShrink: 0 }}>
         {SYMBOLS.map(sym => (
-          <button
+          <SymbolPill
             key={sym}
+            sym={sym}
+            active={activeSymbol === sym}
             onClick={() => setActiveSymbol(sym)}
-            style={{
-              padding: '3px 8px',
-              borderRadius: 'var(--r2)',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: activeSymbol === sym ? 'var(--tx)' : 'var(--tx2)',
-              cursor: 'pointer',
-              background: activeSymbol === sym ? 'var(--bg2)' : 'none',
-              border: 'none',
-              fontFamily: 'var(--mono)',
-            }}
-          >
-            {sym}
-          </button>
+          />
         ))}
       </div>
 
-      {/* Latency */}
-      <div className="latency">
-        <div className="latency-dot" style={{
-          background: connectionStatus === 'connected' ? 'var(--up)' : 'var(--warn)',
-        }} />
-        <span>{connectionStatus === 'connected' ? '2ms' : connectionStatus === 'connecting' ? '...' : 'offline'}</span>
+      {/* Live data status badge */}
+      <div className="tb-sep" />
+      <div
+        title={`Live data stream: ${liveStatus}`}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '3px 8px', fontSize: 10, fontFamily: 'var(--mono)',
+          fontWeight: 700, letterSpacing: '0.05em',
+          color: liveStatus === 'live' ? 'var(--up)' : liveStatus === 'reconnecting' ? 'var(--warn)' : 'var(--dn)',
+          background: 'var(--bg2)', borderRadius: 3,
+        }}
+      >
+        <div
+          style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: liveStatus === 'live' ? 'var(--up)' : liveStatus === 'reconnecting' ? 'var(--warn)' : 'var(--dn)',
+            boxShadow: liveStatus === 'live' ? '0 0 6px var(--up)' : 'none',
+          }}
+        />
+        {liveStatus === 'live' ? 'LIVE' : liveStatus === 'reconnecting' ? 'RECONNECTING' : 'OFFLINE'}
+        {activeQuote && activeQuote.price > 0 && (
+          <span style={{ color: 'var(--tx2)', marginLeft: 4 }}>
+            {activeSymbol} ${activeQuote.price.toFixed(2)}
+          </span>
+        )}
+      </div>
+
+      {/* Latency indicator — tied to live quote stream status */}
+      <div className="latency" title={`Quote stream: ${liveStatus}`}>
+        <div
+          className="latency-dot"
+          style={{
+            background: liveStatus === 'live' ? 'var(--up)' : liveStatus === 'reconnecting' ? 'var(--warn)' : 'var(--dn)',
+          }}
+        />
+        <span>{liveStatus === 'live' ? '< 1s' : liveStatus === 'reconnecting' ? '…' : 'offline'}</span>
       </div>
 
       {/* Right */}
@@ -138,5 +160,39 @@ export function TopBar({ onOpenCommandPalette, connectionStatus, marketOpen, mar
         </div>
       </div>
     </div>
+  );
+}
+
+function SymbolPill({ sym, active, onClick }: { sym: string; active: boolean; onClick: () => void }) {
+  const q = useLiveQuote(sym);
+  const up = (q?.change ?? 0) >= 0;
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '3px 8px',
+        borderRadius: 'var(--r2)',
+        fontSize: '11px',
+        fontWeight: 600,
+        color: active ? 'var(--tx)' : 'var(--tx2)',
+        cursor: 'pointer',
+        background: active ? 'var(--bg2)' : 'none',
+        border: 'none',
+        fontFamily: 'var(--mono)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+      }}
+    >
+      <span>{sym}</span>
+      {q && q.price > 0 && (
+        <>
+          <span style={{ color: 'var(--tx2)' }}>${q.price.toFixed(2)}</span>
+          <span style={{ color: up ? 'var(--up)' : 'var(--dn)', fontSize: 10 }}>
+            {up ? '▲' : '▼'}{Math.abs(q.changePct).toFixed(2)}%
+          </span>
+        </>
+      )}
+    </button>
   );
 }

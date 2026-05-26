@@ -318,3 +318,70 @@ async def market_mood():
         "symbol_count": len(scores),
         "source": "finnhub",
     }
+
+
+# ── v4 compat aliases (frontend SentimentUI2 hits these paths) ──────────────
+v4_router = APIRouter(prefix="/api/v4/sentiment", tags=["sentiment-v4-compat"])
+
+
+@v4_router.get("/news")
+async def v4_news(symbol: str = None, limit: int = 20):
+    return await list_articles(symbol=symbol, limit=limit)
+
+
+@v4_router.get("/symbols")
+async def v4_symbols():
+    return await symbol_sentiments()
+
+
+@v4_router.get("/social")
+async def v4_social(limit: int = 20):
+    """Social entries — stubbed as empty until a real social provider is wired."""
+    return {"entries": [], "total": 0, "source": "unavailable"}
+
+
+@v4_router.get("/fear-greed")
+async def v4_fear_greed():
+    mood = await market_mood()
+    score = mood["avg_score"]
+    # Map [-1,+1] → [0,100] for a fear/greed style gauge.
+    fg = max(0, min(100, round((score + 1) * 50)))
+    classification = (
+        "Extreme Greed" if fg >= 80 else
+        "Greed" if fg >= 60 else
+        "Neutral" if fg >= 40 else
+        "Fear" if fg >= 20 else
+        "Extreme Fear"
+    )
+    return {
+        "score": fg,
+        "classification": classification,
+        "raw_mood": mood["mood"],
+        "source": mood["source"],
+    }
+
+
+@v4_router.get("/dashboard")
+async def v4_dashboard():
+    mood = await market_mood()
+    syms = await symbol_sentiments()
+    news = await list_articles(limit=10)
+    sentiments = syms.get("sentiments", [])
+    bulls = sum(1 for s in sentiments if s.get("score", 0) > 0.1)
+    bears = sum(1 for s in sentiments if s.get("score", 0) < -0.1)
+    neutrals = max(0, len(sentiments) - bulls - bears)
+    total_articles = sum(s.get("article_count", 0) for s in sentiments)
+    return {
+        "summary": {
+            "mood": mood.get("mood"),
+            "avg_score": mood.get("avg_score"),
+            "symbols_tracked": len(sentiments),
+            "bull_count": bulls,
+            "bear_count": bears,
+            "neutral_count": neutrals,
+            "news_articles": total_articles,
+            "social_entries": 0,
+        },
+        "top_headlines": news.get("articles", [])[:5],
+        "source": mood.get("source"),
+    }

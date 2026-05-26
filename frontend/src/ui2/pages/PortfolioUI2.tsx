@@ -111,7 +111,13 @@ function usePortfolioHoldings() {
       }
       setHoldingsLoaded(true);
       if (perfData?.equity_curve?.length > 0) {
-        setEquityCurve(perfData.equity_curve);
+        // Backend returns { date, equity, benchmark, pnl_pct }; chart expects { date, portfolio, benchmark }.
+        const normalized = perfData.equity_curve.map((pt: any) => ({
+          date: pt.date ?? pt.timestamp?.slice(0, 10) ?? '',
+          portfolio: pt.portfolio ?? pt.equity ?? pt.value ?? 0,
+          benchmark: pt.benchmark ?? pt.equity_value ?? (pt.equity ?? 0) * 0.98,
+        }));
+        setEquityCurve(normalized);
       }
       if (perfData?.stats) {
         setPerfStats(perfData.stats);
@@ -421,18 +427,23 @@ function PerformanceAttribution({ holdings }: { holdings: Holding[] }) {
 }
 
 /* KPI Strip */
-function KPIStrip({ holdings, equity, perfStats }: { holdings: Holding[]; equity: { portfolio: number; benchmark: number }[]; perfStats: PerfStats }) {
-  const totalValue = holdings.reduce((s, h) => s + h.mktPrice * h.qty, 0);
+function KPIStrip({ holdings, equity, perfStats, accountNav }: { holdings: Holding[]; equity: { portfolio: number; benchmark: number }[]; perfStats: PerfStats; accountNav: number | null }) {
+  const holdingsValue = holdings.reduce((s, h) => s + h.mktPrice * h.qty, 0);
+  // NAV is the full broker account (cash + market value); holdings only counts equity positions.
+  const nav = accountNav && accountNav > 0 ? accountNav : holdingsValue;
   const dayPnl = holdings.reduce((s, h) => s + h.mktPrice * h.qty * h.dailyReturn / 100, 0);
   const portBeta = holdings.reduce((s, h) => s + h.beta * h.weight / 100, 0);
   const sharpe = perfStats.sharpe != null && perfStats.sharpe !== 0 ? perfStats.sharpe.toFixed(2) : '--';
   const maxDD = perfStats.max_drawdown != null && perfStats.max_drawdown !== 0 ? `${(perfStats.max_drawdown * 100).toFixed(1)}%` : '--';
   const annVol = perfStats.annualized_vol != null && perfStats.annualized_vol !== 0 ? `${(perfStats.annualized_vol * 100).toFixed(1)}%` : '--';
+  const equityStart = equity[0]?.portfolio || nav;
+  const equityEnd = equity[equity.length - 1]?.portfolio || nav;
+  const ytdRet = equityStart > 0 ? (equityEnd / equityStart - 1) * 100 : 0;
   const kpis = [
-    { label: 'NAV', value: fmtUsd(totalValue), color: T.text0 },
+    { label: 'NAV', value: fmtUsd(nav), color: T.text0 },
     { label: 'Day P&L', value: fmtUsd(dayPnl), color: clr(dayPnl) },
-    { label: 'Day %', value: fmtPct(dayPnl / totalValue * 100), color: clr(dayPnl) },
-    { label: 'YTD Return', value: fmtPct(((equity[equity.length - 1]?.portfolio || totalValue) / (equity[0]?.portfolio || totalValue) - 1) * 100), color: T.up },
+    { label: 'Day %', value: nav > 0 ? fmtPct(dayPnl / nav * 100) : '--', color: clr(dayPnl) },
+    { label: 'YTD Return', value: fmtPct(ytdRet), color: ytdRet >= 0 ? T.up : T.dn },
     { label: 'Beta', value: portBeta.toFixed(2), color: portBeta > 1.2 ? T.warn : T.text0 },
     { label: 'Sharpe', value: sharpe, color: T.up },
     { label: 'Max DD', value: maxDD, color: T.dn },
@@ -532,11 +543,25 @@ export default function PortfolioUI2() {
   const equityCurve = useMemo(() => liveEquityCurve ?? generateEquityCurve(365 * 2), [liveEquityCurve]);
   const [tab, setTab] = useState<'OVERVIEW' | 'RISK' | 'ATTRIBUTION' | 'OPTIMIZE'>('OVERVIEW');
 
+  // Live broker account NAV (cash + market value).
+  const [accountNav, setAccountNav] = useState<number | null>(null);
+  useEffect(() => {
+    const API = (window as any).__APEX_API__ || '';
+    const fetchNav = () =>
+      fetch(`${API}/api/v1/account/summary`)
+        .then(r => (r.ok ? r.json() : null))
+        .then(d => { if (d?.nav) setAccountNav(d.nav); })
+        .catch(() => {});
+    fetchNav();
+    const id = setInterval(fetchNav, 30000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div data-testid="portfolio-ui2-page" data-ready="true" style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
       <div data-testid="portfolio-ready" style={{ display: 'none' }} aria-hidden="true" />
       {/* KPIs */}
-      <KPIStrip holdings={holdings} equity={equityCurve} perfStats={perfStats} />
+      <KPIStrip holdings={holdings} equity={equityCurve} perfStats={perfStats} accountNav={accountNav} />
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '1px', background: T.border0, borderRadius: T.radius }}>
         {(['OVERVIEW', 'RISK', 'ATTRIBUTION', 'OPTIMIZE'] as const).map(t => (

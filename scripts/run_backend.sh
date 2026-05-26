@@ -26,5 +26,14 @@ if [ ! -d "venv" ] && [ ! -d "../venv" ]; then
     pip install -r requirements.txt
 fi
 
-echo "Starting backend on port 8000..."
-uvicorn services.api.main:app --host 0.0.0.0 --port 8000 --reload
+# Use 8001 when 8000 is occupied by another service
+BACKEND_PORT="${APEX_BACKEND_PORT:-8000}"
+if curl -s --max-time 1 "http://localhost:8000/" 2>/dev/null | grep -qv "Apex Terminal"; then
+  if curl -s --max-time 1 "http://localhost:8000/health" >/dev/null 2>&1; then
+    BACKEND_PORT="${APEX_BACKEND_PORT:-8001}"
+  fi
+fi
+export APEX_BACKEND_PORT="$BACKEND_PORT"
+echo "Starting backend on port $BACKEND_PORT..."
+exec "$PWD/venv/bin/python" -m uvicorn services.api.main:app \
+  --host 0.0.0.0 --port "$BACKEND_PORT" --reload --app-dir "$PWD"

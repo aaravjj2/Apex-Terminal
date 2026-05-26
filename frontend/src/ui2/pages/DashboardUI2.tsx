@@ -38,6 +38,7 @@ import { useOrders } from '@/ui2/hooks';
 import { useSocial } from '@/ui2/hooks';
 import { usePlatform } from '@/ui2/hooks';
 import ApexAreaChart from '../components/chart/ApexAreaChart';
+import { useLiveQuotes } from '../lib/liveQuoteStore';
 
 /* ── Design tokens ── */
 const T = {
@@ -655,24 +656,65 @@ export default function DashboardUI2() {
       .catch(() => {});
   }, []);
 
-  // Sync watchlist prices from real quote cache when hook provides data
+  // ── Live watchlist prices via WebSocket-backed liveQuoteStore ──
+  // NOTE: `useLiveQuotes` returns a stable reference that only changes when a
+  // tracked symbol actually ticks, so it's safe in the dependency array.
+  const watchlistSymbolKey = watchlist.map(w => w.symbol).join(',');
+  const watchlistSymbols = useMemo(
+    () => watchlist.map(w => w.symbol),
+    [watchlistSymbolKey],
+  );
+  const liveQuoteMap = useLiveQuotes(watchlistSymbols);
   useEffect(() => {
-    const cache = marketState.quoteCache;
-    if (!cache.size) return;
-    setWatchlist(prev => prev.map(item => {
-      const q = cache.get(item.symbol);
-      if (!q) return item;
-      const newPrice = q.last;
-      return {
-        ...item,
-        price: newPrice,
-        change: q.change,
-        changePct: q.changePct,
-        volume: q.volume,
-        sparkline: [...item.sparkline.slice(1), newPrice],
-      };
-    }));
-  }, [marketState.quoteCache]);
+    if (!Object.keys(liveQuoteMap).length) return;
+    setWatchlist(prev => {
+      let changed = false;
+      const next = prev.map(item => {
+        const q = liveQuoteMap[item.symbol];
+        if (!q || q.price <= 0 || q.price === item.price) return item;
+        changed = true;
+        return {
+          ...item,
+          price: q.price,
+          change: q.change,
+          changePct: q.changePct,
+          volume: q.volume ?? item.volume,
+          sparkline: [...item.sparkline.slice(1), q.price],
+        };
+      });
+      return changed ? next : prev;
+    });
+  }, [liveQuoteMap]);
+
+  // Legacy REST poll as a second safety net.
+  useEffect(() => {
+    const syms = watchlist.map(w => w.symbol);
+    if (!syms.length) return;
+    const load = () => {
+      fetch(`/api/v1/live/quotes?symbols=${encodeURIComponent(syms.join(','))}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d?.quotes?.length) return;
+          setWatchlist(prev => prev.map(item => {
+            const q = d.quotes.find((x: { symbol?: string }) => x.symbol === item.symbol);
+            if (!q) return item;
+            const last = Number(q.last ?? q.price ?? 0);
+            if (last <= 0) return item;
+            return {
+              ...item,
+              price: last,
+              change: Number(q.change ?? 0),
+              changePct: Number(q.change_pct ?? q.changePct ?? 0),
+              sparkline: [...item.sparkline.slice(1), last],
+            };
+          }));
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5000);
+    return () => clearInterval(id);
+  }, [watchlist.map(w => w.symbol).join(',')]);
 
   // ── Live news from /api/v1/sentiment/articles (Finnhub) ──
   useEffect(() => {

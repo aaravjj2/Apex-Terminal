@@ -218,30 +218,41 @@ export function OrdersUI2() {
   const [blotter, setBlotter] = useState<BlotterRow[]>([])
   const [tca, setTCA] = useState<TCARow[]>([])
 
+  const mapAlpacaStatus = (s: string): OrderStatus => {
+    const v = (s || '').toLowerCase()
+    if (v === 'filled') return 'filled'
+    if (v === 'partially_filled') return 'partial'
+    if (v === 'canceled' || v === 'cancelled') return 'canceled'
+    if (v === 'rejected') return 'rejected'
+    if (v === 'expired') return 'expired'
+    if (v === 'new' || v === 'accepted' || v === 'pending_new') return 'working'
+    return 'pending'
+  }
+
   const fetchOrders = useCallback(async () => {
     try {
-      const r = await fetch('/api/v1/orders')
+      const r = await fetch('/api/broker/orders')
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const d = await r.json()
       const raw: any[] = Array.isArray(d) ? d : d.orders ?? d.data ?? []
       const mapped: Order[] = raw.map((o: any) => ({
-        id: o.order_id ?? o.id ?? String(Math.random()),
+        id: o.id ?? o.order_id ?? String(o.client_order_id ?? ''),
         symbol: o.symbol ?? '',
-        side: o.side ?? 'buy',
-        type: o.type ?? o.order_type ?? 'market',
-        qty: Number(o.quantity ?? o.qty ?? 0),
-        filled: Number(o.filled_quantity ?? o.filled ?? 0),
-        price: o.price != null ? Number(o.price) : null,
+        side: (o.side ?? 'buy') as OrderSide,
+        type: (o.type ?? o.order_type ?? 'market') as OrderType,
+        qty: Number(o.qty ?? o.quantity ?? 0),
+        filled: Number(o.filled_qty ?? o.filled_quantity ?? o.filled ?? 0),
+        price: o.limit_price != null ? Number(o.limit_price) : (o.price != null ? Number(o.price) : null),
         stopPrice: o.stop_price != null ? Number(o.stop_price) : null,
-        trailAmt: o.trail_amount != null ? Number(o.trail_amount) : null,
-        status: o.status ?? 'pending',
-        tif: o.tif ?? o.time_in_force ?? 'day',
-        avgFill: o.avg_fill_price != null ? Number(o.avg_fill_price) : null,
+        trailAmt: o.trail_price != null ? Number(o.trail_price) : null,
+        status: mapAlpacaStatus(o.status ?? 'pending'),
+        tif: (o.time_in_force ?? o.tif ?? 'day') as OrderTIF,
+        avgFill: o.filled_avg_price != null ? Number(o.filled_avg_price) : null,
         commission: Number(o.commission ?? 0),
-        slippage: o.slippage != null ? Number(o.slippage) : null,
-        vwap: o.vwap != null ? Number(o.vwap) : null,
-        createdAt: o.created_at ?? o.timestamp ?? '',
-        updatedAt: o.updated_at ?? o.timestamp ?? '',
+        slippage: null,
+        vwap: null,
+        createdAt: o.created_at ?? o.submitted_at ?? '',
+        updatedAt: o.updated_at ?? o.filled_at ?? o.created_at ?? '',
         note: o.note ?? '',
       }))
       setOrders(mapped)
@@ -253,21 +264,26 @@ export function OrdersUI2() {
 
   const fetchBlotter = useCallback(async () => {
     try {
-      const r = await fetch('/api/v1/orders/executions')
+      const r = await fetch('/api/broker/orders')
       if (!r.ok) throw new Error()
       const d = await r.json()
-      const raw: any[] = Array.isArray(d) ? d : d.executions ?? []
-      setBlotter(raw.map((x: any) => ({
-        id: x.exec_id ?? x.id ?? String(Math.random()),
-        symbol: x.symbol ?? '',
-        execTime: x.exec_time ?? x.timestamp ?? '',
-        side: x.side ?? 'buy',
-        qty: Number(x.qty ?? 0),
-        price: Number(x.price ?? 0),
-        value: Number(x.value ?? x.qty * x.price ?? 0),
-        venue: x.venue ?? x.exchange ?? 'ARCA',
-        commission: Number(x.commission ?? 0),
-      })))
+      const raw: any[] = Array.isArray(d) ? d : d.orders ?? []
+      const filled = raw.filter((o: any) => (o.status || '').toLowerCase() === 'filled')
+      setBlotter(filled.map((x: any) => {
+        const qty = Number(x.filled_qty ?? x.qty ?? 0)
+        const price = Number(x.filled_avg_price ?? x.limit_price ?? 0)
+        return {
+          id: x.id ?? String(Math.random()),
+          symbol: x.symbol ?? '',
+          execTime: x.filled_at ?? x.updated_at ?? x.created_at ?? '',
+          side: (x.side ?? 'buy') as OrderSide,
+          qty,
+          price,
+          value: qty * price,
+          venue: 'ALPACA',
+          commission: 0,
+        }
+      }))
     } catch { /* empty blotter on fail */ }
   }, [])
 
@@ -292,7 +308,7 @@ export function OrdersUI2() {
   const fetchLiveQuote = useCallback(async (sym: string) => {
     if (!sym) return
     try {
-      const r = await fetch(`/api/v1/market-data/${sym}/quote`)
+      const r = await fetch(`/api/v1/market/quote?symbol=${encodeURIComponent(sym)}`)
       if (!r.ok) return
       const d = await r.json()
       const p = Number(d.price ?? d.last ?? d.close ?? 0)
@@ -323,7 +339,7 @@ export function OrdersUI2() {
 
   const cancelOrder = async (id: string) => {
     try {
-      await fetch(`/api/v1/orders/${id}`, { method: 'DELETE' })
+      await fetch(`/api/broker/orders/${id}`, { method: 'DELETE' })
       fetchOrders()
     } catch { /* ignore */ }
   }
@@ -339,14 +355,19 @@ export function OrdersUI2() {
     if (!eSymbol || !eQty) { setEErr('Symbol and quantity required'); return }
     setESubmitting(true); setEErr(null); setESuccess(null)
     try {
-      const body: any = { symbol: eSymbol.toUpperCase(), side: eSide, type: eType, quantity: Number(eQty), time_in_force: eTIF }
-      if (eType !== 'market' && ePrice) body.price = Number(ePrice)
-      if ((eType === 'stop' || eType === 'stop_limit') && eStop) body.stop_price = Number(eStop)
-      if (eNote) body.note = eNote
-      const r = await fetch('/api/v1/trading/place-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      if (!r.ok) { const d = await r.json(); throw new Error(d.detail ?? `HTTP ${r.status}`) }
+      const body: Record<string, unknown> = {
+        symbol: eSymbol.toUpperCase(),
+        side: eSide === 'buy' || eSide === 'buy_to_cover' ? 'buy' : 'sell',
+        type: eType === 'stop_limit' ? 'stop_limit' : eType,
+        qty: Number(eQty),
+        time_in_force: eTIF,
+      }
+      if (eType !== 'market' && ePrice) body.limit_price = Number(ePrice)
+      const r = await fetch('/api/broker/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      if (!r.ok) { const d = await r.json(); throw new Error(d.message ?? d.detail ?? `HTTP ${r.status}`) }
       const d = await r.json()
-      setESuccess(`Order placed — ID: ${d.order_id ?? d.id ?? 'OK'}`)
+      const ord = d.order ?? d
+      setESuccess(`Order placed — ID: ${ord.id ?? ord.order_id ?? 'OK'}`)
       fetchOrders()
       setEQty('100'); setEPrice(''); setEStop(''); setENote('')
     } catch (e: any) { setEErr(e.message) }

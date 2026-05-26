@@ -11,11 +11,24 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # Load environment before any other imports that might read os.environ
+import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
-_keys_path = Path(__file__).parent.parent.parent / "keys.env"
-if _keys_path.exists():
-    load_dotenv(_keys_path)
+
+_phase1_root = Path(__file__).resolve().parent.parent.parent
+_repo_root = _phase1_root.parent
+for _keys_path in (
+    _phase1_root / "keys.env",
+    _repo_root / "keys.env",
+    _phase1_root / "services" / "keys.env",
+):
+    if _keys_path.exists():
+        load_dotenv(_keys_path, override=False)
+
+# Allow `backend.core.startup_checks` imports from repo root
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
 
 import asyncio
 from contextlib import asynccontextmanager
@@ -202,7 +215,6 @@ logger = structlog.get_logger()
 
 from ..ingestion.main import IngestionService
 from ..autopilot.service import get_autopilot_service
-import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -219,22 +231,20 @@ async def lifespan(app: FastAPI):
     logger.info("autopilot_db_initialized")
     
     # Start Autopilot Service (Background)
-    # This runs the cycle every 60 seconds autonomously
+    autopilot_service = None
     try:
         autopilot_service = get_autopilot_service()
         await autopilot_service.start_background_loop(interval_seconds=60)
-        # Start continuous position monitoring (every 15 seconds)
         await autopilot_service.start_monitoring_loop(interval_seconds=15)
     except Exception as e:
         logger.error(f"Failed to start autopilot service: {e}")
     
     # Start Ingestion Service (Background)
     settings = get_settings()
-    
-    # Waves 11-20: Online-only mode — no mock/demo/synthetic
-    # Prefer Alpaca, fallback to Finnhub, but never mock
-    mode = "live"
-    csv_path = None
+    ingestion = None
+
+    # Prefer Alpaca, fallback to Finnhub; yfinance when no keys
+    mode = "mock" if os.getenv("DEMO_MODE", "0") == "1" else "live"
     provider_override = None
 
     if settings.apca_api_key_id:
@@ -244,23 +254,28 @@ async def lifespan(app: FastAPI):
         provider_override = "finnhub"
         logger.info("using_finnhub_live_data")
     else:
-        # Online-only: still set mode=live, ingestion will use yfinance
         logger.warning("no_api_keys_configured_using_yfinance_fallback")
 
-    ingestion = IngestionService(mode=mode, symbols=settings.universe_list[:10], provider=provider_override)
-    
-    # Start ingestion
+    ingestion = IngestionService(
+        mode=mode,
+        symbols=settings.universe_list[:10],
+        provider=provider_override,
+    )
+
     try:
         await ingestion.start()
-
-        # Expose ingestion on app state for status endpoints
-        try:
-            app.state.ingestion = ingestion
-        except Exception:
-            pass
-            
+        app.state.ingestion = ingestion
     except Exception as e:
         logger.error("ingestion_startup_failed", error=str(e))
+        ingestion = None
+
+    # Prewarm live quote cache for the default universe (single Alpaca call).
+    try:
+        from .routes.live_quotes import prewarm_live_quotes
+        await prewarm_live_quotes()
+        logger.info("live_quotes_prewarmed")
+    except Exception as e:
+        logger.warning("live_quote_prewarm_failed", error=str(e))
 
     # Start WebSocket manager heartbeat
     try:
@@ -287,9 +302,13 @@ async def lifespan(app: FastAPI):
         logger.error("health_monitor_start_failed", error=str(e))
     
     yield
-    
+
     # Cleanup Ingestion
-    await ingestion.stop()
+    if ingestion is not None:
+        try:
+            await ingestion.stop()
+        except Exception as e:
+            logger.error("ingestion_shutdown_failed", error=str(e))
 
     # Stop health monitoring
     try:
@@ -312,7 +331,11 @@ async def lifespan(app: FastAPI):
         logger.error("ws_manager_stop_failed", error=str(e))
     
     # Cleanup Autopilot
-    await autopilot_service.stop_background_loop()
+    if autopilot_service is not None:
+        try:
+            await autopilot_service.stop_background_loop()
+        except Exception as e:
+            logger.error("autopilot_shutdown_failed", error=str(e))
     
     # Cleanup DB
     db = get_database()
@@ -380,6 +403,13 @@ def create_app() -> FastAPI:
     # Market Data with Record/Replay (v1.13) - available at both v1 and v2 for backward compatibility
     app.include_router(market_data_v1_13.router, prefix="/api/v1/market-data", tags=["market-data-v1.13"])
     app.include_router(market_data_v1_13.router, prefix="/api/v2/market-data", tags=["market-data-v1.13-v2"])
+    # ── Industrial live quote stream (REST + WS) ──────────────────────────────
+    try:
+        from .routes import live_quotes
+        app.include_router(live_quotes.router, tags=["live-quotes"])
+    except Exception as _lq_err:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"live_quotes router not loaded: {_lq_err}")
     app.include_router(automation.router, prefix="/api/v1", tags=["automation"])
     app.include_router(forecast.router, prefix="/api/v1", tags=["forecast"])
     app.include_router(intelligence.router, prefix="/api/v1", tags=["intelligence"])
@@ -402,6 +432,8 @@ def create_app() -> FastAPI:
     app.include_router(cache.router, tags=["cache"])
     # UNIFIED AUTOPILOT ROUTER - This is the ONLY autopilot API
     app.include_router(unified_autopilot_router, prefix="/api/v1", tags=["autopilot"])
+    # Alias under /api (AutopilotUI2 frontend hits /api/autopilot/* without the v1 prefix).
+    app.include_router(unified_autopilot_router, prefix="/api", tags=["autopilot-compat"])
     app.include_router(ws_router, prefix="/ws", tags=["websocket"])
     from .autopilot_websocket import router as autopilot_ws_router
     app.include_router(autopilot_ws_router, prefix="/ws", tags=["autopilot-websocket"])
@@ -486,6 +518,7 @@ def create_app() -> FastAPI:
     app.include_router(walk_forward.router, tags=["walk-forward"])
     app.include_router(scoring.router, tags=["scoring"])
     app.include_router(sentiment.router, tags=["sentiment"])
+    app.include_router(sentiment.v4_router, tags=["sentiment-v4-compat"])
     app.include_router(regime.router, tags=["regime"])
     # ── Wave 7: Elasticsearch (gated OFF by default) ──
     app.include_router(elasticsearch_gateway.router, tags=["elasticsearch"])
@@ -897,17 +930,20 @@ def create_app() -> FastAPI:
             headers={"X-Correlation-Id": cid},
         )
     
-    # Health check with data source status — uses REAL probes, never lies
+    # Health check with data source status — cached 5s to keep p99 < 50ms
+    _health_cache: dict = {"data": None, "ts": 0.0}
+    _HEALTH_TTL_S = 5.0
+
     @app.get("/health")
     async def health_check():
-        """
-        Quick health check that does real connectivity probes.
-        Uses backend.core.startup_checks when available; fallback when not.
-        """
+        """Cached health probe (5s TTL). Real Alpaca + ES probes underneath."""
+        import time as _t
+        if _health_cache["data"] is not None and (_t.time() - _health_cache["ts"]) < _HEALTH_TTL_S:
+            return _health_cache["data"]
         settings = get_settings()
         try:
             from backend.core.startup_checks import run_all_checks  # type: ignore
-            result = await run_all_checks(timeout=5.0)
+            result = await run_all_checks(timeout=3.0)
             deps = result.get("dependencies", {})
             es = deps.get("elasticsearch", {})
             broker = deps.get("broker", {})
@@ -919,7 +955,7 @@ def create_app() -> FastAPI:
                 bars_source = "yfinance"
             else:
                 bars_source = "none"
-            return {
+            data = {
                 "status": "healthy" if result.get("ready") else "degraded",
                 "ready": result.get("ready", False),
                 "correlation_id": result.get("correlation_id"),
@@ -929,7 +965,11 @@ def create_app() -> FastAPI:
                 "tradier_configured": bool(settings.tradier_brokerage_key),
                 "bars_source": bars_source,
                 "mode": "paper" if broker.get("connected") else "no-broker",
+                "cached_at": _t.time(),
             }
+            _health_cache["data"] = data
+            _health_cache["ts"] = _t.time()
+            return data
         except (ImportError, ModuleNotFoundError):
             # Fallback when backend.core not on path (e.g. phase1 standalone)
             bars_source = "yfinance" if settings.tiingo_api_key else ("finnhub" if settings.finnhub_api_key else "none")
@@ -1026,36 +1066,43 @@ def create_app() -> FastAPI:
             },
         }
 
-    # ── Top-level health / readiness endpoints ──────────────────────────────
-    import time as _time
-    _start_time = _time.time()
-
-    @app.get("/health", tags=["health"], include_in_schema=True)
-    async def health_check():
-        """Liveness probe. Returns 200 when process is up."""
-        return {
-            "status": "ok",
-            "uptime_s": round(_time.time() - _start_time, 1),
-            "version": "2.0.0",
-            "port": 8000,
-        }
-
     @app.get("/ready", tags=["health"], include_in_schema=True)
     async def readiness_check():
-        """Readiness probe. Checks DB and Alpaca key presence."""
+        """Readiness probe — DB connectivity + broker key presence."""
+        from sqlalchemy import text
+
         _settings = get_settings()
-        checks = {
+        checks: dict = {
             "alpaca_key": bool(_settings.apca_api_key_id),
             "alpaca_secret": bool(_settings.apca_api_secret_key),
+            "database": False,
+            "broker": False,
         }
         try:
             db = get_database()
-            await db.execute("SELECT 1")
+            async with db.engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
             checks["database"] = True
         except Exception:
             checks["database"] = False
-        ready = all(checks.values())
-        return {"ready": ready, "checks": checks}
+
+        if _settings.apca_api_key_id and _settings.apca_api_secret_key:
+            try:
+                from backend.core.startup_checks import check_broker  # type: ignore
+                broker = await check_broker(timeout=5.0)
+                checks["broker"] = bool(broker.get("connected"))
+            except Exception:
+                checks["broker"] = False
+
+        # Ready when DB works; broker optional (degraded without Alpaca)
+        ready = checks["database"]
+        return {
+            "ready": ready,
+            "checks": checks,
+            "database_url_scheme": _settings.database_url.split("://")[0]
+            if "://" in _settings.database_url
+            else "unknown",
+        }
 
     return app
 

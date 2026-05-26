@@ -17,12 +17,15 @@ Endpoints:
 """
 
 from __future__ import annotations
+import logging
 import math
 from typing import Any, Dict, List, Literal, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 try:
     from ...screener_engine import (
@@ -85,7 +88,8 @@ class SymbolData(BaseModel):
 
 
 class ScreenRequest(BaseModel):
-    universe: List[SymbolData]
+    universe: Optional[List[SymbolData]] = None
+    symbols:  Optional[List[str]] = None
     criteria: List[Dict[str, Any]] = []
     sort_by:  str = "composite_score"
     ascending: bool = False
@@ -93,18 +97,22 @@ class ScreenRequest(BaseModel):
 
 
 class QuickScreenRequest(BaseModel):
-    universe: List[SymbolData]
+    universe: Optional[List[SymbolData]] = None
+    symbols:  Optional[List[str]] = None
     preset:   Literal["momentum", "value", "growth", "mean_reversion", "quality"] = "momentum"
     max_results: int = Field(50, ge=1, le=500)
 
 
 class ScoreRequest(BaseModel):
-    universe: List[SymbolData]
+    universe: Optional[List[SymbolData]] = None
+    symbols:  Optional[List[str]] = None
 
 
 class RankRequest(BaseModel):
-    universe: List[SymbolData]
+    universe: Optional[List[SymbolData]] = None
+    symbols:  Optional[List[str]] = None
     factors: Optional[Dict[str, Dict]] = None  # {column: {weight, ascending}}
+    field:   Optional[str] = None
 
 
 class AlertAddRequest(BaseModel):
@@ -164,6 +172,60 @@ def symbol_data_to_df(sd: SymbolData) -> pd.DataFrame:
             df[k] = v
 
     return df
+
+
+def resolve_universe(
+    universe: Optional[List[SymbolData]],
+    symbols: Optional[List[str]],
+    *,
+    lookback_days: int = 400,
+) -> List[SymbolData]:
+    """
+    Return a SymbolData list, either passed in by the caller (rich form) or
+    materialised from a list of tickers by loading the local backtest cache.
+    Auto-primes any missing symbol from yfinance.
+    """
+    if universe:
+        return universe
+    if not symbols:
+        return []
+
+    import datetime as _dt
+    from ...backtest_engine.data_pipeline import load_bars, prime_symbol
+
+    end = _dt.date.today()
+    start = end - _dt.timedelta(days=lookback_days)
+    out: List[SymbolData] = []
+    for sym in symbols:
+        s = (sym or "").strip().upper()
+        if not s:
+            continue
+        bars, _ = load_bars(s, start, end)
+        if not bars:
+            try:
+                prime_symbol(s, years=2)
+                bars, _ = load_bars(s, start, end)
+            except Exception as e:
+                logger.warning("screener_prime_failed", symbol=s, error=str(e))
+                continue
+        if not bars:
+            continue
+        out.append(SymbolData(
+            symbol=s,
+            bars=[
+                OHLCVBar(
+                    timestamp=b.date.isoformat(),
+                    open=b.open,
+                    high=b.high,
+                    low=b.low,
+                    close=b.adj_close,
+                    volume=float(b.volume),
+                )
+                for b in bars
+            ],
+            fundamentals=None,
+        ))
+    return out
 
 
 def build_universe_snapshot(universe: List[SymbolData]) -> pd.DataFrame:
@@ -231,7 +293,10 @@ async def screen_universe(req: ScreenRequest):
     if not _SCREENER_AVAILABLE:
         raise HTTPException(503, "Screener engine unavailable")
 
-    snap = build_universe_snapshot(req.universe)
+    universe = resolve_universe(req.universe, req.symbols)
+    if not universe:
+        raise HTTPException(400, "Provide either 'universe' (with bars) or 'symbols' (tickers)")
+    snap = build_universe_snapshot(universe)
     if snap.empty:
         return {"results": [], "total": 0}
 
@@ -261,8 +326,12 @@ async def quick_screen(req: QuickScreenRequest):
     if not _SCREENER_AVAILABLE:
         raise HTTPException(503, "Screener engine unavailable")
 
+    universe = resolve_universe(req.universe, req.symbols)
+    if not universe:
+        raise HTTPException(400, "Provide either 'universe' (with bars) or 'symbols' (tickers)")
+
     symbol_data_dict = {}
-    for sd in req.universe:
+    for sd in universe:
         if len(sd.bars) >= 30:
             symbol_data_dict[sd.symbol] = symbol_data_to_df(sd)
 
@@ -287,7 +356,10 @@ async def compute_scores(req: ScoreRequest):
     if not _SCREENER_AVAILABLE:
         raise HTTPException(503, "Screener engine unavailable")
 
-    snap = build_universe_snapshot(req.universe)
+    universe = resolve_universe(req.universe, req.symbols)
+    if not universe:
+        raise HTTPException(400, "Provide either 'universe' (with bars) or 'symbols' (tickers)")
+    snap = build_universe_snapshot(universe)
     if snap.empty:
         return {"results": [], "total": 0}
 
@@ -316,14 +388,23 @@ async def rank_symbols(req: RankRequest):
     if not _SCREENER_AVAILABLE:
         raise HTTPException(503, "Screener engine unavailable")
 
-    snap = build_universe_snapshot(req.universe)
+    universe = resolve_universe(req.universe, req.symbols)
+    if not universe:
+        raise HTTPException(400, "Provide either 'universe' (with bars) or 'symbols' (tickers)")
+    snap = build_universe_snapshot(universe)
     if snap.empty:
         return {"results": [], "total": 0}
 
+    # Single-field rank: build a factors dict from req.field if provided.
+    factors = req.factors
+    if not factors and req.field:
+        factors = {req.field: {"weight": 1.0, "ascending": False}}
+
     try:
-        ranked = rank_universe(snap, req.factors)
+        ranked = rank_universe(snap, factors)
+        # `ranked` is sorted descending by composite — also expose top-200 ranking
         records = screener_to_dict(ranked.head(200), max_rows=200)
-        return {"results": records, "total": len(records)}
+        return {"results": records, "ranked": records, "total": len(records)}
     except Exception as e:
         raise HTTPException(400, str(e))
 

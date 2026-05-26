@@ -297,9 +297,13 @@ class AlpacaBrokerClient:
             result = []
             
             for pos in positions:
+                # Alpaca returns fractional qty as a string like "8.720336718".
+                # int(...) blows up on fractional shares — use float and round
+                # only when the dataclass demands it.
+                qty_val = float(pos.qty)
                 result.append(AlpacaPosition(
                     symbol=pos.symbol,
-                    qty=int(pos.qty),
+                    qty=int(qty_val) if qty_val.is_integer() else qty_val,
                     side=pos.side.value,
                     avg_entry_price=float(pos.avg_entry_price),
                     current_price=float(pos.current_price),
@@ -307,7 +311,6 @@ class AlpacaBrokerClient:
                     unrealized_pl=float(pos.unrealized_pl),
                     unrealized_plpc=float(pos.unrealized_plpc),
                     asset_class=pos.asset_class.value,
-                    # Option fields would be parsed from symbol if needed
                 ))
             
             return result
@@ -322,9 +325,10 @@ class AlpacaBrokerClient:
         
         try:
             pos = self._api.get_open_position(symbol)
+            qty_val = float(pos.qty)
             return AlpacaPosition(
                 symbol=pos.symbol,
-                qty=int(pos.qty),
+                qty=int(qty_val) if qty_val.is_integer() else qty_val,
                 side=pos.side.value,
                 avg_entry_price=float(pos.avg_entry_price),
                 current_price=float(pos.current_price),

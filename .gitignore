@@ -38,6 +38,8 @@ keys.env
 .env
 .env.local
 .env.*.local
+*:Zone.Identifier
+.apex-backend.pid
 *.pem
 *.key
 *.crt
@@ -122,6 +124,8 @@ w01_judge_report/
 phase1.db
 test_phase1.db
 apex.db
+autopilot_v3.db
+**/autopilot_v3.db
 *.db-journal
 *.db-wal
 *.db-shm

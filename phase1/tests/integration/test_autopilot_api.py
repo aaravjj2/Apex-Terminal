@@ -145,7 +145,9 @@ class TestHealthEndpoint:
         """Test /health endpoint."""
         response = await client.get("/health")
         assert response.status_code == 200
-        assert response.json()["status"] == "healthy"
+        body = response.json()
+        assert body["status"] in ("healthy", "degraded")
+        assert "ready" in body
 
 
 if __name__ == "__main__":

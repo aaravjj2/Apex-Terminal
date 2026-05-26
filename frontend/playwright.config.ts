@@ -21,15 +21,15 @@ export default defineConfig({
         trace: 'on',  // Capture trace for ALL tests (required for Week 3 proof pack)
         screenshot: 'on',
         video: 'on',  // Capture video for ALL tests (required for Week 3 proof pack)
-        headless: false,  // HEADED MODE ONLY (user mandate)
-        channel: 'chrome',  // Use installed Chrome, not Chromium
+        headless: isCI,  // Headless in CI; headed locally for debugging
+        ...(isCI ? {} : { channel: 'chrome' as const }),
         launchOptions: {
             args: [
                 '--no-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
             ],
-            slowMo: 50,
+            ...(isCI ? {} : { slowMo: 50 }),
         },
         actionTimeout: 15000,
         navigationTimeout: 60000,
@@ -38,22 +38,31 @@ export default defineConfig({
     // In CI, start both backend and frontend
     webServer: isCI ? [
         {
-            // Backend server (FastAPI)
-            command: `cd ../phase1 && source ../keys.env && uvicorn services.api.main:app --host 0.0.0.0 --port ${backendPort}`,
+            // Backend server (FastAPI) — mock credentials only; never load keys.env in CI
+            command: `cd ../phase1 && PROFILE=dev ALPACA3_KEY=test_key_for_ci ALPACA3_SECRET=test_secret_for_ci python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${backendPort}`,
             url: `http://localhost:${backendPort}/health`,
             reuseExistingServer: false,
-            timeout: 120000,
+            timeout: 180000,
             stdout: 'pipe',
             stderr: 'pipe',
+            env: {
+                PROFILE: 'dev',
+                ALPACA3_KEY: 'test_key_for_ci',
+                ALPACA3_SECRET: 'test_secret_for_ci',
+                APEX_BACKEND_PORT: backendPort,
+            },
         },
         {
             // Frontend server (Vite preview for stability)
             command: `npm run build && npm run preview -- --port ${frontendPort}`,
             url: `http://localhost:${frontendPort}`,
             reuseExistingServer: false,
-            timeout: 120000,
+            timeout: 180000,
             stdout: 'pipe',
             stderr: 'pipe',
+            env: {
+                APEX_BACKEND_PORT: backendPort,
+            },
         },
     ] : undefined,  // Local: no webServer - assume servers are already running
     projects: [

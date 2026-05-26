@@ -13,7 +13,7 @@
  * │ • Indices: S&P 500, NASDAQ, DOW                                    │
  * └───────────────────────────────────────────────────────────────────────┘
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useMarketData } from '@/ui2/hooks';
 
 const T = {
@@ -111,17 +111,39 @@ function computeTreemap(items: { symbol: string; weight: number }[], x: number, 
 /* ═════════════════════════════════════════════════════════════════════ */
 
 export default function HeatmapUI2() {
-  // ── Hook integration ──
   const [marketState, marketActions] = useMarketData();
 
   const [colorBy, setColorBy] = useState<'1d' | '1w' | 'ytd'>('1d');
   const [sizeBy, setSizeBy] = useState<'mcap' | 'vol' | 'equal'>('mcap');
   const [hoveredSymbol, setHoveredSymbol] = useState<string | null>(null);
 
-  const getChange = (s: Stock) => colorBy === '1d' ? s.change1d : colorBy === '1w' ? s.change1w : s.changeYtd;
+  // ── Live stocks data overlaid on the static metadata (sector + mkt cap). ──
+  const [liveStocks, setLiveStocks] = useState<Record<string, { change: number; price?: number }>>({});
+  useEffect(() => {
+    const periodParam = colorBy === '1d' ? '1D' : colorBy === '1w' ? '1W' : 'YTD';
+    let cancelled = false;
+    const fetchHeatmap = () =>
+      fetch(`/api/v1/market-data/heatmap?period=${periodParam}`)
+        .then(r => (r.ok ? r.json() : null))
+        .then(d => {
+          if (cancelled || !d?.stocks) return;
+          const map: Record<string, { change: number }> = {};
+          d.stocks.forEach((s: any) => { map[s.symbol] = { change: +s.change }; });
+          setLiveStocks(map);
+        })
+        .catch(() => {});
+    fetchHeatmap();
+    const id = setInterval(fetchHeatmap, 30000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [colorBy]);
+
+  const getChange = (s: Stock) => {
+    const live = liveStocks[s.symbol];
+    if (live && colorBy === '1d') return live.change;
+    return colorBy === '1d' ? s.change1d : colorBy === '1w' ? s.change1w : s.changeYtd;
+  };
   const getWeight = (s: Stock) => sizeBy === 'mcap' ? s.marketCap : sizeBy === 'vol' ? s.volume : 10;
 
-  // Group by sector
   const sectors = useMemo(() => {
     const map = new Map<string, Stock[]>();
     STOCKS.forEach(s => { const arr = map.get(s.sector) || []; arr.push(s); map.set(s.sector, arr); });

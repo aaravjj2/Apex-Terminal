@@ -1131,15 +1131,28 @@ async def get_ops_summary():
     total_exits = sum(a.exits_executed for a in engine._run_history)
     last = engine.last_run
 
+    # Pull live equity / day pnl from Alpaca.
+    equity = float(config.paper_equity or 0.0)
+    daily_pnl = 0.0
+    try:
+        from .alpaca_client import get_alpaca_client
+        acct = await get_alpaca_client().get_account()
+        if acct:
+            equity = float(acct.equity)
+            daily_pnl = float(acct.equity) - float(acct.last_equity)
+    except Exception as e:
+        logger.debug(f"ops-summary alpaca fetch failed: {e}")
+
     return {
         "state": "running" if service.is_running else "idle",
+        "armed": service.is_running,
         "kill_switch": engine.kill_switch_active,
         "cycles_completed": total_runs,
         "trades_today": total_orders,
         "exits_today": total_exits,
         "win_rate": 0.0,
-        "daily_pnl": 0.0,
-        "equity": config.paper_equity,
+        "daily_pnl": daily_pnl,
+        "equity": equity,
         "last_cycle_at": last.timestamp.isoformat() if last else None,
     }
 
@@ -1213,42 +1226,111 @@ async def get_latest_cycles(n: int = Query(default=20, le=100)):
 
 @router.get("/signals")
 async def get_signals(symbols: str = Query(default="AAPL,SPY,NVDA,MSFT,META,GOOGL,TSLA,AMZN,GLD,QQQ")):
-    """Latest scored signals for requested symbols."""
+    """Latest scored signals for requested symbols (v3-style schema)."""
     syms = [s.strip().upper() for s in symbols.split(",") if s.strip()][:20]
-    engine = get_unified_engine()
-    last = engine.last_run
-    generated_at = last.timestamp.isoformat() if last else datetime.now().isoformat()
-    return {
-        "signals": [
-            {
-                "symbol": sym,
-                "trend_strength": 0.5,
-                "iv_rank": 0.4,
-                "liquidity_score": 0.7,
-                "regime": "neutral",
-                "score": 0.5,
-                "generated_at": generated_at,
-            }
-            for sym in syms
-        ],
-        "count": len(syms),
-    }
+    try:
+        from .signal_provider import get_signals_batch
+        sigs = await get_signals_batch(syms)
+        return {
+            "ok": True,
+            "signals": {k: v.to_dict() for k, v in sigs.items()},
+            "count": len(sigs),
+        }
+    except Exception as e:
+        logger.warning(f"signals provider failed, falling back to live quote heuristic: {e}")
+
+    # Fallback: build directional signals from live quote change_pct.
+    try:
+        from ..api.routes.live_quotes import _get_quotes
+        quotes = await _get_quotes(syms)
+    except Exception:
+        quotes = []
+    qmap = {q.get("symbol"): q for q in quotes}
+    out: Dict[str, Any] = {}
+    for sym in syms:
+        q = qmap.get(sym) or {}
+        chg = float(q.get("change_pct") or 0.0)
+        direction = "bullish" if chg > 0.25 else "bearish" if chg < -0.25 else "neutral"
+        strength = min(abs(chg) / 3.0, 1.0)
+        out[sym] = {
+            "symbol": sym,
+            "direction": direction,
+            "strength": strength,
+            "rsi14": 50 + chg * 5,
+            "sma_fast": q.get("last"),
+            "sma_slow": q.get("last"),
+            "atr14": None,
+            "generated_at": datetime.now().isoformat(),
+        }
+    return {"ok": True, "signals": out, "count": len(out)}
 
 
 @router.get("/risk-snapshot")
 async def get_risk_snapshot():
-    """Current risk exposure snapshot."""
+    """Current risk exposure snapshot — pulls live equity / BP from Alpaca."""
     from .config import get_autopilot_config
+    from .alpaca_client import get_alpaca_client
     config = get_autopilot_config()
     engine = get_unified_engine()
     total_orders = sum(a.orders_filled for a in engine._run_history)
+
+    equity = float(config.paper_equity or 0.0)
+    options_bp = 0.0
+    buying_power = 0.0
+    cash = 0.0
+    day_pnl = 0.0
+    positions_count = 0
+    try:
+        client = get_alpaca_client()
+        acct = await client.get_account()
+        if acct:
+            equity = float(acct.equity)
+            buying_power = float(acct.buying_power or 0.0)
+            options_bp = float(getattr(acct, "options_buying_power", None) or buying_power)
+            cash = float(acct.cash or 0.0)
+            day_pnl = float(acct.equity) - float(acct.last_equity)
+        pos = await client.list_positions()
+        positions_count = len(pos)
+    except Exception as e:
+        logger.debug(f"risk-snapshot alpaca fetch failed: {e}")
+
+    daily_loss_used = max(0.0, -day_pnl)
+    risk_snapshot = {
+        "total_premium_at_risk": 0.0,
+        "open_positions_count": positions_count,
+        "estimated_daily_loss": day_pnl,
+        "delta_notional_total": 0.0,
+        "bp_utilization_pct": (1.0 - (options_bp / max(equity, 1.0))) * 100 if equity else 0.0,
+        "equity": equity,
+    }
+    caps = {
+        "max_total_premium_open_usd": float(config.risk_limits.max_total_risk),
+        "max_positions": int(config.risk_limits.max_open_positions),
+        "max_daily_loss_usd": float(config.risk_limits.max_daily_loss),
+        "max_premium_per_trade_usd": float(config.risk_limits.max_risk_per_trade),
+        "max_delta_notional_total": 0.0,
+        "max_delta_notional_per_symbol": 0.0,
+        "max_bp_utilization_pct": 80.0,
+    }
     return {
-        "equity": config.paper_equity,
-        "daily_loss_used": 0.0,
+        "ok": True,
+        # v3-style schema (consumed by AutopilotUI2)
+        "risk_snapshot": risk_snapshot,
+        "caps": caps,
+        "account": {
+            "equity": equity,
+            "buying_power": buying_power,
+            "options_buying_power": options_bp,
+            "cash": cash,
+            "day_pnl": day_pnl,
+        },
+        # legacy flat fields (back-compat)
+        "equity": equity,
+        "daily_loss_used": daily_loss_used,
         "daily_loss_limit": config.risk_limits.max_daily_loss,
         "open_risk": 0.0,
         "max_risk": config.risk_limits.max_total_risk,
-        "positions_count": 0,
+        "positions_count": positions_count,
         "max_positions": config.risk_limits.max_open_positions,
         "kill_switch": engine.kill_switch_active,
         "total_trades": total_orders,

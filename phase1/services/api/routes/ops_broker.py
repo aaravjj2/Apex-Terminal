@@ -103,6 +103,37 @@ async def _alpaca_post(path: str, body: dict, correlation_id: str) -> dict:
         }
 
 
+async def _alpaca_delete(path: str, correlation_id: str) -> dict:
+    """DELETE from Alpaca paper API."""
+    global _last_sync, _last_error
+    url = f"{_ALPACA_PAPER_BASE}{path}"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.delete(url, headers=_headers())
+        _last_sync = time.time()
+        if r.status_code >= 400:
+            _last_error = f"HTTP {r.status_code}: {r.text[:200]}"
+            return {
+                "ok": False,
+                "code": f"ALPACA_{r.status_code}",
+                "message": r.text[:500],
+                "correlation_id": correlation_id,
+                "details": None,
+            }
+        if r.status_code == 204 or not r.text:
+            return {}
+        return r.json()
+    except Exception as e:
+        _last_error = str(e)
+        return {
+            "ok": False,
+            "code": "ALPACA_NETWORK_ERROR",
+            "message": str(e),
+            "correlation_id": correlation_id,
+            "details": None,
+        }
+
+
 # ── Health ─────────────────────────────────────────────────────────────
 
 @router.get("/health")
@@ -205,6 +236,18 @@ async def broker_place_order(req: PlaceOrderRequest):
     if req.limit_price is not None:
         body["limit_price"] = str(req.limit_price)
     data = await _alpaca_post("/v2/orders", body, cid)
+    if isinstance(data, dict) and data.get("ok") is False:
+        return data
+    return {"ok": True, "correlation_id": cid, "order": data}
+
+
+@router.delete("/orders/{order_id}")
+async def broker_cancel_order(order_id: str):
+    """Cancel an Alpaca paper order."""
+    cid = _cid()
+    if not _is_configured():
+        return {"ok": False, "code": "NOT_CONFIGURED", "message": "Alpaca keys not set", "correlation_id": cid}
+    data = await _alpaca_delete(f"/v2/orders/{order_id}", cid)
     if isinstance(data, dict) and data.get("ok") is False:
         return data
     return {"ok": True, "correlation_id": cid, "order": data}

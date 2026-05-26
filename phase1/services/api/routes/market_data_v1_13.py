@@ -198,10 +198,9 @@ async def get_bars(req: BarsRequest):
 @router.post("/quote", response_model=QuoteResponse)
 async def get_quote(req: QuoteRequest):
     """
-    Get real-time quote with provenance.
-    Fetches latest close from Yahoo Finance via yfinance.
-    Falls back to last-known Alpaca bar if yfinance is unavailable.
-    Returns full quote data: bid, ask, last, change, OHLCV, vwap.
+    Real-time quote — Alpaca snapshot first (single request, includes daily OHLCV
+    and previous close), then Finnhub, then yfinance fast_info as a last resort.
+    Targets <250ms p99 latency.
     """
     import logging
     from datetime import datetime, timezone
@@ -215,44 +214,94 @@ async def get_quote(req: QuoteRequest):
     close_price: float = 0.0
     volume: float = 0.0
     prev_close: float = 0.0
+    bid_override: float = 0.0
+    ask_override: float = 0.0
 
-    yf_symbol = req.symbol
-    # For common indices, prefix with ^
-    if req.symbol.upper() in ("VIX", "GSPC", "DJI", "IXIC", "RUT", "TNX", "TYX", "IRX"):
-        yf_symbol = f"^{req.symbol}"
+    symbol_upper = req.symbol.upper()
 
-    # --- Try yfinance (delayed quotes, free tier) ---
+    # --- Try Alpaca snapshot (fast, single round trip) ---
     try:
-        import yfinance as yf  # type: ignore
-        ticker = yf.Ticker(yf_symbol)
-        hist = ticker.history(period="5d")
-        if not hist.empty:
-            last_row = hist.iloc[-1]
-            price = float(last_row["Close"])
-            open_price = float(last_row["Open"])
-            high_price = float(last_row["High"])
-            low_price = float(last_row["Low"])
-            close_price = float(last_row["Close"])
-            volume = float(last_row["Volume"])
-            if len(hist) >= 2:
-                prev_close = float(hist["Close"].iloc[-2])
-            else:
-                prev_close = open_price
-            provider_name = "yahoo"
+        from .market_quote import _quote_alpaca
+        import os as _os
+        key_id = _os.environ.get("APCA_API_KEY_ID")
+        secret = _os.environ.get("APCA_API_SECRET_KEY")
+        if key_id and secret:
+            import httpx
+            endpoint = _os.environ.get("APCA_DATA_URL", "https://data.alpaca.markets")
+            headers = {"APCA-API-KEY-ID": key_id, "APCA-API-SECRET-KEY": secret}
+            async with httpx.AsyncClient(timeout=3.5) as client:
+                r = await client.get(
+                    f"{endpoint}/v2/stocks/{symbol_upper}/snapshot",
+                    headers=headers,
+                )
+            if r.status_code == 200:
+                snap = r.json()
+                quote = snap.get("latestQuote") or {}
+                trade = snap.get("latestTrade") or {}
+                daily = snap.get("dailyBar") or snap.get("minuteBar") or {}
+                prev = snap.get("prevDailyBar") or {}
+                bid_override = float(quote.get("bp") or 0)
+                ask_override = float(quote.get("ap") or 0)
+                price = float(
+                    trade.get("p")
+                    or daily.get("c")
+                    or ((bid_override + ask_override) / 2 if bid_override and ask_override else 0)
+                )
+                open_price = float(daily.get("o") or 0)
+                high_price = float(daily.get("h") or 0)
+                low_price = float(daily.get("l") or 0)
+                close_price = float(daily.get("c") or price)
+                volume = float(daily.get("v") or 0)
+                prev_close = float(prev.get("c") or 0)
+                if price > 0:
+                    provider_name = "alpaca"
     except Exception as e:
-        _log.warning(f"yfinance quote failed for {yf_symbol}: {e}")
+        _log.debug(f"Alpaca snapshot failed for {symbol_upper}: {e}")
 
-    # --- Fall back to Alpaca latest bar if yfinance returned nothing ---
+    # --- Finnhub fallback ---
     if price == 0.0:
         try:
-            from ...market_data.providers import get_provider
-            provider = get_provider("alpaca")
-            from ...market_data.providers.types import QuoteRequest as ProviderQuoteRequest
-            resp = await provider.get_quote(ProviderQuoteRequest(symbol=req.symbol))
-            price = float(resp.quote.price)
-            provider_name = "alpaca"
-        except Exception as e2:
-            _log.warning(f"Alpaca quote fallback failed for {req.symbol}: {e2}")
+            import os as _os
+            import httpx
+            fk = _os.environ.get("FINNHUB_API_KEY")
+            if fk:
+                async with httpx.AsyncClient(timeout=3.0) as client:
+                    r = await client.get(
+                        f"https://finnhub.io/api/v1/quote?symbol={symbol_upper}&token={fk}",
+                    )
+                if r.status_code == 200:
+                    d = r.json()
+                    if (d.get("c") or 0) > 0:
+                        price = float(d["c"])
+                        open_price = float(d.get("o") or price)
+                        high_price = float(d.get("h") or price)
+                        low_price = float(d.get("l") or price)
+                        close_price = price
+                        prev_close = float(d.get("pc") or 0)
+                        provider_name = "finnhub"
+        except Exception as e:
+            _log.debug(f"Finnhub quote failed for {symbol_upper}: {e}")
+
+    # --- yfinance fast_info as last resort (fast, no history) ---
+    if price == 0.0:
+        try:
+            yf_symbol = symbol_upper
+            if symbol_upper in ("VIX", "GSPC", "DJI", "IXIC", "RUT", "TNX", "TYX", "IRX"):
+                yf_symbol = f"^{symbol_upper}"
+            import yfinance as yf  # type: ignore
+            info = yf.Ticker(yf_symbol).fast_info
+            last_p = float(getattr(info, "last_price", 0) or 0)
+            if last_p > 0:
+                price = last_p
+                prev_close = float(getattr(info, "previous_close", 0) or 0)
+                open_price = float(getattr(info, "open", price) or price)
+                high_price = float(getattr(info, "day_high", price) or price)
+                low_price = float(getattr(info, "day_low", price) or price)
+                close_price = price
+                volume = float(getattr(info, "last_volume", 0) or 0)
+                provider_name = "yahoo"
+        except Exception as e:
+            _log.debug(f"yfinance fast_info failed: {e}")
 
     if price == 0.0:
         _log.warning(f"No market data available for {req.symbol}, returning zero quote")
@@ -268,9 +317,13 @@ async def get_quote(req: QuoteRequest):
     # Compute derived fields
     change = price - prev_close if prev_close else 0.0
     change_pct = (change / prev_close * 100) if prev_close else 0.0
-    spread = price * 0.0002  # simulate ~2bp spread
-    bid = round(price - spread / 2, 4)
-    ask = round(price + spread / 2, 4)
+    if bid_override and ask_override:
+        bid = round(bid_override, 4)
+        ask = round(ask_override, 4)
+    else:
+        spread = price * 0.0002
+        bid = round(price - spread / 2, 4)
+        ask = round(price + spread / 2, 4)
     # Simple VWAP approximation: (high+low+close)/3
     vwap = round((high_price + low_price + close_price) / 3, 4) if high_price else price
 

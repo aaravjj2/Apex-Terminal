@@ -144,7 +144,7 @@ function _staticBasePrice(symbol: string): number {
  */
 export async function getBasePrice(symbol: string): Promise<number> {
   try {
-    const resp = await fetch(`/api/v1/market-data/${symbol}/quote`, {
+    const resp = await fetch(`/api/v1/market/quote?symbol=${encodeURIComponent(symbol)}`, {
       signal: AbortSignal.timeout(5000),
     });
     if (resp.ok) {
@@ -153,7 +153,7 @@ export async function getBasePrice(symbol: string): Promise<number> {
       if (typeof price === 'number' && price > 0) return price;
     }
   } catch {
-    // API unreachable — fall through to static fallback
+    // API unreachable
   }
-  return _staticBasePrice(symbol);
+  return 0;
 }

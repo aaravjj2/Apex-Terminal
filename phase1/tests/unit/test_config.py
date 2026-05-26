@@ -139,10 +139,10 @@ class TestConfigDefaults:
         assert settings.default_timezone == "America/New_York"
     
     def test_default_api_port(self):
-        """Test default API port is 8090 (single source of truth)."""
+        """Test default API port is 8000 (single source of truth)."""
         from services.config import Settings
         settings = Settings()
-        assert settings.api_port == 8090
+        assert settings.api_port == 8000
     
     def test_default_alpaca_endpoint(self):
         """Test default Alpaca endpoint is paper trading."""

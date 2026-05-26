@@ -138,30 +138,141 @@ async def get_portfolio():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Stale-while-revalidate positions cache.
+#   - Fresh (≤ FRESH_TTL): return cache instantly, no refetch.
+#   - Stale  (≤ STALE_TTL): return cache instantly, kick off background refresh.
+#   - Expired (> STALE_TTL): synchronously fetch from Alpaca.
+# Alpaca paper API can take 3-7s on a single call.
+import asyncio as _asyncio
+_positions_cache: Dict[str, Any] = {"data": None, "ts": 0.0}
+_POSITIONS_FRESH_S = 5.0
+_POSITIONS_STALE_S = 60.0
+_positions_refresh_lock = _asyncio.Lock()
+
+
+async def _refresh_positions_from_alpaca() -> Optional[List[PositionResponse]]:
+    import os as _os
+    import time as _t
+    import httpx
+    key_id = _os.environ.get("APCA_API_KEY_ID")
+    secret = _os.environ.get("APCA_API_SECRET_KEY")
+    if not (key_id and secret):
+        return None
+    endpoint = _os.environ.get("APCA_ENDPOINT", "https://paper-api.alpaca.markets")
+    headers = {"APCA-API-KEY-ID": key_id, "APCA-API-SECRET-KEY": secret}
+    async with _positions_refresh_lock:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{endpoint}/v2/positions", headers=headers)
+        except Exception as e:
+            logger.warning(f"Alpaca positions HTTP error: {e}")
+            return None
+        if r.status_code != 200:
+            return None
+        raw = r.json() or []
+        out: List[PositionResponse] = []
+        for p in raw:
+            qty = float(p.get("qty") or 0)
+            avg = float(p.get("avg_entry_price") or 0)
+            cur = float(p.get("current_price") or 0)
+            mv = float(p.get("market_value") or qty * cur)
+            upl = float(p.get("unrealized_pl") or (mv - qty * avg))
+            upl_pct = float(p.get("unrealized_plpc") or 0) * 100
+            out.append(PositionResponse(
+                symbol=p.get("symbol", ""),
+                quantity=qty, avg_cost=avg, current_price=cur, market_value=mv,
+                unrealized_pnl=upl, unrealized_pnl_pct=upl_pct,
+                side=p.get("side", "long"),
+                asset_class=p.get("asset_class", "us_equity"),
+                underlying=None, dte=None, managed=False, run_id=None,
+            ))
+        _positions_cache["data"] = out
+        _positions_cache["ts"] = _t.time()
+        return out
+
+
 @router.get("/positions", response_model=List[PositionResponse])
 async def get_positions():
-    """Get all positions."""
-    manager = get_broker_position_manager()
-    positions = await manager.get_positions()
-    
-    return [
-        PositionResponse(
-            symbol=p.symbol,
-            quantity=float(p.qty),
-            avg_cost=p.avg_entry_price,
-            current_price=p.current_price,
-            market_value=p.market_value,
-            unrealized_pnl=p.unrealized_pnl,
-            unrealized_pnl_pct=p.unrealized_pnl_pct,
-            side=p.side,
-            asset_class=p.asset_class,
-            underlying=p.underlying,
-            dte=p.dte,
-            managed=p.managed,
-            run_id=p.run_id
-        )
-        for p in positions
-    ]
+    """Stale-while-revalidate Alpaca positions. Always returns fast."""
+    import os as _os
+    import time as _t
+    now = _t.time()
+    cached = _positions_cache["data"]
+    age = now - _positions_cache["ts"] if cached is not None else 1e9
+
+    if cached is not None and age < _POSITIONS_FRESH_S:
+        return cached
+    if cached is not None and age < _POSITIONS_STALE_S:
+        # Serve stale, refresh in background
+        try:
+            _asyncio.create_task(_refresh_positions_from_alpaca())
+        except RuntimeError:
+            pass
+        return cached
+
+    fresh = await _refresh_positions_from_alpaca()
+    if fresh is not None:
+        return fresh
+    if cached is not None:
+        return cached
+
+    key_id = _os.environ.get("APCA_API_KEY_ID")
+    secret = _os.environ.get("APCA_API_SECRET_KEY")
+    if key_id and secret:
+        endpoint = _os.environ.get("APCA_ENDPOINT", "https://paper-api.alpaca.markets")
+        headers = {"APCA-API-KEY-ID": key_id, "APCA-API-SECRET-KEY": secret}
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.get(f"{endpoint}/v2/positions", headers=headers)
+            if r.status_code == 200:
+                raw = r.json() or []
+                out = []
+                for p in raw:
+                    qty = float(p.get("qty") or 0)
+                    avg = float(p.get("avg_entry_price") or 0)
+                    cur = float(p.get("current_price") or 0)
+                    mv = float(p.get("market_value") or qty * cur)
+                    upl = float(p.get("unrealized_pl") or (mv - qty * avg))
+                    upl_pct = float(p.get("unrealized_plpc") or 0) * 100
+                    out.append(PositionResponse(
+                        symbol=p.get("symbol", ""),
+                        quantity=qty,
+                        avg_cost=avg,
+                        current_price=cur,
+                        market_value=mv,
+                        unrealized_pnl=upl,
+                        unrealized_pnl_pct=upl_pct,
+                        side=p.get("side", "long"),
+                        asset_class=p.get("asset_class", "us_equity"),
+                        underlying=None,
+                        dte=None,
+                        managed=False,
+                        run_id=None,
+                    ))
+                import time as _t2
+                _positions_cache["data"] = out
+                _positions_cache["ts"] = _t2.time()
+                return out
+        except Exception as e:
+            logger.warning(f"Alpaca positions fetch failed: {e}")
+
+    # Fallback to broker_position_manager
+    try:
+        manager = get_broker_position_manager()
+        positions = await manager.get_positions()
+        return [
+            PositionResponse(
+                symbol=p.symbol, quantity=float(p.qty), avg_cost=p.avg_entry_price,
+                current_price=p.current_price, market_value=p.market_value,
+                unrealized_pnl=p.unrealized_pnl, unrealized_pnl_pct=p.unrealized_pnl_pct,
+                side=p.side, asset_class=p.asset_class, underlying=p.underlying,
+                dte=p.dte, managed=p.managed, run_id=p.run_id,
+            )
+            for p in positions
+        ]
+    except Exception as e:
+        logger.warning(f"Position manager fallback failed: {e}")
+        return []
 
 
 @router.get("/orders", response_model=List[OrderResponse])
@@ -357,12 +468,61 @@ async def get_holdings():
 
 @router.get("/performance")
 async def get_performance(period: str = "1y"):
-    """Portfolio performance history — equity curve + benchmark."""
-    # For now delegate to metrics and return equity_curve placeholder
+    """Portfolio performance history — equity curve + benchmark from Alpaca."""
+    import os as _os
+    import httpx
     metrics = await get_portfolio_metrics()
-    # Return in the format expected by PortfolioUI2
+
+    # Map UI period to Alpaca portfolio/history params.
+    period_map = {
+        "1w":  ("1W",  "1H"),
+        "1m":  ("1M",  "1D"),
+        "3m":  ("3M",  "1D"),
+        "6m":  ("6M",  "1D"),
+        "ytd": ("1A",  "1D"),
+        "1y":  ("1A",  "1D"),
+        "all": ("ALL", "1D"),
+    }
+    p_param, tf_param = period_map.get(period.lower(), ("1A", "1D"))
+
+    equity_curve: List[Dict[str, Any]] = []
+    key_id = _os.environ.get("APCA_API_KEY_ID")
+    secret = _os.environ.get("APCA_API_SECRET_KEY")
+    endpoint = _os.environ.get("APCA_ENDPOINT", "https://paper-api.alpaca.markets")
+
+    if key_id and secret:
+        try:
+            headers = {"APCA-API-KEY-ID": key_id, "APCA-API-SECRET-KEY": secret}
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                r = await client.get(
+                    f"{endpoint}/v2/account/portfolio/history",
+                    params={"period": p_param, "timeframe": tf_param},
+                    headers=headers,
+                )
+            if r.status_code == 200:
+                hist = r.json() or {}
+                ts = hist.get("timestamp") or []
+                eq = hist.get("equity") or []
+                base = hist.get("base_value") or (eq[0] if eq else 0) or 1
+                from datetime import datetime as _dt
+                for t, v in zip(ts, eq):
+                    if v is None:
+                        continue
+                    iso = _dt.utcfromtimestamp(t).isoformat()
+                    pnl_pct = ((float(v) - base) / base) * 100 if base else 0.0
+                    equity_curve.append({
+                        "date": iso[:10],
+                        "timestamp": iso,
+                        "equity": float(v),
+                        "benchmark": float(v),    # placeholder until SPY series wired
+                        "pnl_pct": round(pnl_pct, 4),
+                    })
+        except Exception as e:
+            logger.warning(f"alpaca portfolio history failed: {e}")
+
     return {
-        "equity_curve": [],  # Would need historical data storage for real curve
+        "equity_curve": equity_curve,
         "metrics": metrics,
         "period": period,
+        "source": "alpaca" if equity_curve else "empty",
     }

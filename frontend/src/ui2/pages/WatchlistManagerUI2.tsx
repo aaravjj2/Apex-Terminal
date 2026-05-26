@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useLiveQuotes } from '../lib/liveQuoteStore';
 
 // ── Theme ────────────────────────────────────────────────────────────────────
 const BG = '#0a0a0a';
@@ -51,34 +52,21 @@ interface Watchlist {
   color: string;
 }
 
-// ── Mock data ────────────────────────────────────────────────────────────────
-function generateSparkline(base: number, len: number = 40): number[] {
-  const data: number[] = [];
-  let v = base * (0.85 + Math.random() * 0.15);
-  for (let i = 0; i < len; i++) {
-    v += (Math.random() - 0.48) * base * 0.012;
-    data.push(v);
-  }
-  data[data.length - 1] = base;
-  return data;
-}
-
-function makeSym(symbol: string, name: string): WatchlistSymbol {
-  const price = 20 + Math.random() * 500;
-  const chg = (Math.random() - 0.45) * 8;
+/** Placeholder row — prices filled by live API poll. */
+function skeletonSym(symbol: string, name: string): WatchlistSymbol {
   return {
     symbol,
     name,
-    price: +price.toFixed(2),
-    change: +(chg).toFixed(2),
-    changePct: +((chg / price) * 100).toFixed(2),
-    volume: +(Math.random() * 80 + 0.5).toFixed(1),
-    marketCap: +(Math.random() * 2500 + 1).toFixed(0),
-    pe: +(5 + Math.random() * 60).toFixed(1),
-    divYield: +(Math.random() * 5).toFixed(2),
-    high52w: +(price * (1 + Math.random() * 0.3)).toFixed(2),
-    low52w: +(price * (0.5 + Math.random() * 0.3)).toFixed(2),
-    sparkline: generateSparkline(price),
+    price: 0,
+    change: 0,
+    changePct: 0,
+    volume: 0,
+    marketCap: 0,
+    pe: 0,
+    divYield: 0,
+    high52w: 0,
+    low52w: 0,
+    sparkline: Array(40).fill(0),
   };
 }
 
@@ -90,13 +78,13 @@ const DEFAULT_WATCHLISTS: Watchlist[] = [
     color: '#3b82f6',
     createdAt: '2024-01-15',
     symbols: [
-      makeSym('AAPL', 'Apple Inc'),
-      makeSym('MSFT', 'Microsoft Corp'),
-      makeSym('GOOGL', 'Alphabet Inc'),
-      makeSym('AMZN', 'Amazon.com'),
-      makeSym('NVDA', 'NVIDIA Corp'),
-      makeSym('META', 'Meta Platforms'),
-      makeSym('TSLA', 'Tesla Inc'),
+      skeletonSym('AAPL', 'Apple Inc'),
+      skeletonSym('MSFT', 'Microsoft Corp'),
+      skeletonSym('GOOGL', 'Alphabet Inc'),
+      skeletonSym('AMZN', 'Amazon.com'),
+      skeletonSym('NVDA', 'NVIDIA Corp'),
+      skeletonSym('META', 'Meta Platforms'),
+      skeletonSym('TSLA', 'Tesla Inc'),
     ],
   },
   {
@@ -106,12 +94,12 @@ const DEFAULT_WATCHLISTS: Watchlist[] = [
     color: '#10b981',
     createdAt: '2024-02-01',
     symbols: [
-      makeSym('JPM', 'JPMorgan Chase'),
-      makeSym('BAC', 'Bank of America'),
-      makeSym('GS', 'Goldman Sachs'),
-      makeSym('MS', 'Morgan Stanley'),
-      makeSym('V', 'Visa Inc'),
-      makeSym('MA', 'Mastercard'),
+      skeletonSym('JPM', 'JPMorgan Chase'),
+      skeletonSym('BAC', 'Bank of America'),
+      skeletonSym('GS', 'Goldman Sachs'),
+      skeletonSym('MS', 'Morgan Stanley'),
+      skeletonSym('V', 'Visa Inc'),
+      skeletonSym('MA', 'Mastercard'),
     ],
   },
   {
@@ -121,13 +109,13 @@ const DEFAULT_WATCHLISTS: Watchlist[] = [
     color: '#f59e0b',
     createdAt: '2024-02-15',
     symbols: [
-      makeSym('UNH', 'UnitedHealth'),
-      makeSym('JNJ', 'Johnson & Johnson'),
-      makeSym('LLY', 'Eli Lilly'),
-      makeSym('PFE', 'Pfizer Inc'),
-      makeSym('ABBV', 'AbbVie Inc'),
-      makeSym('MRK', 'Merck & Co'),
-      makeSym('TMO', 'Thermo Fisher'),
+      skeletonSym('UNH', 'UnitedHealth'),
+      skeletonSym('JNJ', 'Johnson & Johnson'),
+      skeletonSym('LLY', 'Eli Lilly'),
+      skeletonSym('PFE', 'Pfizer Inc'),
+      skeletonSym('ABBV', 'AbbVie Inc'),
+      skeletonSym('MRK', 'Merck & Co'),
+      skeletonSym('TMO', 'Thermo Fisher'),
     ],
   },
   {
@@ -137,12 +125,12 @@ const DEFAULT_WATCHLISTS: Watchlist[] = [
     color: '#8b5cf6',
     createdAt: '2024-03-01',
     symbols: [
-      makeSym('T', 'AT&T Inc'),
-      makeSym('VZ', 'Verizon'),
-      makeSym('XOM', 'Exxon Mobil'),
-      makeSym('CVX', 'Chevron Corp'),
-      makeSym('KO', 'Coca-Cola'),
-      makeSym('PEP', 'PepsiCo'),
+      skeletonSym('T', 'AT&T Inc'),
+      skeletonSym('VZ', 'Verizon'),
+      skeletonSym('XOM', 'Exxon Mobil'),
+      skeletonSym('CVX', 'Chevron Corp'),
+      skeletonSym('KO', 'Coca-Cola'),
+      skeletonSym('PEP', 'PepsiCo'),
     ],
   },
   {
@@ -152,11 +140,11 @@ const DEFAULT_WATCHLISTS: Watchlist[] = [
     color: '#ec4899',
     createdAt: '2024-03-15',
     symbols: [
-      makeSym('AAPL', 'Apple Inc'),
-      makeSym('NVDA', 'NVIDIA Corp'),
-      makeSym('AMD', 'AMD Inc'),
-      makeSym('COST', 'Costco'),
-      makeSym('NFLX', 'Netflix'),
+      skeletonSym('AAPL', 'Apple Inc'),
+      skeletonSym('NVDA', 'NVIDIA Corp'),
+      skeletonSym('AMD', 'AMD Inc'),
+      skeletonSym('COST', 'Costco'),
+      skeletonSym('NFLX', 'Netflix'),
     ],
   },
 ];
@@ -287,37 +275,15 @@ type ViewMode = 'table' | 'tiles' | 'compact';
 
 // ── Live price hook ───────────────────────────────────────────────────────────
 /**
- * Polls GET /api/v1/market/quotes?symbols=... every 15 seconds.
- * Returns a map of symbol -> { price, change, changePct } from the API.
- * When the API is unavailable the map is empty, so callers fall back to
- * the random values stored in the watchlist state.
+ * Live prices via WebSocket-backed liveQuoteStore (REST fallback inside).
  */
 function useWatchlistPrices(symbols: string[]) {
-  const [prices, setPrices] = React.useState<Record<string, { price: number; change: number; changePct: number }>>({});
-  const key = symbols.slice(0, 20).join(',');
-  React.useEffect(() => {
-    if (!key) return;
-    // Reuse `key` — avoids recomputing the same slice+join inside every poll tick
-    const fetch_prices = () => {
-      fetch(`/api/v1/market/quotes?symbols=${key}`)
-        .then(r => r.ok ? r.json() : null)
-        .catch(() => null)
-        .then(data => {
-          if (data?.quotes) {
-            const map: Record<string, { price: number; change: number; changePct: number }> = {};
-            for (const q of data.quotes) {
-              map[q.symbol] = { price: q.price, change: q.change ?? 0, changePct: q.change_pct ?? 0 };
-            }
-            setPrices(map);
-          }
-        });
-    };
-    fetch_prices();
-    const id = setInterval(fetch_prices, 15000);
-    return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-  return prices;
+  const map = useLiveQuotes(symbols.slice(0, 20));
+  const out: Record<string, { price: number; change: number; changePct: number }> = {};
+  for (const [sym, q] of Object.entries(map)) {
+    out[sym] = { price: q.price, change: q.change, changePct: q.changePct };
+  }
+  return out;
 }
 
 export default function WatchlistManagerUI2() {
@@ -379,7 +345,7 @@ export default function WatchlistManagerUI2() {
   const addSymbol = useCallback((sym: { symbol: string; name: string }) => {
     setWatchlists(prev => prev.map(w =>
       w.id === activeWLId
-        ? { ...w, symbols: [...w.symbols, makeSym(sym.symbol, sym.name)] }
+        ? { ...w, symbols: [...w.symbols, skeletonSym(sym.symbol, sym.name)] }
         : w
     ));
     setAddInput('');
@@ -753,9 +719,10 @@ export default function WatchlistManagerUI2() {
                 // Use live API price/change when available; fall back to the
                 // random value that was generated when the symbol was added.
                 const live = livePrices[s.symbol];
-                const displayPrice = live?.price ?? s.price;
+                const displayPrice = live?.price && live.price > 0 ? live.price : s.price;
                 const displayChange = live?.change ?? s.change;
                 const displayChangePct = live?.changePct ?? s.changePct;
+                const priceLabel = displayPrice > 0 ? `$${displayPrice.toFixed(2)}` : '…';
                 return (
                 <div
                   key={s.symbol}
@@ -769,7 +736,7 @@ export default function WatchlistManagerUI2() {
                 >
                   <div style={{ width: 70, minWidth: 70, padding: '5px 6px', color: AMBER, fontWeight: 600 }}>{s.symbol}</div>
                   <div style={{ width: 130, minWidth: 130, padding: '5px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 10 }}>{s.name}</div>
-                  <div style={{ width: 75, minWidth: 75, padding: '5px 6px', textAlign: 'right' }}>${displayPrice.toFixed(2)}</div>
+                  <div style={{ width: 75, minWidth: 75, padding: '5px 6px', textAlign: 'right' }}>{priceLabel}</div>
                   <div style={{
                     width: 65, minWidth: 65, padding: '5px 6px', textAlign: 'right',
                     color: displayChangePct >= 0 ? GREEN : RED,

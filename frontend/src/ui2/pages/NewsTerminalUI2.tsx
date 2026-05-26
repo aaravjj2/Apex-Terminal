@@ -14,8 +14,7 @@
  * │ • Market impact assessment                                           │
  * └───────────────────────────────────────────────────────────────────────┘
  */
-import React, { useState, useMemo } from 'react';
-import { useSocial } from '@/ui2/hooks';
+import React, { useState, useMemo, useEffect } from 'react';
 
 const T = {
   brand: '#2962FF', bg0: '#0C0E12', bg1: '#131722', bg2: '#1E222D', bg3: '#2A2E39',
@@ -32,30 +31,27 @@ interface NewsItem {
   tickers: string[]; summary: string;
 }
 
-const NEWS_DATA: NewsItem[] = [
-  { id: 1, headline: 'Fed Holds Rates Steady, Signals September Cut Possible', source: 'Reuters', time: '2m ago', category: 'Macro', sentiment: 0.35, impact: 'HIGH', breaking: true, tickers: ['SPY', 'QQQ', 'TLT'], summary: 'The Federal Reserve kept its benchmark rate at 5.25-5.50% but opened the door to rate cuts as early as September, citing progress on inflation.' },
-  { id: 2, headline: 'NVIDIA Surpasses Apple as World\'s Most Valuable Company', source: 'Bloomberg', time: '8m ago', category: 'Earnings', sentiment: 0.85, impact: 'HIGH', breaking: true, tickers: ['NVDA', 'AAPL', 'MSFT'], summary: 'NVIDIA market cap briefly exceeded $3.2T as AI demand continues to drive record revenue growth.' },
-  { id: 3, headline: 'ECB Cuts Rates for First Time Since 2019, Euro Weakens', source: 'FT', time: '15m ago', category: 'Policy', sentiment: -0.15, impact: 'HIGH', breaking: false, tickers: ['EUR/USD', 'EWQ', 'VGK'], summary: 'The ECB reduced its deposit rate by 25bps to 3.75%, with Lagarde signaling a data-dependent approach.' },
-  { id: 4, headline: 'Bitcoin ETFs See Record $1.2B Daily Inflow', source: 'CNBC', time: '22m ago', category: 'Crypto', sentiment: 0.72, impact: 'MEDIUM', breaking: false, tickers: ['BTC', 'IBIT', 'FBTC'], summary: 'Spot Bitcoin ETFs attracted unprecedented daily inflows, led by BlackRock\'s IBIT fund.' },
-  { id: 5, headline: 'Oil Rises on OPEC+ Production Cut Extension', source: 'Reuters', time: '35m ago', category: 'Commodities', sentiment: 0.25, impact: 'MEDIUM', breaking: false, tickers: ['CL', 'XLE', 'USO'], summary: 'OPEC+ agreed to extend voluntary production cuts through Q3 2024, keeping 2.2M bpd off market.' },
-  { id: 6, headline: 'Tesla Recalls 1.8M Vehicles Over Hood Latch Issue', source: 'WSJ', time: '42m ago', category: 'Company', sentiment: -0.65, impact: 'MEDIUM', breaking: false, tickers: ['TSLA'], summary: 'NHTSA mandated recall affects Model 3, Y, S, X vehicles manufactured between 2021-2024.' },
-  { id: 7, headline: 'Microsoft-Activision Deal Clears Final EU Hurdle', source: 'Bloomberg', time: '55m ago', category: 'M&A', sentiment: 0.55, impact: 'MEDIUM', breaking: false, tickers: ['MSFT', 'ATVI'], summary: 'EU commission approved the $69B acquisition after Microsoft offered cloud gaming concessions.' },
-  { id: 8, headline: 'China PMI Falls Below 50, Manufacturing Contraction Deepens', source: 'FT', time: '1h ago', category: 'Macro', sentiment: -0.45, impact: 'HIGH', breaking: false, tickers: ['FXI', 'EEM', 'KWEB'], summary: 'Official manufacturing PMI dropped to 48.8 in June, worse than expected, raising stimulus expectations.' },
-  { id: 9, headline: 'Goldman Sachs Raises S&P 500 Year-End Target to 5,600', source: 'CNBC', time: '1h ago', category: 'Strategy', sentiment: 0.40, impact: 'LOW', breaking: false, tickers: ['SPY', 'SPX'], summary: 'GS chief equity strategist raised forecast citing AI-driven earnings growth and soft landing probability.' },
-  { id: 10, headline: 'US Jobless Claims Rise to 229K, Above Expectations', source: 'Reuters', time: '2h ago', category: 'Macro', sentiment: -0.30, impact: 'MEDIUM', breaking: false, tickers: ['SPY', 'TLT'], summary: 'Initial weekly jobless claims came in above the 218K consensus, suggesting gradual labor market cooling.' },
-  { id: 11, headline: 'Apple Announces AI-Powered Siri Overhaul at WWDC', source: 'Bloomberg', time: '2h ago', category: 'Technology', sentiment: 0.60, impact: 'MEDIUM', breaking: false, tickers: ['AAPL'], summary: 'Apple Intelligence features include context-aware Siri, AI writing tools, and ChatGPT integration.' },
-  { id: 12, headline: 'Copper Hits Record High on Green Energy Demand', source: 'FT', time: '3h ago', category: 'Commodities', sentiment: 0.35, impact: 'MEDIUM', breaking: false, tickers: ['HG', 'COPX', 'FCX'], summary: 'LME copper surged past $11,000/mt driven by EV demand growth and constrained mine supply.' },
-  { id: 13, headline: 'Japan Yen Slides Past 160 as BOJ Delays Tightening', source: 'Reuters', time: '3h ago', category: 'FX', sentiment: -0.50, impact: 'HIGH', breaking: false, tickers: ['USD/JPY', 'FXY', 'EWJ'], summary: 'USD/JPY broke through the psychological 160 level, raising intervention speculation from the MOF.' },
-  { id: 14, headline: 'CrowdStrike Q1 Revenue Beats, Raises Full-Year Guidance', source: 'CNBC', time: '4h ago', category: 'Earnings', sentiment: 0.75, impact: 'MEDIUM', breaking: false, tickers: ['CRWD', 'HACK'], summary: 'Cybersecurity firm reported $921M revenue (+33% YoY), guided FY25 revenue to $3.98-4.01B.' },
-  { id: 15, headline: 'UK Inflation Falls to Bank of England 2% Target', source: 'FT', time: '5h ago', category: 'Macro', sentiment: 0.25, impact: 'MEDIUM', breaking: false, tickers: ['GBP/USD', 'EWU'], summary: 'CPI dropped to 2.0% in May, down from 2.3% in April, boosting expectations for an August rate cut.' },
-  { id: 16, headline: 'Broadcom Stock Splits 10-for-1 After AI Revenue Doubles', source: 'Bloomberg', time: '5h ago', category: 'Earnings', sentiment: 0.80, impact: 'MEDIUM', breaking: false, tickers: ['AVGO'], summary: 'Broadcom announced a 10-for-1 stock split after reporting AI revenue doubled to $3.1B in Q2.' },
-  { id: 17, headline: 'US-China Trade Tensions Escalate Over EV Tariffs', source: 'WSJ', time: '6h ago', category: 'Policy', sentiment: -0.55, impact: 'HIGH', breaking: false, tickers: ['FXI', 'NIO', 'XPEV'], summary: 'Biden administration finalizes 100% tariffs on Chinese EVs, 50% on semiconductors, solar cells.' },
-  { id: 18, headline: 'GameStop Completes $933M Share Offering, Stock Drops 12%', source: 'CNBC', time: '7h ago', category: 'Company', sentiment: -0.70, impact: 'LOW', breaking: false, tickers: ['GME', 'AMC'], summary: 'Meme stock darling completed at-the-market offering of 75M shares, diluting existing shareholders.' },
-  { id: 19, headline: 'Saudi Aramco IPO: Secondary Offering Raises $11.2B', source: 'Reuters', time: '8h ago', category: 'M&A', sentiment: 0.15, impact: 'MEDIUM', breaking: false, tickers: ['2222.SR'], summary: 'Saudi Arabia sold 1.545B shares at 27.25 SAR each in world\'s largest offering since its 2019 IPO.' },
-  { id: 20, headline: 'Palantir Added to S&P 500, Shares Surge 14%', source: 'Bloomberg', time: '9h ago', category: 'Company', sentiment: 0.65, impact: 'MEDIUM', breaking: false, tickers: ['PLTR'], summary: 'S&P Dow Jones Indices announced Palantir will replace American Airlines in the benchmark index.' },
-];
+function sentimentScore(label: string | undefined): number {
+  const s = (label || '').toLowerCase();
+  if (s === 'bullish' || s === 'positive') return 0.6;
+  if (s === 'bearish' || s === 'negative') return -0.6;
+  return 0;
+}
 
-const SOURCES = ['All', 'Reuters', 'Bloomberg', 'CNBC', 'FT', 'WSJ'];
+function formatAgo(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const mins = Math.round((Date.now() - d.getTime()) / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return d.toLocaleDateString();
+  } catch {
+    return '';
+  }
+}
+
+const SOURCES = ['All', 'Reuters', 'Bloomberg', 'CNBC', 'FT', 'WSJ', 'Finnhub'];
 const CATEGORIES = ['All', 'Macro', 'Earnings', 'M&A', 'Policy', 'Crypto', 'Commodities', 'FX', 'Technology', 'Company', 'Strategy'];
 
 function sentimentColor(s: number) { return s > 0.3 ? T.up : s < -0.3 ? T.dn : T.warn; }
@@ -63,25 +59,55 @@ function sentimentLabel(s: number) { return s > 0.5 ? 'Bullish' : s > 0.2 ? 'Lea
 
 /* Main Component */
 export default function NewsTerminalUI2() {
-  // ── Hook integration ──
-  const [socialState, socialActions] = useSocial();
-
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [source, setSource] = useState('All');
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
+  useEffect(() => {
+    const load = () => {
+      fetch('/api/v1/sentiment/articles?limit=40')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d?.articles?.length) {
+            setNews([]);
+            return;
+          }
+          const items: NewsItem[] = d.articles.map((a: Record<string, unknown>, i: number) => ({
+            id: i + 1,
+            headline: String(a.headline ?? a.title ?? ''),
+            source: String(a.source ?? 'Finnhub'),
+            time: formatAgo(String(a.published_at ?? a.datetime ?? '')),
+            category: 'Macro',
+            sentiment: sentimentScore(String(a.sentiment ?? '')),
+            impact: 'MEDIUM',
+            breaking: i < 2,
+            tickers: Array.isArray(a.symbols) ? (a.symbols as string[]) : [],
+            summary: String(a.summary ?? ''),
+          }));
+          setNews(items);
+        })
+        .catch(() => setNews([]))
+        .finally(() => setLoading(false));
+    };
+    load();
+    const iv = setInterval(load, 120_000);
+    return () => clearInterval(iv);
+  }, []);
+
   const filtered = useMemo(() => {
-    return NEWS_DATA.filter(n => {
+    return news.filter(n => {
       if (source !== 'All' && n.source !== source) return false;
       if (category !== 'All' && n.category !== category) return false;
       if (search && !n.headline.toLowerCase().includes(search.toLowerCase()) && !n.tickers.some(t => t.toLowerCase().includes(search.toLowerCase()))) return false;
       return true;
     });
-  }, [source, category, search]);
+  }, [news, source, category, search]);
 
   const avgSentiment = filtered.length ? filtered.reduce((s, n) => s + n.sentiment, 0) / filtered.length : 0;
-  const selected = NEWS_DATA.find(n => n.id === selectedId);
+  const selected = news.find(n => n.id === selectedId);
 
   return (
     <div data-testid="news-terminal-page" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '6px', height: '100%', padding: '6px', background: T.bg0, color: T.text1, fontFamily: T.fontSans, overflow: 'hidden' }}>
@@ -103,6 +129,10 @@ export default function NewsTerminalUI2() {
         <div style={{ ...panelStyle, flex: 1 }}>
           <div style={panelHdr}><span>NEWS FEED ({filtered.length})</span><span style={{ color: sentimentColor(avgSentiment), fontSize: '9px' }}>Avg Sentiment: {sentimentLabel(avgSentiment)}</span></div>
           <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin' }}>
+            {loading && <div style={{ padding: 16, color: T.text3, fontSize: 11 }}>Loading live news…</div>}
+            {!loading && filtered.length === 0 && (
+              <div style={{ padding: 16, color: T.text3, fontSize: 11 }}>No live articles — check FINNHUB_API_KEY</div>
+            )}
             {filtered.map(n => (
               <div key={n.id} onClick={() => setSelectedId(n.id)} style={{ padding: '6px 10px', borderBottom: `1px solid ${T.border0}`, cursor: 'pointer', background: selectedId === n.id ? T.bg2 : 'transparent', transition: 'background 0.15s' }} onMouseEnter={e => { if (selectedId !== n.id) e.currentTarget.style.background = T.bg2; }} onMouseLeave={e => { if (selectedId !== n.id) e.currentTarget.style.background = ''; }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>

@@ -428,17 +428,19 @@ export default function OptionsChainUI2() {
   const [legs, setLegs] = useState<StrategyLeg[]>([]);
   const [activeTab, setActiveTab] = useState<'CHAIN' | 'STRATEGY' | 'IV' | 'UNUSUAL'>('CHAIN');
 
-  // ── Real market data fetch (no synthetic Math.random) ──
+  // ── Real market data fetch (live quote + full chain from backend BSM) ──
   useEffect(() => {
     let mounted = true;
     async function fetchSpot() {
       try {
-        const r = await fetch(`/api/market-quote?symbol=${symbol}`);
+        const r = await fetch(`/api/v1/live/quotes?symbols=${symbol}`);
         if (!r.ok) return;
         const d = await r.json();
-        const price = d.price ?? d.last ?? d.close ?? d.latestPrice;
-        const pct = d.changePercent ?? d.change_percent ?? d.pct ?? 0;
-        if (mounted && price) { setSpot(+price.toFixed(2)); setSpotPct(+pct.toFixed(2)); }
+        const q = d?.quotes?.[0];
+        if (mounted && q?.last) {
+          setSpot(+q.last.toFixed(2));
+          setSpotPct(+(q.change_pct ?? 0).toFixed(2));
+        }
       } catch {}
     }
     fetchSpot();
@@ -446,7 +448,63 @@ export default function OptionsChainUI2() {
     return () => { mounted = false; clearInterval(id); };
   }, [symbol]);
 
-  useEffect(() => { if (spot > 0) setChain(generateChain(spot, selectedExpiry)); }, [spot, selectedExpiry]);
+  // ── Real options chain from backend (Black-Scholes with live spot/IV) ──
+  useEffect(() => {
+    let mounted = true;
+    async function fetchChain() {
+      try {
+        const url = `/api/v4/options/chain?symbol=${encodeURIComponent(symbol)}&expiry=${encodeURIComponent(selectedExpiry)}`;
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol, expiry: selectedExpiry }) });
+        let payload: any = null;
+        if (r.ok) payload = await r.json();
+        if (!payload?.chain?.length) {
+          const r2 = await fetch(`/api/v4/options/chain/${encodeURIComponent(symbol)}`);
+          if (r2.ok) payload = await r2.json();
+        }
+        if (!mounted || !payload?.chain?.length) {
+          if (mounted && spot > 0) setChain(generateChain(spot, selectedExpiry));
+          return;
+        }
+        // Pivot flat call+put list into per-strike rows.
+        const byStrike: Record<number, any> = {};
+        payload.chain
+          .filter((c: any) => !selectedExpiry || c.expiry === selectedExpiry)
+          .forEach((c: any) => {
+            const k = +c.strike;
+            byStrike[k] = byStrike[k] || { strike: k };
+            const prefix = c.option_type === 'call' ? 'call' : 'put';
+            byStrike[k][`${prefix}Bid`] = +c.bid ?? 0;
+            byStrike[k][`${prefix}Ask`] = +c.ask ?? 0;
+            byStrike[k][`${prefix}Last`] = +c.last ?? +c.mid ?? 0;
+            byStrike[k][`${prefix}Change`] = 0;
+            byStrike[k][`${prefix}Volume`] = +c.volume ?? 0;
+            byStrike[k][`${prefix}OI`] = +c.open_interest ?? 0;
+            byStrike[k][`${prefix}Delta`] = +c.delta ?? 0;
+            byStrike[k][`${prefix}Gamma`] = +c.gamma ?? 0;
+            byStrike[k][`${prefix}Theta`] = +c.theta ?? 0;
+            byStrike[k][`${prefix}Vega`] = +c.vega ?? 0;
+            byStrike[k][`${prefix}IV`] = +c.iv ?? 0;
+          });
+        const spotForItm = payload.spot_price ?? spot;
+        const rows: OptionStrike[] = Object.values(byStrike)
+          .map((row: any) => ({
+            callBid: 0, callAsk: 0, callLast: 0, callChange: 0, callVolume: 0, callOI: 0,
+            callDelta: 0, callGamma: 0, callTheta: 0, callVega: 0, callIV: 0,
+            putBid: 0, putAsk: 0, putLast: 0, putChange: 0, putVolume: 0, putOI: 0,
+            putDelta: 0, putGamma: 0, putTheta: 0, putVega: 0, putIV: 0,
+            ...row,
+            itm: row.strike < spotForItm ? 'call' : row.strike > spotForItm ? 'put' : 'atm',
+          }))
+          .sort((a, b) => a.strike - b.strike);
+        if (mounted && rows.length) setChain(rows);
+        else if (mounted && spot > 0) setChain(generateChain(spot, selectedExpiry));
+      } catch {
+        if (mounted && spot > 0) setChain(generateChain(spot, selectedExpiry));
+      }
+    }
+    if (spot > 0) fetchChain();
+    return () => { mounted = false; };
+  }, [symbol, selectedExpiry, spot]);
 
   const handleAddLeg = useCallback((leg: StrategyLeg) => setLegs(prev => [...prev, { ...leg, expiry: selectedExpiry }]), [selectedExpiry]);
   const handleRemoveLeg = useCallback((i: number) => setLegs(prev => prev.filter((_, idx) => idx !== i)), []);

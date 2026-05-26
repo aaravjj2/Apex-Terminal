@@ -345,11 +345,31 @@ class BacktestEngineV2:
             else:
                 bars, batch = load_bars(config.symbol, config.start_date, config.end_date)
                 if not bars:
-                    raise ValueError(
-                        f"No market data for {config.symbol} "
-                        f"({config.start_date} – {config.end_date}). "
-                        f"Run: python scripts/prime_backtest_history.py {config.symbol}"
-                    )
+                    # Auto-prime instead of forcing the user to run a script.
+                    # Backtests are user-driven — fetching ~7y of daily bars from
+                    # yfinance takes 1-3s and is a one-time cost per symbol.
+                    try:
+                        from .data_pipeline import prime_symbol
+                        import logging as _logging
+                        _logging.getLogger(__name__).info(
+                            "auto_priming_backtest_symbol",
+                            extra={"symbol": config.symbol},
+                        )
+                        prime_symbol(config.symbol, years=7)
+                        bars, batch = load_bars(
+                            config.symbol, config.start_date, config.end_date
+                        )
+                    except Exception as prime_err:
+                        raise ValueError(
+                            f"No market data for {config.symbol} "
+                            f"({config.start_date} – {config.end_date}); "
+                            f"auto-prime also failed: {prime_err}"
+                        ) from prime_err
+                    if not bars:
+                        raise ValueError(
+                            f"No market data for {config.symbol} after auto-prime "
+                            f"({config.start_date} – {config.end_date})"
+                        )
 
             checksum = compute_bars_sha256(bars)
 

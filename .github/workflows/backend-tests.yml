@@ -13,11 +13,14 @@ on:
     branches: [main, develop, master]
     paths:
       - 'phase1/**'
-      - '.github/workflows/backend-tests.yml'
+      - '.github/**'
+      - 'scripts/**'
   pull_request:
     branches: [main, develop, master]
     paths:
       - 'phase1/**'
+      - '.github/**'
+      - 'scripts/**'
   schedule:
     # Run at 9:00 AM ET (14:00 UTC) on weekdays to verify before market open
     - cron: '0 14 * * 1-5'
@@ -82,7 +85,7 @@ jobs:
           APCA_API_KEY_ID: test_key_for_ci
           APCA_API_SECRET_KEY: test_secret_for_ci
         run: |
-          pytest tests/integration/ -v --tb=short || echo "Integration tests may require live API"
+          pytest tests/integration/ -v --tb=short
 
   lint:
     name: Code Quality

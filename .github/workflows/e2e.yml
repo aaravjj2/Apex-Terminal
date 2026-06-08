@@ -6,12 +6,18 @@ on:
     paths:
       - 'frontend/**'
       - 'phase1/**'
-      - '.github/workflows/e2e.yml'
+      - '.github/**'
+      - 'scripts/**'
   pull_request:
     branches: [master, main, develop]
     paths:
       - 'frontend/**'
       - 'phase1/**'
+      - '.github/**'
+      - 'scripts/**'
+  schedule:
+    # Weekdays 15:00 UTC — after backend scheduled runs
+    - cron: '0 15 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -29,6 +35,8 @@ jobs:
       PROFILE: dev
       ALPACA3_KEY: test_key_for_ci
       ALPACA3_SECRET: test_secret_for_ci
+      APCA_API_KEY_ID: test_key_for_ci
+      APCA_API_SECRET_KEY: test_secret_for_ci
       APEX_BACKEND_PORT: '8000'
       APEX_FRONTEND_PORT: '5100'
       PLAYWRIGHT_BASE_URL: http://localhost:5100

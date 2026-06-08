@@ -39,7 +39,7 @@ export default defineConfig({
     webServer: isCI ? [
         {
             // Backend server (FastAPI) — mock credentials only; never load keys.env in CI
-            command: `cd ../phase1 && PROFILE=dev ALPACA3_KEY=test_key_for_ci ALPACA3_SECRET=test_secret_for_ci python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${backendPort}`,
+            command: `cd ../phase1 && PROFILE=dev ALPACA3_KEY=test_key_for_ci ALPACA3_SECRET=test_secret_for_ci APCA_API_KEY_ID=test_key_for_ci APCA_API_SECRET_KEY=test_secret_for_ci python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${backendPort}`,
             url: `http://localhost:${backendPort}/health`,
             reuseExistingServer: false,
             timeout: 180000,
@@ -49,6 +49,8 @@ export default defineConfig({
                 PROFILE: 'dev',
                 ALPACA3_KEY: 'test_key_for_ci',
                 ALPACA3_SECRET: 'test_secret_for_ci',
+                APCA_API_KEY_ID: 'test_key_for_ci',
+                APCA_API_SECRET_KEY: 'test_secret_for_ci',
                 APEX_BACKEND_PORT: backendPort,
             },
         },

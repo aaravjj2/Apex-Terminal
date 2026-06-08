@@ -8,11 +8,17 @@ on:
     branches: [main, develop, master]
     paths:
       - 'phase1/**'
-      - '.github/workflows/backend-ci.yml'
+      - '.github/**'
+      - 'scripts/**'
   pull_request:
     branches: [main, develop, master]
     paths:
       - 'phase1/**'
+      - '.github/**'
+      - 'scripts/**'
+  schedule:
+    # Weekdays 14:00 UTC — same window as Backend Tests
+    - cron: '0 14 * * 1-5'
   workflow_dispatch:
 
 jobs:

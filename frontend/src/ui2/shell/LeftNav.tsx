@@ -80,6 +80,22 @@ const I = {
       <circle cx="7.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/>
     </svg>
   ),
+  commandCenter: (
+    <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <circle cx="4" cy="4" r="2"/>
+      <circle cx="11" cy="4" r="2"/>
+      <circle cx="7.5" cy="11" r="2"/>
+      <line x1="5" y1="5" x2="6.5" y2="9.5"/>
+      <line x1="10" y1="5" x2="8.5" y2="9.5"/>
+    </svg>
+  ),
+  research: (
+    <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <rect x="2" y="2" width="11" height="11" rx="1"/>
+      <path d="M5 8l2-3 2 3"/>
+      <line x1="5" y1="11" x2="10" y2="11"/>
+    </svg>
+  ),
   watchlist: (
     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7">
       <line x1="1" y1="4" x2="14" y2="4"/>
@@ -104,6 +120,8 @@ const NAV_ITEMS: Array<{ id: string; label: string; path: string; icon: React.Re
   { id: 'trading',    label: 'Trading',       path: '/ui2/trading',          icon: I.trading    },
   { id: 'portfolio',  label: 'Portfolio',     path: '/ui2/portfolio',        icon: I.portfolio  },
   { id: 'autopilot',  label: 'Autopilot',     path: '/ui2/autopilot',        icon: I.autopilot  },
+  { id: 'research-agent', label: 'Research', path: '/ui2/research-agent', icon: I.research },
+  { id: 'command-center', label: 'Pipeline', path: '/ui2/command-center', icon: I.commandCenter },
   { id: 'options',    label: 'Options',       path: '/ui2/options-chain',    icon: I.options    },
   { id: 'heatmap',    label: 'Heatmap',       path: '/ui2/heatmap',          icon: I.heatmap    },
   { id: 'watchlist',  label: 'Watchlists',    path: '/ui2/watchlist-manager',icon: I.watchlist  },

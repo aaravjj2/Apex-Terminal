@@ -1,0 +1,5 @@
+# Optional ML stack for Research Agent Node 3 (FinBERT transformer).
+# Install when RESEARCH_FINBERT_ENABLED=on or auto-detect is desired:
+#   pip install -r requirements-research-ml.txt
+transformers>=4.40.0
+torch>=2.2.0

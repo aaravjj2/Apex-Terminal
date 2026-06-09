@@ -43,6 +43,9 @@ pytest-mock>=3.12.0
 httpx>=0.25.0
 aiosqlite>=0.19.0
 
+# Research Agent MCP SSE (optional at runtime — graceful fallback if missing)
+mcp>=1.6.0
+
 # Development / lint & format
 black>=23.11.0
 ruff>=0.15.0

@@ -49,6 +49,9 @@ const TradingUI2Husk      = lazy(() => import('./pages').then(m => ({ default: m
 const PortfolioUI2Husk    = lazy(() => import('./pages').then(m => ({ default: m.PortfolioUI2Husk })));
 const DashboardUI2Husk    = lazy(() => import('./pages').then(m => ({ default: m.DashboardUI2Husk })));
 const TerraCodeJudge      = lazy(() => import('./pages/TerraCodeJudge'));
+const CommandCenterUI2    = lazy(() => import('./pages/CommandCenterUI2'));
+const AutopilotPipelineUI2 = lazy(() => import('./pages/AutopilotPipelineUI2'));
+const ResearchAgentUI2     = lazy(() => import('./pages/ResearchAgentUI2'));
 
 // ── Suspense wrapper helper ──────────────────────────────────────────────────
 const S = ({ children }: { children: ReactNode }) => (
@@ -80,6 +83,14 @@ export function UI2Routes() {
         {/* ── Autopilot ── */}
         <Route path="autopilot"         element={<S><AutopilotUI2 /></S>} />
         <Route path="autopilot-v2"      element={<S><AutopilotV2UI2 /></S>} />
+
+        {/* ── Research Agent (4-node state machine) ── */}
+        <Route path="research-agent" element={<S><ResearchAgentUI2 /></S>} />
+
+        {/* ── Autopilot pipeline (vendor L0–L4 + TCC HITL) ── */}
+        <Route path="autopilot-pipeline" element={<S><AutopilotPipelineUI2 /></S>} />
+        <Route path="command-center"     element={<S><CommandCenterUI2 /></S>} />
+        <Route path="hitl-review"         element={<S><CommandCenterUI2 /></S>} />
 
         {/* ── Strategy / Backtest ── */}
         <Route path="backtest"          element={<S><BacktestUI2 /></S>} />

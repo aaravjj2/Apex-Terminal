@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Single source of truth for port configuration
-const backendPort = process.env.APEX_BACKEND_PORT || '8000';
+const backendPort = process.env.APEX_BACKEND_PORT || '8010';
 const frontendPort = process.env.APEX_FRONTEND_PORT || '5100';
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${frontendPort}`;
 const isCI = !!process.env.CI;
@@ -39,7 +39,7 @@ export default defineConfig({
     webServer: isCI ? [
         {
             // Backend server (FastAPI) — mock credentials only; never load keys.env in CI
-            command: `cd ../phase1 && PROFILE=dev ALPACA3_KEY=test_key_for_ci ALPACA3_SECRET=test_secret_for_ci APCA_API_KEY_ID=test_key_for_ci APCA_API_SECRET_KEY=test_secret_for_ci python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${backendPort}`,
+            command: `cd ../phase1 && PROFILE=dev DATABASE_URL=sqlite+aiosqlite:///../phase1/data/apex-ci.db TRADING_ENV=paper PAPER_DRY_RUN=true ALPACA3_KEY=test_key_for_ci ALPACA3_SECRET=test_secret_for_ci APCA_API_KEY_ID=test_key_for_ci APCA_API_SECRET_KEY=test_secret_for_ci python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${backendPort}`,
             url: `http://localhost:${backendPort}/health`,
             reuseExistingServer: false,
             timeout: 180000,
@@ -52,6 +52,9 @@ export default defineConfig({
                 APCA_API_KEY_ID: 'test_key_for_ci',
                 APCA_API_SECRET_KEY: 'test_secret_for_ci',
                 APEX_BACKEND_PORT: backendPort,
+                DATABASE_URL: 'sqlite+aiosqlite:///../phase1/data/apex-ci.db',
+                TRADING_ENV: 'paper',
+                PAPER_DRY_RUN: 'true',
             },
         },
         {
@@ -64,6 +67,8 @@ export default defineConfig({
             stderr: 'pipe',
             env: {
                 APEX_BACKEND_PORT: backendPort,
+                VITE_HITL_DRY_RUN: 'true',
+                VITE_PIPELINE_JOB_ID: 'dry-run-apex-command-center',
             },
         },
     ] : undefined,  // Local: no webServer - assume servers are already running

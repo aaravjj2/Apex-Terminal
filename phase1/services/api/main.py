@@ -300,6 +300,14 @@ async def lifespan(app: FastAPI):
         app.state.health_monitor = health_monitor
     except Exception as e:
         logger.error("health_monitor_start_failed", error=str(e))
+
+    # Vendor autopilot pipeline (arb scan loop, demo seed)
+    try:
+        from ..autopilot_arb import start_vendor_autopilot
+
+        await start_vendor_autopilot()
+    except Exception as e:
+        logger.warning("vendor_autopilot_start_skipped", error=str(e))
     
     yield
 
@@ -336,6 +344,13 @@ async def lifespan(app: FastAPI):
             await autopilot_service.stop_background_loop()
         except Exception as e:
             logger.error("autopilot_shutdown_failed", error=str(e))
+
+    try:
+        from ..autopilot_arb import stop_vendor_autopilot
+
+        await stop_vendor_autopilot()
+    except Exception as e:
+        logger.warning("vendor_autopilot_stop_skipped", error=str(e))
     
     # Cleanup DB
     db = get_database()
@@ -1103,6 +1118,36 @@ def create_app() -> FastAPI:
             if "://" in _settings.database_url
             else "unknown",
         }
+
+    # Trading Command Center (pipeline, HITL SSE, audit) — FinceptTerminal/backend
+    try:
+        from ..command_center import mount_command_center_routers
+
+        mount_command_center_routers(app)
+    except Exception as exc:
+        logger.warning("command_center_mount_skipped", error=str(exc))
+
+    # Autopilot arb radar (Kalshi × Polymarket) — vendor/autopilot-public
+    try:
+        from ..autopilot_arb import mount_autopilot_arb_routes
+
+        mount_autopilot_arb_routes(app)
+    except Exception as exc:
+        logger.warning("autopilot_arb_mount_skipped", error=str(exc))
+
+    # Research Agent — 4-node LLM-free state machine (OSI → BSM → FinBERT → Conformal)
+    try:
+        from ..research_agent import research_agent_router
+
+        app.include_router(research_agent_router)
+    except Exception as exc:
+        logger.warning("research_agent_router_skipped", error=str(exc))
+    try:
+        from ..research_agent import mount_research_mcp_sse
+
+        mount_research_mcp_sse(app)
+    except Exception as exc:
+        logger.warning("research_agent_mcp_skipped", error=str(exc))
 
     return app
 

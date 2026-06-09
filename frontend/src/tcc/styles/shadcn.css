@@ -1,0 +1,38 @@
+/**
+ * shadcn/ui design tokens — MUST load before Tailwind and React Flow.
+ */
+:root {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 96%;
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 96%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 222 47% 6%;
+  --secondary: 217 19% 18%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 19% 14%;
+  --muted-foreground: 215 16% 57%;
+  --accent: 217 19% 18%;
+  --accent-foreground: 210 40% 96%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217 19% 20%;
+  --ring: 217 91% 60%;
+  --radius: 0.5rem;
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
